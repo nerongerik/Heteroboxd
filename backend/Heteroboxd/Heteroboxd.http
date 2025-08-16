@@ -1,0 +1,6 @@
+@Heteroboxd_HostAddress = http://localhost:5058
+
+GET {{Heteroboxd_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
