@@ -1,0 +1,63 @@
+# Build folders
+bin/
+obj/
+Debug/
+Release/
+out/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+
+# DotCover is a JetBrains coverage tool
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.ncb
+*.cache
+*.dbmdl
+
+# NuGet packages
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+*.nuget.props
+*.nuget.targets
+
+# Entity Framework migrations snapshots
+*Migrations/*.Designer.cs
+*Migrations/*.resx
+
+# Build results
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Rider
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Publish output
+publish/
+dist/
+
+# App settings (contains secrets, don't commit)
+appsettings.json
+appsettings.Development.json
