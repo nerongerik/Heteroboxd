@@ -16,6 +16,8 @@ namespace Heteroboxd.Data
         public DbSet<ListEntry> ListEntries { get; set; }
         public DbSet<UserList> UserLists { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Watchlist> Watchlists { get; set; }
+        public DbSet<UserFavorites> UserFavorites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,66 +30,89 @@ namespace Heteroboxd.Data
                 entity.HasIndex(u => u.Email).IsUnique();
                 entity.Property(u => u.Tier).HasConversion<string>();
 
-                // Watchlist
-                entity.HasMany(u => u.Watchlist)
-                      .WithOne()
+                // Watchlist (1:1)
+                entity.HasOne(u => u.Watchlist)
+                      .WithOne(w => w.User)
+                      .HasForeignKey<Watchlist>(w => w.Id)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Lists
+                // Favorites (1:1)
+                entity.HasOne(u => u.Favorites)
+                      .WithOne(f => f.User)
+                      .HasForeignKey<UserFavorites>(f => f.Id)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Lists (1:M)
                 entity.HasMany(u => u.Lists)
                       .WithOne(l => l.Author)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Followers (who follows THIS user)
+                // Followers (M:M)
                 entity.HasMany(u => u.Followers)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserFollowers"));
 
-                // Following (who THIS user follows)
+                // Following (M:M)
                 entity.HasMany(u => u.Following)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserFollowing"));
 
-
-                // Blocked users (many-to-many)
+                // Blocked users (M:M)
                 entity.HasMany(u => u.Blocked)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserBlocked"));
 
-                // Notifications
+                // Notifications (1:M)
                 entity.HasMany(u => u.Notifications)
                       .WithOne(n => n.User)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Reviews
+                // Reviews (1:M)
                 entity.HasMany(u => u.Reviews)
                       .WithOne(r => r.Author)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Comments
+                // Comments (1:M)
                 entity.HasMany(u => u.Comments)
                       .WithOne(c => c.Author)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // LikedReviews (many-to-many)
+                // LikedReviews (M:M)
                 entity.HasMany(u => u.LikedReviews)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserLikedReviews"));
 
-                // LikedComments (many-to-many)
+                // LikedComments (M:M)
                 entity.HasMany(u => u.LikedComments)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserLikedComments"));
 
-                // LikedLists (many-to-many)
+                // LikedLists (M:M)
                 entity.HasMany(u => u.LikedLists)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserLikedLists"));
+            });
 
-                // Favorites
-                entity.HasMany(u => u.Favorites)
+            // Watchlist
+            modelBuilder.Entity<Watchlist>(entity =>
+            {
+                entity.HasKey(w => w.Id);
+
+                entity.HasMany(w => w.Films)
                       .WithOne()
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // UserFavorites
+            modelBuilder.Entity<UserFavorites>(entity =>
+            {
+                entity.HasKey(f => f.Id);
+
+                entity.HasOne(f => f.Film1).WithMany().OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(f => f.Film2).WithMany().OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(f => f.Film3).WithMany().OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(f => f.Film4).WithMany().OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(f => f.Film5).WithMany().OnDelete(DeleteBehavior.SetNull);
             });
 
             // Film
@@ -110,6 +135,7 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<Review>(entity =>
             {
                 entity.HasKey(r => r.Id);
+
                 entity.HasOne(r => r.Author)
                       .WithMany(u => u.Reviews)
                       .OnDelete(DeleteBehavior.Cascade);
@@ -127,6 +153,7 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<Comment>(entity =>
             {
                 entity.HasKey(c => c.Id);
+
                 entity.HasOne(c => c.Author)
                       .WithMany(u => u.Comments)
                       .OnDelete(DeleteBehavior.Cascade);

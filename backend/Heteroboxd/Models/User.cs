@@ -14,9 +14,9 @@ namespace Heteroboxd.Models
         public string? Bio { get; private set; }
         public Tier Tier { get; private set; }
         public DateTime DateJoined { get; private set; }
-        public ICollection<ListEntry> Watchlist { get; private set; }
+        public Watchlist Watchlist { get; private set; }
         public bool Deleted { get; private set; }
-        public ICollection<ListEntry> Favorites { get; private set; }
+        public UserFavorites Favorites { get; private set; }
         public ICollection<UserList> Lists { get; private set; }
         public ICollection<User> Followers { get; private set; }
         public ICollection<User> Following { get; private set; }
@@ -38,9 +38,9 @@ namespace Heteroboxd.Models
             this.Bio = null;
             this.Tier = Tier.Free;
             this.DateJoined = DateTime.UtcNow;
-            this.Watchlist = new List<ListEntry>();
+            this.Watchlist = new Watchlist();
             this.Deleted = false;
-            this.Favorites = new List<ListEntry>();
+            this.Favorites = new UserFavorites();
             this.Lists = new List<UserList>();
             this.Followers = new List<User>();
             this.Following = new List<User>();
