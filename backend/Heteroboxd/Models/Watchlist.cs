@@ -1,0 +1,19 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Heteroboxd.Models
+{
+    public class Watchlist
+    {
+        [Key]
+        public Guid Id { get; private set; }
+        public ICollection<ListEntry> Films { get; private set; }
+        public User User { get; private set; }
+
+        public Watchlist()
+        {
+            this.Id = Guid.NewGuid();
+            this.Films = new List<ListEntry>();
+            this.User = new User();
+        }
+    }
+}
