@@ -15,5 +15,12 @@ namespace Heteroboxd.Models
             this.Films = new List<ListEntry>();
             this.User = new User();
         }
+
+        public Watchlist(User User)
+        {
+            this.Id = Guid.NewGuid();
+            this.Films = new List<ListEntry>();
+            this.User = User;
+        }
     }
 }

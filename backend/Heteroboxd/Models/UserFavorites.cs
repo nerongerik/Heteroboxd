@@ -23,5 +23,16 @@ namespace Heteroboxd.Models
             this.Film5 = null;
             this.User = new User();
         }
+
+        public UserFavorites(User User)
+        {
+            this.Id = Guid.NewGuid();
+            this.Film1 = null;
+            this.Film2 = null;
+            this.Film3 = null;
+            this.Film4 = null;
+            this.Film5 = null;
+            this.User = User;
+        }
     }
 }

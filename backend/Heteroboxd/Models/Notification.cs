@@ -23,5 +23,16 @@ namespace Heteroboxd.Models
             this.Deleted = false;
             this.User = new User();
         }
+
+        public Notification(string Title, string Text, User User)
+        {
+            this.Id = Guid.NewGuid();
+            this.Title = Title;
+            this.Text = Text;
+            this.Date = DateTime.UtcNow;
+            this.Read = false;
+            this.Deleted = false;
+            this.User = User;
+        }
     }
 }

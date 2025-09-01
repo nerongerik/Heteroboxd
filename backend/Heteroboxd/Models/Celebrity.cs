@@ -22,5 +22,15 @@ namespace Heteroboxd.Models
             this.Deleted = false;
             this.Credits = new List<CelebrityCredit>();
         }
+
+        public Celebrity(string Name, string? Description, string? PictureUrl)
+        {
+            this.Id = Guid.NewGuid();
+            this.Name = Name;
+            this.Description = Description;
+            this.PictureUrl = PictureUrl ?? "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
+            this.Deleted = false;
+            this.Credits = new List<CelebrityCredit>();
+        }
     }
 }

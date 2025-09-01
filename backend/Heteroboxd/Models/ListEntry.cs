@@ -16,5 +16,13 @@ namespace Heteroboxd.Models
             this.Film = new Film();
             this.DateAdded = DateTime.UtcNow;
         }
+
+        public ListEntry(Film Film, int? Position)
+        {
+            this.Id = Guid.NewGuid();
+            this.Film = Film;
+            this.DateAdded = DateTime.UtcNow;
+            this.Position = Position;
+        }
     }
 }

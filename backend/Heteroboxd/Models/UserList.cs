@@ -27,5 +27,18 @@ namespace Heteroboxd.Models
             this.Films = new List<ListEntry>();
             this.LikeCount = 0;
         }
+
+        public UserList(string Name, string? Description, bool Ranked, User Author)
+        {
+            this.Id = Guid.NewGuid();
+            this.Name = Name;
+            this.Description = Description;
+            this.Ranked = Ranked;
+            this.NotificationsOn = true;
+            this.Deleted = false;
+            this.Author = Author;
+            this.Films = new List<ListEntry>();
+            this.LikeCount = 0;
+        }
     }
 }

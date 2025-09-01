@@ -18,5 +18,12 @@ namespace Heteroboxd.Models
             this.Film = new Film();
             this.Role = Role.Actor;
         }
+
+        public CelebrityCredit(Film Film, Role Role)
+        {
+            this.Id = Guid.NewGuid();
+            this.Film = Film;
+            this.Role = Role;
+        }
     }
 }
