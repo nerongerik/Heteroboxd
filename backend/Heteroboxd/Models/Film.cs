@@ -22,7 +22,7 @@ namespace Heteroboxd.Models
         public ICollection<Review> Reviews { get; private set; }
         public int FavoriteCount { get; private set; }
 
-        //public ICollection<UserList> ListedIn { get; private set; }
+        //a film SHOULD know which lists it was featured in, but for mobility and performance reasons I won't include that here
 
         public Film()
         {
@@ -38,6 +38,26 @@ namespace Heteroboxd.Models
             this.Slug = "Slug" + this.Id.ToString();
             this.TmdbId = "TMDB" + this.Id.ToString();
             this.LastSync = null;
+            this.CastAndCrew = new List<Celebrity>();
+            this.Deleted = false;
+            this.Reviews = new List<Review>();
+            this.FavoriteCount = 0;
+        }
+
+        public Film(string Title, string? OriginalTitle, string Synopsis, string? PosterUrl, string? BackdropUrl, string? TrailerUrl, int Length, int ReleaseYear, string Slug, string TmdbId)
+        {
+            this.Id = Guid.NewGuid();
+            this.Title = Title;
+            this.OriginalTitle = OriginalTitle;
+            this.Synopsis = Synopsis;
+            this.PosterUrl = PosterUrl ?? "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
+            this.BackdropUrl = BackdropUrl;
+            this.TrailerUrl = TrailerUrl;
+            this.Length = Length;
+            this.ReleaseYear = ReleaseYear;
+            this.Slug = Slug;
+            this.TmdbId = TmdbId;
+            this.LastSync = DateTime.UtcNow;
             this.CastAndCrew = new List<Celebrity>();
             this.Deleted = false;
             this.Reviews = new List<Review>();

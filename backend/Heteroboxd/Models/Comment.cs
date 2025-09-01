@@ -18,10 +18,26 @@ namespace Heteroboxd.Models
         public Comment()
         {
             this.Id = Guid.NewGuid();
+            this.Text = string.Empty;
             this.Date = DateTime.UtcNow;
             this.Flags = 0;
             this.NotificationsOn = true;
             this.Deleted = false;
+            this.Author = new User();
+            this.Review = new Review();
+            this.LikeCount = 0;
+        }
+
+        public Comment(string Text, int Flags, User Author, Review Review)
+        {
+            this.Id = Guid.NewGuid();
+            this.Text = Text;
+            this.Date = DateTime.UtcNow;
+            this.Flags = Flags;
+            this.NotificationsOn = true;
+            this.Deleted = false;
+            this.Author = Author;
+            this.Review = Review;
             this.LikeCount = 0;
         }
     }

@@ -33,5 +33,21 @@ namespace Heteroboxd.Models
             this.Comments = new List<Comment>();
             this.LikeCount = 0;
         }
+
+        public Review(double Rating, string? Text, int Flags, bool Spoiler, User Author, Film Film)
+        {
+            this.Id = Guid.NewGuid();
+            this.Rating = Rating;
+            this.Text = Text;
+            this.Date = DateTime.UtcNow;
+            this.Flags = Flags;
+            this.Spoiler = Spoiler;
+            this.NotificationsOn = true;
+            this.Deleted = false;
+            this.Author = Author;
+            this.Film = Film;
+            this.Comments = new List<Comment>();
+            this.LikeCount = 0;
+        }
     }
 }

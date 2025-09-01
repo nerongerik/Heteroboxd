@@ -52,5 +52,30 @@ namespace Heteroboxd.Models
             this.LikedComments = new List<Comment>();
             this.LikedLists = new List<UserList>();
         }
+
+        public User(string Name, string Email, string PasswordHash, string? PictureUrl, string Bio)
+        {
+            this.Id = Guid.NewGuid();
+            this.Name = Name;
+            this.Email = Email;
+            this.PasswordHash = PasswordHash;
+            this.PictureUrl = PictureUrl ?? "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
+            this.Bio = Bio;
+            this.Tier = Tier.Free;
+            this.DateJoined = DateTime.UtcNow;
+            this.Watchlist = new Watchlist();
+            this.Deleted = false;
+            this.Favorites = new UserFavorites();
+            this.Lists = new List<UserList>();
+            this.Followers = new List<User>();
+            this.Following = new List<User>();
+            this.Blocked = new List<User>();
+            this.Notifications = new List<Notification>(); //user should get a welcome notification
+            this.Reviews = new List<Review>();
+            this.Comments = new List<Comment>();
+            this.LikedReviews = new List<Review>();
+            this.LikedComments = new List<Comment>();
+            this.LikedLists = new List<UserList>();
+        }
     }
 }
