@@ -27,6 +27,7 @@ namespace Heteroboxd.Models
         public ICollection<Review> LikedReviews { get; private set; }
         public ICollection<Comment> LikedComments { get; private set; }
         public ICollection<UserList> LikedLists { get; private set; }
+        public ICollection<UserWatchedFilm> WatchedFilms { get; private set; }
 
         public User()
         {
@@ -51,6 +52,7 @@ namespace Heteroboxd.Models
             this.LikedReviews = new List<Review>();
             this.LikedComments = new List<Comment>();
             this.LikedLists = new List<UserList>();
+            this.WatchedFilms = new List<UserWatchedFilm>();
         }
 
         public User(string Name, string Email, string PasswordHash, string? PictureUrl, string Bio)
@@ -76,6 +78,7 @@ namespace Heteroboxd.Models
             this.LikedReviews = new List<Review>();
             this.LikedComments = new List<Comment>();
             this.LikedLists = new List<UserList>();
+            this.WatchedFilms = new List<UserWatchedFilm>();
         }
     }
 }
