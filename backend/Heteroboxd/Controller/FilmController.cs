@@ -48,6 +48,14 @@ namespace Heteroboxd.Controller
             return null;
         }
 
+        [HttpGet("user/{UserId}")]
+        public IActionResult GetUsersWatchedFilms(string UserId)
+        {
+            //retrives all films a specific user has watched from database
+            //accesses UserWatchedFilm join table through User, consider separating into a new controller
+            return null;
+        }
+
         [HttpGet("search")]
         public IActionResult SearchFilms([FromQuery] FilmSearchRequest Search)
         {

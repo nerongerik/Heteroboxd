@@ -32,7 +32,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user-reviews/{UserId}")]
-        public IActionResult GetReviewsByUser(string UserId)
+        public IActionResult GetReviewsByAuthor(string UserId)
         {
             //retrives all reviews by a specific user from database
             return null;
@@ -61,6 +61,13 @@ namespace Heteroboxd.Controller
         {
             //increment/decrement the like count of a review
             //updates when a user likes/unlikes a review
+            return null;
+        }
+
+        [HttpPut("toggle-notifications/{ReviewId}")]
+        public IActionResult ToggleNotifications(string ReviewId)
+        {
+            //toggles the notification setting for a review
             return null;
         }
 
