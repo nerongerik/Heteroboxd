@@ -18,6 +18,7 @@ namespace Heteroboxd.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Watchlist> Watchlists { get; set; }
         public DbSet<UserFavorites> UserFavorites { get; set; }
+        public DbSet<UserWatchedFilm> UserWatchedFilms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -91,6 +92,11 @@ namespace Heteroboxd.Data
                 entity.HasMany(u => u.LikedLists)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserLikedLists"));
+
+                // WatchedFilms (1:M)
+                entity.HasMany(u => u.WatchedFilms)
+                      .WithOne(uwf => uwf.User)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Watchlist
@@ -126,8 +132,28 @@ namespace Heteroboxd.Data
                       .WithOne(r => r.Film)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                // Film -> CelebrityCredits
                 entity.HasMany(f => f.CastAndCrew)
-                      .WithOne()
+                      .WithOne(cc => cc.Film)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // WatchedBy (1:M)
+                entity.HasMany(f => f.WatchedBy)
+                      .WithOne(uwf => uwf.Film)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // UserWatchedFilm (join entity)
+            modelBuilder.Entity<UserWatchedFilm>(entity =>
+            {
+                entity.HasKey(uwf => uwf.Id);
+
+                entity.HasOne(uwf => uwf.User)
+                      .WithMany(u => u.WatchedFilms)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(uwf => uwf.Film)
+                      .WithMany(f => f.WatchedBy)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -168,18 +194,25 @@ namespace Heteroboxd.Data
             {
                 entity.HasKey(c => c.Id);
 
+                // Celebrity -> CelebrityCredits
                 entity.HasMany(c => c.Credits)
-                      .WithOne()
+                      .WithOne(cc => cc.Celebrity)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // CelebrityCredit
+            // CelebrityCredit (join entity)
             modelBuilder.Entity<CelebrityCredit>(entity =>
             {
                 entity.HasKey(cc => cc.Id);
 
+                entity.HasOne(cc => cc.Celebrity)
+                      .WithMany(c => c.Credits)
+                      .HasForeignKey("CelebrityId") //shadow property
+                      .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasOne(cc => cc.Film)
-                      .WithMany()
+                      .WithMany(f => f.CastAndCrew)
+                      .HasForeignKey("FilmId") //shadow property
                       .OnDelete(DeleteBehavior.Cascade);
             });
 

@@ -49,20 +49,27 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("FilmId")
-                        .HasColumnType("uuid");
+                    b.Property<bool>("DescriptionLocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastSync")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("NameLocked")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PictureUrl")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.Property<bool>("PictureUrlLocked")
+                        .HasColumnType("boolean");
 
-                    b.HasIndex("FilmId");
+                    b.HasKey("Id");
 
                     b.ToTable("Celebrities");
                 });
@@ -73,7 +80,7 @@ namespace Heteroboxd.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CelebrityId")
+                    b.Property<Guid>("CelebrityId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("FilmId")
@@ -140,6 +147,9 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("BackdropUrl")
                         .HasColumnType("text");
 
+                    b.Property<bool>("BackdropUrlLocked")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
 
@@ -159,6 +169,9 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("PosterUrlLocked")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("ReleaseYear")
                         .HasColumnType("integer");
 
@@ -170,9 +183,15 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("SynopsisLocked")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("TitleLocked")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("TmdbId")
                         .IsRequired()
@@ -500,6 +519,33 @@ namespace Heteroboxd.Migrations
                     b.ToTable("UserLikedLists", (string)null);
                 });
 
+            modelBuilder.Entity("UserWatchedFilm", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("DateWatched")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FilmId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TimesWatched")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FilmId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserWatchedFilms");
+                });
+
             modelBuilder.Entity("CommentUser", b =>
                 {
                     b.HasOne("Heteroboxd.Models.Comment", null)
@@ -515,26 +561,21 @@ namespace Heteroboxd.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Heteroboxd.Models.Celebrity", b =>
-                {
-                    b.HasOne("Heteroboxd.Models.Film", null)
-                        .WithMany("CastAndCrew")
-                        .HasForeignKey("FilmId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("Heteroboxd.Models.CelebrityCredit", b =>
                 {
-                    b.HasOne("Heteroboxd.Models.Celebrity", null)
+                    b.HasOne("Heteroboxd.Models.Celebrity", "Celebrity")
                         .WithMany("Credits")
                         .HasForeignKey("CelebrityId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Heteroboxd.Models.Film", "Film")
-                        .WithMany()
+                        .WithMany("CastAndCrew")
                         .HasForeignKey("FilmId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Celebrity");
 
                     b.Navigation("Film");
                 });
@@ -752,6 +793,25 @@ namespace Heteroboxd.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("UserWatchedFilm", b =>
+                {
+                    b.HasOne("Heteroboxd.Models.Film", "Film")
+                        .WithMany("WatchedBy")
+                        .HasForeignKey("FilmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Heteroboxd.Models.User", "User")
+                        .WithMany("WatchedFilms")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Film");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Heteroboxd.Models.Celebrity", b =>
                 {
                     b.Navigation("Credits");
@@ -762,6 +822,8 @@ namespace Heteroboxd.Migrations
                     b.Navigation("CastAndCrew");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("WatchedBy");
                 });
 
             modelBuilder.Entity("Heteroboxd.Models.Review", b =>
@@ -781,6 +843,8 @@ namespace Heteroboxd.Migrations
                     b.Navigation("Notifications");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("WatchedFilms");
 
                     b.Navigation("Watchlist")
                         .IsRequired();

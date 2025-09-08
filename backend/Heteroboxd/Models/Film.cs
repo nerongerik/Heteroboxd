@@ -16,11 +16,16 @@ namespace Heteroboxd.Models
         public int ReleaseYear { get; private set; }
         public string Slug { get; private set; } //unique
         public string TmdbId { get; private set; } //unique
-        public DateTime? LastSync { get; private set; }
-        public ICollection<Celebrity> CastAndCrew { get; private set; }
+        public DateTime? LastSync { get; private set; } //if LastSync < tMDB's last update, resync
+        public bool TitleLocked { get; private set; } //if true, title won't be updated during sync
+        public bool SynopsisLocked { get; private set; } //if true, synopsis won't be updated during sync
+        public bool PosterUrlLocked { get; private set; } //if true, poster url won't be updated during sync
+        public bool BackdropUrlLocked { get; private set; } //if true, backdrop url won't be updated during sync
+        public ICollection<CelebrityCredit> CastAndCrew { get; private set; }
         public bool Deleted { get; private set; }
         public ICollection<Review> Reviews { get; private set; }
         public int FavoriteCount { get; private set; }
+        public ICollection<UserWatchedFilm> WatchedBy { get; private set; }
 
         //a film SHOULD know which lists it was featured in, but for mobility and performance reasons I won't include that here
 
@@ -38,13 +43,18 @@ namespace Heteroboxd.Models
             this.Slug = "Slug" + this.Id.ToString();
             this.TmdbId = "TMDB" + this.Id.ToString();
             this.LastSync = null;
-            this.CastAndCrew = new List<Celebrity>();
+            this.TitleLocked = false;
+            this.SynopsisLocked = false;
+            this.PosterUrlLocked = false;
+            this.BackdropUrlLocked = false;
+            this.CastAndCrew = new List<CelebrityCredit>();
             this.Deleted = false;
             this.Reviews = new List<Review>();
             this.FavoriteCount = 0;
+            this.WatchedBy = new List<UserWatchedFilm>();
         }
 
-        public Film(string Title, string? OriginalTitle, string Synopsis, string? PosterUrl, string? BackdropUrl, string? TrailerUrl, int Length, int ReleaseYear, string Slug, string TmdbId)
+        public Film(string Title, string? OriginalTitle, string Synopsis, string? PosterUrl, string? BackdropUrl, string? TrailerUrl, int Length, int ReleaseYear, string Slug, string TmdbId, List<CelebrityCredit> CastAndCrew)
         {
             this.Id = Guid.NewGuid();
             this.Title = Title;
@@ -57,11 +67,16 @@ namespace Heteroboxd.Models
             this.ReleaseYear = ReleaseYear;
             this.Slug = Slug;
             this.TmdbId = TmdbId;
+            this.TitleLocked = false;
+            this.SynopsisLocked = false;
+            this.PosterUrlLocked = false;
+            this.BackdropUrlLocked = false;
             this.LastSync = DateTime.UtcNow;
-            this.CastAndCrew = new List<Celebrity>();
+            this.CastAndCrew = CastAndCrew;
             this.Deleted = false;
             this.Reviews = new List<Review>();
             this.FavoriteCount = 0;
+            this.WatchedBy = new List<UserWatchedFilm>();
         }
     }
 }
