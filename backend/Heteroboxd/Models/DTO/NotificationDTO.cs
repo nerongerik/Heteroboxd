@@ -3,4 +3,8 @@
     public class CreateNotificationRequest
     {
     }
+
+    public class UpdateNotificationRequest
+    {
+    }
 }

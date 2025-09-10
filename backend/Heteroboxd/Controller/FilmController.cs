@@ -74,17 +74,17 @@ namespace Heteroboxd.Controller
 
         //PUT endpoints -> ADMIN privileges only
 
-        [HttpPut("{FilmId}")]
-        public IActionResult UpdateFilm(string FilmId, [FromBody] UpdateFilmRequest FilmRequest)
+        [HttpPut]
+        public IActionResult UpdateFilm([FromBody] UpdateFilmRequest FilmRequest)
         {
             //updates an existing film in the database
             return null;
         }
 
-        [HttpPut("favorite-count/{FilmId}")]
-        public IActionResult UpdateFilmFavoriteCount(string FilmId, [FromBody] int FavoriteChange)
+        [HttpPut("favorite-count/{FilmId}/{FavoriteChange}")]
+        public IActionResult UpdateFilmFavoriteCount(string FilmId, string FavoriteChange)
         {
-            //increments/decrements a film's favorite count in the database
+            //FavoriteChange should be +1 or -1, convert to numeral
             //called when a user favorites/unfavorites a film
             return null;
         }

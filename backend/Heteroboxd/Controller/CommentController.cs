@@ -55,10 +55,10 @@ namespace Heteroboxd.Controller
             return null;
         }
 
-        [HttpPut("like-count/{CommentId}")]
-        public IActionResult UpdateLikeCount(string CommentId, [FromBody] int LikeChange)
+        [HttpPut("like-count/{CommentId}/{LikeChange}")]
+        public IActionResult UpdateLikeCount(string CommentId, string LikeChange)
         {
-            //increment/decrement the like count of a comment
+            //LikeChange should be +1 or -1, convert to numeral
             //updates when a user likes/unlikes a comment
             return null;
         }
