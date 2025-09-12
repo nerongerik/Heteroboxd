@@ -11,8 +11,6 @@ namespace Heteroboxd.Models
         public Film Film { get; private set; }
         public Role Role { get; private set; }
 
-        //public Celebrity Celebrity { get; private set; }
-
         public CelebrityCredit()
         {
             this.Id = Guid.NewGuid();

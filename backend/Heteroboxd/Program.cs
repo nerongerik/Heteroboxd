@@ -1,11 +1,22 @@
 using Heteroboxd.Data;
+using Heteroboxd.Service;
+using Heteroboxd.Repository;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services here if needed
+//add services here if needed
 builder.Services.AddDbContext<HeteroboxdContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+//repos
+builder.Services.AddScoped<IFilmRepository, FilmRepository>();
+
+//services
+builder.Services.AddScoped<IFilmService, FilmService>();
+
+//controllers
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -15,13 +26,16 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// Configure the HTTP request pipeline
+//configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage(); // optional for dev
+    app.UseDeveloperExceptionPage(); //optional for dev
 }
 
 app.UseHttpsRedirection();
 
-// Run the application
+//map controllers
+app.MapControllers();
+
+//run the application
 app.Run();

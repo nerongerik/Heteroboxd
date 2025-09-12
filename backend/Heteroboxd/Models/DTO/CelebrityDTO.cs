@@ -1,5 +1,9 @@
 ﻿namespace Heteroboxd.Models.DTO
 {
+    public class CelebrityInfoResponse
+    {
+    }
+
     public class CreateCelebrityRequest
     {
     }

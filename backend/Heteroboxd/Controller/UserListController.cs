@@ -31,6 +31,13 @@ namespace Heteroboxd.Controller
             return null;
         }
 
+        [HttpGet("featuring-film/{FilmId}")]
+        public IActionResult GetListsFeaturingFilm(string FilmId)
+        {
+            //retrives all lists featuring a specific film from database
+            return null;
+        }
+
         [HttpGet("search")]
         public IActionResult SearchLists([FromQuery] UserListSearchRequest Search)
         {

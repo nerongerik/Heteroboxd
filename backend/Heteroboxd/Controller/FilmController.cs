@@ -1,6 +1,10 @@
 ﻿using Heteroboxd.Models.DTO;
+using Heteroboxd.Repository;
+using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace Heteroboxd.Controller
 {
@@ -8,14 +12,27 @@ namespace Heteroboxd.Controller
     [Route("films")]
     public class FilmController : ControllerBase
     {
+        private readonly IFilmService _service;
+
+        public FilmController(IFilmService service)
+        {
+            _service = service;
+        }
+
         //GET endpoints -> public access
 
         [HttpGet]
-        public IActionResult GetAllFilms()
+        public async Task<IActionResult> GetAllFilms()
         {
-            //retrives all films from database
-            //consider pagination, sorting, filtering
-            return null;
+            try
+            {
+                var AllFilms = await _service.GetAllFilms();
+                return Ok(AllFilms);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("trending")]
@@ -63,14 +80,7 @@ namespace Heteroboxd.Controller
             return null;
         }
 
-        //POST endpoints -> depricated
-
-        [HttpPost]
-        public IActionResult AddFilm([FromBody] CreateFilmRequest FilmRequest)
-        {
-            //adds a new film to the database
-            return null;
-        }
+        //POST endpoints -> not allowed, films added via tMDB sync only
 
         //PUT endpoints -> ADMIN privileges only
 
