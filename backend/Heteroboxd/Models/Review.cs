@@ -6,17 +6,17 @@ namespace Heteroboxd.Models
     {
         [Key]
         public Guid Id { get; private set; }
-        public double Rating { get; private set; }
-        public string? Text { get; private set; }
+        public double Rating { get; set; }
+        public string? Text { get; set; }
         public DateTime Date { get; private set; }
-        public int Flags { get; private set; }
-        public bool Spoiler { get; private set; }
-        public bool NotificationsOn { get; private set; }
-        public bool Deleted { get; private set; }
+        public int Flags { get; set; }
+        public bool Spoiler { get; set; }
+        public bool NotificationsOn { get; set; }
+        public bool Deleted { get; set; }
         public User Author { get; private set; }
         public Film Film { get; private set; }
         public ICollection<Comment> Comments { get; private set; }
-        public int LikeCount { get; private set; }
+        public int LikeCount { get; set; }
 
         public Review()
         {

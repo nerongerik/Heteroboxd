@@ -14,7 +14,7 @@ namespace Heteroboxd.Service
         Task<List<FilmInfoResponse>> GetUsersWatchedFilms(string UserId);
         Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search);
         Task<FilmInfoResponse?> UpdateFilm(UpdateFilmRequest FilmRequest);
-        Task<int> UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange);
+        Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange);
         Task LogicalDeleteFilm(string FilmId);
     }
 
@@ -107,11 +107,11 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
-        public async Task<int> UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange)
+        public async Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange)
         {
             if (!Guid.TryParse(FilmId, out var Id)) throw new ArgumentException(nameof(FilmId));
             if (!int.TryParse(FavoriteChange, out var Delta)) throw new ArgumentException(nameof(FavoriteChange));
-            return await _repo.UpdateFilmFavoriteCountEfCore7Async(Id, Delta);
+            await _repo.UpdateFilmFavoriteCountEfCore7Async(Id, Delta);
         }
     }
 }

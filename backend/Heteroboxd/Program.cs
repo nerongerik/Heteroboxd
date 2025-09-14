@@ -11,9 +11,13 @@ builder.Services.AddDbContext<HeteroboxdContext>(options =>
 
 //repos
 builder.Services.AddScoped<IFilmRepository, FilmRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 //services
 builder.Services.AddScoped<IFilmService, FilmService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 //controllers
 builder.Services.AddControllers();

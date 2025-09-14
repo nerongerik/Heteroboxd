@@ -19,7 +19,7 @@ using Heteroboxd.Models.Enums;
  * 
  * 
  * 
- PLEASE NOTE: IF YOU FIND THAT SEARCH MALFUNCTIONS, IT WILL MOST LIKELY BE DUE TO CASE SENSITIVITY
+ NOTE: IF YOU FIND THAT SEARCH MALFUNCTIONS, IT WILL MOST LIKELY BE DUE TO CASE SENSITIVITY
  * 
  * 
  * 
@@ -48,7 +48,7 @@ namespace Heteroboxd.Repository
         Task<List<Film>> GetByUserAsync(Guid UserId);
         Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle, string? Director, ICollection<string>? Cast);
         void Update(Film Film);
-        Task<int> UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta);
+        Task UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta);
         void Delete(Film Film);
         Task SaveChangesAsync();
     }
@@ -107,7 +107,6 @@ namespace Heteroboxd.Repository
 
         public async Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle, string? Director, ICollection<string>? Cast)
         {
-            //the service layer will provide Cast in all lowercase to make the search for the actors specifically easier
             var query = _context.Films.AsQueryable();
 
             if (!string.IsNullOrEmpty(Title))
@@ -137,7 +136,7 @@ namespace Heteroboxd.Repository
                 .Update(Film);
         }
 
-        public async Task<int> UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta)
+        public async Task UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta) //increments/decrements favorite count
         {
             var Rows = await _context.Films
                 .Where(f => f.Id == FilmId)
@@ -146,10 +145,6 @@ namespace Heteroboxd.Repository
                     f => f.FavoriteCount + Delta
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
-            var Film = await _context.Films
-                .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.Id == FilmId);
-            return Film!.FavoriteCount;
         }
 
         public void Delete(Film Film) //used in big, weekly (or monthly) purge jobs, consider cascades and side effects later

@@ -1,5 +1,11 @@
 ﻿namespace Heteroboxd.Models.DTO
 {
+    public class UserInfoResponse
+    {
+        public UserInfoResponse(User User)
+        { 
+        }
+    }
     public class CreateUserRequest
     {
     }

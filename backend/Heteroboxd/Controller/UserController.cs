@@ -1,12 +1,20 @@
 ﻿using Heteroboxd.Models.DTO;
 using Microsoft.AspNetCore.Mvc;
+using Heteroboxd.Service;
 
 namespace Heteroboxd.Controller
 {
     [ApiController]
     [Route("users")]
-    public class UserController
+    public class UserController : ControllerBase
     {
+        private readonly IUserService _service;
+
+        public UserController(IUserService service)
+        {
+            _service = service;
+        }
+
         //GET endpoints -> limited public access
 
         [HttpGet]
