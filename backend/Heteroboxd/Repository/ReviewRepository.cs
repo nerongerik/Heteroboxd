@@ -10,7 +10,7 @@ namespace Heteroboxd.Repository
         Task<Review?> GetByIdAsync(Guid Id);
         Task<List<Review>> GetByFilmAsync(Guid FilmId);
         Task<List<Review>> GetByAuthorAsync(Guid AuthorId);
-        void CreateAsync(Review Review);
+        void Create(Review Review);
         void Update(Review Review);
         Task UpdateReviewLikeCountEfCore7Async(Guid ReviewId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid ReviewId);
@@ -54,7 +54,7 @@ namespace Heteroboxd.Repository
                 .Where(r => r.Author.Id == AuthorId && !r.Deleted)
                 .ToListAsync();
 
-        public void CreateAsync(Review Review)
+        public void Create(Review Review)
         {
             _context.Reviews
                 .Add(Review);

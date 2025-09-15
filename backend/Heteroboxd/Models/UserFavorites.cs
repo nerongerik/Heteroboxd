@@ -11,6 +11,7 @@ namespace Heteroboxd.Models
         public Film? Film3 { get; private set; }
         public Film? Film4 { get; private set; }
         public Film? Film5 { get; private set; }
+        public Guid UserId { get; private set; }
         public User User { get; private set; }
 
         public UserFavorites()
@@ -22,6 +23,7 @@ namespace Heteroboxd.Models
             this.Film4 = null;
             this.Film5 = null;
             this.User = new User();
+            this.UserId = this.User.Id;
         }
 
         public UserFavorites(User User)
@@ -33,6 +35,7 @@ namespace Heteroboxd.Models
             this.Film4 = null;
             this.Film5 = null;
             this.User = User;
+            this.UserId = User.Id;
         }
     }
 }

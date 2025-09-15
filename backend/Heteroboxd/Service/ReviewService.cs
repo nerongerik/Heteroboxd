@@ -57,10 +57,10 @@ namespace Heteroboxd.Service
 
         public async Task<ReviewInfoResponse?> CreateReview(CreateReviewRequest ReviewRequest)
         {
-            User Author = await _userRepo.GetUserAsync(Guid.Parse(ReviewRequest.AuthorId)) ?? throw new KeyNotFoundException();
+            User Author = await _userRepo.GetByIdAsync(Guid.Parse(ReviewRequest.AuthorId)) ?? throw new KeyNotFoundException();
             Film Film = await _filmRepo.GetByIdAsync(Guid.Parse(ReviewRequest.FilmId)) ?? throw new KeyNotFoundException();
             Review Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Flags, ReviewRequest.Spoiler, Author, Film);
-            _repo.CreateAsync(Review);
+            _repo.Create(Review);
             await _repo.SaveChangesAsync();
             return new ReviewInfoResponse(Review);
         }

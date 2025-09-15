@@ -53,6 +53,13 @@ namespace Heteroboxd.Controller
             return null;
         }
 
+        [HttpGet("user-reports/{UserId}")]
+        public IActionResult GetUserReports(string UserId)
+        {
+            //retrives a specific user's reports from database - ADMIN ACCESS ONLY
+            return null;
+        }
+
         [HttpGet("user-likes/{UserId}")]
         public IActionResult GetUserLikes(string UserId)
         {
@@ -67,13 +74,18 @@ namespace Heteroboxd.Controller
             return null;
         }
 
-        //POST endpoints -> possibly useless, might need seperate auth controller
+        //POST endpoints -> public access
 
         [HttpPost]
-        public IActionResult CreateUser([FromBody] CreateUserRequest request)
+        public IActionResult CreateUser([FromBody] CreateUserRequest request) //AuthService?
         {
-            //creates a new user in the database
-            //probably useless, might need seperate auth controller
+            throw new NotImplementedException();
+        }
+
+        [HttpPost("report")]
+        public IActionResult ReportUser([FromBody] ReportUserRequest ReportRequest)
+        {
+            //creates a report against a user
             return null;
         }
 
@@ -87,8 +99,8 @@ namespace Heteroboxd.Controller
             return null;
         }
 
-        [HttpPut("watchlist/{UserId}")]
-        public IActionResult UpdateUserWatchlist(string UserId, [FromBody] string FilmId)
+        [HttpPut("watchlist/{UserId}/{FilmId}")]
+        public IActionResult UpdateUserWatchlist(string UserId, string FilmId)
         {
             //adds or removes a film from the user's watchlist
             return null;
@@ -108,8 +120,8 @@ namespace Heteroboxd.Controller
             return null;
         }
 
-        [HttpPut("likes/{UserId}")]
-        public IActionResult UpdateUserLikes(string UserId, [FromBody] UpdateUserLikesRequest request)
+        [HttpPut("likes")]
+        public IActionResult UpdateUserLikes(UpdateUserLikesRequest request)
         {
             //updates the user's likes (reviews, comments, lists)
             return null;

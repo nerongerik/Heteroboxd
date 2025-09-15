@@ -7,7 +7,9 @@ namespace Heteroboxd.Models
     {
         [Key]
         public Guid Id { get; private set; }
+        public Guid CelebrityId { get; private set; }
         public Celebrity Celebrity { get; private set; }
+        public Guid FilmId { get; private set; }
         public Film Film { get; private set; }
         public Role Role { get; private set; }
 
@@ -15,7 +17,9 @@ namespace Heteroboxd.Models
         {
             this.Id = Guid.NewGuid();
             this.Celebrity = new Celebrity();
+            this.CelebrityId = this.Celebrity.Id;
             this.Film = new Film();
+            this.FilmId = this.Film.Id;
             this.Role = Role.Actor;
         }
 
@@ -23,8 +27,10 @@ namespace Heteroboxd.Models
         {
             this.Id = Guid.NewGuid();
             this.Celebrity = Celebrity;
+            this.CelebrityId = Celebrity.Id;
             this.Film = Film;
+            this.FilmId = Film.Id;
             this.Role = Role;
         }
-    }
+    }   
 }

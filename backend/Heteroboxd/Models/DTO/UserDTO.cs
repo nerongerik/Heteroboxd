@@ -1,4 +1,6 @@
-﻿namespace Heteroboxd.Models.DTO
+﻿using Microsoft.Extensions.Primitives;
+
+namespace Heteroboxd.Models.DTO
 {
     public class UserInfoResponse
     {
@@ -14,11 +16,15 @@
     {
     }
 
-    public class SearchUserRequest
-    {
-    }
-
     public class UpdateUserLikesRequest
     {
+        string UserId { get; set; }
+    }
+
+    public class ReportUserRequest
+    {
+        public string Reason { get; set; }
+        public string? Description { get; set; }
+        public string TargetId { get; set; }
     }
 }

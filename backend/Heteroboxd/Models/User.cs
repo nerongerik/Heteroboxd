@@ -22,6 +22,7 @@ namespace Heteroboxd.Models
         public ICollection<User> Followers { get; private set; }
         public ICollection<User> Following { get; private set; }
         public ICollection<User> Blocked { get; private set; }
+        public ICollection<Report> Reports { get; private set; }
         public ICollection<Notification> Notifications { get; private set; }
         public ICollection<Review> Reviews { get; private set; }
         public ICollection<Comment> Comments { get; private set; }
@@ -48,6 +49,7 @@ namespace Heteroboxd.Models
             this.Followers = new List<User>();
             this.Following = new List<User>();
             this.Blocked = new List<User>();
+            this.Reports = new List<Report>();
             this.Notifications = new List<Notification>();
             this.Reviews = new List<Review>();
             this.Comments = new List<Comment>();
@@ -75,6 +77,7 @@ namespace Heteroboxd.Models
             this.Followers = new List<User>();
             this.Following = new List<User>();
             this.Blocked = new List<User>();
+            this.Reports = new List<Report>();
             this.Notifications = new List<Notification>(); //user should get a welcome notification
             this.Reviews = new List<Review>();
             this.Comments = new List<Comment>();
