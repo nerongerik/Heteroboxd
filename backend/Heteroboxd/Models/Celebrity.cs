@@ -17,20 +17,6 @@ namespace Heteroboxd.Models
         public bool Deleted { get; private set; }
         public ICollection<CelebrityCredit> Credits { get; private set; }
 
-        public Celebrity()
-        {
-            this.Id = Guid.NewGuid();
-            this.Name = string.Empty;
-            this.Description = null;
-            this.PictureUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
-            this.LastSync = DateTime.UtcNow;
-            this.NameLocked = false;
-            this.DescriptionLocked = false;
-            this.PictureUrlLocked = false;
-            this.Deleted = false;
-            this.Credits = new List<CelebrityCredit>();
-        }
-
         public Celebrity(string Name, string? Description, string? PictureUrl)
         {
             this.Id = Guid.NewGuid();

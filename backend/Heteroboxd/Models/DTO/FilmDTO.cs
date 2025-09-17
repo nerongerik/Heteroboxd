@@ -12,11 +12,10 @@
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
         public string Slug { get; set; }
-        public ICollection<CelebrityCredit> CastAndCrew { get; set; }
         public int FavoriteCount { get; set; }
-        public int WatchCount { get; set; }
+        public int? WatchCount { get; set; }
 
-        public FilmInfoResponse(Film Film)
+        public FilmInfoResponse(Film Film, bool IncludeWatchCount = true)
         {
             this.FilmId = Film.Id.ToString();
             this.Title = Film.Title;
@@ -27,9 +26,9 @@
             this.Length = Film.Length;
             this.ReleaseYear = Film.ReleaseYear;
             this.Slug = Film.Slug;
-            this.CastAndCrew = Film.CastAndCrew;
             this.FavoriteCount = Film.FavoriteCount;
-            this.WatchCount = Film.WatchedBy.Count();
+            if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Count();
+            else this.WatchCount = null;
         }
     }
 
@@ -46,7 +45,5 @@
     {
         public string? Title { get; set; }
         public string? OriginalTitle { get; set; }
-        public string? Director { get; set; }
-        public ICollection<string>? Cast { get; set; }
     }
 }

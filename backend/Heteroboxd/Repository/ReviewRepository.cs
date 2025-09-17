@@ -6,7 +6,7 @@ namespace Heteroboxd.Repository
 {
     public interface IReviewRepository
     {
-        Task<List<Review>> GetAllAsync();
+        Task<List<Review>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Review?> GetByIdAsync(Guid Id);
         Task<List<Review>> GetByFilmAsync(Guid FilmId);
         Task<List<Review>> GetByAuthorAsync(Guid AuthorId);
@@ -27,31 +27,23 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<List<Review>> GetAllAsync() =>
+        public async Task<List<Review>> GetAllAsync(CancellationToken CancellationToken = default) =>
             await _context.Reviews
-                .Include(r => r.Author)
-                .Include(r => r.Film)
                 .Where(r => !r.Deleted)
-                .ToListAsync();
+                .ToListAsync(CancellationToken);
 
         public async Task<Review?> GetByIdAsync(Guid Id) =>
             await _context.Reviews
-                .Include(r => r.Author)
-                .Include(r => r.Film)
                 .FirstOrDefaultAsync(r => r.Id == Id && !r.Deleted);
 
         public async Task<List<Review>> GetByFilmAsync(Guid FilmId) =>
             await _context.Reviews
-                .Include(r => r.Author)
-                .Include(r => r.Film)
-                .Where(r => r.Film.Id == FilmId && !r.Deleted)
+                .Where(r => r.FilmId == FilmId && !r.Deleted)
                 .ToListAsync();
 
         public async Task<List<Review>> GetByAuthorAsync(Guid AuthorId) =>
             await _context.Reviews
-                .Include(r => r.Author)
-                .Include(r => r.Film)
-                .Where(r => r.Author.Id == AuthorId && !r.Deleted)
+                .Where(r => r.AuthorId == AuthorId && !r.Deleted)
                 .ToListAsync();
 
         public void Create(Review Review)

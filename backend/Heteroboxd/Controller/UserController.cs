@@ -1,6 +1,6 @@
 ﻿using Heteroboxd.Models.DTO;
-using Microsoft.AspNetCore.Mvc;
 using Heteroboxd.Service;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Heteroboxd.Controller
 {
@@ -18,131 +18,298 @@ namespace Heteroboxd.Controller
         //GET endpoints -> limited public access
 
         [HttpGet]
-        public IActionResult GetAllUsers()
+        public async Task<IActionResult> GetAllUsers()
         {
             //retrives all users from database
-            //probably useless; consider pagination, sorting, filtering
-            return null;
+            try
+            {
+                var AllUsers = await _service.GetAllUsers();
+                return Ok(AllUsers);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{UserId}")]
-        public IActionResult GetUser(string UserId)
+        public async Task<IActionResult> GetUser(string UserId)
         {
             //retrives specific user from database
-            return null;
+            try
+            {
+                var User = await _service.GetUser(UserId);
+                return User == null ? NotFound() : Ok(User);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("user-watchlist/{UserId}")]
-        public IActionResult GetUserWatchlist(string UserId)
+        public async Task<IActionResult> GetUserWatchlist(string UserId)
         {
             //retrives a specific user's watchlist from database
-            return null;
+            try
+            {
+                var Watchlist = await _service.GetWatchlist(UserId);
+                return Ok(Watchlist);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("user-favorites/{UserId}")]
-        public IActionResult GetUserFavorites(string UserId)
+        public async Task<IActionResult> GetUserFavorites(string UserId)
         {
             //retrives a specific user's favorites from database
-            return null;
+            try
+            {
+                var Favorites = await _service.GetFavorites(UserId);
+                return Ok(Favorites);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("user-relationships/{UserId}")]
-        public IActionResult GetUserRelationships(string UserId)
+        public async Task<IActionResult> GetUserRelationships(string UserId)
         {
             //retrives a specific user's relationships (followers, following, blocked) from database
-            return null;
+            try
+            {
+                var Relationships = await _service.GetRelationships(UserId);
+                return Ok(Relationships);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("user-reports/{UserId}")]
-        public IActionResult GetUserReports(string UserId)
+        public async Task<IActionResult> GetUserReports(string UserId)
         {
             //retrives a specific user's reports from database - ADMIN ACCESS ONLY
-            return null;
+            try
+            {
+                var Reports = await _service.GetReports(UserId);
+                return Ok(Reports);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("user-likes/{UserId}")]
-        public IActionResult GetUserLikes(string UserId)
+        public async Task<IActionResult> GetUserLikes(string UserId)
         {
             //retrives a specific user's likes (reviews, comments, lists) from database
-            return null;
+            try
+            {
+                var Likes = await _service.GetLikes(UserId);
+                return Ok(Likes);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("search")]
-        public IActionResult SearchUsers([FromQuery] string Search)
+        public async Task<IActionResult> SearchUsers([FromQuery] string Search)
         {
             //searches for user, probably simpled name-based search
-            return null;
+            try
+            {
+                var Results = await _service.SearchUsers(Search);
+                return Ok(Results);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         //POST endpoints -> public access
 
-        [HttpPost]
-        public IActionResult CreateUser([FromBody] CreateUserRequest request) //AuthService?
-        {
-            throw new NotImplementedException();
-        }
-
         [HttpPost("report")]
-        public IActionResult ReportUser([FromBody] ReportUserRequest ReportRequest)
+        public async Task<IActionResult> ReportUser([FromBody] ReportUserRequest ReportRequest)
         {
             //creates a report against a user
-            return null;
+            try
+            {
+                await _service.ReportUser(ReportRequest);
+                return Ok();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         //PUT endpoints -> protected, user can only modify their own data
 
         [HttpPut]
-        public IActionResult UpdateUser([FromBody] UpdateUserRequest request)
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest Request)
         {
             //updates a specific user's data in the database
-            //only basic data (name, password, picture, bio, tier)
-            return null;
+            try
+            {
+                await _service.UpdateUser(Request);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("watchlist/{UserId}/{FilmId}")]
-        public IActionResult UpdateUserWatchlist(string UserId, string FilmId)
+        public async Task<IActionResult> UpdateUserWatchlist(string UserId, string FilmId)
         {
             //adds or removes a film from the user's watchlist
-            return null;
+            try
+            {
+                await _service.UpdateWatchlist(UserId, FilmId);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("favorites/{UserId}")]
-        public IActionResult UpdateUserFavorites(string UserId, [FromBody] List<string> FilmIds)
+        public async Task<IActionResult> UpdateUserFavorites(string UserId, [FromBody] List<string> FilmIds)
         {
             //updates the user's top 5 films
-            return null;
+            try
+            {
+                await _service.UpdateFavorites(UserId, FilmIds);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("relationships/{UserId}/{TargetId}")]
-        public IActionResult UpdateUserRelationships(string UserId, string TargetId, [FromQuery] string Action)
+        public async Task<IActionResult> UpdateUserRelationships(string UserId, string TargetId, [FromQuery] string Action)
         {
-            //actions: ?action=follow/unfollow/block/unblock/add-follower/remove-follower
-            return null;
+            //actions: ?action=follow-unfollow / block-unblock / add-remove-follower
+            try
+            {
+                await _service.UpdateRelationship(UserId, TargetId, Action);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("likes")]
-        public IActionResult UpdateUserLikes(UpdateUserLikesRequest request)
+        public async Task<IActionResult> UpdateUserLikes(UpdateUserLikesRequest Request)
         {
             //updates the user's likes (reviews, comments, lists)
-            return null;
+            try
+            {
+                await _service.UpdateLikes(Request);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("track-film/{UserId}/{FilmId}")]
-        public IActionResult TrackUserFilm(string UserId, string FilmId, [FromQuery] string Action)
+        public async Task<IActionResult> TrackUserFilm(string UserId, string FilmId, [FromQuery] string Action)
         {
             //actions: ?action=watched/rewatched/unwatched
             //for the frontend: never delete a UserWatchedFilm, just set the times watched to 0 when unwatched is triggered. display films differently based on this value
-            return null;
+            try
+            {
+                await _service.TrackFilm(UserId, FilmId, Action);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         //DELETE endpoints -> limited private access, ADMIN can delete any user, user can delete their own account
 
         [HttpDelete("{UserId}")]
-        public IActionResult DeleteUser(string UserId)
+        public async Task<IActionResult> DeleteUser(string UserId)
         {
-            //deletes a specific user from the database
-            //probably just sets a "Deleted" flag to true, rather than actually deleting the user
-            return null;
+            //logically deletes a specific user from the database
+            try
+            {
+                await _service.LogicalDeleteUser(UserId);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
     }
 }

@@ -27,32 +27,7 @@ namespace Heteroboxd.Models
         public int FavoriteCount { get; set; }
         public ICollection<UserWatchedFilm> WatchedBy { get; private set; }
 
-        public Film()
-        {
-            this.Id = Guid.NewGuid();
-            this.Title = string.Empty;
-            this.OriginalTitle = null;
-            this.Synopsis = string.Empty;
-            this.PosterUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
-            this.BackdropUrl = null;
-            this.TrailerUrl = null;
-            this.Length = 0;
-            this.ReleaseYear = 0;
-            this.Slug = "Slug" + this.Id.ToString();
-            this.TmdbId = "TMDB" + this.Id.ToString();
-            this.LastSync = null;
-            this.TitleLocked = false;
-            this.SynopsisLocked = false;
-            this.PosterUrlLocked = false;
-            this.BackdropUrlLocked = false;
-            this.CastAndCrew = new List<CelebrityCredit>();
-            this.Deleted = false;
-            this.Reviews = new List<Review>();
-            this.FavoriteCount = 0;
-            this.WatchedBy = new List<UserWatchedFilm>();
-        }
-
-        public Film(string Title, string? OriginalTitle, string Synopsis, string? PosterUrl, string? BackdropUrl, string? TrailerUrl, int Length, int ReleaseYear, string Slug, string TmdbId, List<CelebrityCredit> CastAndCrew)
+        public Film(string Title, string? OriginalTitle, string Synopsis, string? PosterUrl, string? BackdropUrl, string? TrailerUrl, int Length, int ReleaseYear, string Slug, string TmdbId)
         {
             this.Id = Guid.NewGuid();
             this.Title = Title;
@@ -70,7 +45,7 @@ namespace Heteroboxd.Models
             this.PosterUrlLocked = false;
             this.BackdropUrlLocked = false;
             this.LastSync = DateTime.UtcNow;
-            this.CastAndCrew = CastAndCrew;
+            this.CastAndCrew = new List<CelebrityCredit>();
             this.Deleted = false;
             this.Reviews = new List<Review>();
             this.FavoriteCount = 0;

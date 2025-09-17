@@ -13,28 +13,12 @@ namespace Heteroboxd.Models
         public bool Spoiler { get; set; }
         public bool NotificationsOn { get; set; }
         public bool Deleted { get; set; }
-        public User Author { get; private set; }
-        public Film Film { get; private set; }
         public ICollection<Comment> Comments { get; private set; }
         public int LikeCount { get; set; }
+        public Guid AuthorId { get; private set; }
+        public Guid FilmId { get; private set; }
 
-        public Review()
-        {
-            this.Id = Guid.NewGuid();
-            this.Rating = 0.0;
-            this.Text = null;
-            this.Date = DateTime.UtcNow;
-            this.Flags = 0;
-            this.Spoiler = false;
-            this.NotificationsOn = true;
-            this.Deleted = false;
-            this.Author = new User();
-            this.Film = new Film();
-            this.Comments = new List<Comment>();
-            this.LikeCount = 0;
-        }
-
-        public Review(double Rating, string? Text, int Flags, bool Spoiler, User Author, Film Film)
+        public Review(double Rating, string? Text, int Flags, bool Spoiler, Guid AuthorId, Guid FilmId)
         {
             this.Id = Guid.NewGuid();
             this.Rating = Rating;
@@ -44,10 +28,10 @@ namespace Heteroboxd.Models
             this.Spoiler = Spoiler;
             this.NotificationsOn = true;
             this.Deleted = false;
-            this.Author = Author;
-            this.Film = Film;
             this.Comments = new List<Comment>();
             this.LikeCount = 0;
+            this.AuthorId = AuthorId;
+            this.FilmId = FilmId;
         }
     }
 }

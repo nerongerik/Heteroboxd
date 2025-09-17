@@ -13,7 +13,7 @@ namespace Heteroboxd.Service
         Task<List<FilmInfoResponse>> GetFilmsByCelebrity(string CelebrityId);
         Task<List<FilmInfoResponse>> GetUsersWatchedFilms(string UserId);
         Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search);
-        Task<FilmInfoResponse?> UpdateFilm(UpdateFilmRequest FilmRequest);
+        Task UpdateFilm(UpdateFilmRequest FilmRequest);
         Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange);
         Task LogicalDeleteFilm(string FilmId);
     }
@@ -30,12 +30,11 @@ namespace Heteroboxd.Service
         public async Task<List<FilmInfoResponse>> GetAllFilms()
         {
             var AllFilms = await _repo.GetAllAsync();
-            return AllFilms.Select(film => new FilmInfoResponse(film)).ToList();
+            return AllFilms.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
         public Task<List<FilmInfoResponse>> GetTrendingFilms()
         {
-            //not only is this method unimplemented, but I am also not quite certain if it will ever be needed, or if the weekly tMDB trending call will send to frontend directly
             throw new NotImplementedException();
         }
 
@@ -48,28 +47,28 @@ namespace Heteroboxd.Service
         public async Task<List<FilmInfoResponse>> GetFilmsByYear(int Year)
         {
             var YearsFilms = await _repo.GetByYearAsync(Year);
-            return YearsFilms.Select(film => new FilmInfoResponse(film)).ToList();
+            return YearsFilms.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
         public async Task<List<FilmInfoResponse>> GetFilmsByCelebrity(string CelebrityId)
         {
             var CelebritiesFilms = await _repo.GetByCelebrityAsync(Guid.Parse(CelebrityId));
-            return CelebritiesFilms.Select(film => new FilmInfoResponse(film)).ToList();
+            return CelebritiesFilms.Select(f => new FilmInfoResponse(f)).ToList();
         }
 
         public async Task<List<FilmInfoResponse>> GetUsersWatchedFilms(string UserId)
         {
             var UsersFilms = await _repo.GetByUserAsync(Guid.Parse(UserId));
-            return UsersFilms.Select(film => new FilmInfoResponse(film)).ToList();
+            return UsersFilms.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
         public async Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search)
         {
-            var SearchResults = await _repo.SearchAsync(Search.Title, Search.OriginalTitle, Search.Director, Search.Cast);
-            return SearchResults.Select(film => new FilmInfoResponse(film)).ToList();
+            var SearchResults = await _repo.SearchAsync(Search.Title, Search.OriginalTitle);
+            return SearchResults.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
-        public async Task<FilmInfoResponse?> UpdateFilm(UpdateFilmRequest FilmRequest)
+        public async Task UpdateFilm(UpdateFilmRequest FilmRequest)
         {
             var Film = await _repo.GetByIdAsync(Guid.Parse(FilmRequest.FilmId));
             if (Film == null) throw new KeyNotFoundException();
@@ -95,7 +94,6 @@ namespace Heteroboxd.Service
             }
             _repo.Update(Film);
             await _repo.SaveChangesAsync();
-            return new FilmInfoResponse(Film);
         }
 
         public async Task LogicalDeleteFilm(string FilmId)
@@ -109,8 +107,8 @@ namespace Heteroboxd.Service
 
         public async Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange)
         {
-            if (!Guid.TryParse(FilmId, out var Id)) throw new ArgumentException(nameof(FilmId));
-            if (!int.TryParse(FavoriteChange, out var Delta)) throw new ArgumentException(nameof(FavoriteChange));
+            if (!Guid.TryParse(FilmId, out var Id)) throw new ArgumentException();
+            if (!int.TryParse(FavoriteChange, out var Delta)) throw new ArgumentException();
             await _repo.UpdateFilmFavoriteCountEfCore7Async(Id, Delta);
         }
     }

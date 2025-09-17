@@ -41,12 +41,12 @@ namespace Heteroboxd.Repository
 {
     public interface IFilmRepository
     {
-        Task<List<Film>> GetAllAsync();
+        Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Film?> GetByIdAsync(Guid Id);
         Task<List<Film>> GetByYearAsync(int Year);
         Task<List<Film>> GetByCelebrityAsync(Guid CelebrityId);
         Task<List<Film>> GetByUserAsync(Guid UserId);
-        Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle, string? Director, ICollection<string>? Cast);
+        Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle);
         void Update(Film Film);
         Task UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta);
         void Delete(Film Film);
@@ -61,51 +61,35 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<List<Film>> GetAllAsync() =>
+        public async Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default) =>
             await _context.Films
-            .Include(f => f.CastAndCrew)
-                .ThenInclude(cc => cc.Celebrity)
-            .Include(f => f.WatchedBy)
-                .ThenInclude(w => w.User)
             .Where(f => !f.Deleted)
-            .ToListAsync();
+            .ToListAsync(CancellationToken);
 
         public async Task<Film?> GetByIdAsync(Guid Id) =>
             await _context.Films
-                .Include(f => f.CastAndCrew)
-                    .ThenInclude(cc => cc.Celebrity)
                 .Include(f => f.WatchedBy)
-                    .ThenInclude(w => w.User)
                 .FirstOrDefaultAsync(f => f.Id == Id && !f.Deleted);
 
         public async Task<List<Film>> GetByYearAsync(int Year) =>
             await _context.Films
-            .Include(f => f.CastAndCrew)
-                .ThenInclude(cc => cc.Celebrity)
-            .Include(f => f.WatchedBy)
-                .ThenInclude(w => w.User)
             .Where(f => f.ReleaseYear == Year && !f.Deleted)
             .ToListAsync();
 
         public async Task<List<Film>> GetByCelebrityAsync(Guid CelebrityId) =>
             await _context.Films
-                .Include(f => f.CastAndCrew)
-                    .ThenInclude(cc => cc.Celebrity)
+                .Include(f => f.CastAndCrew) //if there is trouble getting roles, try .ThenInclude(c => c.Role)
                 .Include(f => f.WatchedBy)
-                    .ThenInclude(w => w.User)
-                .Where(f => f.CastAndCrew.Any(c => c.Celebrity.Id == CelebrityId) && !f.Deleted)
+                .Where(f => f.CastAndCrew.Any(c => c.CelebrityId == CelebrityId) && !f.Deleted)
                 .ToListAsync();
 
         public async Task<List<Film>> GetByUserAsync(Guid UserId) =>
             await _context.Films
-                .Include(f => f.CastAndCrew)
-                    .ThenInclude(cc => cc.Celebrity)
                 .Include(f => f.WatchedBy)
-                    .ThenInclude(w => w.User)
-                .Where(f => f.WatchedBy.Any(w => w.User.Id == UserId) && !f.Deleted)
+                .Where(f => f.WatchedBy.Any(w => w.UserId == UserId) && !f.Deleted)
                 .ToListAsync();
 
-        public async Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle, string? Director, ICollection<string>? Cast)
+        public async Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle)
         {
             var query = _context.Films.AsQueryable();
 
@@ -115,17 +99,8 @@ namespace Heteroboxd.Repository
             if (!string.IsNullOrEmpty(OriginalTitle))
                 query = query
                     .Where(f => f.OriginalTitle != null && EF.Functions.Like(f.OriginalTitle, $"%{OriginalTitle}%"));
-            if (!string.IsNullOrEmpty(Director))
-                query = query
-                    .Where(f => f.CastAndCrew.Any(c => c.Role == Role.Director && EF.Functions.Like(c.Celebrity.Name, $"%{Director}%")));
-            if (Cast != null && Cast.Any())
-                query = query.Where(f => f.CastAndCrew.Any(c => c.Role == Role.Actor && Cast.Any(name => EF.Functions.Like(c.Celebrity.Name, $"%{name}%"))));
 
             return await query
-                .Include(f => f.CastAndCrew)
-                    .ThenInclude(cc => cc.Celebrity)
-                .Include(f => f.WatchedBy)
-                    .ThenInclude(w => w.User)
                 .Where(f => !f.Deleted)
                 .ToListAsync();
         }

@@ -41,7 +41,7 @@ namespace Heteroboxd.Controller
         {
             //retrives today's trending films from database
             //maybe a direct tMDB API call instead? only called once a day
-            return null;
+            throw new NotImplementedException();
         }
 
         [HttpGet("film/{FilmId}")]
@@ -129,8 +129,8 @@ namespace Heteroboxd.Controller
             //updates an existing film in the database
             try
             {
-                var UpdatedFilm = await _service.UpdateFilm(FilmRequest);
-                return Ok(UpdatedFilm);
+                await _service.UpdateFilm(FilmRequest);
+                return Ok();
             }
             catch (KeyNotFoundException)
             {

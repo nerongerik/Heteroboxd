@@ -87,8 +87,8 @@ namespace Heteroboxd.Controller
             //adds a new review to the database
             try
             {
-                var CreatedReview = await _service.CreateReview(ReviewRequest);
-                return Ok(CreatedReview);
+                await _service.CreateReview(ReviewRequest);
+                return Ok();
             }
             catch (KeyNotFoundException)
             {
@@ -108,8 +108,8 @@ namespace Heteroboxd.Controller
             //updates an existing review in the database
             try
             {
-                var UpdatedReview = await _service.UpdateReview(ReviewRequest);
-                return Ok(UpdatedReview);
+                await _service.UpdateReview(ReviewRequest);
+                return Ok();
             }
             catch (KeyNotFoundException)
             {

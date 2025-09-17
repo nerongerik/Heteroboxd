@@ -11,20 +11,9 @@ namespace Heteroboxd.Models
         public DateTime Date { get; private set; }
         public bool Read { get; private set; }
         public bool Deleted { get; private set; }
-        public User User { get; private set; }
+        public Guid UserId { get; private set; }
 
-        public Notification()
-        {
-            this.Id = Guid.NewGuid();
-            this.Title = string.Empty;
-            this.Text = string.Empty;
-            this.Date = DateTime.UtcNow;
-            this.Read = false;
-            this.Deleted = false;
-            this.User = new User();
-        }
-
-        public Notification(string Title, string Text, User User)
+        public Notification(string Title, string Text, Guid UserId)
         {
             this.Id = Guid.NewGuid();
             this.Title = Title;
@@ -32,7 +21,7 @@ namespace Heteroboxd.Models
             this.Date = DateTime.UtcNow;
             this.Read = false;
             this.Deleted = false;
-            this.User = User;
+            this.UserId = UserId;
         }
     }
 }
