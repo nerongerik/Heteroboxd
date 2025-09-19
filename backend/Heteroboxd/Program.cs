@@ -43,3 +43,7 @@ app.MapControllers();
 
 //run the application
 app.Run();
+
+/*
+DON'T FORGET TO GET NOTIFICATIONS DONE
+*/
