@@ -7,15 +7,15 @@ namespace Heteroboxd.Models
     {
         [Key]
         public Guid Id { get; private set; }
-        public string Name { get; private set; }
-        public string? Description { get; private set; }
-        public string PictureUrl { get; private set; }
-        public DateTime? LastSync { get; private set; }
-        public bool NameLocked { get; private set; } //if true, name won't be updated during sync
-        public bool DescriptionLocked { get; private set; } //if true, description won't be updated during sync
-        public bool PictureUrlLocked { get; private set; } //if true, picture url won't be updated during sync
-        public bool Deleted { get; private set; }
-        public ICollection<CelebrityCredit> Credits { get; private set; }
+        public string Name { get; set; }
+        public string? Description { get; set; }
+        public string PictureUrl { get; set; }
+        public DateTime? LastSync { get; set; }
+        public bool NameLocked { get; set; } //if true, name won't be updated during sync
+        public bool DescriptionLocked { get; set; } //if true, description won't be updated during sync
+        public bool PictureUrlLocked { get; set; } //if true, picture url won't be updated during sync
+        public bool Deleted { get; set; }
+        public ICollection<CelebrityCredit> Credits { get; set; }
 
         public Celebrity(string Name, string? Description, string? PictureUrl)
         {

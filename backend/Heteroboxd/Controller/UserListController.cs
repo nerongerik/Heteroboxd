@@ -4,7 +4,7 @@ using Heteroboxd.Models.DTO;
 namespace Heteroboxd.Controller
 {
     [ApiController]
-    [Route("lists")]
+    [Route("api/lists")]
     public class UserListController
     {
         //GET endpoints -> limited public access

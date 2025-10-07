@@ -1,7 +1,6 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
-using Heteroboxd.Models.Enums;
 
 /*
  * 

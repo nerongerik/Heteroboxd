@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Heteroboxd.Controller
 {
     [ApiController]
-    [Route("reviews")]
+    [Route("api/reviews")]
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _service;
@@ -41,7 +41,11 @@ namespace Heteroboxd.Controller
             try
             {
                 var Review = await _service.GetReview(ReviewId);
-                return Review == null ? NotFound() : Ok(Review);
+                return Ok(Review);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch
             {

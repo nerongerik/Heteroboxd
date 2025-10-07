@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Heteroboxd.Controller
 {
     [ApiController]
-    [Route("notifications")]
+    [Route("api/notifications")]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService _service;

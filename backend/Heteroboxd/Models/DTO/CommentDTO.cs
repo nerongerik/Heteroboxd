@@ -42,9 +42,15 @@
 
     public class CreateCommentRequest
     {
+        public string Text { get; set; }
+        public int Flags { get; set; }
+        public string AuthorId { get; set; }
+        public string ReviewId { get; set; }
     }
 
     public class UpdateCommentRequest
     {
+        public string Id { get; set; }
+        public string Text { get; set; }
     }
 }

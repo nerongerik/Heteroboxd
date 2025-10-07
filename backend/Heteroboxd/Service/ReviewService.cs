@@ -41,10 +41,9 @@ namespace Heteroboxd.Service
         {
             var Review = await _repo.GetByIdAsync(Guid.Parse(ReviewId));
             if (Review == null) throw new KeyNotFoundException();
-            User Author = await _userRepo.GetByIdAsync(Review.AuthorId);
-            if (Author == null) throw new KeyNotFoundException();
-            Film Film = await _filmRepo.GetByIdAsync(Review.FilmId);
-            if (Film == null) throw new KeyNotFoundException();
+            var Author = await _userRepo.GetByIdAsync(Review.AuthorId);
+            var Film = await _filmRepo.GetByIdAsync(Review.FilmId);
+            if (Author == null || Film == null) throw new KeyNotFoundException();
             return new ReviewInfoResponse(Review, Author, Film);
         }
 

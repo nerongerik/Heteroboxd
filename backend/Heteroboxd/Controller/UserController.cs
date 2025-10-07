@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Heteroboxd.Controller
 {
     [ApiController]
-    [Route("users")]
+    [Route("api/users")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;

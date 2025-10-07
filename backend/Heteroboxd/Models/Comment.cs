@@ -6,12 +6,12 @@ namespace Heteroboxd.Models
     {
         [Key]
         public Guid Id { get; private set; }
-        public string Text { get; private set; }
+        public string Text { get; set; }
         public DateTime Date { get; private set; }
-        public int Flags { get; private set; }
-        public bool NotificationsOn { get; private set; }
-        public bool Deleted { get; private set; }
-        public int LikeCount { get; private set; }
+        public int Flags { get; set; }
+        public bool NotificationsOn { get; set; }
+        public bool Deleted { get; set; }
+        public int LikeCount { get; set; }
         public Guid AuthorId { get; private set; }
         public Guid ReviewId { get; private set; }
 

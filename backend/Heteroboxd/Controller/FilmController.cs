@@ -1,15 +1,11 @@
 ﻿using Heteroboxd.Models.DTO;
-using Heteroboxd.Repository;
 using Heteroboxd.Service;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace Heteroboxd.Controller
 {
     [ApiController]
-    [Route("films")]
+    [Route("api/films")]
     public class FilmController : ControllerBase
     {
         private readonly IFilmService _service;
