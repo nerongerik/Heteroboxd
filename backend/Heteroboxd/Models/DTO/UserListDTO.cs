@@ -8,7 +8,7 @@
         public bool Ranked { get; set; }
         public string DateCreated { get; set; }
         public bool NotificationsOn { get; set; }
-        public ICollection<ListEntryInfoResponse> Films { get; set; }
+        public List<ListEntryInfoResponse> Films { get; set; }
         public int LikeCount { get; set; }
         public string AuthorId { get; set; }
         public string? AuthorName { get; set; }
@@ -45,14 +45,21 @@
 
     public class CreateUserListRequest
     {
+        public string Name { get; set; }
+        public string? Description { get; set; }
+        public bool Ranked { get; set; }
+        public string AuthorId { get; set; }
+        public List<CreateListEntryRequest> Entries { get; set; }
     }
 
     public class UpdateUserListRequest
     {
-    }
-
-    public class UserListSearchRequest
-    {
+        public string ListId { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public bool? Ranked { get; set; }
+        public List<ListEntryInfoResponse> ToAdd { get; set; } //FilmId
+        public List<string> ToRemove { get; set; } //ListEntryId
     }
 
     public class ListEntryInfoResponse
@@ -69,5 +76,11 @@
             this.Position = Entry.Position;
             this.FilmId = Entry.FilmId.ToString();
         }
+    }
+
+    public class CreateListEntryRequest
+    {
+        public string FilmId { get; set; }
+        public int Position { get; set; } //there's no need for this to be nullable, as Watchlist entries are treated separately
     }
 }

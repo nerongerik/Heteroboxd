@@ -7,7 +7,7 @@ namespace Heteroboxd.Models
         [Key]
         public Guid Id { get; private set; }
         public DateTime DateAdded { get; private set; }
-        public int? Position { get; private set; }
+        public int? Position { get; set; }
         public Guid FilmId { get; private set; } //required foreign key
         public Guid? WatchlistId { get; private set; } //optional foreign key
         public Guid? UserListId { get; private set; } //optional foreign key
