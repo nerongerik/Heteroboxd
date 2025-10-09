@@ -1,53 +1,87 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Heteroboxd.Models.DTO;
+using Heteroboxd.Service;
 
 namespace Heteroboxd.Controller
 {
     [ApiController]
-    [Route("celebrities")]
-    public class CelebrityController
+    [Route("api/celebrities")]
+    public class CelebrityController : ControllerBase
     {
+        private readonly ICelebrityService _service;
+
+        public CelebrityController(ICelebrityService service)
+        {
+            _service = service;
+        }
+
         //GET endpoints -> limited public access
 
         [HttpGet]
         public IActionResult GetAllCelebrities()
         {
             //retrives all celebrities from database
-            //probably useless; consider pagination, sorting, filtering
-            return null;
+            try
+            {
+                var AllCelebrities = _service.GetAllCelebrities();
+                return Ok(AllCelebrities);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{CelebrityId}")]
         public IActionResult GetCelebrity(string CelebrityId)
         {
             //retrives specific celebrity from database
-            return null;
+            try
+            {
+                var Celebrity = _service.GetCelebrityById(CelebrityId);
+                return Ok(Celebrity);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("cast-and-crew/{FilmId}")]
         public IActionResult GetCelebritiesByFilm(string FilmId)
         {
-            //retrives all celebrities for a specific film from database
-            //uses CelebrityCredit join table, consider separating into a new controller
-            return null;
+            //retrives all celebrity credits for a specific film from database
+            try
+            {
+                var Celebrities = _service.GetCelebritiesByFilm(FilmId);
+                return Ok(Celebrities);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("search")]
-        public IActionResult SearchCelebrities([FromQuery] CelebritySearchRequest Search)
+        public IActionResult SearchCelebrities([FromQuery] string Search)
         {
-            //retrieves celebrities closely matching (complex) search criteria from database
-            //consider opting for a simple name search only
-            return null;
+            //search by name, possibly case-insensitive
+            try
+            {
+                var Celebrities = _service.SearchCelebrities(Search);
+                return Ok(Celebrities);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
-        //POST endpoints -> depricated
-
-        [HttpPost]
-        public IActionResult AddCelebrity([FromBody] CreateCelebrityRequest CelebrityRequest)
-        {
-            //adds a new celebrity to the database
-            return null;
-        }
+        //POST endpoints -> depricated, celebrities added via tMDB sync only
 
         //PUT endpoints -> ADMIN privileges only
 
@@ -55,16 +89,39 @@ namespace Heteroboxd.Controller
         public IActionResult UpdateCelebrity([FromBody] UpdateCelebrityRequest CelebrityRequest)
         {
             //updates an existing celebrity in the database
-            return null;
+            try
+            {
+                _service.UpdateCelebrity(CelebrityRequest);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         //DELETE endpoints -> ADMIN privileges only
         [HttpDelete("{CelebrityId}")]
         public IActionResult DeleteCelebrity(string CelebrityId)
         {
-            //deletes a celebrity from the database
-            //consider soft delete instead
-            return null;
+            //logical delete, physical rarely or perhaps never
+            try
+            {
+                _service.LogicalDeleteCelebrity(CelebrityId);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
     }
 }

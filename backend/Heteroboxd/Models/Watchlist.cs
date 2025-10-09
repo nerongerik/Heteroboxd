@@ -7,20 +7,13 @@ namespace Heteroboxd.Models
         [Key]
         public Guid Id { get; private set; }
         public ICollection<ListEntry> Films { get; private set; }
-        public User User { get; private set; }
+        public Guid UserId { get; private set; }
 
-        public Watchlist()
+        public Watchlist(Guid UserId)
         {
             this.Id = Guid.NewGuid();
             this.Films = new List<ListEntry>();
-            this.User = new User();
-        }
-
-        public Watchlist(User User)
-        {
-            this.Id = Guid.NewGuid();
-            this.Films = new List<ListEntry>();
-            this.User = User;
+            this.UserId = UserId;
         }
     }
 }

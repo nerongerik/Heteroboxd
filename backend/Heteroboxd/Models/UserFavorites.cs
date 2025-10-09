@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Heteroboxd.Models.DTO;
+using System.ComponentModel.DataAnnotations;
 
 namespace Heteroboxd.Models
 {
@@ -6,33 +7,17 @@ namespace Heteroboxd.Models
     {
         [Key]
         public Guid Id { get; private set; }
-        public Film? Film1 { get; private set; }
-        public Film? Film2 { get; private set; }
-        public Film? Film3 { get; private set; }
-        public Film? Film4 { get; private set; }
-        public Film? Film5 { get; private set; }
-        public User User { get; private set; }
+        public Guid? Film1 { get; set; }
+        public Guid? Film2 { get; set; }
+        public Guid? Film3 { get; set; }
+        public Guid? Film4 { get; set; }
+        public Guid? Film5 { get; set; }
+        public Guid UserId { get; private set; }
 
-        public UserFavorites()
+        public UserFavorites(Guid UserId)
         {
             this.Id = Guid.NewGuid();
-            this.Film1 = null;
-            this.Film2 = null;
-            this.Film3 = null;
-            this.Film4 = null;
-            this.Film5 = null;
-            this.User = new User();
-        }
-
-        public UserFavorites(User User)
-        {
-            this.Id = Guid.NewGuid();
-            this.Film1 = null;
-            this.Film2 = null;
-            this.Film3 = null;
-            this.Film4 = null;
-            this.Film5 = null;
-            this.User = User;
+            this.UserId = UserId;
         }
     }
 }
