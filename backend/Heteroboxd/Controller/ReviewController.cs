@@ -171,7 +171,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("report-review/{ReviewId")]
+        [HttpPut("report-review/{ReviewId}")]
         public async Task<IActionResult> ReportReview(string reviewId)
         {
             //increments the flag count for a review

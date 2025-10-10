@@ -1,13 +1,14 @@
 ﻿using Heteroboxd.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Data
 {
-    public class HeteroboxdContext : DbContext
+    public class HeteroboxdContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     {
         public HeteroboxdContext(DbContextOptions<HeteroboxdContext> options) : base(options) { }
 
-        public DbSet<User> Users { get; set; }
         public DbSet<Film> Films { get; set; }
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Comment> Comments { get; set; }
@@ -20,19 +21,31 @@ namespace Heteroboxd.Data
         public DbSet<UserFavorites> UserFavorites { get; set; }
         public DbSet<UserWatchedFilm> UserWatchedFilms { get; set; }
         public DbSet<Report> Reports { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder); //let Identity configure itself
 
-            // User
+            //map Identity tables to preferred names
+            modelBuilder.Entity<User>(b =>
+            {
+                b.ToTable("Users");
+                b.HasIndex(u => u.Email).IsUnique();
+                b.Property(u => u.Tier).HasConversion<string>();
+            });
+
+            //rename Identity tables so they don't get AspNet* names
+            modelBuilder.Entity<IdentityRole<Guid>>().ToTable("Roles");
+            modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+            modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+            modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+            modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+            modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasKey(u => u.Id);
-                entity.HasIndex(u => u.Email).IsUnique();
-                entity.Property(u => u.Tier).HasConversion<string>();
-
                 // Watchlist (1:1)
                 entity.HasOne(u => u.Watchlist)
                       .WithOne()
@@ -61,7 +74,7 @@ namespace Heteroboxd.Data
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserFollowing"));
 
-                // Blocked users (M:M)
+                // Blocked (M:M)
                 entity.HasMany(u => u.Blocked)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserBlocked"));
@@ -220,6 +233,12 @@ namespace Heteroboxd.Data
             {
                 entity.HasKey(r => r.Id);
                 entity.Property(r => r.Reason).HasConversion<string>();
+            });
+
+            // RefreshToken
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(rt => rt.Id);
             });
         }
     }

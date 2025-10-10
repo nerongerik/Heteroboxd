@@ -1,49 +1,98 @@
 using Heteroboxd.Data;
-using Heteroboxd.Service;
+using Heteroboxd.Models;
 using Heteroboxd.Repository;
+using Heteroboxd.Service;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
 
-//add services here if needed
+// --- DATABASE CONTEXT ---
 builder.Services.AddDbContext<HeteroboxdContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 
-//repos
+// --- IDENTITY CONFIGURATION ---
+builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
+{
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false;
+})
+.AddEntityFrameworkStores<HeteroboxdContext>()
+.AddDefaultTokenProviders();
+
+// --- JWT AUTHENTICATION ---
+var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false; // set to true in production
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidIssuer = config["Jwt:Issuer"],
+        ValidAudience = config["Jwt:Audience"],
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+// --- AUTHORIZATION ---
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdminTier", policy =>
+        policy.RequireClaim("tier", "Admin", "Owner"));
+});
+
+// --- REPOSITORIES ---
 builder.Services.AddScoped<IFilmRepository, FilmRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ICelebrityRepository, CelebrityRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IUserListRepository, UserListRepository>();
 
-//services
+// --- SERVICES ---
 builder.Services.AddScoped<IFilmService, FilmService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<ICelebrityService, CelebrityService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IUserListService, UserListService>();
 
-//controllers
+// --- CONTROLLERS ---
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
-    db.Database.Migrate();
-}
-
-//configure the HTTP request pipeline
+// --- MIDDLEWARE PIPELINE ---
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage(); //optional for dev
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();
 
-//map controllers
+app.UseRouting();
+
+//Identity + JWT middleware
+app.UseAuthorization();
+
 app.MapControllers();
 
-//run the application
 app.Run();
-
-/*
-DON'T FORGET TO GET NOTIFICATIONS DONE
-*/
