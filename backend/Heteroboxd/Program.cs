@@ -21,7 +21,7 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
     options.User.RequireUniqueEmail = true;
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
-    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireNonAlphanumeric = true;
 })
 .AddEntityFrameworkStores<HeteroboxdContext>()
 .AddDefaultTokenProviders();
@@ -57,6 +57,25 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("tier", "Admin", "Owner"));
 });
 
+// --- CORS ---
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+    });
+}
+else
+{
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowFrontend", p => p
+            .WithOrigins("https://yourdomain.com")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+    });
+}
+
 // --- REPOSITORIES ---
 builder.Services.AddScoped<IFilmRepository, FilmRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
@@ -87,12 +106,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseRouting();
-
-//Identity + JWT middleware
+app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCors(builder.Environment.IsDevelopment() ? "AllowAll" : "AllowFrontend");
 app.MapControllers();
 
 app.Run();
