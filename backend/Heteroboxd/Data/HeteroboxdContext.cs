@@ -22,6 +22,7 @@ namespace Heteroboxd.Data
         public DbSet<UserWatchedFilm> UserWatchedFilms { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<VerificationRequest> VerificationRequests { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -239,6 +240,14 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
+            });
+
+            // VerificationRequest
+            modelBuilder.Entity<VerificationRequest>(entity =>
+            {
+                entity.HasKey(vr => vr.Id);
+                entity.HasIndex(vr => vr.Code).IsUnique();
+                entity.Property(vr => vr.Status).HasConversion<string>();
             });
         }
     }

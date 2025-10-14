@@ -84,6 +84,8 @@ builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<ICelebrityRepository, CelebrityRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserListRepository, UserListRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IVerificationRequestRepository, VerificationRequestRepository>();
 
 // --- SERVICES ---
 builder.Services.AddScoped<IFilmService, FilmService>();
@@ -93,6 +95,9 @@ builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<ICelebrityService, CelebrityService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IVerificationRequestService, VerificationRequestService>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();

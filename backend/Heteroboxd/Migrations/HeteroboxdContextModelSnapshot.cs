@@ -540,6 +540,34 @@ namespace Heteroboxd.Migrations
                     b.ToTable("UserLists");
                 });
 
+            modelBuilder.Entity("Heteroboxd.Models.VerificationRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Expiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("VerificationRequests");
+                });
+
             modelBuilder.Entity("Heteroboxd.Models.Watchlist", b =>
                 {
                     b.Property<Guid>("Id")

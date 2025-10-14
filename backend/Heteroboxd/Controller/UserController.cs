@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Heteroboxd.Controller
@@ -195,6 +196,25 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpPut("verify/{Code}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Verify(string Code)
+        {
+            try
+            {
+                await _service.VerifyUser(Code);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpPut("watchlist/{UserId}/{FilmId}")]
         public async Task<IActionResult> UpdateUserWatchlist(string UserId, string FilmId)
         {
@@ -296,7 +316,7 @@ namespace Heteroboxd.Controller
         [HttpDelete("{UserId}")]
         public async Task<IActionResult> DeleteUser(string UserId)
         {
-            //logically deletes a specific user from the database
+            //logically deletes a specific user from the database and revokes his tokens
             try
             {
                 await _service.LogicalDeleteUser(UserId);

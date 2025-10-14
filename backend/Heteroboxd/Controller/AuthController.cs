@@ -10,24 +10,35 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _service;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService service)
     {
-        this._service = authService;
+        _service = service;
     }
 
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest Request)
     {
-        var Result = await _service.RegisterAsync(Request);
-        return Result.Success ? Ok(Result.User) : BadRequest(Result.Error);
+        try
+        {
+            await _service.Register(Request);
+            return Ok();
+        }
+        catch (ArgumentException)
+        {
+            return BadRequest();
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
     }
 
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest Request)
     {
-        var Result = await _service.LoginAsync(Request);
+        var Result = await _service.Login(Request);
         return Result.Success ? Ok(new { Result.Jwt, Result.RefreshToken, user = Result.User }) : Unauthorized();
     }
 
@@ -36,7 +47,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout([FromBody] RefreshRequest Request)
     {
         var UserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var Success = await _service.LogoutAsync(Request.Token, UserId);
+        var Success = await _service.Logout(Request.Token, UserId);
         return Success ? Ok() : BadRequest();
     }
 
@@ -44,7 +55,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest Request)
     {
-        var Result = await _service.RefreshTokenAsync(Request.Token);
+        var Result = await _service.Refresh(Request.Token);
         return Result.Success ? Ok(new { Token = Result.Jwt, RefreshToken = Result.RefreshToken }) : Unauthorized();
     }
 }
