@@ -3,6 +3,7 @@ using Heteroboxd.Repository;
 using Heteroboxd.Models;
 using Heteroboxd.Models.Enums;
 using System.Diagnostics.Eventing.Reader;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Heteroboxd.Service
 {
@@ -18,6 +19,7 @@ namespace Heteroboxd.Service
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUser(ReportUserRequest ReportRequest);
         Task UpdateUser(UpdateUserRequest UserUpdate);
+        Task VerifyUser(String Code);
         Task UpdateWatchlist(string UserId, string FilmId);
         Task UpdateFavorites(string UserId, List<string> FilmIds);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
@@ -30,11 +32,15 @@ namespace Heteroboxd.Service
     {
         private readonly IUserRepository _repo;
         private readonly IFilmRepository _filmRepo;
+        private readonly IAuthService _authService;
+        private readonly IVerificationRequestService _verificationService;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IAuthService authService, IVerificationRequestService verificationService)
         {
             _repo = repo;
             _filmRepo = filmRepo;
+            _authService = authService;
+            _verificationService = verificationService;
         }
 
         public async Task<List<UserInfoResponse>> GetAllUsers()
@@ -202,6 +208,16 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
+        public async Task VerifyUser(string Code)
+        {
+            var UserId = await _verificationService.ValidateRequest(Code);
+            var User = await _repo.GetByIdAsync(UserId);
+            if (User == null) throw new KeyNotFoundException();
+            User.Verified = true;
+            _repo.Update(User);
+            await _repo.SaveChangesAsync();
+        }
+
         public async Task UpdateWatchlist(string UserId, string FilmId)
         {
             var Watchlist = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId));
@@ -347,11 +363,12 @@ namespace Heteroboxd.Service
 
         public async Task LogicalDeleteUser(string UserId)
         {
-            var Film = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            if (Film == null) throw new KeyNotFoundException();
-            Film.Deleted = true;
-            _repo.Update(Film);
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            if (User == null) throw new KeyNotFoundException();
+            User.Deleted = true;
+            _repo.Update(User);
             await _repo.SaveChangesAsync();
+            await _authService.RevokeAllUserTokens(User.Id);
         }
     }
 }

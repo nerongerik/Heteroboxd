@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Heteroboxd.Controller
@@ -18,6 +19,7 @@ namespace Heteroboxd.Controller
         //GET endpoints -> public access
 
         [HttpGet]
+        [Authorize(Policy = "RequireAdminTier")]
         public async Task<IActionResult> GetAllFilms()
         {
             //retrives all films from database
@@ -31,6 +33,24 @@ namespace Heteroboxd.Controller
                 return StatusCode(500);
             }
         }
+
+        /*
+        [HttpGet]
+        [Authorize(Policy = "RequirePaidTier")]
+        public async Task<IActionResult> ExploreFilms()
+        {
+            //retrives all films from database
+            try
+            {
+                var AllFilms = await _service.GetAllFilms();
+                return Ok(AllFilms);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+        */
 
         [HttpGet("trending")]
         public IActionResult GetTrendingFilms()

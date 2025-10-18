@@ -10,7 +10,7 @@ namespace Heteroboxd.Models.DTO
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
         public string DateJoined { get; private set; }
-        //public string Tier { get; set; } ------------> uncomment if needed, but should be covered by auth
+        public string Tier { get; set; }
 
         public UserInfoResponse(User User)
         {
@@ -19,7 +19,7 @@ namespace Heteroboxd.Models.DTO
             this.PictureUrl = User.PictureUrl;
             this.Bio = User.Bio;
             this.DateJoined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
-            //this.Tier = User.Tier.ToString();
+            this.Tier = User.Tier.ToString();
         }
     }
 

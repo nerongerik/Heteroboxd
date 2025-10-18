@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 namespace Heteroboxd.Controller
@@ -19,6 +20,7 @@ namespace Heteroboxd.Controller
         //GET endpoints -> limited public access
 
         [HttpGet]
+        [Authorize(Policy = "RequireAdminTier")]
         public async Task<IActionResult> GetComments()
         {
             //retrieves all comments from database

@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Heteroboxd.Controller
 {
@@ -18,6 +19,7 @@ namespace Heteroboxd.Controller
         //GET endpoints -> limited public access
 
         [HttpGet]
+        [Authorize(Policy = "RequireAdminTier")]
         public IActionResult GetAllCelebrities()
         {
             //retrives all celebrities from database
