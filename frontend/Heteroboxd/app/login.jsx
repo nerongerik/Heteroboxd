@@ -33,8 +33,14 @@ const Login = () => {
         placeholderTextColor={Colors.text}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLoginPress} disabled={email.length === 0 || password.length === 0}>
-        <Text style={styles.buttonText}>Log In</Text>
+      <TouchableOpacity
+        style={[
+                styles.button,
+                (email.length === 0 || password.length === 0) && { opacity: 0.5 }
+              ]}
+        onPress={handleLoginPress}
+        disabled={email.length === 0 || password.length === 0}>
+          <Text style={styles.buttonText}>Log In</Text>
       </TouchableOpacity>
 
       <Text style={styles.footerText}>
@@ -82,6 +88,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   footerText: {
+    fontWeight: "500",
     marginTop: 20,
     fontSize: 14,
     color: Colors.text,

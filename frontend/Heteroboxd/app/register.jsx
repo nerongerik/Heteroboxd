@@ -9,9 +9,10 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pwValid, setPwValid] = useState(false);
+  const [repeatPassword, setRepeatPassword] = useState("");
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [profileUri, setProfileUri] = useState("../assets/default_profile.png");
+  const [profileUri, setProfileUri] = useState("");
 
   const pickImage = async () => {
     try {
@@ -35,7 +36,7 @@ const Register = () => {
     }
   }
 
-  const handleRegister = () => {console.log(profileUri)}; //todo
+  const handleRegister = () => {}; //todo
 
   return (
     <View style={styles.container}>
@@ -46,12 +47,12 @@ const Register = () => {
           source={{ uri: profileUri }}
           style={styles.profileImage}
         />
-        <Text style={styles.changePicText}>Change</Text>
+        <Text style={styles.changePicText}>Profile Picture (optional)</Text>
       </TouchableOpacity>
 
       <TextInput
         style={styles.input}
-        placeholder="Name"
+        placeholder="Name*"
         value={name}
         onChangeText={setName}
         placeholderTextColor={Colors.text}
@@ -69,7 +70,7 @@ const Register = () => {
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Email*"
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
@@ -79,10 +80,22 @@ const Register = () => {
 
       <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
 
+      <TextInput
+        style={styles.input}
+        placeholder="Repeat Password*"
+        secureTextEntry
+        onChangeText={setRepeatPassword}
+        autoCapitalize="none"
+        placeholderTextColor={Colors.text}
+      />
+
       <TouchableOpacity
-        style={styles.button}
+        style={[
+                styles.button,
+                (email.length === 0 || password.length === 0) && { opacity: 0.5 }
+              ]}
         onPress={handleRegister}
-        disabled={email.length === 0 || !pwValid || name.trim().length === 0}
+        disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword}
       >
         <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
@@ -158,6 +171,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   footerText: {
+    fontWeight: "500",
     marginTop: 20,
     fontSize: 14,
     color: Colors.text,
