@@ -1,6 +1,8 @@
 export const Colors = {
     //global
     background: '#191d1f',
+    hetero: '#0064fa',
+    boxd: '#db0240',
     //text
     text: '#656f76',
     text_button: '#e4e6e8',

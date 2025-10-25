@@ -39,7 +39,7 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Password*"
           secureTextEntry
           value={value}
           onChangeText={onChangeText}
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     marginVertical: 10,
+    marginTop: 0
   },
   inputContainer: {
     flexDirection: 'row',
@@ -81,7 +82,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 45,
-    marginBottom: 15,
+    marginBottom: 5,
+    marginTop: 0,
     backgroundColor: Colors.input_background ?? 'transparent',
   },
   input: {
