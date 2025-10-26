@@ -8,7 +8,9 @@ namespace Heteroboxd.Models
         public string Name { get; set; }
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
-        public Tier Tier { get; set; }
+        public Tier Tier { get; set; } //current tier
+        public DateTime? TierExpiry { get; set; } //null if free tier
+        public bool IsPatron { get; set; } //indicates if user ever donated >$50 at once
         public DateTime DateJoined { get; private set; }
         public bool Verified { get; set; }
         public bool Deleted { get; set; }
@@ -30,6 +32,8 @@ namespace Heteroboxd.Models
         public User()
         {
             Tier = Tier.Free;
+            TierExpiry = null;
+            IsPatron = false;
             DateJoined = DateTime.UtcNow;
             Verified = false;
             Deleted = false;

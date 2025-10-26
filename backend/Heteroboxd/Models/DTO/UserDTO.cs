@@ -11,6 +11,8 @@ namespace Heteroboxd.Models.DTO
         public string? Bio { get; set; }
         public string DateJoined { get; private set; }
         public string Tier { get; set; }
+        public string? TierExpiry { get; set; }
+        public bool IsPatron { get; set; }
 
         public UserInfoResponse(User User)
         {
@@ -20,6 +22,11 @@ namespace Heteroboxd.Models.DTO
             this.Bio = User.Bio;
             this.DateJoined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
             this.Tier = User.Tier.ToString();
+            if (User.TierExpiry != null)
+            {
+                this.TierExpiry = User.TierExpiry?.ToString("dd/MM/yyyy HH:mm");
+            }
+            this.IsPatron = User.IsPatron;
         }
     }
 
@@ -44,5 +51,12 @@ namespace Heteroboxd.Models.DTO
         public string Reason { get; set; }
         public string? Description { get; set; }
         public string TargetId { get; set; }
+    }
+
+    public class DonateRequest
+    {
+        public string UserId { get; set; }
+        public string Amount { get; set; }
+        public string Date { get; set; }
     }
 }

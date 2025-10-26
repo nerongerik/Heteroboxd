@@ -4,7 +4,6 @@
     {
         Free,
         Donor,
-        Patron,
         Admin,
         Owner
     }
