@@ -6,51 +6,44 @@ const About = () => {
   return (
     <View style={styles.container}>
     <ScrollView
-      contentContainerStyle={{ padding: "3%" }}
+      contentContainerStyle={{ padding: "2%" }}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>About
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd</Text>
+      <Text style={styles.title}>
+        About Heteroboxd
       </Text>
 
-      <Text style={styles.subtitle}>What is
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd</Text>
-        ?
+      <Text style={styles.subtitle}>
+        What is Heteroboxd?
       </Text>
       <Text style={styles.text}>
         Heteroboxd is a social film discovery app for reactionaries, political extremists, and religious
-        fundamentalists (normal movie-goers from 30 years ago). It was designed to be an open-source
-        alternative to<Text style={{ fontStyle: "italic" }}> *certain* </Text>proprietary platforms that
+        fundamentalists (normal movie-lovers from 30 years ago). It was designed to be an open-source
+        alternative to
+        <Text style={{ fontStyle: "italic" }}> *certain* </Text>proprietary platforms that
         have become overrun with progressive propaganda and censorship.
       </Text>
 
       <Text style={styles.subtitle}>
-        Is
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd </Text>
-        available on all devices?
+        Is Heteroboxd available on all devices?
       </Text>
       <Text style={styles.text}>
-        You can download our mobile app for both iOS and Android devices from their respective app stores,
-        or access Heteroboxd via any web browser at <Link style={styles.link} href='https://heteroboxd.com'>heteroboxd.com</Link>.
+        You can access Heteroboxd via any web browser at <Link style={styles.link} href='https://heteroboxd.com'>heteroboxd.com</Link>,
+        or download our mobile app from the Google Play Store. The iOS version of the app is already developed, but due to the massive
+        costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest
+        <Link style={styles.link} href='sponsor'> and funding.</Link>
       </Text>
 
-      <Text style={styles.subtitle}>How does
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd </Text>
-        work?
+      <Text style={styles.subtitle}>
+        How does Heteroboxd work?
       </Text>
       <Text style={styles.text}>  
-        You can track, rate, and review the films you've seen, or add new ones to your Watchlist. Share your criticism,
+        You can track, rate, and review the films you've seen, or add new ones to your watchlist. Share your criticism,
         interact with other like-minded users, or create your own custom lists - be they ranked, thematic, or just for fun!
       </Text>
 
-      <Text style={styles.subtitle}>Is
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd </Text>
-        a wild-west platform?
+      <Text style={styles.subtitle}>
+        Is Heteroboxd a wild-west platform?
       </Text>
       <Text style={styles.text}>  
         Yes... and no. Heteroboxd enforces no speech restrictions per se, but remains very serious about both the privacy of its
@@ -59,42 +52,39 @@ const About = () => {
       </Text>
 
       <Text style={styles.subtitle}>
-        Does
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd </Text>
-        have guidelines?
+        Does Heteroboxd have guidelines?
       </Text>
       <Text style={styles.text}>
         Yes! Unlike our competitors, Heteroboxd is 100% transparent with its <Link style={styles.link} href='guidelines'>code of conduct.</Link>
       </Text>
 
       <Text style={styles.subtitle}>
-        How do I contact
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd </Text>
-        support?
+        How do I contact Heteroboxd support?
       </Text>
       <Text style={styles.text}>
         Please see the details on our <Link style={styles.link} href='contact'>contact page.</Link>
       </Text>
 
       <Text style={styles.subtitle}>
-        Where does
-        <Text style={{color: Colors.hetero}}> Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd </Text>
-        get its films?
+        Where does Heteroboxd get films from?
       </Text>
       <Text style={styles.text}>
         Heteroboxd's film database is powered by the one and only tMDB API, wherefrom we source all film metadata and images
         in regular syncs.
       </Text>
 
+      <Text style={styles.subtitle}>
+        How can I support Heteroboxd?
+      </Text>
+      <Text style={styles.text}>
+        Heteroboxd is open source and free to use for all, and the (many) expenses are currently covered by the developer.
+        If you'd like to support the project, please consider supporting the cause with <Link style={styles.link} href='sponsor'>a donation</Link>.
+      </Text>
+
       <View style={styles.divider} />
 
       <Text style={[styles.text, {textAlign: "center", fontWeight: "800", marginTop: "5%"}]}>  
-        <Text style={{color: Colors.hetero}}>Hetero</Text>
-        <Text style={{color: Colors.boxd}}>boxd </Text>
-        - developed by <Link style={[styles.link, {fontWeight: "800"}]} href='https://youtube.com/@nerongerik'>nerongerik</Link>
+        Heteroboxd - developed by <Link style={[styles.link, {fontWeight: "800"}]} href='https://github.com/nerongerik'>nerongerik</Link>
       </Text>
     </ScrollView>
     </View>
@@ -125,34 +115,13 @@ const styles = StyleSheet.create({
     textAlign: "left",
     alignSelf: "flex-start",
   },
-  input: {
-    width: "100%",
-    borderWidth: 1.5,
-    borderColor: Colors.border_color,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-    color: Colors.text_input,
-  },
-  button: {
-    backgroundColor: Colors.button,
-    width: "75%",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: Colors.text_button,
-    fontWeight: "600",
-  },
   text: {
     fontWeight: "350",
     marginTop: 5,
     marginBottom: 20,
     fontSize: 16,
     color: Colors.text,
-    textAlign: "justify"
+    textAlign: "justify",
   },
   link: {
     color: Colors.text_link,

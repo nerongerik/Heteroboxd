@@ -311,6 +311,21 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpPut("donate")]
+        public async Task<IActionResult> Donate([FromBody] DonateRequest DonateRequest)
+        {
+            //processes a donation from a user
+            try
+            {
+                //await _service.ProcessDonation(DonateRequest);
+                return Ok();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         //DELETE endpoints -> limited private access, ADMIN can delete any user, user can delete their own account
 
         [HttpDelete("{UserId}")]

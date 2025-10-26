@@ -407,6 +407,9 @@ namespace Heteroboxd.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPatron")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
 
@@ -444,6 +447,9 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("Tier")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("TierExpiry")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");

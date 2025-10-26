@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { Colors } from '../constants/Colors';
 
 const RootLayout = () => {
@@ -8,13 +8,12 @@ const RootLayout = () => {
       screenOptions={{
         headerStyle: styles.headerStyle,
         headerTintColor: Colors.text,
-        headerShadowVisible: false
+        headerShadowVisible: false,
+        title: ''
       }}>
         <Stack.Screen name='index' options={ {headerShown: false }} />
         <Stack.Screen name='login' options={{ headerShown: false }} />
         <Stack.Screen name='register' options={{ headerShown: false }} />
-        <Stack.Screen name='about' options={{ title: '' }} />
-        <Stack.Screen name='notifications' options={{ title: '' }} />
     </Stack>
   )
 }

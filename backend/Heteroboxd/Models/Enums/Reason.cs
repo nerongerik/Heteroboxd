@@ -2,10 +2,10 @@
 {
     public enum Reason //reason for reporting a user
     {
-        Blasphemy,
         Doxxing,
-        Democracy,
-        Marxism,
-        Faggotry
+        Faggotry,
+        Simping,
+        Blasphemy,
+        Millenial,
     }
 }
