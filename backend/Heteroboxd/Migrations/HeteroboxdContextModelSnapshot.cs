@@ -131,8 +131,6 @@ namespace Heteroboxd.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AuthorId");
-
                     b.HasIndex("ReviewId");
 
                     b.ToTable("Comments");
@@ -323,12 +321,7 @@ namespace Heteroboxd.Migrations
                     b.Property<Guid>("TargetId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Reports");
                 });
@@ -458,9 +451,6 @@ namespace Heteroboxd.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<bool>("Verified")
-                        .HasColumnType("boolean");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -544,34 +534,6 @@ namespace Heteroboxd.Migrations
                     b.HasIndex("AuthorId");
 
                     b.ToTable("UserLists");
-                });
-
-            modelBuilder.Entity("Heteroboxd.Models.VerificationRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Expiry")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("VerificationRequests");
                 });
 
             modelBuilder.Entity("Heteroboxd.Models.Watchlist", b =>
@@ -855,12 +817,6 @@ namespace Heteroboxd.Migrations
 
             modelBuilder.Entity("Heteroboxd.Models.Comment", b =>
                 {
-                    b.HasOne("Heteroboxd.Models.User", null)
-                        .WithMany("Comments")
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Heteroboxd.Models.Review", null)
                         .WithMany("Comments")
                         .HasForeignKey("ReviewId")
@@ -888,13 +844,6 @@ namespace Heteroboxd.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Heteroboxd.Models.Report", b =>
-                {
-                    b.HasOne("Heteroboxd.Models.User", null)
-                        .WithMany("Reports")
-                        .HasForeignKey("UserId");
                 });
 
             modelBuilder.Entity("Heteroboxd.Models.Review", b =>
@@ -1101,15 +1050,11 @@ namespace Heteroboxd.Migrations
 
             modelBuilder.Entity("Heteroboxd.Models.User", b =>
                 {
-                    b.Navigation("Comments");
-
                     b.Navigation("Favorites");
 
                     b.Navigation("Lists");
 
                     b.Navigation("Notifications");
-
-                    b.Navigation("Reports");
 
                     b.Navigation("Reviews");
 

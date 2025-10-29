@@ -22,6 +22,7 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
     options.Password.RequireNonAlphanumeric = true;
+    options.SignIn.RequireConfirmedEmail = true;
 })
 .AddEntityFrameworkStores<HeteroboxdContext>()
 .AddDefaultTokenProviders();
@@ -70,7 +71,7 @@ else
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", p => p
-            .WithOrigins("https://yourdomain.com")
+            .WithOrigins(config["Frontend:BaseUrl"])
             .AllowAnyHeader()
             .AllowAnyMethod());
     });
@@ -85,7 +86,6 @@ builder.Services.AddScoped<ICelebrityRepository, CelebrityRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserListRepository, UserListRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-builder.Services.AddScoped<IVerificationRequestRepository, VerificationRequestRepository>();
 
 // --- SERVICES ---
 builder.Services.AddScoped<IFilmService, FilmService>();
@@ -96,7 +96,6 @@ builder.Services.AddScoped<ICelebrityService, CelebrityService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IVerificationRequestService, VerificationRequestService>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 
 // --- CONTROLLERS ---

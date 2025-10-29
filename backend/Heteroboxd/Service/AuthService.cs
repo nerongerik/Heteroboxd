@@ -26,16 +26,14 @@ namespace Heteroboxd.Service
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _config;
         private readonly IRefreshTokenRepository _refreshRepo;
-        private readonly IVerificationRequestService _verificationService;
         private readonly IEmailService _emailService;
 
-        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, IVerificationRequestService verificationService, IEmailService emailService)
+        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
             _refreshRepo = refreshTokenRepo;
-            _verificationService = verificationService;
             _emailService = emailService;
         }
 
@@ -53,7 +51,8 @@ namespace Heteroboxd.Service
             var Result = await _userManager.CreateAsync(User, Request.Password);
             if (!Result.Succeeded) throw new ArgumentException();
 
-            var VerificationRequest = await _verificationService.AddRequest(User);
+            var Token = await _userManager.GenerateEmailConfirmationTokenAsync(User);
+            var ConfirmUrl = $"{_config["Frontend:BaseUrl"]}/verify?userId={User.Id}&token={Uri.EscapeDataString(Token)}";
 
             _scope.Complete();
 
@@ -69,7 +68,7 @@ namespace Heteroboxd.Service
                 try
                 {
                     Attempt++;
-                    await _emailService.SendVerification(User.Email, VerificationRequest.Code);
+                    await _emailService.SendVerification(User.Email, ConfirmUrl);
                     EmailSent = true;
                 }
                 catch
@@ -129,20 +128,33 @@ namespace Heteroboxd.Service
             await _refreshRepo.SaveChangesAsync();
         }
 
+        /*
+        while the JWT is quite comprehensive, and extremely useful in reducing the amount of backend calls needed
+        for the loggen in user (all his basic data is easily displayed here), the UserInfoResponse DTO will still be
+        fully necessary for displaying the data of OTHER users on the platfor :/
+        */
         private async Task<string> GenerateJwtAsync(User User)
         {
             var Key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
             var Claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, User.Email ?? ""),
-                new Claim("name", User.Name ?? ""),
+                new Claim(JwtRegisteredClaimNames.Email, User.Email!),
+                new Claim("name", User.Name!),
+                new Claim("pictureUrl", User.PictureUrl!),
+                new Claim("bio", User.Bio ?? ""),
                 new Claim("tier", User.Tier.ToString()),
-                new Claim(ClaimTypes.NameIdentifier, User.Id.ToString()),
+                new Claim("expiry", User.TierExpiry?.ToString("dd/MM/yyyy HH:mm") ?? ""),
+                new Claim("patron", User.IsPatron.ToString()),
+                new Claim("joined", User.DateJoined.ToString("dd/MM/yyyy HH:mm")),
+                new Claim("listsCount", User.Lists.Count.ToString()),
+                new Claim("followersCount", User.Followers.Count.ToString()),
+                new Claim("followingCount", User.Following.Count.ToString()),
+                new Claim("blockedCount", User.Blocked.Count.ToString()),
+                new Claim("reviewsCount", User.Reviews.Count.ToString()),
+                new Claim("likes", (User.LikedComments.Count + User.LikedLists.Count + User.LikedReviews.Count).ToString()),
+                new Claim("watched", User.WatchedFilms.Count.ToString())
             };
-
-            var Roles = await _userManager.GetRolesAsync(User);
-            Claims.AddRange(Roles.Select(Role => new Claim(ClaimTypes.Role, Role)));
 
             var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);
             var Token = new JwtSecurityToken(

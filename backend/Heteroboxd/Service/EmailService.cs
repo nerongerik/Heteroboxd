@@ -6,7 +6,7 @@ namespace Heteroboxd.Service
 {
     public interface IEmailService
     {
-        Task SendVerification(string Email, string Code);
+        Task SendVerification(string Email, string Url);
     }
 
     public class EmailService : IEmailService
@@ -18,14 +18,13 @@ namespace Heteroboxd.Service
             _configuration = configuration;
         }
 
-        public async Task SendVerification(string Email, string Code)
+        public async Task SendVerification(string Email, string Url)
         {
-            var VerifyUrl = $"{_configuration["Frontend:BaseUrl"]}/verify?code={Code}";
             var body = $@"
                 <html>
                     <body>
                         <p>Welcome Aboard!</p>
-                        <p>Please verify your account by clicking <a href=""{VerifyUrl}"">HERE</a>. (The link is valid for 24 hours)</p>
+                        <p>Please verify your account by clicking <a href=""{Url}"">HERE</a>. (The link is valid for 24 hours)</p>
                     </body>
                 </html>";
 

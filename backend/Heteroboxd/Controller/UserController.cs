@@ -1,6 +1,7 @@
 ﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Heteroboxd.Controller
@@ -196,13 +197,13 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("verify/{Code}")]
+        [HttpPut("verify/{UserId}/{Token}")]
         [AllowAnonymous]
-        public async Task<IActionResult> Verify(string Code)
+        public async Task<IActionResult> Verify(string UserId, string Token)
         {
             try
             {
-                await _service.VerifyUser(Code);
+                await _service.VerifyUser(UserId, Token);
                 return Ok();
             }
             catch (KeyNotFoundException)

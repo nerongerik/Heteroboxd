@@ -4,6 +4,7 @@ using Heteroboxd.Models;
 using Heteroboxd.Models.Enums;
 using System.Diagnostics.Eventing.Reader;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.AspNetCore.Identity;
 
 namespace Heteroboxd.Service
 {
@@ -19,7 +20,7 @@ namespace Heteroboxd.Service
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUser(ReportUserRequest ReportRequest);
         Task UpdateUser(UpdateUserRequest UserUpdate);
-        Task VerifyUser(String Code);
+        Task VerifyUser(String UserId, String Token);
         Task UpdateWatchlist(string UserId, string FilmId);
         Task UpdateFavorites(string UserId, List<string> FilmIds);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
@@ -33,14 +34,14 @@ namespace Heteroboxd.Service
         private readonly IUserRepository _repo;
         private readonly IFilmRepository _filmRepo;
         private readonly IAuthService _authService;
-        private readonly IVerificationRequestService _verificationService;
+        private readonly UserManager<User> _userManager;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IAuthService authService, IVerificationRequestService verificationService)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IAuthService authService, UserManager<User> userManager)
         {
             _repo = repo;
             _filmRepo = filmRepo;
             _authService = authService;
-            _verificationService = verificationService;
+            _userManager = userManager;
         }
 
         public async Task<List<UserInfoResponse>> GetAllUsers()
@@ -208,14 +209,12 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
-        public async Task VerifyUser(string Code)
+        public async Task VerifyUser(string UserId, string Token)
         {
-            var UserId = await _verificationService.ValidateRequest(Code);
-            var User = await _repo.GetByIdAsync(UserId);
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
-            User.Verified = true;
-            _repo.Update(User);
-            await _repo.SaveChangesAsync();
+            var Result = await _userManager.ConfirmEmailAsync(User, Token);
+            if (!Result.Succeeded) throw new Exception();
         }
 
         public async Task UpdateWatchlist(string UserId, string FilmId)
