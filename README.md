@@ -20,11 +20,7 @@ The repository is public for transparency and learning purposes only.
 
 ## Installation
 
-Running Heteroboxd locally is **heavily** disadvised at the moment, as a usable build hasn't yet been achieved. Still, Heteroboxd remains an open-source project, and you can always install the necessary stack and try running it locally!
-
-```bash
-git clone -b master https://github.com/nerongerik/Heteroboxd.git
-```
+Running Heteroboxd locally is **heavily** disadvised at the moment, as a usable build hasn't yet been achieved. Await the creation of the first stable build.
 
 ## License
 
