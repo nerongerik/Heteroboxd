@@ -5,6 +5,9 @@ Debug/
 Release/
 out/
 
+# Migrations
+Migrations/
+
 # User-specific files
 *.user
 *.rsuser

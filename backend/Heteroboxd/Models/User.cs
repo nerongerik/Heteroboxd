@@ -12,7 +12,6 @@ namespace Heteroboxd.Models
         public DateTime? TierExpiry { get; set; } //null if free tier
         public bool IsPatron { get; set; } //indicates if user ever donated >$50 at once
         public DateTime DateJoined { get; private set; }
-        public bool Verified { get; set; }
         public bool Deleted { get; set; }
         public Watchlist? Watchlist { get; set; }
         public UserFavorites? Favorites { get; set; }
@@ -20,10 +19,8 @@ namespace Heteroboxd.Models
         public ICollection<User> Followers { get; set; }
         public ICollection<User> Following { get; set; }
         public ICollection<User> Blocked { get; set; }
-        public ICollection<Report> Reports { get; set; }
         public ICollection<Notification> Notifications { get; set; }
         public ICollection<Review> Reviews { get; set; }
-        public ICollection<Comment> Comments { get; set; }
         public ICollection<Review> LikedReviews { get; set; }
         public ICollection<Comment> LikedComments { get; set; }
         public ICollection<UserList> LikedLists { get; set; }
@@ -35,7 +32,6 @@ namespace Heteroboxd.Models
             TierExpiry = null;
             IsPatron = false;
             DateJoined = DateTime.UtcNow;
-            Verified = false;
             Deleted = false;
             Watchlist = null; //to be set after user creation
             Favorites = null; //to be set after user creation
@@ -43,10 +39,8 @@ namespace Heteroboxd.Models
             Followers = [];
             Following = [];
             Blocked = [];
-            Reports = [];
             Notifications = [];
             Reviews = [];
-            Comments = [];
             LikedReviews = [];
             LikedComments = [];
             LikedLists = [];
