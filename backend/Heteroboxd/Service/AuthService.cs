@@ -1,13 +1,15 @@
-﻿using Heteroboxd.Models;
+﻿using Heteroboxd.Data;
+using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Transactions;
 
 namespace Heteroboxd.Service
 {
@@ -26,57 +28,53 @@ namespace Heteroboxd.Service
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _config;
         private readonly IRefreshTokenRepository _refreshRepo;
-        private readonly IEmailService _emailService;
+        private readonly HeteroboxdContext _context;
+        private readonly IEmailSender _emailSender;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, IEmailService emailService)
+        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, HeteroboxdContext context, IEmailSender emailSender, ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
             _refreshRepo = refreshTokenRepo;
-            _emailService = emailService;
+            _context = context;
+            _emailSender = emailSender;
+            _logger = logger;
         }
 
         public async Task Register(RegisterRequest Request)
         {
             var ExistingUser = await _userManager.FindByEmailAsync(Request.Email);
-            if (ExistingUser != null) throw new ArgumentException();
-
-            using var _scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            if (ExistingUser != null)
+            {
+                _logger.LogError($"Failed to register User with Email: {Request.Email}; Already exists.");
+                throw new ArgumentException();
+            }
 
             var User = new User(Request.Name, Request.Email, Request.PictureUrl, Request.Bio);
             User.Watchlist = new Watchlist(User.Id);
             User.Favorites = new UserFavorites(User.Id);
 
             var Result = await _userManager.CreateAsync(User, Request.Password);
-            if (!Result.Succeeded) throw new ArgumentException();
+            if (!Result.Succeeded)
+            {
+                _logger.LogError($"Failed to register User with Email: {Request.Email}; Internal Server Error.");
+                throw new Exception();
+            }
 
             var Token = await _userManager.GenerateEmailConfirmationTokenAsync(User);
             var ConfirmUrl = $"{_config["Frontend:BaseUrl"]}/verify?userId={User.Id}&token={Uri.EscapeDataString(Token)}";
 
-            _scope.Complete();
-
-            //if the SMTP server poops itself, we still have a user and his verification in the DB, plus we retry 3 times
-
-            const int MaxRetries = 3;
-            const int DelayMs = 2000;
-            int Attempt = 0;
-            bool EmailSent = false;
-
-            while (!EmailSent && Attempt < MaxRetries)
-            {
-                try
-                {
-                    Attempt++;
-                    await _emailService.SendVerification(User.Email, ConfirmUrl);
-                    EmailSent = true;
-                }
-                catch
-                {
-                    if (Attempt < MaxRetries) await Task.Delay(DelayMs);
-                    //else, give up :(
-                }
-            }
+            //confirmation email
+            string Message = $@"
+                <html>
+                    <body>
+                        <p>Welcome Aboard!</p>
+                        <p>Please verify your account by clicking <a href=""{ConfirmUrl}"">HERE</a>. (The link is valid for 24 hours)</p>
+                    </body>
+                </html>";
+            await _emailSender.SendEmailAsync(User.Email!, "Verify Your Account", Message);
         }
 
         public async Task<(bool Success, string? Jwt, string? RefreshToken, UserInfoResponse? User)> Login(LoginRequest Request)

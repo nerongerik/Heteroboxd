@@ -4,6 +4,7 @@ using Heteroboxd.Repository;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -28,7 +29,7 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 .AddDefaultTokenProviders();
 
 // --- JWT AUTHENTICATION ---
-var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]);
+var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -71,7 +72,7 @@ else
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", p => p
-            .WithOrigins(config["Frontend:BaseUrl"])
+            .WithOrigins(config["Frontend:BaseUrl"]!)
             .AllowAnyHeader()
             .AllowAnyMethod());
     });
@@ -96,7 +97,7 @@ builder.Services.AddScoped<ICelebrityService, CelebrityService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();

@@ -59,4 +59,10 @@ namespace Heteroboxd.Models.DTO
         public string Amount { get; set; }
         public string Date { get; set; }
     }
+
+    public class VerifyUserRequest
+    {
+        public string UserId { get; set; }
+        public string Token { get; set; }
+    }
 }

@@ -35,13 +35,15 @@ namespace Heteroboxd.Service
         private readonly IFilmRepository _filmRepo;
         private readonly IAuthService _authService;
         private readonly UserManager<User> _userManager;
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IAuthService authService, UserManager<User> userManager)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger)
         {
             _repo = repo;
             _filmRepo = filmRepo;
             _authService = authService;
             _userManager = userManager;
+            _logger = logger;
         }
 
         public async Task<List<UserInfoResponse>> GetAllUsers()
@@ -211,10 +213,28 @@ namespace Heteroboxd.Service
 
         public async Task VerifyUser(string UserId, string Token)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            if (User == null) throw new KeyNotFoundException();
-            var Result = await _userManager.ConfirmEmailAsync(User, Token);
-            if (!Result.Succeeded) throw new Exception();
+            Guid Id;
+            if (Guid.TryParse(UserId, out Id))
+            {
+                var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
+                if (User == null)
+                {
+                    _logger.LogError($"Failed to verify User with Id: {UserId}; Not Found.");
+                    throw new KeyNotFoundException();
+                }
+                var Result = await _userManager.ConfirmEmailAsync(User, Token);
+                if (!Result.Succeeded)
+                {
+                    _logger.LogError($"Failed to verify User with Id: {UserId}; Token: {Token} expired.");
+                    throw new Exception();
+                }
+            }
+            else
+            {
+                _logger.LogError($"Failed to verify User with Id: {UserId}; Parsing failed.");
+                throw new Exception();
+            }
+            
         }
 
         public async Task UpdateWatchlist(string UserId, string FilmId)

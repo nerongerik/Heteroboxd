@@ -11,10 +11,12 @@ namespace Heteroboxd.Controller
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
+        private readonly ILogger<UserController> _logger;
 
-        public UserController(IUserService service)
+        public UserController(IUserService service, ILogger<UserController> logger)
         {
             _service = service;
+            _logger = logger;
         }
 
         //GET endpoints -> limited public access
@@ -197,13 +199,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("verify/{UserId}/{Token}")]
+        [HttpPut("verify")]
         [AllowAnonymous]
-        public async Task<IActionResult> Verify(string UserId, string Token)
+        public async Task<IActionResult> Verify([FromBody] VerifyUserRequest Request)
         {
+            _logger.LogInformation($"Verify endpoint hit with UserId: {Request.UserId} and Token: {Request.Token}");
             try
             {
-                await _service.VerifyUser(UserId, Token);
+                await _service.VerifyUser(Request.UserId, Request.Token);
+                _logger.LogInformation($"Verified User with Id: {Request.UserId}");
                 return Ok();
             }
             catch (KeyNotFoundException)

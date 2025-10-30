@@ -1,8 +1,10 @@
 import { StyleSheet, TextInput, View, Text, TouchableOpacity, Image, Alert } from 'react-native'
 import { useState } from 'react'
 import { Link } from 'expo-router'
+import { HTTP } from '../constants/HTTP'
 import { Colors } from '../constants/Colors'
 import Password from '../components/password'
+import Popup from '../components/popup'
 import * as ImagePicker from 'expo-image-picker'
  
 const Register = () => {
@@ -13,6 +15,9 @@ const Register = () => {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [profileUri, setProfileUri] = useState("");
+  const [response, setResponse] = useState(0);
+  const [message, setMessage] = useState("");
+  const [popupVisible, setPopupVisible] = useState(false)
 
   const pickImage = async () => {
     try {
@@ -36,7 +41,34 @@ const Register = () => {
     }
   }
 
-  const handleRegister = () => {}; //todo
+  async function handleRegister() {
+    fetch(`${HTTP.api}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        Name: name,
+        Email: email,
+        Password: password,
+        PictureUrl: "", //we are yet to setup image storage
+        Bio: bio
+      })
+    }).then((res) => {
+      console.log(res);
+      if (res.status === 200) {
+        setMessage("You have successfully joined the Heteroboxd community. Please check your email to verify your account within 24 hours.");
+        setResponse(200);
+      } else if (res.status === 400) {
+        setMessage(`The email address ${email} is already in use. Did you mean to log in instead?`);
+        setResponse(400);
+      } else {
+        setMessage("Something went wrong! Try again later, or contact Heteroboxd support for further inquires.");
+        setResponse(500);
+      }
+      setPopupVisible(true);
+    });
+  }
 
   return (
     <View style={styles.container}>
@@ -92,7 +124,7 @@ const Register = () => {
       <TouchableOpacity
         style={[
                 styles.button,
-                (email.length === 0 || password.length === 0) && { opacity: 0.5 }
+                (email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword) && { opacity: 0.5 }
               ]}
         onPress={handleRegister}
         disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword}
@@ -103,6 +135,8 @@ const Register = () => {
       <Text style={styles.footerText}>
         Already a member? <Link href='login' style={styles.link}>Log in</Link>
       </Text>
+
+      <Popup visible={popupVisible} message={message} onClose={() => setPopupVisible(false)} />
     </View>
   )
 }
