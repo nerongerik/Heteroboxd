@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, View, Text, TouchableOpacity, Image, Alert } from 'react-native'
+import { StyleSheet, TextInput, KeyboardAvoidingView, ScrollView, Text, TouchableOpacity, Image, Alert } from 'react-native'
 import { useState } from 'react'
 import { Link } from 'expo-router'
 import { HTTP } from '../constants/HTTP'
@@ -6,6 +6,8 @@ import { Colors } from '../constants/Colors'
 import Password from '../components/password'
 import Popup from '../components/popup'
 import * as ImagePicker from 'expo-image-picker'
+import LoadingResponse from '../components/loadingResponse'
+import { useRouter } from 'expo-router'
  
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -15,9 +17,10 @@ const Register = () => {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [profileUri, setProfileUri] = useState("");
-  const [response, setResponse] = useState(0);
+  const [response, setResponse] = useState(-1);
   const [message, setMessage] = useState("");
-  const [popupVisible, setPopupVisible] = useState(false)
+  const [popupVisible, setPopupVisible] = useState(false);
+  const router = useRouter();
 
   const pickImage = async () => {
     try {
@@ -42,6 +45,7 @@ const Register = () => {
   }
 
   async function handleRegister() {
+    setResponse(0);
     fetch(`${HTTP.api}/auth/register`, {
       method: 'POST',
       headers: {
@@ -71,17 +75,28 @@ const Register = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding" enabled>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: "%2"
+        }}
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={styles.title}>Join Us</Text>
-
       <TouchableOpacity onPress={pickImage} style={styles.profileWrapper}>
         <Image
-          source={{ uri: profileUri }}
+          source={
+            profileUri
+              ? { uri: profileUri }
+              : require('../assets/before-pick.png') // Or any placeholder
+          }
           style={styles.profileImage}
         />
         <Text style={styles.changePicText}>Profile Picture (optional)</Text>
       </TouchableOpacity>
-
       <TextInput
         style={styles.input}
         placeholder="Name*"
@@ -89,7 +104,6 @@ const Register = () => {
         onChangeText={setName}
         placeholderTextColor={Colors.text}
       />
-
       <TextInput
         style={[styles.input, styles.bioInput]}
         placeholder="Bio (optional)"
@@ -99,7 +113,6 @@ const Register = () => {
         numberOfLines={3}
         placeholderTextColor={Colors.text}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Email*"
@@ -109,9 +122,7 @@ const Register = () => {
         autoCapitalize="none"
         placeholderTextColor={Colors.text}
       />
-
       <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
-
       <TextInput
         style={styles.input}
         placeholder="Repeat Password*"
@@ -120,7 +131,6 @@ const Register = () => {
         autoCapitalize="none"
         placeholderTextColor={Colors.text}
       />
-
       <TouchableOpacity
         style={[
                 styles.button,
@@ -131,23 +141,35 @@ const Register = () => {
       >
         <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
-
       <Text style={styles.footerText}>
         Already a member? <Link href='login' style={styles.link}>Log in</Link>
       </Text>
-
-      <Popup visible={popupVisible} message={message} onClose={() => setPopupVisible(false)} />
-    </View>
-  )
+      <Popup
+        visible={popupVisible}
+        message={message}
+        onClose={() => {
+          setPopupVisible(false);
+          router.replace('/');
+        }}
+      />
+      <LoadingResponse visible={response === 0} />
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }
 
 export default Register
 
 const styles = StyleSheet.create({
-  container: {
+  /*container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: Colors.background,
+  },*/
+  container: {
+    flex: 1,
     paddingHorizontal: 20,
     backgroundColor: Colors.background,
   },

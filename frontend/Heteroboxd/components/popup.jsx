@@ -4,7 +4,7 @@ import { Colors } from '../constants/Colors'
 const Popup = ({ visible, message, onClose }) => {
   return (
     <Modal
-      transparent
+      transparent={false}
       visible={visible}
       animationType="fade"
     >

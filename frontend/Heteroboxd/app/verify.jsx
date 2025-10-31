@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet, Text, View } from 'react-native'
+import { TouchableOpacity, StyleSheet, Text, View, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState, useEffect } from 'react';
 import { HTTP } from '../constants/HTTP';
@@ -7,14 +7,15 @@ import { Colors } from '../constants/Colors'
 const Verify = () => {
   
   const {userId, token} = useLocalSearchParams();
-  const [response, setResponse] = useState(0);
-  const [message, setMessage] = useState("This should only take a moment...");
+  const [response, setResponse] = useState(-1);
+  const [message, setMessage] = useState("");
   const router = useRouter();
   useEffect(() => {
     verifyUser();
   }, [])
 
   async function verifyUser() {
+    setResponse(0);
     fetch(`${HTTP.api}/users/verify`, {
       method: 'PUT',
       headers: {
@@ -46,16 +47,21 @@ const Verify = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{message}</Text>
+      {response === 0 ? (
+        <ActivityIndicator size={'large'} color={Colors.text_link} />
+      ) : (
+        <Text style={styles.title}>{message}</Text>
+      )}
       <TouchableOpacity
-              style={[
-                      styles.button,
-                      (response === 0) && { opacity: 0.5 }
-                    ]}
-              onPress={handleProceedPress}
-              disabled={response === 0}>
-                <Text style={styles.buttonText}>Proceed</Text>
-            </TouchableOpacity>
+        style={[
+                styles.button,
+                (response === -1 || response === 0) && { opacity: 0.5 }
+              ]}
+        onPress={handleProceedPress}
+        disabled={response === -1 || response === 0}
+      >
+        <Text style={styles.buttonText}>Proceed</Text>
+      </TouchableOpacity>
     </View>
   )
 }

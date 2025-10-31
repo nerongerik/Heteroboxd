@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "cover",
+      "backgroundColor": "#191d1f"
     },
     "ios": {
       "supportsTablet": true
@@ -19,9 +19,14 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#191d1f"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "backgroundColor": "#191d1f",
+      "statusBar": {
+        "barStyle": "light-content",
+        "backgroundColor": "#191d1f"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
