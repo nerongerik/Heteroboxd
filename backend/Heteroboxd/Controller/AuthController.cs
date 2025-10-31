@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,16 +10,19 @@ using System.Security.Claims;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _service;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService service)
+    public AuthController(IAuthService service, ILogger<AuthController> logger)
     {
         _service = service;
+        _logger = logger;
     }
 
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest Request)
     {
+        _logger.LogInformation($"Register endpoint hit with Email: {Request.Email}");
         try
         {
             await _service.Register(Request);

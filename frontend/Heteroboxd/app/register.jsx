@@ -1,9 +1,13 @@
-import { StyleSheet, TextInput, View, Text, TouchableOpacity, Image, Alert } from 'react-native'
+import { StyleSheet, TextInput, KeyboardAvoidingView, ScrollView, Text, TouchableOpacity, Image, Alert } from 'react-native'
 import { useState } from 'react'
 import { Link } from 'expo-router'
+import { HTTP } from '../constants/HTTP'
 import { Colors } from '../constants/Colors'
 import Password from '../components/password'
+import Popup from '../components/popup'
 import * as ImagePicker from 'expo-image-picker'
+import LoadingResponse from '../components/loadingResponse'
+import { useRouter } from 'expo-router'
  
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -13,6 +17,10 @@ const Register = () => {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [profileUri, setProfileUri] = useState("");
+  const [response, setResponse] = useState(-1);
+  const [message, setMessage] = useState("");
+  const [popupVisible, setPopupVisible] = useState(false);
+  const router = useRouter();
 
   const pickImage = async () => {
     try {
@@ -36,20 +44,59 @@ const Register = () => {
     }
   }
 
-  const handleRegister = () => {}; //todo
+  async function handleRegister() {
+    setResponse(0);
+    fetch(`${HTTP.api}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        Name: name,
+        Email: email,
+        Password: password,
+        PictureUrl: "", //we are yet to setup image storage
+        Bio: bio
+      })
+    }).then((res) => {
+      console.log(res);
+      if (res.status === 200) {
+        setMessage("You have successfully joined the Heteroboxd community. Please check your email to verify your account within 24 hours.");
+        setResponse(200);
+      } else if (res.status === 400) {
+        setMessage(`The email address ${email} is already in use. Did you mean to log in instead?`);
+        setResponse(400);
+      } else {
+        setMessage("Something went wrong! Try again later, or contact Heteroboxd support for further inquires.");
+        setResponse(500);
+      }
+      setPopupVisible(true);
+    });
+  }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding" enabled>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: "%2"
+        }}
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={styles.title}>Join Us</Text>
-
       <TouchableOpacity onPress={pickImage} style={styles.profileWrapper}>
         <Image
-          source={{ uri: profileUri }}
+          source={
+            profileUri
+              ? { uri: profileUri }
+              : require('../assets/before-pick.png') // Or any placeholder
+          }
           style={styles.profileImage}
         />
         <Text style={styles.changePicText}>Profile Picture (optional)</Text>
       </TouchableOpacity>
-
       <TextInput
         style={styles.input}
         placeholder="Name*"
@@ -57,7 +104,6 @@ const Register = () => {
         onChangeText={setName}
         placeholderTextColor={Colors.text}
       />
-
       <TextInput
         style={[styles.input, styles.bioInput]}
         placeholder="Bio (optional)"
@@ -67,7 +113,6 @@ const Register = () => {
         numberOfLines={3}
         placeholderTextColor={Colors.text}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Email*"
@@ -77,9 +122,7 @@ const Register = () => {
         autoCapitalize="none"
         placeholderTextColor={Colors.text}
       />
-
       <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
-
       <TextInput
         style={styles.input}
         placeholder="Repeat Password*"
@@ -88,32 +131,45 @@ const Register = () => {
         autoCapitalize="none"
         placeholderTextColor={Colors.text}
       />
-
       <TouchableOpacity
         style={[
                 styles.button,
-                (email.length === 0 || password.length === 0) && { opacity: 0.5 }
+                (email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword) && { opacity: 0.5 }
               ]}
         onPress={handleRegister}
         disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword}
       >
         <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
-
       <Text style={styles.footerText}>
         Already a member? <Link href='login' style={styles.link}>Log in</Link>
       </Text>
-    </View>
-  )
+      <Popup
+        visible={popupVisible}
+        message={message}
+        onClose={() => {
+          setPopupVisible(false);
+          router.replace('/');
+        }}
+      />
+      <LoadingResponse visible={response === 0} />
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }
 
 export default Register
 
 const styles = StyleSheet.create({
-  container: {
+  /*container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: Colors.background,
+  },*/
+  container: {
+    flex: 1,
     paddingHorizontal: 20,
     backgroundColor: Colors.background,
   },
