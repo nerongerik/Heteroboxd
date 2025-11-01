@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, ScrollView } from 'react-native'
-import { Colors } from '../constants/Colors';
 import { Link } from 'expo-router';
+import { Colors } from '../constants/colors';
 
 const About = () => {
   return (

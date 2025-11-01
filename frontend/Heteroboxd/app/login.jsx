@@ -1,14 +1,51 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { Colors } from '../constants/Colors';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { useState } from "react";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import Popup from '../components/popup';
+import LoadingResponse from '../components/loadingResponse';
+import { Colors } from "../constants/colors";
+import { BaseUrl } from "../constants/api";
+import { useAuth } from "../hooks/useAuth";
 
 const Login = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [response, setResponse] = useState(-1);
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [message, setMessage] = useState("");
+  const router = useRouter();
+  const {login} = useAuth();
   
-  const handleLoginPress = () => {}; //todo
+  const handleLoginPress = async () => {
+    setResponse(0);
+    await fetch(`${BaseUrl.api}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        Email: email,
+        Password: password,
+        Device: Platform.OS
+      })
+    }).then(async (res) => {
+      if (res.status === 200) {
+        const data = await res.json();
+        await login(data.jwt, data.refresh);
+        setResponse(200);
+        router.replace('/');
+      } else if (res.status === 401) {
+        setResponse(401);
+        setMessage("The email or password you entered is incorrect.");
+        setPopupVisible(true);
+      } else {
+        setResponse(500);
+        setMessage("Something went wrong! Try again later, or contact Heteroboxd support for more information!");
+        setPopupVisible(true);
+      }
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -46,6 +83,17 @@ const Login = () => {
       <Text style={styles.footerText}>
         Don't have an account? <Link href='register' style={styles.link}>Sign up</Link>
       </Text>
+      
+      <Popup
+        visible={popupVisible}
+        message={message}
+        onClose={() => {
+          setPopupVisible(false);
+          if (response === 500) router.replace('/contact');
+          else router.replace('/login');
+        }}
+      />
+      <LoadingResponse visible={response === 0} />
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native'
-import { Colors } from '../constants/Colors';
 import { Link } from 'expo-router';
 import * as Linking from 'expo-linking';
+import { Colors } from '../constants/colors';
 
 const Contact = () => {
   return (

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native'
-import { Colors } from '../constants/Colors'
+import { Colors } from '../constants/colors'
 
 const Popup = ({ visible, message, onClose }) => {
   return (
