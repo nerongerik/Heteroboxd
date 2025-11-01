@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
-import * as auth from "../helpers/Auth";
+import * as auth from "../helpers/auth";
 import { Platform } from "react-native";
+import LoadingResponse from "../components/loadingResponse";
 
 export const AuthContext = createContext();
 

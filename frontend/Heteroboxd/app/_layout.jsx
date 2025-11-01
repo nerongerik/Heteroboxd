@@ -2,6 +2,7 @@ import { Stack } from 'expo-router'
 import { StyleSheet } from 'react-native'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
+import ProfileOptionsButton from '../components/profileOptionsButton'
 
 const RootLayout = () => {
   return (
@@ -16,6 +17,12 @@ const RootLayout = () => {
           <Stack.Screen name='index' options={ {headerShown: false }} />
           <Stack.Screen name='login' options={{ headerShown: false }} />
           <Stack.Screen name='register' options={{ headerShown: false }} />
+          <Stack.Screen 
+            name="profile/[userId]" 
+            options={({route}) => ({
+              headerRight: () => <ProfileOptionsButton userId={route.params?.userId} />
+            })}
+          />
       </Stack>
     </AuthProvider>
   )
