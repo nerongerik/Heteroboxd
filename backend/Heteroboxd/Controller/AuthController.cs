@@ -42,9 +42,9 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest Request)
     {
+        _logger.LogInformation($"Login endpoint hit with Email: {Request.Email} and Password: {Request.Password}");
         try
         {
-            _logger.LogInformation($"Login endpoint hit with Email: {Request.Email} and Password: {Request.Password}");
             var Result = await _service.Login(Request);
 
             if (Request.Device.Equals("web"))
@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
                 {
                     HttpOnly = true,
                     Secure = true,
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.None,
                     Expires = Result.RefreshToken!.Expires
                 });
 
@@ -74,6 +74,7 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest LogoutRequest)
     {
+        _logger.LogInformation($"Logout endpoint hit with User: {LogoutRequest.UserId}");
         try
         {
             if (LogoutRequest.Token == null) //web
@@ -102,6 +103,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest RefreshRequest)
     {
+        _logger.LogInformation($"Refresh endpoint hit with Refresh Token: {RefreshRequest.Token}");
         try
         {
             if (RefreshRequest.Token == null) //web
@@ -116,7 +118,7 @@ public class AuthController : ControllerBase
                         {
                             HttpOnly = true,
                             Secure = true,
-                            SameSite = SameSiteMode.Strict,
+                            SameSite = SameSiteMode.None,
                             Expires = Result.RefreshToken!.Expires
                         });
 
@@ -128,7 +130,7 @@ public class AuthController : ControllerBase
             else //mobile
             {
                 var Result = await _service.Refresh(RefreshRequest.Token);
-                return Result.Success ? Ok(new { jwt = Result.Jwt, refresh = Result.RefreshToken }) : Unauthorized();
+                return Result.Success ? Ok(new { jwt = Result.Jwt, refresh = Result.RefreshToken!.Token }) : Unauthorized();
             }
         }
         catch

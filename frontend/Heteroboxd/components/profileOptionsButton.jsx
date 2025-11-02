@@ -9,7 +9,7 @@ const ProfileOptionsButton = ({userId}) => {
 
   function handlePress() {
     if (user.userId === userId) {
-      //options to edit, delete, or share account
+      //options to edit, delete, logout, or share account
       console.log('ja')
     } else {
       //options to block or report someone

@@ -10,8 +10,16 @@ export function handleWebLogin(jwt) {
 
 export async function handleMobileLogin(jwt, refresh) {
     if (!jwt || !refresh) return;
-    await SecureStore.setItemAsync("token", JSON.stringify(jwt));
-    await SecureStore.setItemAsync("refresh", JSON.stringify(refresh));
+    if (typeof jwt === 'string') {
+        await SecureStore.setItemAsync("token", jwt);
+    } else {
+        await SecureStore.setItemAsync("token", JSON.stringify(jwt));
+    }
+    if (typeof refresh === 'string') {
+        await SecureStore.setItemAsync("refresh", refresh);
+    } else {
+        await SecureStore.setItemAsync("refresh", JSON.stringify(refresh));
+    }
 }
 
 export async function getJwt() {

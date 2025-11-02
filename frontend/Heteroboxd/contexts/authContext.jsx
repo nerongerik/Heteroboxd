@@ -2,6 +2,8 @@ import { createContext, useEffect, useState } from "react";
 import * as auth from "../helpers/auth";
 import { Platform } from "react-native";
 import LoadingResponse from "../components/loadingResponse";
+import { View } from "react-native";
+import { Colors } from "../constants/colors";
 
 export const AuthContext = createContext();
 
@@ -56,7 +58,17 @@ export function AuthProvider({ children }) {
         setUser(null);
     }
 
-    if (!hydrated) return <LoadingResponse visible={true} />;
+    if (!hydrated) return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        paddingHorizontal: "5%",
+        backgroundColor: Colors.background,
+      }}>
+        <LoadingResponse visible={true} />
+      </View>
+    )
     return (
         <AuthContext.Provider value={{user, login, logout, isValidSession}}>
             { children }
