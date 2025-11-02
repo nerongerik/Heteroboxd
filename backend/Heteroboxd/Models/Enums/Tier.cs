@@ -5,6 +5,5 @@
         Free,
         Donor,
         Admin,
-        Owner
     }
 }

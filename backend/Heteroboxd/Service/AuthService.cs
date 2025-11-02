@@ -5,20 +5,18 @@ using Heteroboxd.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Heteroboxd.Service
 {
     public interface IAuthService
     {
         Task Register(RegisterRequest Request);
-        Task<(bool Success, string? Jwt, string? RefreshToken, UserInfoResponse? User)> Login(LoginRequest Request);
-        Task<bool> Logout(string RefreshToken, Guid UserId);
-        Task<(bool Success, string? Jwt, string? RefreshToken)> Refresh(string RefreshToken);
+        Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
+        Task<bool> Logout(string RefreshToken, string UserId);
+        Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string RefreshToken);
         Task RevokeAllUserTokens(Guid UserId);
     }
 
@@ -77,46 +75,62 @@ namespace Heteroboxd.Service
             await _emailSender.SendEmailAsync(User.Email!, "Verify Your Account", Message);
         }
 
-        public async Task<(bool Success, string? Jwt, string? RefreshToken, UserInfoResponse? User)> Login(LoginRequest Request)
+        public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
         {
             var User = await _userManager.FindByEmailAsync(Request.Email);
-            if (User == null || User.Deleted) return (false, null, null, null);
+            if (User == null || User.Deleted)
+            {
+                _logger.LogError($"Failed to sign in: User with email {Request.Email} does not exist.");
+                return (false, null, null);
+            }
 
             var Check = await _signInManager.CheckPasswordSignInAsync(User, Request.Password, false);
-            if (!Check.Succeeded) return (false, null, null, null);
+            if (!Check.Succeeded)
+            {
+                _logger.LogError($"Failed to sign in: password {Request.Password} is invalid.");
+                return (false, null, null);
+            }
 
-            var Jwt = await GenerateJwtAsync(User);
+            string Jwt = GenerateJwt(User);
             var RefreshToken = await GenerateRefreshTokenAsync(User);
 
-            return (true, Jwt, RefreshToken.Token, new UserInfoResponse(User));
+            _logger.LogInformation("Succesfully generated JWT and Refresh tokens.");
+            return (true, Jwt, RefreshToken);
         }
 
-        public async Task<bool> Logout(string RefreshToken, Guid UserId)
+        public async Task<bool> Logout(string RefreshToken, string UserId)
         {
             var Token = await _refreshRepo.GetValidTokenAsync(RefreshToken);
-            if (Token == null || Token.UserId != UserId) return false;
+            if (Token == null || Token.UserId != Guid.Parse(UserId)) return false;
 
             Token.Revoked = true;
             await _refreshRepo.SaveChangesAsync();
             return true;
         }
 
-        public async Task<(bool Success, string? Jwt, string? RefreshToken)> Refresh(string RefreshToken)
+        public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string RefreshToken)
         {
             var Token = await _refreshRepo.GetValidTokenAsync(RefreshToken);
-            if (Token == null) return (false, null, null);
+            if (Token == null)
+            {
+                _logger.LogError($"Token {RefreshToken} invalid!");
+                return (false, null, null);
+            }
 
             Token.Used = true;
 
             var User = await _userManager.FindByIdAsync(Token.UserId.ToString());
-            if (User == null || User.Deleted) return (false, null, null);
+            if (User == null || User.Deleted)
+            {
+                _logger.LogError("User for specified token not found.");
+                return (false, null, null);
+            }
 
-            var Jwt = await GenerateJwtAsync(User);
+            var Jwt = GenerateJwt(User);
             var NewRefreshToken = await GenerateRefreshTokenAsync(User);
 
             await _refreshRepo.SaveChangesAsync();
-
-            return (true, Jwt, NewRefreshToken.Token);
+            return (true, Jwt, NewRefreshToken);
         }
 
         public async Task RevokeAllUserTokens(Guid UserId)
@@ -131,10 +145,12 @@ namespace Heteroboxd.Service
         for the loggen in user (all his basic data is easily displayed here), the UserInfoResponse DTO will still be
         fully necessary for displaying the data of OTHER users on the platfor :/
         */
-        private async Task<string> GenerateJwtAsync(User User)
+        private string GenerateJwt(User User)
         {
-            var Key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
-            var Claims = new List<Claim>
+            try
+            {
+                var Key = Convert.FromBase64String(_config["Jwt:Key"]!);
+                var Claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, User.Email!),
@@ -154,34 +170,48 @@ namespace Heteroboxd.Service
                 new Claim("watched", User.WatchedFilms.Count.ToString())
             };
 
-            var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);
-            var Token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: Claims,
-                expires: DateTime.UtcNow.AddHours(3),
-                signingCredentials: Creds
-            );
+                var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);
+                var Token = new JwtSecurityToken(
+                    issuer: _config["Jwt:Issuer"],
+                    audience: _config["Jwt:Audience"],
+                    claims: Claims,
+                    expires: DateTime.UtcNow.AddHours(3),
+                    signingCredentials: Creds
+                );
 
-            return new JwtSecurityTokenHandler().WriteToken(Token);
+                return new JwtSecurityTokenHandler().WriteToken(Token);
+            }
+            catch
+            {
+                _logger.LogError($"Failed to generate Jwt token for user: {User.Id}");
+                throw new Exception();
+            }
         }
 
         private async Task<RefreshToken> GenerateRefreshTokenAsync(User User)
         {
-            var Token = new RefreshToken
+            try
             {
-                Id = Guid.NewGuid(),
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                UserId = User.Id,
-                Expires = DateTime.UtcNow.AddDays(365),
-                Used = false,
-                Revoked = false
-            };
+                var Token = new RefreshToken
+                {
+                    Id = Guid.NewGuid(),
+                    Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                    UserId = User.Id,
+                    Expires = DateTime.UtcNow.AddDays(365),
+                    Used = false,
+                    Revoked = false
+                };
 
-            await _refreshRepo.AddAsync(Token);
-            await _refreshRepo.SaveChangesAsync();
+                await _refreshRepo.AddAsync(Token);
+                await _refreshRepo.SaveChangesAsync();
 
-            return Token;
+                return Token;
+            }
+            catch
+            {
+                _logger.LogError($"Failed to generate Refresh token for user {User.Id}");
+                throw new Exception();
+            }
         }
     }
 }

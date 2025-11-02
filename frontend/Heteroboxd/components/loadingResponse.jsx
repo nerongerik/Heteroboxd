@@ -1,5 +1,5 @@
 import { StyleSheet, View, Modal, ActivityIndicator } from 'react-native'
-import { Colors } from '../constants/Colors'
+import { Colors } from '../constants/colors'
 
 const LoadingResponse = ({ visible }) => {
   return (

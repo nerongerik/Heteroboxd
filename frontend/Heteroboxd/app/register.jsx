@@ -1,13 +1,13 @@
 import { StyleSheet, TextInput, KeyboardAvoidingView, ScrollView, Text, TouchableOpacity, Image, Alert } from 'react-native'
 import { useState } from 'react'
 import { Link } from 'expo-router'
-import { HTTP } from '../constants/HTTP'
-import { Colors } from '../constants/Colors'
 import Password from '../components/password'
 import Popup from '../components/popup'
 import * as ImagePicker from 'expo-image-picker'
 import LoadingResponse from '../components/loadingResponse'
 import { useRouter } from 'expo-router'
+import { Colors } from '../constants/colors'
+import { BaseUrl } from '../constants/api'
  
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -46,7 +46,7 @@ const Register = () => {
 
   async function handleRegister() {
     setResponse(0);
-    fetch(`${HTTP.api}/auth/register`, {
+    fetch(`${BaseUrl.api}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -161,13 +161,6 @@ const Register = () => {
 export default Register
 
 const styles = StyleSheet.create({
-  /*container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    backgroundColor: Colors.background,
-  },*/
   container: {
     flex: 1,
     paddingHorizontal: 20,
@@ -180,7 +173,7 @@ const styles = StyleSheet.create({
     color: Colors.text_title,
   },
 
-  // profile picture wrapper to show 'Change' affordance
+  //profile picture wrapper to show change
   profileWrapper: {
     alignItems: 'center',
     marginBottom: 16,

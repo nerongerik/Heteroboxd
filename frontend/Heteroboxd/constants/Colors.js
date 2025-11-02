@@ -1,8 +1,7 @@
 export const Colors = {
     //global
     background: '#191d1f',
-    hetero: '#0064fa',
-    boxd: '#db0240',
+    crown: '#efbf04',
     //text
     text: '#656f76',
     text_button: '#e4e6e8',
@@ -21,5 +20,5 @@ export const Colors = {
     password_meh: '#ffa500',
     password_solid: '#ffdb4d',
     password_acceptable: '#90ee90',
-    password_strong: '#00cc66'
+    password_strong: '#0f5400'
 }

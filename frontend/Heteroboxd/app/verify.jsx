@@ -1,8 +1,8 @@
 import { TouchableOpacity, StyleSheet, Text, View, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState, useEffect } from 'react';
-import { HTTP } from '../constants/HTTP';
-import { Colors } from '../constants/Colors'
+import { Colors } from '../constants/colors';
+import { BaseUrl } from '../constants/api';
 
 const Verify = () => {
   
@@ -16,7 +16,7 @@ const Verify = () => {
 
   async function verifyUser() {
     setResponse(0);
-    fetch(`${HTTP.api}/users/verify`, {
+    fetch(`${BaseUrl.api}/users/verify`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'

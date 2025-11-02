@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, Image } from 'react-native'
-import { Colors } from '../constants/Colors';
+import { Colors } from '../constants/colors'
 
 const Sponsor = () => {
   return (

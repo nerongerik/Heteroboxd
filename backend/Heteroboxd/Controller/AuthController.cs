@@ -1,8 +1,8 @@
-﻿using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Security.Claims;
 
 [ApiController]
@@ -42,24 +42,100 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest Request)
     {
-        var Result = await _service.Login(Request);
-        return Result.Success ? Ok(new { Result.Jwt, Result.RefreshToken, user = Result.User }) : Unauthorized();
+        _logger.LogInformation($"Login endpoint hit with Email: {Request.Email} and Password: {Request.Password}");
+        try
+        {
+            var Result = await _service.Login(Request);
+
+            if (Request.Device.Equals("web"))
+            {
+                Response.Cookies.Append("refreshToken", Result.RefreshToken!.Token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    Expires = Result.RefreshToken!.Expires
+                });
+
+                return Result.Success ? Ok(new { jwt = Result.Jwt }) : Unauthorized();
+            }
+            else
+            {
+                return Result.Success ? Ok(new { jwt = Result.Jwt, refresh = Result.RefreshToken }) : Unauthorized();
+            }
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
     }
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout([FromBody] RefreshRequest Request)
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest LogoutRequest)
     {
-        var UserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var Success = await _service.Logout(Request.Token, UserId);
-        return Success ? Ok() : BadRequest();
+        _logger.LogInformation($"Logout endpoint hit with User: {LogoutRequest.UserId}");
+        try
+        {
+            if (LogoutRequest.Token == null) //web
+            {
+                foreach (var HttpOnly in Request.Cookies) //will there ever be more than one?
+                {
+                    var Result = await _service.Logout(HttpOnly.Value, LogoutRequest.UserId);
+                    if (!Result) continue;
+                    else return Ok();
+                }
+                return BadRequest();
+            }
+            else //mobile
+            {
+                var Result = await _service.Logout(LogoutRequest.Token, LogoutRequest.UserId);
+                return Result ? Ok() : BadRequest();
+            }
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest Request)
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest RefreshRequest)
     {
-        var Result = await _service.Refresh(Request.Token);
-        return Result.Success ? Ok(new { Token = Result.Jwt, RefreshToken = Result.RefreshToken }) : Unauthorized();
+        _logger.LogInformation($"Refresh endpoint hit with Refresh Token: {RefreshRequest.Token}");
+        try
+        {
+            if (RefreshRequest.Token == null) //web
+            {
+                foreach (var HttpOnly in Request.Cookies) //will there ever be more than one?
+                {
+                    var Result = await _service.Refresh(HttpOnly.Value);
+                    if (!Result.Success) continue;
+                    else
+                    {
+                        Response.Cookies.Append("refreshToken", Result.RefreshToken!.Token, new CookieOptions
+                        {
+                            HttpOnly = true,
+                            Secure = true,
+                            SameSite = SameSiteMode.None,
+                            Expires = Result.RefreshToken!.Expires
+                        });
+
+                        return Ok(new { jwt = Result.Jwt });
+                    }
+                }
+                return BadRequest();
+            }
+            else //mobile
+            {
+                var Result = await _service.Refresh(RefreshRequest.Token);
+                return Result.Success ? Ok(new { jwt = Result.Jwt, refresh = Result.RefreshToken!.Token }) : Unauthorized();
+            }
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
     }
 }

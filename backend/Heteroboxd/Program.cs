@@ -56,27 +56,18 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminTier", policy =>
-        policy.RequireClaim("tier", "Admin", "Owner"));
+        policy.RequireClaim("tier", "Admin"));
 });
 
 // --- CORS ---
-if (builder.Environment.IsDevelopment())
+builder.Services.AddCors(options =>
 {
-    builder.Services.AddCors(options =>
-    {
-        options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-    });
-}
-else
-{
-    builder.Services.AddCors(options =>
-    {
-        options.AddPolicy("AllowFrontend", p => p
-            .WithOrigins(config["Frontend:BaseUrl"]!)
-            .AllowAnyHeader()
-            .AllowAnyMethod());
-    });
-}
+    options.AddPolicy("AllowFrontend", p => p
+    .WithOrigins(config["Frontend:BaseUrl"]!)
+    .AllowAnyHeader()
+    .AllowCredentials()
+    .AllowAnyMethod());
+});
 
 // --- REPOSITORIES ---
 builder.Services.AddScoped<IFilmRepository, FilmRepository>();
@@ -114,7 +105,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors(builder.Environment.IsDevelopment() ? "AllowAll" : "AllowFrontend");
+app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();
