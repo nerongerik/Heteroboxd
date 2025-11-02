@@ -1,36 +1,34 @@
-import { StyleSheet, View, Modal, ActivityIndicator } from 'react-native'
-import { Colors } from '../constants/colors'
+import { StyleSheet, View, Modal, ActivityIndicator } from 'react-native';
+import { Colors } from '../constants/colors';
 
 const LoadingResponse = ({ visible }) => {
   return (
     <Modal
-      transparent={true}
+      transparent
       visible={visible}
-      animationType="fade"
+      animationType="none"
     >
       <View style={styles.overlay}>
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
         <View style={styles.popup}>
-          <ActivityIndicator size={"large"} color={Colors.text_link} />
+          <ActivityIndicator size="large" color={Colors.text_link} />
         </View>
       </View>
     </Modal>
-  )
-}
+  );
+};
 
-export default LoadingResponse
+export default LoadingResponse;
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: '(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   popup: {
-    width: '50%',
-    backgroundColor: '(0,0,0,0)',
-    padding: 20,
-    borderRadius: 10,
+    padding: 24,
+    borderRadius: 12,
     alignItems: 'center',
-  }
-})
+  },
+});

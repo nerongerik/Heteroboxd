@@ -24,7 +24,8 @@
     "react-native-screens": "~4.16.0",
     "react-native-web": "~0.21.0",
     "secure-store": "^0.0.1",
-    "@expo/vector-icons": "^15.0.3"
+    "@expo/vector-icons": "^15.0.3",
+    "expo-blur": "~15.0.7"
   },
   "private": true
 }

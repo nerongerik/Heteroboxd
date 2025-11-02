@@ -1,6 +1,7 @@
 export const Colors = {
     //global
     background: '#191d1f',
+    card: '#2b3037',
     crown: '#efbf04',
     //text
     text: '#656f76',

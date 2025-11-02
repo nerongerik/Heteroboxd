@@ -3,23 +3,16 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { BaseUrl } from "../constants/api";
 
-export function handleWebLogin(jwt) {
-    if (!jwt) return;
+export function handleWebLogin(jwt, refresh) {
+    if (!jwt || !refresh) return;
     localStorage.setItem('token', jwt);
+    localStorage.setItem('refresh', refresh);
 }
 
 export async function handleMobileLogin(jwt, refresh) {
     if (!jwt || !refresh) return;
-    if (typeof jwt === 'string') {
-        await SecureStore.setItemAsync("token", jwt);
-    } else {
-        await SecureStore.setItemAsync("token", JSON.stringify(jwt));
-    }
-    if (typeof refresh === 'string') {
-        await SecureStore.setItemAsync("refresh", refresh);
-    } else {
-        await SecureStore.setItemAsync("refresh", JSON.stringify(refresh));
-    }
+    await SecureStore.setItemAsync("token", jwt);
+    await SecureStore.setItemAsync("refresh", refresh);
 }
 
 export async function getJwt() {
@@ -41,41 +34,24 @@ export function isJwtExpired(token) {
 
 export async function refreshToken() {
     try {
-        if (Platform.OS === 'web') {
-            return await fetch(`${BaseUrl.api}/auth/refresh`, {
-                method: "POST",
-                credentials: "include", //send HttpOnly cookie
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ Token: null })
-            }).then(async (res) => {
-                if (res.status !== 200) return false;
-                const json = await res.json();
-                const jwt = json?.jwt ?? json?.token ?? null;
-                if (jwt) {
-                    handleWebLogin(jwt);
-                    return true;
-                }
-                return false;
-            });
-        } else {
-            const refresh = await SecureStore.getItemAsync("refresh");
-            if (!refresh) return false;
-            return await fetch(`${BaseUrl.api}/auth/refresh`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ Token: refresh })
-            }).then(async (res) => {
-                if (!res.ok) return false;
-                const json = await res.json();
-                const jwt = json?.jwt ?? json?.token ?? null;
-                const newRefresh = json?.refresh ?? json?.refreshToken ?? null;
-                if (jwt) {
-                  await handleMobileLogin(jwt, newRefresh);
-                  return true;
-                }
-                return false;
-            });
-        }
+        const refresh = Platform.OS === 'web' ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
+        if (!refresh) return false;
+
+        return await fetch(`${BaseUrl.api}/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ Token: refresh })
+        }).then(async (res) => {
+            if (!res.ok) return false;
+            const json = await res.json();
+            const jwt = json?.jwt ?? json?.token ?? null;
+            const newRefresh = json?.refresh ?? json?.refreshToken ?? null;
+            if (jwt) {
+              Platform.OS === 'web' ? handleWebLogin(jwt, newRefresh) : await handleMobileLogin(jwt, newRefresh);
+              return true;
+            }
+            return false;
+        });
     } catch {
         return false;
     }
@@ -83,37 +59,22 @@ export async function refreshToken() {
 
 export async function logout(userId) {
     try {
-        const refresh = Platform.OS === "web"
-            ? null
-            : await SecureStore.getItemAsync("refresh");
-        if (Platform.OS === "web") {
-            await fetch(`${BaseUrl.api}/auth/logout`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ Token: refresh, UserId: userId })
-            }).then((res) => {
-                localStorage.clear(); //regardless
-                return res.status === 200;
-            })
-        } else {
-            await fetch(`${BaseUrl.api}/auth/logout`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ Token: refresh, UserId: userId })
-            }).then(async (res) => {
+        const refresh = Platform.OS === "web" ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
+
+        await fetch(`${BaseUrl.api}/auth/logout`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ Token: refresh, UserId: userId })
+        }).then(async (res) => {
+            //log user out on the frontend regardless of backend's success
+            if (Platform.OS === "web") localStorage.clear();
+            else {
                 await SecureStore.deleteItemAsync("token");
                 await SecureStore.deleteItemAsync("refresh");
-                return res.status === 200;
-            });
-        }
+            }
+            return res.status === 200;
+        });
     } catch {
-        //failsafe
-        if (Platform.OS === "web") localStorage.clear();
-        else {
-            await SecureStore.deleteItemAsync("token");
-            await SecureStore.deleteItemAsync("refresh");
-        }
         return false;
     }
 }

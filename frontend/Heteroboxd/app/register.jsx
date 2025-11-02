@@ -200,6 +200,10 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     color: Colors.text_input,
+
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
   },
 
   bioInput: {

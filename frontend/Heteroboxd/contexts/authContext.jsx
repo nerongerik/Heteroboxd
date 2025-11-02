@@ -44,16 +44,12 @@ export function AuthProvider({ children }) {
     }
 
     async function login(jwt, refresh) {
-        if (Platform.OS === 'web') {
-            auth.handleWebLogin(jwt);
-        } else {
-            auth.handleMobileLogin(jwt, refresh);
-        }
-        setUser(auth.decodeUser(jwt));
+      Platform.OS === 'web' ? auth.handleWebLogin(jwt, refresh) : auth.handleMobileLogin(jwt, refresh);
+      setUser(auth.decodeUser(jwt));
     }
 
     async function logout(userId) {
-        console.log(auth.logout(userId));
+        console.log(await auth.logout(userId));
         //whether backend succeeds in invalidating the user's tokens, the front should still log them out
         setUser(null);
     }

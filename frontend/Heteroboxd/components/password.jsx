@@ -89,7 +89,10 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: Colors.text_input,
-    fontSize: 16,
+
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
   },
   iconBtn: {
     marginLeft: 8,

@@ -19,62 +19,31 @@ const Login = () => {
   
   const handleLoginPress = async () => {
     setResponse(0);
-    if (Platform.OS === 'web') {
-      await fetch(`${BaseUrl.api}/auth/login`, {
-        method: 'POST',
-        credentials: 'include', //necessary for the HttpOnly cookie
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          Email: email,
-          Password: password,
-          Device: Platform.OS
-        })
-      }).then(async (res) => {
-        if (res.status === 200) {
-          const data = await res.json();
-          await login(data.jwt, data.refresh);
-          setResponse(200);
-          router.replace('/');
-        } else if (res.status === 401) {
-          setResponse(401);
-          setMessage("The email or password you entered is incorrect.");
-          setPopupVisible(true);
-        } else {
-          setResponse(500);
-          setMessage("Something went wrong! Try again later, or contact Heteroboxd support for more information!");
-          setPopupVisible(true);
-        }
-      });
-    } else {
-      await fetch(`${BaseUrl.api}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          Email: email,
-          Password: password,
-          Device: Platform.OS
-        })
-      }).then(async (res) => {
-        if (res.status === 200) {
-          const data = await res.json();
-          await login(data.jwt, data.refresh);
-          setResponse(200);
-          router.replace('/');
-        } else if (res.status === 401) {
-          setResponse(401);
-          setMessage("The email or password you entered is incorrect.");
-          setPopupVisible(true);
-        } else {
-          setResponse(500);
-          setMessage("Something went wrong! Try again later, or contact Heteroboxd support for more information!");
-          setPopupVisible(true);
-        }
-      });
-    }
+    await fetch(`${BaseUrl.api}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        Email: email,
+        Password: password
+      })
+    }).then(async (res) => {
+      if (res.status === 200) {
+        const data = await res.json();
+        await login(data.jwt, data.refresh);
+        setResponse(200);
+        router.replace('/');
+      } else if (res.status === 401) {
+        setResponse(401);
+        setMessage("The email or password you entered is incorrect.");
+        setPopupVisible(true);
+      } else {
+        setResponse(500);
+        setMessage("Something went wrong! Try again later, or contact Heteroboxd support for more information!");
+        setPopupVisible(true);
+      }
+    });
   };
 
   return (
@@ -152,6 +121,10 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     color: Colors.text_input,
+
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
   },
   button: {
     backgroundColor: Colors.button,
