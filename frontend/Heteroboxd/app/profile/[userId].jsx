@@ -1,31 +1,73 @@
 import { StyleSheet, Text, ScrollView, View, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
 import { useEffect, useState } from 'react';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { UserAvatar } from '../../components/userAvatar';
+import { BaseUrl } from '../../constants/api';
+import Popup from '../../components/popup';
+import LoadingResponse from '../../components/loadingResponse';
 
 const Profile = () => {
   const { userId } = useLocalSearchParams();
   const { user } = useAuth();
   const [data, setData] = useState(null);
-
+  const [result, setResult] = useState(-1);
+  const [error, setError] = useState("");
   useEffect(() => {
-    if (!userId) return;
-
-    if (user.userId === userId) {
-      // Avoid referencing user directly (prevents logout crash)
-      const { name, pictureUrl, bio, tier, expiry, patron, joined, listsCount, followersCount, followingCount, blockedCount, reviewsCount, likes, watched } = user;
-      setData({ name, pictureUrl, bio, tier, expiry, patron, joined, listsCount, followersCount, followingCount, blockedCount, reviewsCount, likes, watched });
-    } else {
-      // TODO: Fetch user DTO by userId
-      // setData(await fetchUserDTO(userId));
-    }
+    (async () => {
+      if (user.userId === userId) {
+        setData({ 
+          name: user.name, pictureUrl: user.pictureUrl, bio: user.bio, tier: user.tier,
+          expiry: user.expiry, patron: user.patron, joined: user.joined, listsCount: user.listsCount,
+          followersCount: user.followersCount, followingCount: user.followingCount, blockedCount: user.blockedCount,
+          reviewsCount: user.reviewsCount, likes: user.likes, watched: user.watched 
+        });
+      } else {
+        setResult(0);
+        try {
+          const res = await fetch(`${BaseUrl.api}/users/${userId}`, {method: 'GET'});
+          if (res.status === 200) {
+            setResult(200);
+            const json = await res.json();
+            console.log(json);
+            setData({ 
+              name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, tier: json.tier,
+              expiry: json.expiry, patron: json.patron, joined: json.joined, listsCount: json.listsCount,
+              followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
+              reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched 
+            });
+          } else if (res.status === 404) {
+            setError("This user no longer exists!");
+            setResult(404);
+          } else {
+            setError("Something went wrong! Please contact Heteroboxd support for more information!");
+            setResult(500);
+          }
+        } catch (err) {
+          setError("Unable to connect to Heteroboxd. Please check your internet connection!");
+          setResult(500);
+        }
+      }
+    })();
   }, [userId]);
+  const router = useRouter();
 
-  if (!data) return null; // or <Loading />
-
+  if (!data) {
+    return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        paddingHorizontal: "5%",
+        backgroundColor: Colors.background,
+      }}>
+        <LoadingResponse visible={true} />
+      </View>
+    );
+  }
+  
   return (
     <View style={styles.container}>
       <ScrollView
@@ -77,6 +119,9 @@ const Profile = () => {
             ))}
         </View>
       </ScrollView>
+      <Popup visible={result === 404 || result === 500} message={error} onClose={() => {
+        result === 500 ? router.replace('/contact') : router.replace('/');
+      }} />
     </View>
   );
 };

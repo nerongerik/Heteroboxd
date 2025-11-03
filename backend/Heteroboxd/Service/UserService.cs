@@ -54,8 +54,18 @@ namespace Heteroboxd.Service
 
         public async Task<UserInfoResponse?> GetUser(string UserId)
         {
+            if (!Guid.TryParse(UserId, out var Id))
+            {
+                _logger.LogError($"Failed to parse UserId: {UserId}; invalid.");
+                throw new ArgumentException();
+            }
             var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            return User == null ? null : new UserInfoResponse(User);
+            if (User == null)
+            {
+                _logger.LogError($"User with Id: {UserId} not found.");
+                return null;
+            }
+            return new UserInfoResponse(User);
         }
 
         public async Task<Watchlist> GetWatchlist(string UserId)

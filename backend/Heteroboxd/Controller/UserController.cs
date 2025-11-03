@@ -22,6 +22,7 @@ namespace Heteroboxd.Controller
         //GET endpoints -> limited public access
 
         [HttpGet]
+        [Authorize(Policy = "RequireAdminTier")]
         public async Task<IActionResult> GetAllUsers()
         {
             //retrives all users from database
@@ -37,13 +38,18 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("{UserId}")]
+        [AllowAnonymous] //Heteroboxd is an open-access app, anyone can search through the community
         public async Task<IActionResult> GetUser(string UserId)
         {
-            //retrives specific user from database
+            _logger.LogInformation($"GetUser endpoint hit with UserId: {UserId}");
             try
             {
                 var User = await _service.GetUser(UserId);
                 return User == null ? NotFound() : Ok(User);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch
             {
