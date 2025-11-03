@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
+import Feather from '@expo/vector-icons/Feather';
  
 const Password = ({ value, onChangeText, onValidityChange }) => {
   const [showRequirements, setShowRequirements] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const checkRequirements = (pw) => ({
     length: pw.length >= 8,
@@ -40,17 +42,30 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
         <TextInput
           style={styles.input}
           placeholder="Password*"
-          secureTextEntry
+          secureTextEntry={!showPassword}
           value={value}
           onChangeText={onChangeText}
           placeholderTextColor={Colors.text}
         />
+        {
+          !showPassword ? (
+            <TouchableOpacity onPress={() => setShowPassword(true)} style={styles.iconBtn}>
+              <Feather name="eye" size={22} color={Colors.text_input} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => setShowPassword(false)} style={styles.iconBtn}>
+              <Feather name="eye-off" size={22} color={Colors.text_input} />
+            </TouchableOpacity>
+          )
+        }
+      </View>
+      
+      <View style={styles.strContainer}>
+        <View style={[styles.strengthBar, { backgroundColor: strengthColors[strength] }]} />
         <TouchableOpacity onPress={() => setShowRequirements(!showRequirements)} style={styles.iconBtn}>
-          <Ionicons name="help-circle-outline" size={22} color={Colors.text_input} />
+            <Ionicons name="help-circle-outline" size={22} color={Colors.text_input} />
         </TouchableOpacity>
       </View>
- 
-      <View style={[styles.strengthBar, { backgroundColor: strengthColors[strength] }]} />
  
       {showRequirements && (
         <View style={styles.reqsContainer}>
@@ -71,8 +86,6 @@ export default Password
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginVertical: 10,
-    marginTop: 0
   },
   inputContainer: {
     flexDirection: 'row',
@@ -82,9 +95,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 45,
-    marginBottom: 5,
-    marginTop: 0,
-    backgroundColor: Colors.input_background ?? 'transparent',
+    backgroundColor: 'transparent',
+  },
+  strContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    width: '100%',
+    marginBottom: 0
   },
   input: {
     flex: 1,
@@ -97,6 +117,7 @@ const styles = StyleSheet.create({
   iconBtn: {
     marginLeft: 8,
     padding: 4,
+    alignSelf: 'center'
   },
   strengthBar: {
     height: 5,
@@ -105,14 +126,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   reqsContainer: {
-    marginTop: 8,
+    marginTop: 0,
+    marginBottom: 15,
   },
   req: {
     color: Colors.text,
     fontSize: 13,
   },
   reqMet: {
-    color: Colors.success ?? '#00cc66',
+    color: Colors.success,
     textDecorationLine: 'line-through',
   },
 });

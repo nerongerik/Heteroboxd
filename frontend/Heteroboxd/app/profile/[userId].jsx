@@ -1,23 +1,30 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Image } from 'react-native'
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { useState } from 'react';
+import { UserAvatar } from '../../components/userAvatar';
 
 const Profile = () => {
-
-  const {userId} = useLocalSearchParams();
-  const {user} = useAuth();
+  const { userId } = useLocalSearchParams();
+  const { user } = useAuth();
   const [data, setData] = useState(null);
+
   useEffect(() => {
+    if (!userId) return;
+
     if (user.userId === userId) {
-      //load data from user
+      // Avoid referencing user directly (prevents logout crash)
+      const { name, pictureUrl, bio, tier, expiry, patron, joined, listsCount, followersCount, followingCount, blockedCount, reviewsCount, likes, watched } = user;
+      setData({ name, pictureUrl, bio, tier, expiry, patron, joined, listsCount, followersCount, followingCount, blockedCount, reviewsCount, likes, watched });
     } else {
-      //dto request
+      // TODO: Fetch user DTO by userId
+      // setData(await fetchUserDTO(userId));
     }
-  }, []);
+  }, [userId]);
+
+  if (!data) return null; // or <Loading />
 
   return (
     <View style={styles.container}>
@@ -25,75 +32,54 @@ const Profile = () => {
         contentContainerStyle={{ padding: "2%" }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Profile Header */}
         <View style={styles.profile}>
-          <Image
-            source={
-              user.pictureUrl
-                ? { uri: user.pictureUrl }
-                : require('../../assets/default-profile.png')
-            }
-            style={styles.profileImage}
-          />
-          <Text>{user.name}</Text>
-          <FontAwesome5 name="crown" size={24} color={Colors.crown} />
+          <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
+          <Text>{data.name}</Text>
+          {data.patron && (
+            <FontAwesome5 name="crown" size={24} color={Colors.crown} />
+          )}
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.bio}>
-          <Text>{user.bio}</Text>
+          <Text style={styles.text}>{data.bio}</Text>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.movies}>
-          <Text>{'[TOP 5 FAVORITES PLACEHOLDER]'}</Text>
+          <Text>[TOP 5 FAVORITES PLACEHOLDER]</Text>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.ratings}>
-          <Text>{'[RATINGS GRAPH PLACEHOLDER]'}</Text>
+          <Text>[RATINGS GRAPH PLACEHOLDER]</Text>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.movies}>
-          <Text>{'[RECENT ACTIVITY PLACEHOLDER]'}</Text>
+          <Text>[RECENT ACTIVITY PLACEHOLDER]</Text>
         </View>
 
         <View style={styles.divider} />
 
+        {/* Buttons */}
         <View style={styles.buttons}>
-          <TouchableOpacity>
-            <Text>Watchlist</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>Films</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>Reviews</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>Lists</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>Likes</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>Following</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>Followers</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text>Blocked</Text>
-          </TouchableOpacity>
+          {["Watchlist", "Films", "Reviews", "Lists", "Likes", "Following", "Followers", "Blocked"]
+            .map(label => (
+              <TouchableOpacity key={label}>
+                <Text>{label}</Text>
+              </TouchableOpacity>
+            ))}
         </View>
       </ScrollView>
     </View>
-  )
-}
+  );
+};
 
 export default Profile
 

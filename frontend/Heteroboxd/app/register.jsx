@@ -55,7 +55,7 @@ const Register = () => {
         Name: name,
         Email: email,
         Password: password,
-        PictureUrl: "", //we are yet to setup image storage
+        PictureUrl: profileUri, //won't work until we setup proper image storage, duh
         Bio: bio
       })
     }).then((res) => {

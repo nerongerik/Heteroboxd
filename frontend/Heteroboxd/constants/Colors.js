@@ -16,6 +16,7 @@ export const Colors = {
     //border
     border_color: '#262a2d',
     //strenghts
+    success: '#00cc66',
     password_weak: '#262b2e',
     password_meager: '#ff4d4d',
     password_meh: '#ffa500',
