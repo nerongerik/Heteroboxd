@@ -1,30 +1,46 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, Platform, useWindowDimensions } from 'react-native'
 import { Link } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { Colors } from '../constants/colors';
 
 const Contact = () => {
+
+  const { width } = useWindowDimensions();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Contact Heteroboxd</Text>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 15,
+          minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
+          maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%",
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          alignSelf: 'center'
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>Contact Heteroboxd</Text>
 
-      <Text style={styles.text}>
-        Whether it's feedback, troubleshooting, business proposals, or general inquiries, we're here to help! Reach out to us at:
-      </Text>
-      <Text style={[styles.link, {alignSelf: 'center'}]} onPress={() => Linking.openURL('mailto:support@heteroboxd.com')}>
-        support@heteroboxd.com
-      </Text>
+        <Text style={styles.text}>
+          Whether it's feedback, troubleshooting, business proposals, or general inquiries, we're here to help! Reach out to us at:
+        </Text>
+        <Text style={[styles.link, {alignSelf: 'center'}]} onPress={() => Linking.openURL('mailto:support@heteroboxd.com')}>
+          support@heteroboxd.com
+        </Text>
 
-      <View style={styles.divider} />
+        <View style={styles.divider} />
 
-      <Text style={styles.subtitle}>
-        Note
-      </Text>
-      <Text style={styles.text}>
-        Please keep in mind that Heteroboxd isn't a commercial entity, and the response times from our volunteers may vary.
-        We should get back to you within 24 hours. In the meantime, feel free to check out our
-        <Link style={[styles.link, {fontSize: 16}]} href='about'> FAQ</Link> for more information.
-      </Text>
+        <Text style={styles.subtitle}>
+          Note
+        </Text>
+        <Text style={styles.text}>
+          Please keep in mind that Heteroboxd isn't a commercial entity, and the response times from our volunteers may vary.
+          We should get back to you within 24 hours. In the meantime, feel free to check out our
+          <Link style={[styles.link, {fontSize: 16}]} href='about'> FAQ</Link> for more information.
+        </Text>
+      </ScrollView>
     </View>
   )
 }
@@ -34,9 +50,7 @@ export default Contact
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: "5%",
+    paddingHorizontal: 10,
     paddingBottom: 50,
     backgroundColor: Colors.background,
   },

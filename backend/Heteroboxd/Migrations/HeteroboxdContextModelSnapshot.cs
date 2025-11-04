@@ -484,9 +484,6 @@ namespace Heteroboxd.Migrations
                     b.Property<Guid?>("Film4")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("Film5")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 

@@ -1,11 +1,19 @@
-import { StyleSheet, Text, View, ScrollView } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, Platform, useWindowDimensions } from 'react-native'
 import { Colors } from '../constants/colors'
 
 const Guidelines = () => {
+
+  const { width } = useWindowDimensions();
+
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ padding: "2%" }}
+        contentContainerStyle={{
+          padding: 15,
+          minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
+          maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%",
+          alignSelf: 'center',
+        }}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>
@@ -72,9 +80,11 @@ export default Guidelines
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: "5%",
+    paddingHorizontal: 15,
     paddingBottom: 50,
     backgroundColor: Colors.background,
+    alignContent: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 28,
@@ -97,7 +107,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
     color: Colors.text,
-    textAlign: "justify",
+    textAlign: "left",
   },
   link: {
     color: Colors.text_link,

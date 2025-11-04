@@ -1,8 +1,9 @@
 export const Colors = {
-    //global
+    //general
+    heteroboxd: '#ff8a00',
+    _heteroboxd: '#0075ff',
     background: '#191d1f',
     card: '#2b3037',
-    crown: '#efbf04',
     //text
     text: '#656f76',
     text_button: '#e4e6e8',

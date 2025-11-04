@@ -77,9 +77,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user-favorites/{UserId}")]
+        [AllowAnonymous] //must be open so non-logged in users can see other members' profiles
         public async Task<IActionResult> GetUserFavorites(string UserId)
         {
-            //retrives a specific user's favorites from database
+            _logger.LogInformation($"Get Favorites enpoint hit with UserId: ${UserId}");
             try
             {
                 var Favorites = await _service.GetFavorites(UserId);
@@ -88,6 +89,10 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch
             {

@@ -1,14 +1,14 @@
-import { StyleSheet, TextInput, KeyboardAvoidingView, ScrollView, Text, TouchableOpacity, Image, Alert } from 'react-native'
-import { useState } from 'react'
-import { Link } from 'expo-router'
-import Password from '../components/password'
-import Popup from '../components/popup'
-import * as ImagePicker from 'expo-image-picker'
-import LoadingResponse from '../components/loadingResponse'
-import { useRouter } from 'expo-router'
-import { Colors } from '../constants/colors'
-import { BaseUrl } from '../constants/api'
- 
+import { StyleSheet, TextInput, KeyboardAvoidingView, ScrollView, Text, TouchableOpacity, Image, Alert, View, Platform } from 'react-native';
+import { useState } from 'react';
+import { Link, useRouter } from 'expo-router';
+import Password from '../components/password';
+import Popup from '../components/popup';
+import * as ImagePicker from 'expo-image-picker';
+import LoadingResponse from '../components/loadingResponse';
+import { Colors } from '../constants/colors';
+import { BaseUrl } from '../constants/api';
+import { useWindowDimensions } from 'react-native';
+
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +20,7 @@ const Register = () => {
   const [response, setResponse] = useState(-1);
   const [message, setMessage] = useState("");
   const [popupVisible, setPopupVisible] = useState(false);
+  const { width } = useWindowDimensions();
   const router = useRouter();
 
   const pickImage = async () => {
@@ -48,18 +49,15 @@ const Register = () => {
     setResponse(0);
     fetch(`${BaseUrl.api}/auth/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         Name: name,
         Email: email,
         Password: password,
-        PictureUrl: profileUri, //won't work until we setup proper image storage, duh
+        PictureUrl: profileUri,
         Bio: bio
       })
     }).then((res) => {
-      console.log(res);
       if (res.status === 200) {
         setMessage("You have successfully joined the Heteroboxd community. Please check your email to verify your account within 24 hours.");
         setResponse(200);
@@ -67,7 +65,7 @@ const Register = () => {
         setMessage(`The email address ${email} is already in use. Did you mean to log in instead?`);
         setResponse(400);
       } else {
-        setMessage("Something went wrong! Try again later, or contact Heteroboxd support for further inquires.");
+        setMessage("Something went wrong! Try again later, or contact Heteroboxd support.");
         setResponse(500);
       }
       setPopupVisible(true);
@@ -76,161 +74,115 @@ const Register = () => {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding" enabled>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: "%2"
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-      <Text style={styles.title}>Join Us</Text>
-      <TouchableOpacity onPress={pickImage} style={styles.profileWrapper}>
-        <Image
-          source={
-            profileUri
-              ? { uri: profileUri }
-              : require('../assets/before-pick.png') // Or any placeholder
-          }
-          style={styles.profileImage}
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={[styles.form, { maxWidth: Platform.OS === 'web' && width > 1000 ? 1000 : '100%' }]}>
+
+          <Text style={styles.title}>Join Us</Text>
+
+          <TouchableOpacity onPress={pickImage} style={styles.profileWrapper}>
+            <Image
+              source={profileUri ? { uri: profileUri } : require('../assets/before-pick.png')}
+              style={styles.profileImage}
+            />
+            <Text style={styles.changePicText}>Profile Picture (optional)</Text>
+          </TouchableOpacity>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Name*"
+            value={name}
+            onChangeText={setName}
+            placeholderTextColor={Colors.text}
+          />
+
+          <TextInput
+            style={[styles.input, styles.bioInput]}
+            placeholder="Bio (optional)"
+            value={bio}
+            onChangeText={setBio}
+            multiline
+            numberOfLines={3}
+            placeholderTextColor={Colors.text}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email*"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            placeholderTextColor={Colors.text}
+          />
+
+          <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Repeat Password*"
+            secureTextEntry
+            value={repeatPassword}
+            onChangeText={setRepeatPassword}
+            autoCapitalize="none"
+            placeholderTextColor={Colors.text}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, (email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword) && { opacity: 0.5 }]}
+            onPress={handleRegister}
+            disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword}
+          >
+            <Text style={styles.buttonText}>Register</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.footerText}>
+            Already a member? <Link href='login' style={styles.link}>Log in</Link>
+          </Text>
+
+        </View>
+
+        <Popup
+          visible={popupVisible}
+          message={message}
+          onClose={() => {
+            setPopupVisible(false);
+            router.replace('/');
+          }}
         />
-        <Text style={styles.changePicText}>Profile Picture (optional)</Text>
-      </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="Name*"
-        value={name}
-        onChangeText={setName}
-        placeholderTextColor={Colors.text}
-      />
-      <TextInput
-        style={[styles.input, styles.bioInput]}
-        placeholder="Bio (optional)"
-        value={bio}
-        onChangeText={setBio}
-        multiline
-        numberOfLines={3}
-        placeholderTextColor={Colors.text}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email*"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        placeholderTextColor={Colors.text}
-      />
-      <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
-      <TextInput
-        style={styles.input}
-        placeholder="Repeat Password*"
-        secureTextEntry
-        onChangeText={setRepeatPassword}
-        autoCapitalize="none"
-        placeholderTextColor={Colors.text}
-      />
-      <TouchableOpacity
-        style={[
-                styles.button,
-                (email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword) && { opacity: 0.5 }
-              ]}
-        onPress={handleRegister}
-        disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword}
-      >
-        <Text style={styles.buttonText}>Register</Text>
-      </TouchableOpacity>
-      <Text style={styles.footerText}>
-        Already a member? <Link href='login' style={styles.link}>Log in</Link>
-      </Text>
-      <Popup
-        visible={popupVisible}
-        message={message}
-        onClose={() => {
-          setPopupVisible(false);
-          router.replace('/');
-        }}
-      />
-      <LoadingResponse visible={response === 0} />
+        <LoadingResponse visible={response === 0} />
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-export default Register
+export default Register;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.background,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 20,
-    color: Colors.text_title,
-  },
-
-  //profile picture wrapper to show change
-  profileWrapper: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderColor: Colors.border_color,
-    borderWidth: 1.5,
-  },
-  changePicText: {
-    marginTop: 6,
-    fontSize: 12,
-    color: Colors.text_link,
-    fontWeight: '600',
-  },
-
+  container: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  form: { width: '100%', alignSelf: 'center' },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 30, color: Colors.text_title, textAlign: 'center' },
+  profileWrapper: { alignItems: 'center', marginBottom: 16 },
+  profileImage: { width: 100, height: 100, borderRadius: 50, borderColor: Colors.border_color, borderWidth: 1.5 },
+  changePicText: { marginTop: 6, fontSize: 12, color: Colors.text_link, fontWeight: '600' },
   input: {
-    width: "100%",
+    width: '100%',
     borderWidth: 1.5,
     borderColor: Colors.border_color,
     borderRadius: 10,
-    padding: 12,
+    paddingHorizontal: 12,
+    height: 45,
     marginBottom: 15,
     color: Colors.text_input,
-
     outlineStyle: 'none',
     outlineWidth: 0,
     outlineColor: 'transparent',
   },
-
-  bioInput: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-
-  button: {
-    backgroundColor: Colors.button,
-    width: "75%",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: Colors.text_button,
-    fontWeight: "600",
-  },
-  footerText: {
-    fontWeight: "500",
-    marginTop: 20,
-    fontSize: 14,
-    color: Colors.text,
-  },
-  link: {
-    color: Colors.text_link,
-    fontWeight: "600",
-  },
+  bioInput: { minHeight: 80, textAlignVertical: 'top', padding: 5 },
+  button: { backgroundColor: Colors.button, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10,
+            width: '50%', alignSelf: 'center' },
+  buttonText: { color: Colors.text_button, fontWeight: '600' },
+  footerText: { textAlign: 'center', marginTop: 20, fontSize: 14, color: Colors.text },
+  link: { color: Colors.text_link, fontWeight: '600' },
 });

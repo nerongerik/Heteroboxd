@@ -11,7 +11,6 @@ namespace Heteroboxd.Models
         public Guid? Film2 { get; set; }
         public Guid? Film3 { get; set; }
         public Guid? Film4 { get; set; }
-        public Guid? Film5 { get; set; }
         public Guid UserId { get; private set; }
 
         public UserFavorites(Guid UserId)

@@ -60,7 +60,6 @@ export async function refreshToken() {
 export async function logout(userId) {
     try {
         const refresh = Platform.OS === "web" ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
-
         await fetch(`${BaseUrl.api}/auth/logout`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},

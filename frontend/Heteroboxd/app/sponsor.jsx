@@ -1,29 +1,45 @@
-import { StyleSheet, Text, View, Image } from 'react-native'
+import { StyleSheet, Text, View, Image, ScrollView, useWindowDimensions, Platform } from 'react-native'
 import { Colors } from '../constants/colors'
 
 const Sponsor = () => {
+
+  const { width } = useWindowDimensions();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Donate to Heteroboxd
-      </Text>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 15,
+          minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
+          maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%",
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          alignSelf: 'center'
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>
+          Donate to Heteroboxd
+        </Text>
 
-      <Text style={styles.text}>
-        Heteroboxd is open-source and free to use, but annual maintanance and server costs do add up.
-        If you'd like to support the project and help cover these costs, please consider making a donation.
-      </Text>
+        <Text style={styles.text}>
+          Heteroboxd is open-source and free to use, but annual maintanance and server costs do add up.
+          If you'd like to support the project and help cover these costs, please consider making a donation.
+        </Text>
 
-      {/* PayPal or Stripe donation form */}
-      <Image source={require('../assets/default-profile.png')} />
+        {/* PayPal or Stripe donation form */}
+        <Image source={require('../assets/default-profile.png')} />
 
-      <Text style={styles.text}>
-        As an added bonus to show our appreciation, all people who donate will recieve a special badge next to their
-        profile name, as well as highlighted reviews and comments for 365 days after the donation is processed.
-      </Text>
+        <Text style={styles.text}>
+          As an added bonus to show our appreciation, all people who donate will recieve a special badge next to their
+          profile name, as well as highlighted reviews and comments for 365 days after the donation is processed.
+        </Text>
 
-      <Text style={styles.text}>
-        Furthermore, donating more than $50 at a time will mark you as a PATRON for life, long after the 365 days expire!
-      </Text>
+        <Text style={styles.text}>
+          Furthermore, donating more than $50 at a time will mark you as a PATRON for life, long after the 365 days expire!
+        </Text>
+      </ScrollView>
     </View>
   )
 }
@@ -33,9 +49,7 @@ export default Sponsor
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: "5%",
+    paddingHorizontal: 10,
     paddingBottom: 50,
     backgroundColor: Colors.background,
   },
