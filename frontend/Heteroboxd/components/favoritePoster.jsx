@@ -14,6 +14,9 @@ export const FavoritePoster = ({ posterUrl, style, other }) => {
       } else if (posterUrl === 'error') {
         setResolvedUrl('error');
         return;
+      } else if (posterUrl === 'more') {
+        setResolvedUrl('more');
+        return;
       }
 
       // FUTURE: If `posterUrl` is actually a storage key, resolve here:
@@ -30,13 +33,15 @@ export const FavoritePoster = ({ posterUrl, style, other }) => {
   return (
     <Image
       source={
-        resolvedUrl
-          ? { uri: resolvedUrl }
-          : resolvedUrl === 'error'
-            ? require("../assets/error.png")
-            : other
-              ? require("../assets/before-pick.png")
-              : require("../assets/add-favorite.png")
+        resolvedUrl === 'error'
+          ? require("../assets/error.png")
+          : resolvedUrl === 'more'
+            ? require('../assets/load-more.png')
+            : resolvedUrl !== null
+              ? { uri: resolvedUrl }
+              : other
+                ? require("../assets/before-pick.png")
+                : require("../assets/add-favorite.png")
       }
       style={style}
     />

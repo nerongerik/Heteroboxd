@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
         return true;
       }
 
-      //refresh failed => session dead
+      //refresh failed + session dead
       setUser(null);
       return false;
     }

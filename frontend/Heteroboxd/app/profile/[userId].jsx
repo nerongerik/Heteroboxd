@@ -1,4 +1,4 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
@@ -11,91 +11,133 @@ import LoadingResponse from '../../components/loadingResponse';
 import GlowingText from '../../components/glowingText';
 import { FavoritePoster } from '../../components/favoritePoster';
 import { Snackbar } from 'react-native-paper';
+import * as auth from '../../helpers/auth';
 
 const Profile = () => {
   const { userId } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user, isValidSession } = useAuth();
+
+  const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
   const [result, setResult] = useState(-1);
   const [error, setError] = useState("");
+
   const { width } = useWindowDimensions();
+
   const router = useRouter();
-  const [favorites, setFavorites] = useState([null, null, null, null]);
+
   const [visible, setVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+
+  const [favorites, setFavorites] = useState([null, null, null, null]);
   const [favoritesResult, setFavoritesResult] = useState(-1);
 
-  useEffect(() => {
-    (async () => {
-      if (user.userId === userId) {
+  const [recent, setRecent] = useState([]);
+  const [recentResult, setRecentResult] = useState(-1);
+
+  const [following, setFollowing] = useState(false);
+
+  const loadProfileData = async () => {
+    setRefreshing(true);
+
+    // --- FETCH PROFILE ---
+    setResult(0);
+    try {
+      const res = await fetch(`${BaseUrl.api}/users/${userId}`);
+      if (res.status === 200) {
+        setResult(200);
+        const json = await res.json();
+        console.log(json)
         setData({ 
-          name: user.name, pictureUrl: user.pictureUrl, bio: user.bio, tier: user.tier,
-          expiry: user.expiry, patron: user.patron === 'true' ? true : false, joined: parseDate(user.joined), listsCount: user.listsCount,
-          followersCount: user.followersCount, followingCount: user.followingCount, blockedCount: user.blockedCount,
-          reviewsCount: user.reviewsCount, likes: user.likes, watched: user.watched 
+          name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, tier: json.tier,
+          expiry: json.expiry, patron: json.patron === 'true', joined: parseDate(json.joined), listsCount: json.listsCount,
+          followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
+          reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched 
         });
+      } else if (res.status === 404) {
+        setError("This user no longer exists!");
+        setResult(404);
       } else {
-        setResult(0);
-        try {
-          const res = await fetch(`${BaseUrl.api}/users/${userId}`, {method: 'GET'});
-          if (res.status === 200) {
-            setResult(200);
-            const json = await res.json();
-            setData({ 
-              name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, tier: json.tier,
-              expiry: json.expiry, patron: json.patron === 'true' ? true : false, joined: parseDate(json.joined), listsCount: json.listsCount,
-              followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
-              reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched 
-            });
-          } else if (res.status === 404) {
-            setError("This user no longer exists!");
-            setResult(404);
-          } else {
-            setError("Something went wrong! Please contact Heteroboxd support for more information!");
-            setResult(500);
-          }
-        } catch (err) {
-          setError("Unable to connect to Heteroboxd. Please check your internet connection!");
-          setResult(500);
-        }
+        setError("Something went wrong! Please contact Heteroboxd support for more information!");
+        setResult(500);
       }
-    })();
-  }, [userId]);
-
-  useEffect(() => {
-  let shouldFetch = true;
-
-  (async () => {
-    setFavoritesResult(0);
-    const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`, { method: "GET" });
-
-    if (!shouldFetch) return;
-    
-    //when user views his own profile, there is a (small) chance they accidentally end up viewing an expired state
-    //in case localstorage/securestorage clearence failed. in that case -> trigger errors that loading other user
-    //would've normally triggered (server malfuncion, notfound)
-
-    if (res.status === 200) {
-      const json = await res.json();
-      const ordered = [json["1"], json["2"], json["3"], json["4"]];
-      setFavorites(ordered);
-      setFavoritesResult(200);
-    } 
-    else if (res.status === 404) {
-      setFavoritesResult(404);
-    }
-    else if (res.status === 400) {
-      setError("This user no longer exists!")
-      setResult(400);
-    } 
-    else {
+    } catch {
       setError("Unable to connect to Heteroboxd. Please check your internet connection!");
       setResult(500);
     }
-  })();
 
-  return () => { shouldFetch = false; };
-}, [userId]);
+    // --- FETCH FAVORITES ---
+    setFavoritesResult(0);
+    try {
+      const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`);
+      if (res.status === 200) {
+        const json = await res.json();
+        setFavorites([json["1"], json["2"], json["3"], json["4"]]);
+        setFavoritesResult(200);
+      } else if (res.status === 404) {
+        setFavoritesResult(404);
+      } else if (res.status === 400) {
+        setError("This user no longer exists!");
+        setResult(400);
+      } else {
+        setError("Something went wrong! Please contact Heteroboxd support for more information!");
+        setResult(500);
+      }
+    } catch {
+      setError("Unable to connect to Heteroboxd. Please check your internet connection!");
+      setResult(500);
+    }
+
+    // --- FETCH RECENTS ---
+    setRecentResult(0);
+    try {
+      const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=1&PageSize=8`);
+      if (res.status === 200) {
+        const json = await res.json();
+        setRecent(json.films);
+        setRecentResult(200);
+      } else if (res.status === 400) {
+        setError("This user no longer exists!")
+        setResult(400);
+      } else {
+        setError("Something went wrong! Please contact Heteroboxd support for more information!");
+        setResult(500);
+      }
+    } catch {
+      setError("Unable to connect to Heteroboxd. Please check your internet connection!");
+      setResult(500);
+    }
+
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    console.log(width);
+    loadProfileData();
+  }, [userId]);
+
+  useEffect(() => {
+    let loaded = true;
+    if (!user || user.userId === userId) return;
+    (async () => {
+      try {
+        const res = await fetch(`${BaseUrl.api}/users/user-relationships/${user.userId}`, {method: "GET"});
+        if (!loaded) return;
+        
+        if (res.status === 200) {
+          const json = await res.json();
+          const followingSet = new Set(json['following'].map(uir => uir.id));
+          if (followingSet.has(userId)) setFollowing(true);
+        } else {
+          console.log('Failed to determine if the user follows account; falling back to false.');
+        }
+      } catch {
+        console.log('Failed to determine if the user follows account; falling back to false.');
+      }
+    })();
+
+    return () => { loaded = false; };
+  }, [userId]);
 
 
   function parseDate(date) {
@@ -104,6 +146,55 @@ const Profile = () => {
     const day = nums[0]; const year = nums[2];
     const month = months[parseInt(nums[1] - 1)];
     return `joined ${month} ${day}, ${year}`;
+  }
+
+  function handleButtons(button) {
+    switch(button) {
+      case 'Watchlist':
+        router.replace(`/watchlist/${userId}`);
+        break;
+      case 'Reviews':
+        router.replace(`/reviews/user/${userId}`);
+        break;
+      case 'Lists':
+        if (data.listsCount === '0') router.replace(`/list/create`)
+        else router.replace(`/lists/user/${userId}`);
+        break;
+      case 'Likes':
+        console.log('I am yet to decide on the most practical way to make this happen with tabs and all.');
+        break;
+      case 'Followers':
+        router.replace(`/relationships/${userId}?t=followers`);
+        break;
+      case 'Following':
+        router.replace(`/relationships/${userId}?t=following`);
+        break;
+      case 'Blocked':
+        router.replace(`/relationships/${userId}?t=blocked`);
+        break;
+      default:
+        setSnackbarMessage("I'm gonna touch you");
+        setVisible(true);
+    }
+  }
+
+  async function handleFollow() {
+    if (!user || !(await isValidSession())) {
+      setSnackbarMessage('You must be logged in to follow people.');
+      setVisible(true);
+      return;
+    }
+    setFollowing(!following); //hope for happy path, change the look for the user on front regardless
+    const jwt = await auth.getJwt();
+    await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=follow-unfollow`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${jwt}`
+      }
+    }).then((res) => {
+      //not critical to handle errors, not critical architecture
+      console.log(res.status);
+    });
   }
 
   if (!data) {
@@ -120,6 +211,8 @@ const Profile = () => {
     );
   }
 
+  const isOwnProfile = user && user.userId === userId;
+
   const isDonor = data.tier === "DONOR" || data.tier === "donor" || data.tier === "Donor";
   const isAdmin = data.tier === 'ADMIN' || data.tier === 'admin' || data.tier === 'Admin';
 
@@ -134,6 +227,9 @@ const Profile = () => {
   return (
     <View style={styles.container}>
       <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={loadProfileData} />
+        }
         contentContainerStyle={{
           padding: 5,
           minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
@@ -144,7 +240,72 @@ const Profile = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.profile}>
-          <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
+          <View style={styles.inline}>
+            {
+              Platform.OS === "web" && width < 500 ? (
+                <UserAvatar pictureUrl={data.pictureUrl} style={styles.smallWebProfile} />
+              ) : (
+                <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
+              )
+            }
+            {!isOwnProfile && (
+              following ? (
+                  <TouchableOpacity
+                    onPress={handleFollow}
+                    style={{
+                      backgroundColor: 'transparent',
+                      borderWidth: 3,
+                      borderColor: Colors.button_reject,
+                      borderRadius: 3,
+                      paddingVertical: Platform.OS === 'web' ? 8 : 6,
+                      paddingHorizontal: Platform.OS === 'web' ? 8 : 6,
+                      justifyContent: 'center',
+                      alignSelf: 'center',
+                      position: 'absolute',
+                      right: Platform.OS === 'web' && width < 500 ? -85 : (Platform.OS === 'web' ? -120 : -100)
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (Platform.OS === 'web' ? 16 : (width > 350 ? 14 : 10)),
+                        fontWeight: '700',
+                        color: Colors.button_reject,
+                        textAlign: 'center',
+                      }}
+                    >
+                      UNFOLLOW
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleFollow}
+                    style={{
+                      backgroundColor: 'transparent',
+                      borderWidth: 3,
+                      borderColor: Colors.button_confirm,
+                      borderRadius: 3,
+                      paddingVertical: Platform.OS === 'web' ? 8 : 6,
+                      paddingHorizontal: Platform.OS === 'web' ? 8 : 6,
+                      justifyContent: 'center',
+                      alignSelf: 'center',
+                      position: 'absolute',
+                      right: Platform.OS === 'web' && width < 500 ? -75 : (Platform.OS === 'web' ? -100 : -85)
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (Platform.OS === 'web' ? 16 : (width > 350 ? 14 : 10)),
+                        fontWeight: '700',
+                        color: Colors.button_confirm,
+                        textAlign: 'center',
+                      }}
+                    >
+                      FOLLOW
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
+          </View>
           <View style={styles.inline}>
             {isDonor ? (
               <GlowingText color={Colors.heteroboxd}>{data.name}</GlowingText>
@@ -157,7 +318,6 @@ const Profile = () => {
               <GlowingText color={Colors.heteroboxd}><MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd} style={{ position: 'absolute', right: -40 }}/></GlowingText>
             )}
           </View>
-          <Text style={styles.subtext}>{data.joined}</Text>
         </View>
 
         <View style={{marginVertical: 5}} />
@@ -165,6 +325,11 @@ const Profile = () => {
         <View style={styles.bio}>
           <Text style={styles.text}>{data.bio}</Text>
         </View>
+
+        {/* DECORATIVE TAPS/HOVERS FOR GLOWING PROFILES"
+        'this user is a community moderator'
+        'this user is a gigachad (see sponsor details)
+        if own profile -> 'days until donor tier expiry: x dats'*/}
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
@@ -185,7 +350,7 @@ const Profile = () => {
                 }
                 else if (film && film.filmId) {
                   router.replace(`/film/${film.filmId}`);
-                } else if (user.userId !== userId) {
+                } else if (!isOwnProfile) {
                   setSnackbarMessage("You can't choose favorites for other people, retard!");
                   setVisible(true);
                 } else {
@@ -204,7 +369,7 @@ const Profile = () => {
                   borderColor: film ? "transparent" : Colors.border_color,
                   opacity: film ? 1 : 0.4,
                 }}
-                other={user.userId !== userId}
+                other={!isOwnProfile}
               />
             </TouchableOpacity>
           ))}
@@ -220,26 +385,100 @@ const Profile = () => {
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
-        <Text style={styles.subtitle}>Recent</Text>
+        <Text style={styles.subtitle}>Recents</Text>
         <View style={styles.movies}>
-          <Text>[RECENT ACTIVITY PLACEHOLDER]</Text>
+          {recentResult === 0 ? (
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
+              <LoadingResponse visible={true} />
+            </View>
+          ) : recent.length === 0 ? (
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
+              <Text style={styles.text}>This user doesn't appear to be a real nigga, as there is no recent activity.</Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 10 }}
+            >
+              {recent.slice(0, 8).map((film, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => router.replace(`/film/${film.filmId}`)}
+                  style={{ marginRight: 8 }}
+                >
+                  <FavoritePoster
+                    posterUrl={film?.posterUrl ?? null}
+                    style={{
+                      width: posterWidth,
+                      height: posterHeight,
+                      borderRadius: 8,
+                      borderWidth: film ? 0 : 1,
+                      borderColor: film ? "transparent" : Colors.border_color,
+                      opacity: film ? 1 : 0.4,
+                    }}
+                    other={!isOwnProfile}
+                  />
+                </TouchableOpacity>
+              ))}
+
+              <TouchableOpacity
+                onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
+                style={{ marginRight: 8 }}
+              >
+                <FavoritePoster
+                  posterUrl={'more'}
+                  style={{
+                    width: posterWidth,
+                    height: posterHeight,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: Colors.border_color,
+                    opacity: 0.4,
+                  }}
+                  other={!isOwnProfile}
+                />
+              </TouchableOpacity>
+            </ScrollView>
+          )}
         </View>
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
         <View style={styles.buttons}>
-          {["Watchlist", "Films", "Reviews", "Lists", "Likes", "Following", "Followers", "Blocked"]
-            .map(label => (
-              <TouchableOpacity key={label}>
-                <Text>{label}</Text>
+          {[
+            ...(isOwnProfile ? [{ label: "Watchlist", count: data.watched }] : []),
+            { label: "Reviews", count: data.reviewsCount },
+            { label: "Lists", count: data.listsCount },
+            { label: "Likes", count: data.likes },
+            { label: "Followers", count: data.followersCount },
+            { label: "Following", count: data.followingCount },
+            ...(isOwnProfile ? [{ label: "Blocked", count: data.blockedCount }] : []),
+          ]
+          .map((item, index) => {
+            const disabled = item.label === 'Lists' ? (isOwnProfile ? false : item.count === '0') : item.count === '0';
+            return (
+              <TouchableOpacity
+                key={index}
+                disabled={disabled}
+                onPress={() => {handleButtons(item.label)}}
+                style={[styles.boxButton, (disabled) && { opacity: 0.5 }]}
+              >
+                <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
+                  {item.label}
+                </Text>
+                <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
+                  {item.count} {'➜'}
+                </Text>
               </TouchableOpacity>
-            ))}
+            );
+          })}
         </View>
       </ScrollView>
-
       <Popup visible={result === 400 || result === 404 || result === 500} message={error} onClose={() => {
         result === 500 ? router.replace('/contact') : router.replace('/');
-      }} />
+        }}
+      />
 
       <Snackbar
         visible={visible}
@@ -252,7 +491,7 @@ const Profile = () => {
           borderRadius: 8,
         }}
         action={{
-          label: 'OK',
+          label: 'Sorry',
           onPress: () => setVisible(false),
           textColor: Colors.text_link
         }}
@@ -345,5 +584,25 @@ const styles = StyleSheet.create({
     borderRadius: Platform.OS === 'web' ? 75 : 50,
     borderColor: Colors.border_color,
     borderWidth: 1.5,
+  },
+  smallWebProfile: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderColor: Colors.border_color,
+    borderWidth: 1.5,
+  },
+  boxButton: {
+    width: "100%",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    justifyContent: 'space-between',
+    
+  },
+  boxButtonText: {
+    fontSize: 18,
+    fontWeight: "400",
+    textAlign: "right",
   },
 });

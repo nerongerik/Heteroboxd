@@ -1,13 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native'
 
-const settings = () => {
+const UserReviews = () => {
   return (
     <View>
-      <Text>settings</Text>
+      <Text>UserReviews</Text>
     </View>
   )
 }
 
-export default settings
+export default UserReviews
 
 const styles = StyleSheet.create({})

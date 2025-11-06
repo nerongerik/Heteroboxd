@@ -64,15 +64,10 @@ namespace Heteroboxd.Data
                       .HasForeignKey(ul => ul.AuthorId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Followers (M:M)
-                entity.HasMany(u => u.Followers)
-                      .WithMany()
-                      .UsingEntity(j => j.ToTable("UserFollowers"));
-
-                // Following (M:M)
+                // Followers/Following (M:M)
                 entity.HasMany(u => u.Following)
-                      .WithMany()
-                      .UsingEntity(j => j.ToTable("UserFollowing"));
+                      .WithMany(u => u.Followers)
+                      .UsingEntity(j => j.ToTable("UserRelationships"));
 
                 // Blocked (M:M)
                 entity.HasMany(u => u.Blocked)

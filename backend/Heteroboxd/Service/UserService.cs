@@ -150,11 +150,16 @@ namespace Heteroboxd.Service
 
         public async Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId)
         {
+            //non-critical infrastructure, no need for rigorous id-checking
             var _following = await _repo.GetFollowing(Guid.Parse(UserId));
             var _followers = await _repo.GetFollowers(Guid.Parse(UserId));
             var _blocked = await _repo.GetBlocked(Guid.Parse(UserId));
 
-            if (_following == null || _followers == null || _blocked == null) throw new KeyNotFoundException();
+            if (_following == null || _followers == null || _blocked == null)
+            {
+                _logger.LogError("Failed to fetch all relationships");
+                throw new KeyNotFoundException();
+            }
 
             return new Dictionary<string, List<UserInfoResponse>>
             {
@@ -332,14 +337,17 @@ namespace Heteroboxd.Service
             {
                 case ("follow-unfollow"):
                     await _repo.FollowUnfollowAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
+                    _logger.LogInformation("Successfully followed/unfollowed.");
                     await _repo.SaveChangesAsync();
                     break;
                 case ("block-unblock"):
                     await _repo.BlockUnblockAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
+                    _logger.LogInformation("Successfully blocked/unblocked.");
                     await _repo.SaveChangesAsync();
                     break;
                 case ("add-remove-follower"):
                     await _repo.FollowUnfollowAsync(Guid.Parse(TargetId), Guid.Parse(UserId));
+                    _logger.LogInformation("Successfully added/removed follower.");
                     await _repo.SaveChangesAsync();
                     break;
             }
@@ -397,8 +405,17 @@ namespace Heteroboxd.Service
 
         public async Task LogicalDeleteUser(string UserId)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            if (User == null) throw new KeyNotFoundException();
+            if (!Guid.TryParse(UserId, out var Id))
+            {
+                _logger.LogError($"GUID failed to parse {UserId}; malformed.");
+                throw new ArgumentException();
+            }
+            var User = await _repo.GetByIdAsync(Id);
+            if (User == null)
+            {
+                _logger.LogError($"Failed to find User with Id: {UserId}");
+                throw new KeyNotFoundException();
+            }
             User.Deleted = true;
             _repo.Update(User);
             await _repo.SaveChangesAsync();

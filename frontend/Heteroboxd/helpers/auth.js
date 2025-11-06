@@ -81,21 +81,14 @@ export async function logout(userId) {
 export function decodeUser(token) {
     let decoded = jwtDecode(token);
     return {
-        userId: decoded.sub,
-        email: decoded.email,
-        name: decoded.name,
-        pictureUrl: decoded.pictureUrl,
-        bio: decoded.bio,
-        tier: decoded.tier,
-        expiry: decoded.expiry,
-        patron: decoded.patron,
-        joined: decoded.joined,
-        listsCount: decoded.listsCount,
-        followersCount: decoded.followersCount,
-        followingCount: decoded.followingCount,
-        blockedCount: decoded.blockedCount,
-        reviewsCount: decoded.reviewsCount,
-        likes: decoded.likes,
-        watched: decoded.watched
+        userId: decoded.sub, //never changes
+        email: decoded.email, //never changes
+        name: decoded.name, //changes on edit profile -> refresh in that case
+        pictureUrl: decoded.pictureUrl, //changes on edit profile -> refresh in that case
+        bio: decoded.bio, //changes on edit profile -> refresh in that case
+        tier: decoded.tier, //changes per donation (or a year after one) -> refresh in that case
+        expiry: decoded.expiry, //changes per donation -> refresh in that case
+        patron: decoded.patron, //changes only once, ever -> refresh in that case
+        joined: decoded.joined //never changes
     };
 }

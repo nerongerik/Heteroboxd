@@ -142,8 +142,8 @@ namespace Heteroboxd.Service
 
         /*
         while the JWT is quite comprehensive, and extremely useful in reducing the amount of backend calls needed
-        for the loggen in user (all his basic data is easily displayed here), the UserInfoResponse DTO will still be
-        fully necessary for displaying the data of OTHER users on the platfor :/
+        for the logged in user, the UserInfoResponse DTO will still be fully necessary for displaying the data of OTHER
+        users on the platform, as well as the common-changing attributes such as counts
         */
         private string GenerateJwt(User User)
         {
@@ -160,14 +160,7 @@ namespace Heteroboxd.Service
                 new Claim("tier", User.Tier.ToString()),
                 new Claim("expiry", User.TierExpiry?.ToString("dd/MM/yyyy HH:mm") ?? ""),
                 new Claim("patron", User.IsPatron.ToString()),
-                new Claim("joined", User.DateJoined.ToString("dd/MM/yyyy HH:mm")),
-                new Claim("listsCount", User.Lists.Count.ToString()),
-                new Claim("followersCount", User.Followers.Count.ToString()),
-                new Claim("followingCount", User.Following.Count.ToString()),
-                new Claim("blockedCount", User.Blocked.Count.ToString()),
-                new Claim("reviewsCount", User.Reviews.Count.ToString()),
-                new Claim("likes", (User.LikedComments.Count + User.LikedLists.Count + User.LikedReviews.Count).ToString()),
-                new Claim("watched", User.WatchedFilms.Count.ToString())
+                new Claim("joined", User.DateJoined.ToString("dd/MM/yyyy HH:mm"))
             };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);
