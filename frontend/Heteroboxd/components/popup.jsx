@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native'
 import { Colors } from '../constants/colors'
 
-const Popup = ({ visible, message, onClose }) => {
+const Popup = ({ visible, message, onClose, confirm, onConfirm }) => {
   return (
     <Modal
       transparent={false}
@@ -11,9 +11,22 @@ const Popup = ({ visible, message, onClose }) => {
       <View style={styles.overlay}>
         <View style={styles.popup}>
           <Text style={styles.message}>{message}</Text>
-          <TouchableOpacity onPress={onClose} style={styles.button}>
-            <Text style={styles.buttonText}>OK</Text>
-          </TouchableOpacity>
+          {
+            !confirm ? (
+              <TouchableOpacity onPress={onClose} style={styles.button}>
+                <Text style={styles.buttonText}>OK</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
+                <TouchableOpacity onPress={onConfirm} style={[styles.button, { backgroundColor: Colors.button_confirm, marginHorizontal: 10 }]}>
+                  <Text style={styles.buttonText}>Yes</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={onClose} style={[styles.button, { backgroundColor: Colors.button_reject, marginHorizontal: 10 }]}>
+                  <Text style={styles.buttonText}>No</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          }
         </View>
       </View>
     </Modal>
@@ -32,7 +45,7 @@ const styles = StyleSheet.create({
   popup: {
     width: '80%',
     backgroundColor: Colors.background,
-    padding: 20,
+    padding: 15,
     borderRadius: 10,
     alignItems: 'center',
   },

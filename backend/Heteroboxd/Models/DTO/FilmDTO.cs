@@ -46,4 +46,12 @@
         public string? Title { get; set; }
         public string? OriginalTitle { get; set; }
     }
+
+    public class PagedFilmInfoResponse
+    {
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public List<FilmInfoResponse> Films { get; set; }
+    }
 }

@@ -44,7 +44,7 @@ namespace Heteroboxd.Repository
         Task<Film?> GetByIdAsync(Guid Id);
         Task<List<Film>> GetByYearAsync(int Year);
         Task<List<Film>> GetByCelebrityAsync(Guid CelebrityId);
-        Task<List<Film>> GetByUserAsync(Guid UserId);
+        Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle);
         void Update(Film Film);
         Task UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta);
@@ -82,11 +82,30 @@ namespace Heteroboxd.Repository
                 .Where(f => f.CastAndCrew.Any(c => c.CelebrityId == CelebrityId) && !f.Deleted)
                 .ToListAsync();
 
-        public async Task<List<Film>> GetByUserAsync(Guid UserId) =>
-            await _context.Films
-                .Include(f => f.WatchedBy)
-                .Where(f => f.WatchedBy.Any(w => w.UserId == UserId) && !f.Deleted)
+        public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
+        {
+            var UwQuery = _context.UserWatchedFilms
+                .Where(uw => uw.UserId == UserId)
+                .OrderByDescending(uw => uw.DateWatched);
+
+            var TotalCount = await UwQuery.CountAsync();
+
+            var PagedFilmIds = await UwQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .Select(uw => uw.FilmId)
                 .ToListAsync();
+
+            var Films = await _context.Films
+                .Where(f => PagedFilmIds.Contains(f.Id) && !f.Deleted)
+                .ToListAsync();
+
+            var FilmsById = Films.ToDictionary(f => f.Id);
+            var OrderedFilms = PagedFilmIds.Select(id => FilmsById[id]).ToList();
+
+            return (OrderedFilms, TotalCount);
+
+        }
 
         public async Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle)
         {

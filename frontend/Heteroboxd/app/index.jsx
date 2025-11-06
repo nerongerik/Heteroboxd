@@ -12,6 +12,7 @@ const Home = () => {
       <Text>Home</Text>
       <Link style={styles.link} href='/about'>About Heteroboxd</Link>
       <Link style={styles.link} href='/notifications'>Notifications</Link>
+      <Link style={styles.link} href='/profile/019a4942-2d39-772d-9d23-193c77a03c3b'>Other User</Link>
       {
         !user ? (
           <Link style={styles.link} href='/login'>Profile</Link>

@@ -84,6 +84,15 @@ namespace Heteroboxd.Repository
 
         public async Task<User?> GetByIdAsync(Guid Id) =>
             await _context.Users
+                .Include(u => u.Followers)
+                .Include(u => u.Following)
+                .Include(u => u.Blocked)
+                .Include(u => u.Lists)
+                .Include(u => u.Reviews)
+                .Include(u => u.LikedComments)
+                .Include(u => u.LikedLists)
+                .Include(u => u.LikedReviews)
+                .Include(u => u.WatchedFilms)
                 .FirstOrDefaultAsync(u => u.Id == Id && !u.Deleted);
 
         public async Task<Watchlist?> GetUserWatchlistAsync(Guid UserId) =>

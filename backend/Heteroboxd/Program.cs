@@ -29,8 +29,7 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 .AddDefaultTokenProviders();
 
 // --- JWT AUTHENTICATION ---
-var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
-
+var key = Convert.FromBase64String(config["Jwt:Key"]!);
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -38,7 +37,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // set to true in production
+    options.RequireHttpsMetadata = false;
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -103,9 +102,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();

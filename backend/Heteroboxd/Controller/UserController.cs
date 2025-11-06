@@ -22,6 +22,7 @@ namespace Heteroboxd.Controller
         //GET endpoints -> limited public access
 
         [HttpGet]
+        [Authorize(Policy = "RequireAdminTier")]
         public async Task<IActionResult> GetAllUsers()
         {
             //retrives all users from database
@@ -37,13 +38,18 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("{UserId}")]
+        [AllowAnonymous] //Heteroboxd is an open-access app, anyone can search through the community
         public async Task<IActionResult> GetUser(string UserId)
         {
-            //retrives specific user from database
+            _logger.LogInformation($"GetUser endpoint hit with UserId: {UserId}");
             try
             {
                 var User = await _service.GetUser(UserId);
                 return User == null ? NotFound() : Ok(User);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch
             {
@@ -71,9 +77,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user-favorites/{UserId}")]
+        [AllowAnonymous] //must be open so non-logged in users can see other members' profiles
         public async Task<IActionResult> GetUserFavorites(string UserId)
         {
-            //retrives a specific user's favorites from database
+            _logger.LogInformation($"Get Favorites enpoint hit with UserId: {UserId}");
             try
             {
                 var Favorites = await _service.GetFavorites(UserId);
@@ -83,6 +90,10 @@ namespace Heteroboxd.Controller
             {
                 return NotFound();
             }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
             catch
             {
                 return StatusCode(500);
@@ -90,9 +101,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user-relationships/{UserId}")]
+        [AllowAnonymous] //anyone can visit anyone's profile and see their following and followers
         public async Task<IActionResult> GetUserRelationships(string UserId)
         {
-            //retrives a specific user's relationships (followers, following, blocked) from database
+            _logger.LogInformation($"Get Relationships endpoint hit for UserId: {UserId}");
             try
             {
                 var Relationships = await _service.GetRelationships(UserId);
@@ -259,9 +271,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("relationships/{UserId}/{TargetId}")]
+        [Authorize] //need to be logged in to perform CUDs
         public async Task<IActionResult> UpdateUserRelationships(string UserId, string TargetId, [FromQuery] string Action)
         {
-            //actions: ?action=follow-unfollow / block-unblock / add-remove-follower
+            _logger.LogInformation($"Update Relationship endpoint hit with originator {UserId}, target {TargetId}\nAction = {Action}");
             try
             {
                 await _service.UpdateRelationship(UserId, TargetId, Action);
@@ -334,9 +347,10 @@ namespace Heteroboxd.Controller
         //DELETE endpoints -> limited private access, ADMIN can delete any user, user can delete their own account
 
         [HttpDelete("{UserId}")]
+        [Authorize]
         public async Task<IActionResult> DeleteUser(string UserId)
         {
-            //logically deletes a specific user from the database and revokes his tokens
+            _logger.LogInformation($"Delete endpoint hit with UserId: {UserId}");
             try
             {
                 await _service.LogicalDeleteUser(UserId);
@@ -345,6 +359,10 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch
             {

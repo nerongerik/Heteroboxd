@@ -1,18 +1,28 @@
 ﻿using Heteroboxd.Models.Enums;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Primitives;
+using System.Security.Claims;
 
 namespace Heteroboxd.Models.DTO
 {
     public class UserInfoResponse
     {
+        //carries the same information about the user as jwt, different usecase
         public string Id { get; set; }
         public string Name { get; set; }
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
-        public string DateJoined { get; private set; }
         public string Tier { get; set; }
-        public string? TierExpiry { get; set; }
-        public bool IsPatron { get; set; }
+        public string? Expiry { get; set; }
+        public string Patron { get; set; }
+        public string Joined { get; set; }
+        public string ListsCount { get; set; }
+        public string FollowersCount { get; set; }
+        public string FollowingCount { get; set; }
+        public string BlockedCount { get; set; }
+        public string ReviewsCount { get; set; }
+        public string Likes { get; set; }
+        public string Watched { get; set; }
 
         public UserInfoResponse(User User)
         {
@@ -20,13 +30,17 @@ namespace Heteroboxd.Models.DTO
             this.Name = User.Name;
             this.PictureUrl = User.PictureUrl;
             this.Bio = User.Bio;
-            this.DateJoined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
             this.Tier = User.Tier.ToString();
-            if (User.TierExpiry != null)
-            {
-                this.TierExpiry = User.TierExpiry?.ToString("dd/MM/yyyy HH:mm");
-            }
-            this.IsPatron = User.IsPatron;
+            this.Expiry = User.TierExpiry != null ? User.TierExpiry?.ToString("dd/MM/yyyy HH:mm")! : null;
+            this.Patron = User.IsPatron.ToString();
+            this.Joined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
+            this.ListsCount = User.Lists.Count.ToString();
+            this.FollowersCount = User.Followers.Count.ToString();
+            this.FollowingCount = User.Following.Count.ToString();
+            this.BlockedCount = User.Blocked.Count.ToString();
+            this.ReviewsCount = User.Reviews.Count.ToString();
+            this.Likes = (User.LikedComments.Count + User.LikedLists.Count + User.LikedReviews.Count).ToString();
+            this.Watched = User.WatchedFilms.Count.ToString();
         }
     }
 

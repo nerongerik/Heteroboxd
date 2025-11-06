@@ -10,10 +10,12 @@ namespace Heteroboxd.Controller
     public class FilmController : ControllerBase
     {
         private readonly IFilmService _service;
+        private readonly ILogger<FilmController> _logger;
 
-        public FilmController(IFilmService service)
+        public FilmController(IFilmService service, ILogger<FilmController> logger)
         {
             _service = service;
+            _logger = logger;
         }
 
         //GET endpoints -> public access
@@ -33,24 +35,6 @@ namespace Heteroboxd.Controller
                 return StatusCode(500);
             }
         }
-
-        /*
-        [HttpGet]
-        [Authorize(Policy = "RequirePaidTier")]
-        public async Task<IActionResult> ExploreFilms()
-        {
-            //retrives all films from database
-            try
-            {
-                var AllFilms = await _service.GetAllFilms();
-                return Ok(AllFilms);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-        */
 
         [HttpGet("trending")]
         public IActionResult GetTrendingFilms()
@@ -106,13 +90,18 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user/{UserId}")]
-        public async Task<IActionResult> GetUsersWatchedFilms(string UserId)
+        [AllowAnonymous] //public, because anyone can view these on any member's profile page
+        public async Task<IActionResult> GetUsersWatchedFilms(string UserId, int Page = 1, int PageSize = 20)
         {
-            //retrives all films a specific user has watched from database
+            _logger.LogInformation($"Get UWF hit | UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var UsersFilms = await _service.GetUsersWatchedFilms(UserId);
-                return Ok(UsersFilms);
+                var Result = await _service.GetUsersWatchedFilms(UserId, Page, PageSize);
+                return Ok(Result);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch
             {

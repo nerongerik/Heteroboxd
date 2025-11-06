@@ -54,8 +54,18 @@ namespace Heteroboxd.Service
 
         public async Task<UserInfoResponse?> GetUser(string UserId)
         {
+            if (!Guid.TryParse(UserId, out var Id))
+            {
+                _logger.LogError($"Failed to parse UserId: {UserId}; invalid.");
+                throw new ArgumentException();
+            }
             var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            return User == null ? null : new UserInfoResponse(User);
+            if (User == null)
+            {
+                _logger.LogError($"User with Id: {UserId} not found.");
+                return null;
+            }
+            return new UserInfoResponse(User);
         }
 
         public async Task<Watchlist> GetWatchlist(string UserId)
@@ -67,48 +77,65 @@ namespace Heteroboxd.Service
 
         public async Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId)
         {
-            var Favorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
-            if (Favorites == null) throw new KeyNotFoundException();
+            if (!Guid.TryParse(UserId, out var Id))
+            {
+                _logger.LogError($"Failed to parse GUID: {UserId}");
+                throw new ArgumentException();
+            }
+            var Favorites = await _repo.GetUserFavoritesAsync(Id);
+            if (Favorites == null)
+            {
+                _logger.LogError($"Failed to find Favorites of User: {UserId}");
+                throw new KeyNotFoundException();
+            }
 
             FilmInfoResponse? Film1IR = null;
             FilmInfoResponse? Film2IR = null;
             FilmInfoResponse? Film3IR = null;
             FilmInfoResponse? Film4IR = null;
-            FilmInfoResponse? Film5IR = null;
 
             if (Favorites.Film1 != null)
             {
                 var Film1 = await _filmRepo.GetByIdAsync(Favorites.Film1.Value);
-                if (Film1 == null) throw new KeyNotFoundException();
+                if (Film1 == null)
+                {
+                    _logger.LogError($"Failed to find Film: {Favorites.Film1.Value}");
+                    throw new KeyNotFoundException();
+                }
                 Film1IR = new FilmInfoResponse(Film1, false);
             }
 
             if (Favorites.Film2 != null)
             {
                 var Film2 = await _filmRepo.GetByIdAsync(Favorites.Film2.Value);
-                if (Film2 == null) throw new KeyNotFoundException();
+                if (Film2 == null)
+                {
+                    _logger.LogError($"Failed to find Film: {Favorites.Film2.Value}");
+                    throw new KeyNotFoundException();
+                }
                 Film2IR = new FilmInfoResponse(Film2, false);
             }
 
             if (Favorites.Film3 != null)
             {
                 var Film3 = await _filmRepo.GetByIdAsync(Favorites.Film3.Value);
-                if (Film3 == null) throw new KeyNotFoundException();
+                if (Film3 == null)
+                {
+                    _logger.LogError($"Failed to find Film: {Favorites.Film3.Value}");
+                    throw new KeyNotFoundException();
+                }
                 Film3IR = new FilmInfoResponse(Film3, false);
             }
 
             if (Favorites.Film4 != null)
             {
                 var Film4 = await _filmRepo.GetByIdAsync(Favorites.Film4.Value);
-                if (Film4 == null) throw new KeyNotFoundException();
+                if (Film4 == null)
+                {
+                    _logger.LogError($"Failed to find Film: {Favorites.Film4.Value}");
+                    throw new KeyNotFoundException();
+                }
                 Film4IR = new FilmInfoResponse(Film4, false);
-            }
-
-            if (Favorites.Film5 != null)
-            {
-                var Film5 = await _filmRepo.GetByIdAsync(Favorites.Film5.Value);
-                if (Film5 == null) throw new KeyNotFoundException();
-                Film5IR = new FilmInfoResponse(Film5, false);
             }
 
             return new Dictionary<string, FilmInfoResponse?>
@@ -116,19 +143,23 @@ namespace Heteroboxd.Service
                 {"1", Film1IR},
                 {"2", Film2IR},
                 {"3", Film3IR},
-                {"4", Film4IR},
-                {"5", Film5IR}
+                {"4", Film4IR}
             };
         }
 
 
         public async Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId)
         {
+            //non-critical infrastructure, no need for rigorous id-checking
             var _following = await _repo.GetFollowing(Guid.Parse(UserId));
             var _followers = await _repo.GetFollowers(Guid.Parse(UserId));
             var _blocked = await _repo.GetBlocked(Guid.Parse(UserId));
 
-            if (_following == null || _followers == null || _blocked == null) throw new KeyNotFoundException();
+            if (_following == null || _followers == null || _blocked == null)
+            {
+                _logger.LogError("Failed to fetch all relationships");
+                throw new KeyNotFoundException();
+            }
 
             return new Dictionary<string, List<UserInfoResponse>>
             {
@@ -296,17 +327,6 @@ namespace Heteroboxd.Service
                 UserFavorites.Film4 = Film.Id;
             }
 
-            if (string.IsNullOrEmpty(FilmIds[4]))
-            {
-                UserFavorites.Film5 = null;
-            }
-            else
-            {
-                var Film = await _filmRepo.GetByIdAsync(Guid.Parse(FilmIds[4]));
-                if (Film == null) throw new KeyNotFoundException();
-                UserFavorites.Film5 = Film.Id;
-            }
-
             _repo.UpdateFavorites(UserFavorites);
             await _repo.SaveChangesAsync();
         }
@@ -317,14 +337,17 @@ namespace Heteroboxd.Service
             {
                 case ("follow-unfollow"):
                     await _repo.FollowUnfollowAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
+                    _logger.LogInformation("Successfully followed/unfollowed.");
                     await _repo.SaveChangesAsync();
                     break;
                 case ("block-unblock"):
                     await _repo.BlockUnblockAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
+                    _logger.LogInformation("Successfully blocked/unblocked.");
                     await _repo.SaveChangesAsync();
                     break;
                 case ("add-remove-follower"):
                     await _repo.FollowUnfollowAsync(Guid.Parse(TargetId), Guid.Parse(UserId));
+                    _logger.LogInformation("Successfully added/removed follower.");
                     await _repo.SaveChangesAsync();
                     break;
             }
@@ -382,8 +405,17 @@ namespace Heteroboxd.Service
 
         public async Task LogicalDeleteUser(string UserId)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            if (User == null) throw new KeyNotFoundException();
+            if (!Guid.TryParse(UserId, out var Id))
+            {
+                _logger.LogError($"GUID failed to parse {UserId}; malformed.");
+                throw new ArgumentException();
+            }
+            var User = await _repo.GetByIdAsync(Id);
+            if (User == null)
+            {
+                _logger.LogError($"Failed to find User with Id: {UserId}");
+                throw new KeyNotFoundException();
+            }
             User.Deleted = true;
             _repo.Update(User);
             await _repo.SaveChangesAsync();

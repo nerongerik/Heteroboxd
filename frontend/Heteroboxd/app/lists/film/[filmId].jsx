@@ -1,13 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native'
 
-const Comments = () => {
+const FilmsLists = () => {
   return (
     <View>
-      <Text>Comments</Text>
+      <Text>FilmsLists</Text>
     </View>
   )
 }
 
-export default Comments
+export default FilmsLists
 
 const styles = StyleSheet.create({})

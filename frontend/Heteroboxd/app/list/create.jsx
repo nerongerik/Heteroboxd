@@ -1,13 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native'
 
-const Explore = () => {
+const CreateList = () => {
   return (
     <View>
-      <Text>Explore</Text>
+      <Text>CreateList</Text>
     </View>
   )
 }
 
-export default Explore
+export default CreateList
 
 const styles = StyleSheet.create({})

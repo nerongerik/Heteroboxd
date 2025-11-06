@@ -1,13 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native'
 
-const Celebrity = () => {
+const FilmReviews = () => {
   return (
     <View>
-      <Text>Celebrity</Text>
+      <Text>FilmReviews</Text>
     </View>
   )
 }
 
-export default Celebrity
+export default FilmReviews
 
 const styles = StyleSheet.create({})

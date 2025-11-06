@@ -11,7 +11,7 @@ namespace Heteroboxd.Service
         Task<FilmInfoResponse?> GetFilm(string FilmId);
         Task<List<FilmInfoResponse>> GetFilmsByYear(int Year);
         Task<List<FilmInfoResponse>> GetFilmsByCelebrity(string CelebrityId);
-        Task<List<FilmInfoResponse>> GetUsersWatchedFilms(string UserId);
+        Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
         Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search);
         Task UpdateFilm(UpdateFilmRequest FilmRequest);
         Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange);
@@ -21,10 +21,12 @@ namespace Heteroboxd.Service
     public class FilmService : IFilmService
     {
         private readonly IFilmRepository _repo;
+        private readonly ILogger<FilmService> _logger;
 
-        public FilmService(IFilmRepository repo)
+        public FilmService(IFilmRepository repo, ILogger<FilmService> logger)
         {
             _repo = repo;
+            _logger = logger;
         }
 
         public async Task<List<FilmInfoResponse>> GetAllFilms()
@@ -56,10 +58,23 @@ namespace Heteroboxd.Service
             return CelebritiesFilms.Select(f => new FilmInfoResponse(f)).ToList();
         }
 
-        public async Task<List<FilmInfoResponse>> GetUsersWatchedFilms(string UserId)
+        public async Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize)
         {
-            var UsersFilms = await _repo.GetByUserAsync(Guid.Parse(UserId));
-            return UsersFilms.Select(f => new FilmInfoResponse(f, false)).ToList();
+            if (!Guid.TryParse(UserId, out var Id))
+            {
+                _logger.LogError($"GUID failed to parse {UserId}; malformed.");
+                throw new ArgumentException();
+            }
+
+            var (Films, TotalCount) = await _repo.GetByUserAsync(Id, Page, PageSize);
+
+            return new PagedFilmInfoResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Films = Films.Select(f => new FilmInfoResponse(f, false)).ToList()
+            };
         }
 
         public async Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search)

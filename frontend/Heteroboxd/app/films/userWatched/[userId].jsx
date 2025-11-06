@@ -1,13 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
+import React from 'react'
 
-const List = () => {
+const UserWatchedFilms = () => {
   return (
     <View>
-      <Text>List</Text>
+      <Text>UserWatchedFilms</Text>
     </View>
   )
 }
 
-export default List
+export default UserWatchedFilms
 
 const styles = StyleSheet.create({})

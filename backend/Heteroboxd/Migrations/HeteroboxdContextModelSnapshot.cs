@@ -484,9 +484,6 @@ namespace Heteroboxd.Migrations
                     b.Property<Guid?>("Film4")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("Film5")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -703,42 +700,27 @@ namespace Heteroboxd.Migrations
                     b.Property<Guid>("FollowersId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("FollowingId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("FollowersId", "UserId");
+                    b.HasKey("FollowersId", "FollowingId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("FollowingId");
 
-                    b.ToTable("UserFollowers", (string)null);
+                    b.ToTable("UserRelationships", (string)null);
                 });
 
             modelBuilder.Entity("UserUser1", b =>
                 {
-                    b.Property<Guid>("FollowingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("User1Id")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("FollowingId", "User1Id");
-
-                    b.HasIndex("User1Id");
-
-                    b.ToTable("UserFollowing", (string)null);
-                });
-
-            modelBuilder.Entity("UserUser2", b =>
-                {
                     b.Property<Guid>("BlockedId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("User2Id")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("BlockedId", "User2Id");
+                    b.HasKey("BlockedId", "UserId");
 
-                    b.HasIndex("User2Id");
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserBlocked", (string)null);
                 });
@@ -964,27 +946,12 @@ namespace Heteroboxd.Migrations
 
                     b.HasOne("Heteroboxd.Models.User", null)
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("FollowingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
             modelBuilder.Entity("UserUser1", b =>
-                {
-                    b.HasOne("Heteroboxd.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("FollowingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Heteroboxd.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("User1Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("UserUser2", b =>
                 {
                     b.HasOne("Heteroboxd.Models.User", null)
                         .WithMany()
@@ -994,7 +961,7 @@ namespace Heteroboxd.Migrations
 
                     b.HasOne("Heteroboxd.Models.User", null)
                         .WithMany()
-                        .HasForeignKey("User2Id")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
