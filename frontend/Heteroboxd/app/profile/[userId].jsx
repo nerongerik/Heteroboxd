@@ -1,5 +1,5 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal } from 'react-native';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ import GlowingText from '../../components/glowingText';
 import { FavoritePoster } from '../../components/favoritePoster';
 import { Snackbar } from 'react-native-paper';
 import * as auth from '../../helpers/auth';
+import Foundation from '@expo/vector-icons/Foundation';
 
 const Profile = () => {
   const { userId } = useLocalSearchParams();
@@ -19,6 +20,7 @@ const Profile = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
+  const [pronoun, setPronoun] = useState(["he", "him", "his"])
   const [result, setResult] = useState(-1);
   const [error, setError] = useState("");
 
@@ -37,6 +39,10 @@ const Profile = () => {
 
   const [following, setFollowing] = useState(false);
 
+  //context menu
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [contextMenuMessage, setContextMenuMessage] = useState("");
+
   const loadProfileData = async () => {
     setRefreshing(true);
 
@@ -49,11 +55,12 @@ const Profile = () => {
         const json = await res.json();
         console.log(json)
         setData({ 
-          name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, tier: json.tier,
-          expiry: json.expiry, patron: json.patron === 'true', joined: parseDate(json.joined), listsCount: json.listsCount,
+          name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
+          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), listsCount: json.listsCount,
           followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
-          reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched 
+          reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
+        if (json.gender === 'female' || json.gender === 'Female') setPronoun(['she', 'her', 'hers']);
       } else if (res.status === 404) {
         setError("This user no longer exists!");
         setResult(404);
@@ -112,7 +119,6 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    console.log(width);
     loadProfileData();
   }, [userId]);
 
@@ -141,6 +147,7 @@ const Profile = () => {
 
 
   function parseDate(date) {
+    if (!date) return date;
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const nums = date.split(" ")[0].split("/");
     const day = nums[0]; const year = nums[2];
@@ -203,7 +210,7 @@ const Profile = () => {
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
-        paddingHorizontal: "5%",
+        paddingHorizontal: 5,
         backgroundColor: Colors.background,
       }}>
         <LoadingResponse visible={true} />
@@ -223,6 +230,34 @@ const Profile = () => {
   //compute poster width:
   const posterWidth = (maxRowWidth - spacing * 4) / 4;
   const posterHeight = posterWidth * (3 / 2); //maintain 2:3 aspect
+
+  //context menu
+  const handleNamePressOrHover = () => {
+    let message = "";
+
+    if (isAdmin) {
+      message = 'This person is a community moderator. Learn how you can join our moderation team ';
+      setContextMenuMessage(message);
+      setContextMenuVisible(true);
+      return;
+    }
+    if (isDonor) {
+      if (isOwnProfile) {
+        const expiryDate = new Date(data.expiry);
+        const now = new Date();
+        const diffDays = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+        message = `Your DONOR status expires in ${diffDays} days. You can extend that `;
+      } else {
+        if (!data.patron) {
+          message = `This person is 🐐ed. Learn how you can join ${pronoun[1]} `;
+        } else {
+          message = `This person is 🐐ed — forever. Learn how you can join ${pronoun[1]} `;
+        }
+      }
+      setContextMenuMessage(message);
+      setContextMenuVisible(true);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -306,16 +341,31 @@ const Profile = () => {
                 )
               )}
           </View>
+          
           <View style={styles.inline}>
             {isDonor ? (
-              <GlowingText color={Colors.heteroboxd}>{data.name}</GlowingText>
+              <Pressable
+                onPress={handleNamePressOrHover}
+              >
+                <GlowingText color={Colors.heteroboxd}>{data.name}</GlowingText>
+              </Pressable>
             ) : isAdmin ? (
-              <GlowingText color={Colors._heteroboxd}>{data.name}</GlowingText>
+              <Pressable
+                onPress={handleNamePressOrHover}
+              >
+                <GlowingText color={Colors._heteroboxd}>{data.name}</GlowingText>
+              </Pressable>
             ) : (
               <Text style={styles.username}>{data.name}</Text>
             )}
             {data.patron && (
-              <GlowingText color={Colors.heteroboxd}><MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd} style={{ position: 'absolute', right: -40 }}/></GlowingText>
+              <Pressable
+                onPress={handleNamePressOrHover}
+              >
+              <GlowingText color={Colors.heteroboxd}>
+                <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd} style={{ position: 'absolute', right: -40 }}/>
+              </GlowingText>
+              </Pressable>
             )}
           </View>
         </View>
@@ -323,13 +373,15 @@ const Profile = () => {
         <View style={{marginVertical: 5}} />
 
         <View style={styles.bio}>
+          {
+            data.gender === 'male' || data.gender === 'Male' ? (
+              <Foundation name="male-symbol" size={24} color={Colors.male} />
+            ) : (
+              <Foundation name="female-symbol" size={24} color={Colors.female} />
+            )
+          }
           <Text style={styles.text}>{data.bio}</Text>
         </View>
-
-        {/* DECORATIVE TAPS/HOVERS FOR GLOWING PROFILES"
-        'this user is a community moderator'
-        'this user is a gigachad (see sponsor details)
-        if own profile -> 'days until donor tier expiry: x dats'*/}
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
@@ -498,6 +550,43 @@ const Profile = () => {
       >
         {snackbarMessage}
       </Snackbar>
+
+      {/*context menu*/}
+      {contextMenuVisible && (
+        <Modal
+          transparent
+          visible={contextMenuVisible}
+          animationType="fade"
+          onRequestClose={() => setContextMenuVisible(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)"
+            }}
+            onPress={() => setContextMenuVisible(false)}
+          >
+            <View style={{
+              backgroundColor: Colors.card,
+              padding: 15,
+              borderRadius: 3,
+              maxWidth: Platform.OS === 'web' ? Math.min(1000, width-50) : width-50,
+            }}>
+              <Text style={{ color: Colors.text, textAlign: 'center', fontSize: 16}}>
+                {contextMenuMessage}
+                { isAdmin ? (
+                  <Link style={styles.link} href={'/contact'}>here</Link>
+                ) : (
+                  <Link style={styles.link} href={'/sponsor'}>here</Link>
+                )}
+                .
+              </Text>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -604,5 +693,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "400",
     textAlign: "right",
+  },
+  link: {
+    color: Colors.text_link,
+    fontWeight: "600",
+    fontSize: 16
   },
 });

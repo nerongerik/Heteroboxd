@@ -17,6 +17,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [profileUri, setProfileUri] = useState("");
+  const [gender, setGender] = useState(-1); //0 for male, 1 for female
   const [response, setResponse] = useState(-1);
   const [message, setMessage] = useState("");
   const [popupVisible, setPopupVisible] = useState(false);
@@ -55,7 +56,8 @@ const Register = () => {
         Email: email,
         Password: password,
         PictureUrl: profileUri,
-        Bio: bio
+        Bio: bio,
+        Gender: gender === 0 ? 'male' : 'female',
       })
     }).then((res) => {
       if (res.status === 200) {
@@ -127,10 +129,28 @@ const Register = () => {
             placeholderTextColor={Colors.text}
           />
 
+          <View style={styles.genderContainer}>
+            <TouchableOpacity
+              style={styles.genderOption}
+              onPress={() => setGender(0)}
+            >
+              <View style={[styles.radioCircle, gender === 0 && styles.radioSelected]} />
+              <Text style={styles.genderText}>Male</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.genderOption}
+              onPress={() => setGender(1)}
+            >
+              <View style={[styles.radioCircle, gender === 1 && styles.radioSelected]} />
+              <Text style={styles.genderText}>Female</Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
-            style={[styles.button, (email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword) && { opacity: 0.5 }]}
+            style={[styles.button, (email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword || gender === -1) && { opacity: 0.5 }]}
             onPress={handleRegister}
-            disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword}
+            disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword || gender === -1}
           >
             <Text style={styles.buttonText}>Register</Text>
           </TouchableOpacity>
@@ -185,4 +205,33 @@ const styles = StyleSheet.create({
   buttonText: { color: Colors.text_button, fontWeight: '600' },
   footerText: { textAlign: 'center', marginTop: 20, fontSize: 14, color: Colors.text },
   link: { color: Colors.text_link, fontWeight: '600' },
+  genderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 15,
+    alignSelf: 'center',
+  },
+  genderOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10
+  },
+  radioCircle: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.border_color,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  radioSelected: {
+    borderColor: Colors.border_color,
+    backgroundColor: Colors.button,
+  },
+  genderText: {
+    color: Colors.text_input,
+    fontSize: 14,
+  },
 });

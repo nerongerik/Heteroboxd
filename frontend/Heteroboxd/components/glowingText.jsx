@@ -78,7 +78,7 @@ export default GlowingText;
 
 const styles = StyleSheet.create({
   glowBase: {
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: "700",
     marginBottom: 30,
     textAlign: "center",
