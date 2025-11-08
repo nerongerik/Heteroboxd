@@ -50,7 +50,7 @@ namespace Heteroboxd.Service
                 throw new ArgumentException();
             }
 
-            var User = new User(Request.Name, Request.Email, Request.PictureUrl, Request.Bio);
+            var User = new User(Request.Name, Request.Email, Request.PictureUrl, Request.Bio, Request.Gender);
             User.Watchlist = new Watchlist(User.Id);
             User.Favorites = new UserFavorites(User.Id);
 
@@ -157,6 +157,7 @@ namespace Heteroboxd.Service
                 new Claim("name", User.Name!),
                 new Claim("pictureUrl", User.PictureUrl!),
                 new Claim("bio", User.Bio ?? ""),
+                new Claim("gender", User.Gender.ToString()),
                 new Claim("tier", User.Tier.ToString()),
                 new Claim("expiry", User.TierExpiry?.ToString("dd/MM/yyyy HH:mm") ?? ""),
                 new Claim("patron", User.IsPatron.ToString()),

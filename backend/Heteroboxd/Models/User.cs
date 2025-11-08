@@ -8,6 +8,7 @@ namespace Heteroboxd.Models
         public string Name { get; set; }
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
+        public Gender Gender { get; private set; }
         public Tier Tier { get; set; } //current tier
         public DateTime? TierExpiry { get; set; } //null if free tier
         public bool IsPatron { get; set; } //indicates if user ever donated >$50 at once
@@ -47,13 +48,14 @@ namespace Heteroboxd.Models
             WatchedFilms = [];
         }
 
-        public User(string Name, string Email, string? PictureUrl, string? Bio) : this()
+        public User(string Name, string Email, string? PictureUrl, string? Bio, string Gender) : this()
         {
             this.UserName = Email;
             this.Email = Email;
             this.Name = Name;
             this.PictureUrl = PictureUrl ?? "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
             this.Bio = Bio;
+            this.Gender = Gender == "male" ? Enums.Gender.Male : Enums.Gender.Female;
         }
     }
 }

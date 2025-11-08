@@ -7,6 +7,7 @@
         public string Password { get; set; }
         public string? PictureUrl { get; set; }
         public string? Bio { get; set; }
+        public string Gender { get; set; }
     }
 
     public class LoginRequest()

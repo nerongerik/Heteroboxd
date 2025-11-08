@@ -12,6 +12,7 @@ namespace Heteroboxd.Models.DTO
         public string Name { get; set; }
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
+        public string? Gender { get; set; }
         public string Tier { get; set; }
         public string? Expiry { get; set; }
         public string Patron { get; set; }
@@ -30,6 +31,7 @@ namespace Heteroboxd.Models.DTO
             this.Name = User.Name;
             this.PictureUrl = User.PictureUrl;
             this.Bio = User.Bio;
+            this.Gender = User.Gender.ToString();
             this.Tier = User.Tier.ToString();
             this.Expiry = User.TierExpiry != null ? User.TierExpiry?.ToString("dd/MM/yyyy HH:mm")! : null;
             this.Patron = User.IsPatron.ToString();

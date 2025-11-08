@@ -400,6 +400,10 @@ namespace Heteroboxd.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsPatron")
                         .HasColumnType("boolean");
 
