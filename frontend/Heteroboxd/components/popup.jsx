@@ -6,7 +6,7 @@ const Popup = ({ visible, message, onClose, confirm, onConfirm }) => {
     <Modal
       transparent={false}
       visible={visible}
-      animationType="fade"
+      animationType="none"
     >
       <View style={styles.overlay}>
         <View style={styles.popup}>

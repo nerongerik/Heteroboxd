@@ -48,13 +48,12 @@ namespace Heteroboxd.Repository
         Task<User?> GetFollowing(Guid UserId);
         Task<User?> GetFollowers(Guid UserId);
         Task<User?> GetBlocked(Guid UserId);
-        Task<List<Report>> GetUserReportsAsync(Guid UserId);
         Task<User?> GetUserLikedReviewsAsync(Guid UserId);
         Task<User?> GetUserLikedCommentsAsync(Guid UserId);
         Task<User?> GetUserLikedListsAsync(Guid UserId);
         Task<List<User>> SearchAsync(string Name);
-        void CreateReport(Report Report);
         void Update(User User);
+        Task ReportUserEfCore7Async(Guid UserId);
         void UpdateWatchlist(Watchlist Watchlist);
         void UpdateFavorites(UserFavorites Favorites);
         void CreateUserWatchedFilm(UserWatchedFilm WatchedFilm);
@@ -123,11 +122,6 @@ namespace Heteroboxd.Repository
                 .Include(u => u.Blocked)
                 .FirstOrDefaultAsync(u => u.Id == UserId && !u.Deleted);
 
-        public async Task<List<Report>> GetUserReportsAsync(Guid UserId) =>
-            await _context.Reports
-                .Where(r => r.TargetId == UserId && !r.Deleted)
-                .ToListAsync();
-
         public async Task<User?> GetUserLikedReviewsAsync(Guid UserId) =>
             await _context.Users
                 .Include(u => u.LikedReviews)
@@ -154,11 +148,19 @@ namespace Heteroboxd.Repository
                 .ToListAsync();
         }
 
-        public void CreateReport(Report Report) =>
-            _context.Reports.Add(Report);
-
         public void Update(User User) =>
             _context.Users.Update(User);
+
+        public async Task ReportUserEfCore7Async(Guid UserId)
+        {
+            var Rows = await _context.Users
+                .Where(u => u.Id == UserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    u => u.Flags,
+                    u => u.Flags + 1
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
 
         public void UpdateWatchlist(Watchlist Watchlist) =>
             _context.Watchlists.Update(Watchlist);

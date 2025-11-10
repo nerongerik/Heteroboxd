@@ -156,12 +156,8 @@ namespace Heteroboxd.Service
                 new Claim(JwtRegisteredClaimNames.Email, User.Email!),
                 new Claim("name", User.Name!),
                 new Claim("pictureUrl", User.PictureUrl!),
-                new Claim("bio", User.Bio ?? ""),
-                new Claim("gender", User.Gender.ToString()),
                 new Claim("tier", User.Tier.ToString()),
-                new Claim("expiry", User.TierExpiry?.ToString("dd/MM/yyyy HH:mm") ?? ""),
                 new Claim("patron", User.IsPatron.ToString()),
-                new Claim("joined", User.DateJoined.ToString("dd/MM/yyyy HH:mm"))
             };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);

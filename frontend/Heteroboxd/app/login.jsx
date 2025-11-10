@@ -64,7 +64,7 @@ const Login = () => {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
-            placeholderTextColor={Colors.text}
+            placeholderTextColor={Colors.text_placeholder}
           />
 
           <View style={styles.inputContainer}>
@@ -74,7 +74,7 @@ const Login = () => {
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
-              placeholderTextColor={Colors.text}
+              placeholderTextColor={Colors.text_placeholder}
             />
             <TouchableOpacity onPress={() => setShowPassword(prev => !prev)} style={styles.iconBtn}>
               <Feather name={showPassword ? "eye-off" : "eye"} size={22} color={Colors.text_input} />

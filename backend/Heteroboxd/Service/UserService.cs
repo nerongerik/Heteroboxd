@@ -1,9 +1,6 @@
 ﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 using Heteroboxd.Models;
-using Heteroboxd.Models.Enums;
-using System.Diagnostics.Eventing.Reader;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.AspNetCore.Identity;
 
 namespace Heteroboxd.Service
@@ -15,10 +12,9 @@ namespace Heteroboxd.Service
         Task<Watchlist> GetWatchlist(string UserId);
         Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId);
         Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId); //example: {"following": [User1, User2, User3], "followers": [User2], "blocked": [User4, User5]}
-        Task<List<Report>> GetReports(string UserId);
         Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
-        Task ReportUser(ReportUserRequest ReportRequest);
+        Task ReportUserEfCore7Async(string UserId);
         Task UpdateUser(UpdateUserRequest UserUpdate);
         Task VerifyUser(String UserId, String Token);
         Task UpdateWatchlist(string UserId, string FilmId);
@@ -59,7 +55,7 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Failed to parse UserId: {UserId}; invalid.");
                 throw new ArgumentException();
             }
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var User = await _repo.GetByIdAsync(Id);
             if (User == null)
             {
                 _logger.LogError($"User with Id: {UserId} not found.");
@@ -169,13 +165,6 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<List<Report>> GetReports(string UserId)
-        {
-            var Reports = await _repo.GetUserReportsAsync(Guid.Parse(UserId));
-            if (Reports == null) throw new KeyNotFoundException();
-            return Reports;
-        }
-
         public async Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId)
         {
             var _likedReviews = await _repo.GetUserLikedReviewsAsync(Guid.Parse(UserId));
@@ -224,17 +213,14 @@ namespace Heteroboxd.Service
             return Users.Select(u => new UserInfoResponse(u)).ToList();
         }
 
-        public async Task ReportUser(ReportUserRequest ReportRequest)
-        {
-            Report Report = new Report((Reason)Enum.Parse(typeof(Reason), ReportRequest.Reason, true), ReportRequest.Description, Guid.Parse(ReportRequest.TargetId));
-            _repo.CreateReport(Report);
-            await _repo.SaveChangesAsync();
-        }
-
         public async Task UpdateUser(UpdateUserRequest UserUpdate)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserUpdate.UserId));
-            if (User == null) throw new KeyNotFoundException();
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserUpdate.UserId)); //no need for rigorous id-checking, as users are requires to be logged in to update their profile
+            if (User == null)
+            {
+                _logger.LogError($"Failed to update User with Id: {UserUpdate.UserId}; not found"); //should never happen
+                throw new KeyNotFoundException();
+            }
             User.Name = UserUpdate.Name ?? User.Name;
             User.Bio = UserUpdate.Bio ?? User.Bio;
             User.PictureUrl = UserUpdate.PictureUrl ?? User.PictureUrl;
@@ -266,6 +252,16 @@ namespace Heteroboxd.Service
                 throw new Exception();
             }
             
+        }
+
+        public async Task ReportUserEfCore7Async(string UserId)
+        {
+            if (!Guid.TryParse(UserId, out var Id))
+            {
+                _logger.LogError($"GUID failed to parse {UserId}; malformed.");
+                throw new ArgumentException();
+            }
+            await _repo.ReportUserEfCore7Async(Id);
         }
 
         public async Task UpdateWatchlist(string UserId, string FilmId)

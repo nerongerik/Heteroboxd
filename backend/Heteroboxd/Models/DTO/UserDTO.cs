@@ -17,6 +17,7 @@ namespace Heteroboxd.Models.DTO
         public string? Expiry { get; set; }
         public string Patron { get; set; }
         public string Joined { get; set; }
+        public int Flags { get; set; }
         public string ListsCount { get; set; }
         public string FollowersCount { get; set; }
         public string FollowingCount { get; set; }
@@ -36,6 +37,7 @@ namespace Heteroboxd.Models.DTO
             this.Expiry = User.TierExpiry != null ? User.TierExpiry?.ToString("dd/MM/yyyy HH:mm")! : null;
             this.Patron = User.IsPatron.ToString();
             this.Joined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
+            this.Flags = User.Flags;
             this.ListsCount = User.Lists.Count.ToString();
             this.FollowersCount = User.Followers.Count.ToString();
             this.FollowingCount = User.Following.Count.ToString();
@@ -60,13 +62,6 @@ namespace Heteroboxd.Models.DTO
         public string? ReviewId { get; set; }
         public string? CommentId { get; set; }
         public string? ListId { get; set; }
-    }
-
-    public class ReportUserRequest
-    {
-        public string Reason { get; set; }
-        public string? Description { get; set; }
-        public string TargetId { get; set; }
     }
 
     public class DonateRequest

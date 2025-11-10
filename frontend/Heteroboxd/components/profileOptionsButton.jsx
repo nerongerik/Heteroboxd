@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { Colors } from '../constants/colors';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -13,6 +13,8 @@ import { BaseUrl } from '../constants/api';
 import * as auth from '../helpers/auth';
 import Popup from './popup';
 import LoadingResponse from './loadingResponse';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 const ProfileOptionsButton = ({ userId }) => {
   const { user, logout, isValidSession } = useAuth();
@@ -25,13 +27,44 @@ const ProfileOptionsButton = ({ userId }) => {
   const [result, setResult] = useState(-1);
 
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [reportConfirm, setReportConfirm] = useState(false);
+  const [blockConfirm, setBlockConfirm] = useState(false);
+
+  const [blocked, setBlocked] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
     if (!user) setOther(true);
     else setOther(user.userId !== userId);
-  }, []);
+  }, [userId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user || !other) return;
+    
+      let isActive = true;
+    
+      (async () => {
+        try {
+          const res = await fetch(`${BaseUrl.api}/users/user-relationships/${user.userId}`);
+          if (!isActive) return;
+        
+          if (res.status === 200) {
+            const json = await res.json();
+            const blockedSet = new Set(json.blocked.map(uir => uir.id));
+            setBlocked(blockedSet.has(userId));
+          }
+        } catch {
+          console.log('failure.');
+        }
+      })();
+    
+      return () => {
+        isActive = false; // clean up so state isn't set after unmount
+      };
+    }, [user, userId, other])
+  );
 
   const openMenu = () => {
     setMenuShown(true);
@@ -101,31 +134,69 @@ const ProfileOptionsButton = ({ userId }) => {
     }
   }
   async function handleEdit() {
-    if (!(isValidSession)) {
-      //fail
+    if (!(isValidSession())) {
+      setMessage("Session invalid - you cannot edit your account.")
+      setResult(401);
     } else {
-      //todo
+      router.replace(`/profile/edit/${userId}`);
     }
   }
   async function handleShare() {
-    if (!(isValidSession)) {
+    if (!(isValidSession())) {
       //fail
     } else {
       //todo
     }
   }
   async function handleReport() {
-    if (!(isValidSession)) {
-      //fail
+    if (!(isValidSession())) {
+      setMessage("Session invalid - you cannot report this account.")
+      setResult(401);
     } else {
-      //todo
+      const jwt = await auth.getJwt();
+      await fetch(`${BaseUrl.api}/users/report/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${jwt}`
+        }
+      }).then((res) => {
+        if (res.status === 200) {
+          setMessage("You have successfully reported this user.");
+          setResult(400); //to make the popup show, who cares lol
+        } else if (res.status === 400 || res.status === 404) {
+          setMessage("The user you are trying to report doesn't seem to exist, or your request was malformed.");
+          setResult(404);
+        } else {
+          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
+          setResult(500);
+        }
+      })
     }
   }
   async function handleBlock() {
-    if (!(isValidSession)) {
-      //fail
+    if (!(isValidSession())) {
+      setMessage("Session invalid - you cannot block this account.")
+      setResult(401);
     } else {
-      //todo
+      const jwt = await auth.getJwt();
+      await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=block-unblock`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${jwt}`
+        }
+      }).then((res) => {
+        if (res.status === 200) {
+          blocked ? setMessage('You have successfully unblocked this user') : setMessage('You have successfully blocked this user.');
+          setResult(400); //to make the popup show, who cares lol
+          setBlocked(prev => !prev);
+        } else if (res.status === 404) {
+          setMessage("The user you are trying to block no longer exists.");
+          setResult(404);
+        } else {
+          setMessage("Something went wrong. Please contact Heteroboxd support for more information.")
+          setResult(500);
+        }
+      });
     }
   }
 
@@ -143,12 +214,20 @@ const ProfileOptionsButton = ({ userId }) => {
         <Animated.View style={[styles.menu, { transform: [{ translateY }] }]}>
           {other ? (
             <>
-              <TouchableOpacity style={styles.option} onPress={handleReport}>
+              <TouchableOpacity style={styles.option} onPress={() => {setReportConfirm(true)}}>
                 <Text style={styles.optionText}>Report User  <Octicons name="report" size={18} color={Colors.text} /></Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.option} onPress={handleBlock}>
-                <Text style={styles.optionText}>Block User  <Entypo name="block" size={18} color={Colors.text} /></Text>
-              </TouchableOpacity>
+              {
+                blocked ? (
+                  <TouchableOpacity style={styles.option} onPress={handleBlock}>
+                    <Text style={styles.optionText}>Unblock User  <Entypo name="lock-open" size={18} color={Colors.text} /></Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={styles.option} onPress={handleBlock}>
+                    <Text style={styles.optionText}>Block User  <Entypo name="block" size={18} color={Colors.text} /></Text>
+                  </TouchableOpacity>
+                )
+              }
             </>
           ) : (
             <>
@@ -161,7 +240,6 @@ const ProfileOptionsButton = ({ userId }) => {
               <TouchableOpacity style={styles.option} onPress={handleLogout}>
                 <Text style={styles.optionText}>Sign Out  <FontAwesome name="sign-out" size={18} color={Colors.text} /></Text>
               </TouchableOpacity>
-              {/* only delete account need have a confirmation dialog, since it's the only one that cannot be undone*/}
               <TouchableOpacity style={styles.option} onPress={() => {setDeleteConfirm(true)}}>
                 <Text style={styles.optionText}>Delete Profile  <AntDesign name="user-delete" size={18} color={Colors.text} /></Text>
               </TouchableOpacity>
@@ -177,6 +255,14 @@ const ProfileOptionsButton = ({ userId }) => {
 
       <Popup visible={deleteConfirm} message={"This action cannot be undone, and you may be unable to make a new account with the same e-mail until the next database purge. Are you sure you want to delete your account?"}
         onClose={() => {setDeleteConfirm(false)}} confirm={true} onConfirm={() => {handleDelete()}}
+      />
+
+      <Popup visible={reportConfirm} message={<Text>Are you sure this user has violated{' '}<Link style={styles.link} href="/guidelines">Heteroboxd community guidelines</Link>?</Text>}
+        onClose={() => {setReportConfirm(false)}} confirm={true} onConfirm={() => {handleReport()}}
+      />
+
+      <Popup visible={blockConfirm} message={"Are you sure you want to block this user? Interactions will be disabled unless you unblock this account."}
+        onClose={() => {setBlockConfirm(false)}} confirm={true} onConfirm={() => {handleBlock()}}
       />
 
       <LoadingResponse visible={result === 0} />
@@ -206,5 +292,9 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     color: Colors.text,
+  },
+  link: {
+    color: Colors.text_link,
+    fontWeight: "600",
   },
 });
