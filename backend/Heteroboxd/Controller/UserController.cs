@@ -1,7 +1,6 @@
 ﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Heteroboxd.Controller
@@ -120,25 +119,6 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-reports/{UserId}")]
-        public async Task<IActionResult> GetUserReports(string UserId)
-        {
-            //retrives a specific user's reports from database - ADMIN ACCESS ONLY
-            try
-            {
-                var Reports = await _service.GetReports(UserId);
-                return Ok(Reports);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("user-likes/{UserId}")]
         public async Task<IActionResult> GetUserLikes(string UserId)
         {
@@ -173,29 +153,13 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //POST endpoints -> public access
-
-        [HttpPost("report")]
-        public async Task<IActionResult> ReportUser([FromBody] ReportUserRequest ReportRequest)
-        {
-            //creates a report against a user
-            try
-            {
-                await _service.ReportUser(ReportRequest);
-                return Ok();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         //PUT endpoints -> protected, user can only modify their own data
 
         [HttpPut]
+        [Authorize] //need to be logged in to perform CUDs
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest Request)
         {
-            //updates a specific user's data in the database
+            _logger.LogInformation($"Update endpoint hit with UserId: {Request.UserId}");
             try
             {
                 await _service.UpdateUser(Request);
@@ -221,6 +185,30 @@ namespace Heteroboxd.Controller
                 await _service.VerifyUser(Request.UserId, Request.Token);
                 _logger.LogInformation($"Verified User with Id: {Request.UserId}");
                 return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPut("report/{UserId}")]
+        [Authorize] //need to be logged in to report users
+        public async Task<IActionResult> ReportUser(string UserId)
+        {
+            _logger.LogInformation($"Report endpoint hit with UserId: {UserId}");
+            try
+            {
+                await _service.ReportUserEfCore7Async(UserId);
+                return Ok();
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch (KeyNotFoundException)
             {

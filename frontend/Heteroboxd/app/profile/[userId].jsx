@@ -37,6 +37,7 @@ const Profile = () => {
   const [recent, setRecent] = useState([]);
   const [recentResult, setRecentResult] = useState(-1);
 
+  const [blocked, setBlocked] = useState(false);
   const [following, setFollowing] = useState(false);
 
   //context menu
@@ -51,26 +52,28 @@ const Profile = () => {
     try {
       const res = await fetch(`${BaseUrl.api}/users/${userId}`);
       if (res.status === 200) {
-        setResult(200);
         const json = await res.json();
-        console.log(json)
         setData({ 
           name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
-          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), listsCount: json.listsCount,
+          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), flags: json.flags, listsCount: json.listsCount,
           followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
           reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
         if (json.gender === 'female' || json.gender === 'Female') setPronoun(['she', 'her', 'hers']);
+        setResult(200);
       } else if (res.status === 404) {
         setError("This user no longer exists!");
         setResult(404);
+        setData({})
       } else {
         setError("Something went wrong! Please contact Heteroboxd support for more information!");
         setResult(500);
+        setData({})
       }
     } catch {
       setError("Unable to connect to Heteroboxd. Please check your internet connection!");
       setResult(500);
+      setData({})
     }
 
     // --- FETCH FAVORITES ---
@@ -119,10 +122,6 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    loadProfileData();
-  }, [userId]);
-
-  useEffect(() => {
     let loaded = true;
     if (!user || user.userId === userId) return;
     (async () => {
@@ -132,6 +131,11 @@ const Profile = () => {
         
         if (res.status === 200) {
           const json = await res.json();
+          const blockedSet = new Set(json['blocked'].map(uir => uir.id));
+          if (blockedSet.has(userId)) {
+            setBlocked(true);
+            return;
+          }
           const followingSet = new Set(json['following'].map(uir => uir.id));
           if (followingSet.has(userId)) setFollowing(true);
         } else {
@@ -143,6 +147,12 @@ const Profile = () => {
     })();
 
     return () => { loaded = false; };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!blocked) {
+      loadProfileData();
+    }
   }, [userId]);
 
 
@@ -204,6 +214,20 @@ const Profile = () => {
     });
   }
 
+  if (blocked) {
+    return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        paddingHorizontal: 5,
+        backgroundColor: Colors.background,
+      }}>
+        <Text style={styles.text}>You have blocked this user.</Text>
+      </View>
+    );
+  }
+
   if (!data) {
     return (
       <View style={{
@@ -232,32 +256,20 @@ const Profile = () => {
   const posterHeight = posterWidth * (3 / 2); //maintain 2:3 aspect
 
   //context menu
-  const handleNamePressOrHover = () => {
+  const handlePress = () => {
     let message = "";
 
     if (isAdmin) {
-      message = 'This person is a community moderator. Learn how you can join our moderation team ';
-      setContextMenuMessage(message);
-      setContextMenuVisible(true);
-      return;
+      message = "This person is a community moderator. Learn how you can join our moderation team ";
+    } else if (data.patron) {
+      message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
+    } else if (isDonor) {
+      message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
     }
-    if (isDonor) {
-      if (isOwnProfile) {
-        const expiryDate = new Date(data.expiry);
-        const now = new Date();
-        const diffDays = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-        message = `Your DONOR status expires in ${diffDays} days. You can extend that `;
-      } else {
-        if (!data.patron) {
-          message = `This person is 🐐ed. Learn how you can join ${pronoun[1]} `;
-        } else {
-          message = `This person is 🐐ed — forever. Learn how you can join ${pronoun[1]} `;
-        }
-      }
-      setContextMenuMessage(message);
-      setContextMenuVisible(true);
-    }
-  }
+
+    setContextMenuMessage(message);
+    setContextMenuVisible(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -341,31 +353,32 @@ const Profile = () => {
                 )
               )}
           </View>
-          
-          <View style={styles.inline}>
+
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            {data.patron && (
+              <Pressable
+                onPress={handlePress}
+                style={{marginBottom: -5}}
+              >
+              <GlowingText color={Colors.heteroboxd}>
+                <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd}/>
+              </GlowingText>
+              </Pressable>
+            )}
             {isDonor ? (
               <Pressable
-                onPress={handleNamePressOrHover}
+                onPress={handlePress}
               >
                 <GlowingText color={Colors.heteroboxd}>{data.name}</GlowingText>
               </Pressable>
             ) : isAdmin ? (
               <Pressable
-                onPress={handleNamePressOrHover}
+                onPress={handlePress}
               >
                 <GlowingText color={Colors._heteroboxd}>{data.name}</GlowingText>
               </Pressable>
             ) : (
               <Text style={styles.username}>{data.name}</Text>
-            )}
-            {data.patron && (
-              <Pressable
-                onPress={handleNamePressOrHover}
-              >
-              <GlowingText color={Colors.heteroboxd}>
-                <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd} style={{ position: 'absolute', right: -40 }}/>
-              </GlowingText>
-              </Pressable>
             )}
           </View>
         </View>
@@ -525,6 +538,7 @@ const Profile = () => {
               </TouchableOpacity>
             );
           })}
+          <Text style={[styles.text, {marginTop: 50}]}>{data.joined}</Text>
         </View>
       </ScrollView>
       <Popup visible={result === 400 || result === 404 || result === 500} message={error} onClose={() => {
@@ -607,6 +621,7 @@ const styles = StyleSheet.create({
   },
   inline: {
     flexDirection: 'row',
+    marginBottom: 15
   },
   username: {
     fontSize: 25,

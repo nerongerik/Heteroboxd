@@ -299,33 +299,6 @@ namespace Heteroboxd.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Heteroboxd.Models.Report", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TargetId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Reports");
-                });
-
             modelBuilder.Entity("Heteroboxd.Models.Review", b =>
                 {
                     b.Property<Guid>("Id")
@@ -399,6 +372,9 @@ namespace Heteroboxd.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("Flags")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Gender")
                         .IsRequired()

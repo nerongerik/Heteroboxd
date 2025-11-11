@@ -49,7 +49,6 @@ const GlowingText = ({ children, color }) => {
         style={{
           fontSize: 28,
           fontWeight: 700,
-          marginBottom: 30,
           textAlign: "center",
           color,
           filter: `drop-shadow(0 0 ${radius}px ${color})`,
@@ -80,7 +79,6 @@ const styles = StyleSheet.create({
   glowBase: {
     fontSize: 25,
     fontWeight: "700",
-    marginBottom: 30,
     textAlign: "center",
   },
 })

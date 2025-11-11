@@ -94,7 +94,7 @@ const Register = () => {
             placeholder="Name*"
             value={name}
             onChangeText={setName}
-            placeholderTextColor={Colors.text}
+            placeholderTextColor={Colors.text_placeholder}
           />
 
           <TextInput
@@ -104,7 +104,7 @@ const Register = () => {
             onChangeText={setBio}
             multiline
             numberOfLines={3}
-            placeholderTextColor={Colors.text}
+            placeholderTextColor={Colors.text_placeholder}
           />
 
           <TextInput
@@ -114,7 +114,7 @@ const Register = () => {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
-            placeholderTextColor={Colors.text}
+            placeholderTextColor={Colors.text_placeholder}
           />
 
           <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
@@ -126,7 +126,7 @@ const Register = () => {
             value={repeatPassword}
             onChangeText={setRepeatPassword}
             autoCapitalize="none"
-            placeholderTextColor={Colors.text}
+            placeholderTextColor={Colors.text_placeholder}
           />
 
           <View style={styles.genderContainer}>

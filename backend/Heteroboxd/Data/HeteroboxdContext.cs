@@ -20,7 +20,6 @@ namespace Heteroboxd.Data
         public DbSet<Watchlist> Watchlists { get; set; }
         public DbSet<UserFavorites> UserFavorites { get; set; }
         public DbSet<UserWatchedFilm> UserWatchedFilms { get; set; }
-        public DbSet<Report> Reports { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
 
@@ -216,13 +215,6 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<Notification>(entity =>
             {
                 entity.HasKey(n => n.Id);
-            });
-
-            // Report
-            modelBuilder.Entity<Report>(entity =>
-            {
-                entity.HasKey(r => r.Id);
-                entity.Property(r => r.Reason).HasConversion<string>();
             });
 
             // RefreshToken

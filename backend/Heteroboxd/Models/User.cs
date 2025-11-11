@@ -13,6 +13,7 @@ namespace Heteroboxd.Models
         public DateTime? TierExpiry { get; set; } //null if free tier
         public bool IsPatron { get; set; } //indicates if user ever donated >$50 at once
         public DateTime DateJoined { get; private set; }
+        public int Flags { get; set; }
         public bool Deleted { get; set; }
         public Watchlist? Watchlist { get; set; }
         public UserFavorites? Favorites { get; set; }
@@ -33,6 +34,7 @@ namespace Heteroboxd.Models
             TierExpiry = null;
             IsPatron = false;
             DateJoined = DateTime.UtcNow;
+            Flags = 0;
             Deleted = false;
             Watchlist = null; //to be set after user creation
             Favorites = null; //to be set after user creation
