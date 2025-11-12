@@ -9,7 +9,7 @@ namespace Heteroboxd.Models
         public Guid Id { get; private set; }
         public Guid CelebrityId { get; private set; }
         public Guid FilmId { get; private set; }
-        public Role Role { get; private set; }
+        public Role Role { get; set; }
 
         public CelebrityCredit(Guid CelebrityId, Guid FilmId, Role Role)
         {
