@@ -1,4 +1,5 @@
 using Heteroboxd.Data;
+using Heteroboxd.Integrations;
 using Heteroboxd.Models;
 using Heteroboxd.Repository;
 using Heteroboxd.Service;
@@ -94,6 +95,10 @@ builder.Services.AddScoped<ICelebrityService, CelebrityService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<ITMDBClient, TMDBClient>();
+builder.Services.AddScoped<ITMDBHelper, TMDBHelper>();
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 // --- CONTROLLERS ---

@@ -4,7 +4,18 @@ using Heteroboxd.Repository;
 
 namespace Heteroboxd.Integrations
 {
-    public class TMDBHelper
+    public interface ITMDBHelper
+    {
+        Task ParseResponse(TMDBInfoResponse Response);
+        Task ParseCollection(string CollectionUrl);
+        Task<Film> ParseFilm(TMDBInfoResponse Response, bool OfCollection = false);
+        Task<List<CelebrityCredit>> ParseCreditsResponse(Credits? Credits, Guid FilmId);
+        Task<Celebrity> ParseCelebrity(TMDBCelebrityResponse CelebrityResponse);
+        string FormUrls(string? Path, int Type = 0);
+        string GenerateSlug(string Title, int ReleaseYear);
+    }
+
+    public class TMDBHelper : ITMDBHelper
     {
         //private readonly ITMDBClient _tmdbClient;
         private readonly ILogger<TMDBHelper> _logger;
