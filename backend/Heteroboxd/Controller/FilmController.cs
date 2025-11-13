@@ -134,7 +134,7 @@ namespace Heteroboxd.Controller
             //updates an existing film in the database
             try
             {
-                await _service.UpdateFilm(FilmRequest);
+                //await _service.UpdateFilm(FilmRequest);
                 return Ok();
             }
             catch (KeyNotFoundException)

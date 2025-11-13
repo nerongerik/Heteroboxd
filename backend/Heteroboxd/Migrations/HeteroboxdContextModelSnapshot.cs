@@ -49,9 +49,6 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<bool>("DescriptionLocked")
-                        .HasColumnType("boolean");
-
                     b.Property<DateTime?>("LastSync")
                         .HasColumnType("timestamp with time zone");
 
@@ -59,15 +56,9 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("NameLocked")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("PictureUrl")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<bool>("PictureUrlLocked")
-                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
@@ -145,14 +136,19 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("BackdropUrl")
                         .HasColumnType("text");
 
-                    b.Property<bool>("BackdropUrlLocked")
-                        .HasColumnType("boolean");
+                    b.PrimitiveCollection<Guid[]>("Collection")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
 
                     b.Property<int>("FavoriteCount")
                         .HasColumnType("integer");
+
+                    b.PrimitiveCollection<string[]>("Genres")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<DateTime?>("LastSync")
                         .HasColumnType("timestamp with time zone");
@@ -167,9 +163,6 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("PosterUrlLocked")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("ReleaseYear")
                         .HasColumnType("integer");
 
@@ -181,21 +174,16 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("SynopsisLocked")
-                        .HasColumnType("boolean");
+                    b.Property<string>("Tagline")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("TitleLocked")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("TmdbId")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TrailerUrl")
                         .HasColumnType("text");
 
                     b.HasKey("Id");

@@ -7,14 +7,21 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // --- DATABASE CONTEXT ---
 builder.Services.AddDbContext<HeteroboxdContext>(options =>
-    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection"), npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null
+        );
+    }).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+);
 
 // --- IDENTITY CONFIGURATION ---
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>

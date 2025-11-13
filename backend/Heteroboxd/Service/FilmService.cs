@@ -13,7 +13,7 @@ namespace Heteroboxd.Service
         Task<List<FilmInfoResponse>> GetFilmsByCelebrity(string CelebrityId);
         Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
         Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search);
-        Task UpdateFilm(UpdateFilmRequest FilmRequest);
+        //Task UpdateFilm(UpdateFilmRequest FilmRequest);
         Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange);
         Task LogicalDeleteFilm(string FilmId);
     }
@@ -83,7 +83,7 @@ namespace Heteroboxd.Service
             return SearchResults.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
-        public async Task UpdateFilm(UpdateFilmRequest FilmRequest)
+        /*public async Task UpdateFilm(UpdateFilmRequest FilmRequest)
         {
             var Film = await _repo.GetByIdAsync(Guid.Parse(FilmRequest.FilmId));
             if (Film == null) throw new KeyNotFoundException();
@@ -109,7 +109,7 @@ namespace Heteroboxd.Service
             }
             _repo.Update(Film);
             await _repo.SaveChangesAsync();
-        }
+        }*/
 
         public async Task LogicalDeleteFilm(string FilmId)
         {

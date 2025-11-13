@@ -1,14 +1,14 @@
 ﻿namespace Heteroboxd.Models.DTO
 {
     /*
-    MAIN TMDB RESPONSE CLASS  
+    MAIN TMDB RESPONSE CLASSES
     */
 
     public class TMDBInfoResponse
     {
         public bool? Adult { get; set; }
         public string? BackdropPath { get; set; }
-        public object? BelongsToCollection { get; set; }
+        public Collection? BelongsToCollection { get; set; }
         public int? Budget { get; set; }
         public List<Genre>? Genres { get; set; }
         public string? Homepage { get; set; }
@@ -34,8 +34,37 @@
 
         //include credits
         public Credits? Credits { get; set; }
-        //include videos for trailer
-        public Videos? Videos { get; set; }
+    }
+
+    public class TMDBCollectionResponse
+    {
+        public int? Id { get; set; }
+        public string? Name { get; set; }
+        public string? OriginalLanguage { get; set; }
+        public string? OriginalName { get; set; }
+        public string? Overview { get; set; }
+        public string? PosterPath { get; set; }
+        public string? BackdropPath { get; set; }
+
+        public List<CollectionPart>? Parts { get; set; }
+    }
+
+    public class TMDBCelebrityResponse
+    {
+        public bool? Adult { get; set; }
+        public List<string>? AlsoKnownAs { get; set; }
+        public string? Biography { get; set; }
+        public string? Birthday { get; set; }
+        public string? Deathday { get; set; }
+        public int? Gender { get; set; }
+        public string? Homepage { get; set; }
+        public int? Id { get; set; }
+        public string? ImdbId { get; set; }
+        public string? KnownForDepartment { get; set; }
+        public string? Name { get; set; }
+        public string? PlaceOfBirth { get; set; }
+        public double? Popularity { get; set; }
+        public string? ProfilePath { get; set; }
     }
 
     /*
@@ -67,6 +96,14 @@
         public string? EnglishName { get; set; }
         public string? Iso6391 { get; set; }
         public string? Name { get; set; }
+    }
+
+    public class Collection
+    {
+        public int? Id { get; set; }
+        public string? Name { get; set; }
+        public string? PosterPath { get; set; }
+        public string? BackdropPath { get; set; }
     }
 
     /*
@@ -102,17 +139,22 @@
         public string? ProfilePath { get; set; }
     }
 
-    /*
-    WE WILL BE APPENDING VIDEOS TO RESPONSE WHEN REQUESTING
-    */
-
-    public class Videos
+    public class CollectionPart
     {
-        public string? Id { get; set; }
-        public string? Key { get; set; }
-        public string? Name { get; set; }
-        public string? Site { get; set; }
-        public string? Type { get; set; }
-        public bool? Official { get; set; }
+        public bool? Adult { get; set; }
+        public string? BackdropPath { get; set; }
+        public int? Id { get; set; }
+        public string? Title { get; set; }
+        public string? OriginalTitle { get; set; }
+        public string? Overview { get; set; }
+        public string? PosterPath { get; set; }
+        public string? MediaType { get; set; }
+        public string? OriginalLanguage { get; set; }
+        public List<int>? GenreIds { get; set; }
+        public double? Popularity { get; set; }
+        public string? ReleaseDate { get; set; }
+        public bool? Video { get; set; }
+        public double? VoteAverage { get; set; }
+        public int? VoteCount { get; set; }
     }
 }

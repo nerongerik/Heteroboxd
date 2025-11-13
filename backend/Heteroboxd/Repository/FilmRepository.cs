@@ -42,10 +42,12 @@ namespace Heteroboxd.Repository
     {
         Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Film?> GetByIdAsync(Guid Id);
+        Task<List<Film>> GetByTmdbIdsAsync(List<int> TmdbIds);
         Task<List<Film>> GetByYearAsync(int Year);
         Task<List<Film>> GetByCelebrityAsync(Guid CelebrityId);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle);
+        void Create(Film Film);
         void Update(Film Film);
         Task UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta);
         void Delete(Film Film);
@@ -69,6 +71,11 @@ namespace Heteroboxd.Repository
             await _context.Films
                 .Include(f => f.WatchedBy)
                 .FirstOrDefaultAsync(f => f.Id == Id && !f.Deleted);
+
+        public async Task<List<Film>> GetByTmdbIdsAsync(List<int> TmdbIds) =>
+            await _context.Films
+                .Where(f => TmdbIds.Contains(f.TmdbId) && !f.Deleted)
+                .ToListAsync();
 
         public async Task<List<Film>> GetByYearAsync(int Year) =>
             await _context.Films
@@ -121,6 +128,12 @@ namespace Heteroboxd.Repository
             return await query
                 .Where(f => !f.Deleted)
                 .ToListAsync();
+        }
+
+        public void Create(Film Film)
+        {
+            _context.Films
+                .Add(Film);
         }
 
         public void Update(Film Film)

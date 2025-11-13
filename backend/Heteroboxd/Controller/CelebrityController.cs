@@ -93,7 +93,7 @@ namespace Heteroboxd.Controller
             //updates an existing celebrity in the database
             try
             {
-                _service.UpdateCelebrity(CelebrityRequest);
+                //_service.UpdateCelebrity(CelebrityRequest);
                 return Ok();
             }
             catch (KeyNotFoundException)

@@ -1,7 +1,6 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel;
 
 /*
  * 
@@ -45,6 +44,7 @@ namespace Heteroboxd.Repository
         Task<Celebrity?> GetById(Guid Id);
         Task<List<Celebrity>> GetByFilm(Guid FilmId);
         Task<List<Celebrity>> SearchAsync(string Name); //add arguments as needed
+        void Create(Celebrity Celebrity);
         void Update(Celebrity Celebrity);
         void Delete(Celebrity Celebrity);
         Task SaveChangesAsync();
@@ -84,6 +84,12 @@ namespace Heteroboxd.Repository
             return await query
                 .Where(u => !u.Deleted)
                 .ToListAsync();
+        }
+
+        public void Create(Celebrity Celebrity)
+        {
+            _context.Celebrities
+                .Add(Celebrity);
         }
 
         public void Update(Celebrity Celebrity)

@@ -11,7 +11,7 @@ namespace Heteroboxd.Service
         Task<CelebrityInfoResponse?> GetCelebrityById(string CelebrityId);
         Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(string FilmId);
         Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search);
-        Task UpdateCelebrity(UpdateCelebrityRequest CelebrityRequest);
+        //Task UpdateCelebrity(UpdateCelebrityRequest CelebrityRequest);
         Task LogicalDeleteCelebrity(string CelebrityId);
     }
 
@@ -65,7 +65,7 @@ namespace Heteroboxd.Service
             return SearchResults.Select(c => new CelebrityInfoResponse(c)).ToList();
         }
 
-        public async Task UpdateCelebrity(UpdateCelebrityRequest CelebrityRequest)
+        /*public async Task UpdateCelebrity(UpdateCelebrityRequest CelebrityRequest)
         {
             var Celebrity = await _repo.GetById(Guid.Parse(CelebrityRequest.Id));
             if (Celebrity == null) throw new KeyNotFoundException();
@@ -86,7 +86,7 @@ namespace Heteroboxd.Service
             }
             _repo.Update(Celebrity);
             await _repo.SaveChangesAsync();
-        }
+        }*/
 
         public async Task LogicalDeleteCelebrity(string CelebrityId)
         {
