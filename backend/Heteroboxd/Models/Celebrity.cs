@@ -12,9 +12,10 @@ namespace Heteroboxd.Models
         public string PictureUrl { get; set; }
         public DateTime? LastSync { get; set; }
         public bool Deleted { get; set; }
+        public int TmdbId { get; set; }
         public ICollection<CelebrityCredit> Credits { get; set; }
 
-        public Celebrity(string Name, string? Description, string? PictureUrl)
+        public Celebrity(string Name, string? Description, string? PictureUrl, int TmdbId)
         {
             this.Id = Guid.NewGuid();
             this.Name = Name;
@@ -22,7 +23,8 @@ namespace Heteroboxd.Models
             this.PictureUrl = PictureUrl ?? "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
             this.LastSync = DateTime.UtcNow;
             this.Deleted = false;
-            this.Credits = new List<CelebrityCredit>();
+            this.Credits = [];
+            this.TmdbId = TmdbId;
         }
     }
 }

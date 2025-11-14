@@ -42,6 +42,7 @@ namespace Heteroboxd.Repository
     {
         Task<List<Celebrity>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Celebrity?> GetById(Guid Id);
+        Task<List<Celebrity>> GetByTmdbIdsAsync(List<int> TmdbIds);
         Task<List<Celebrity>> GetByFilm(Guid FilmId);
         Task<List<Celebrity>> SearchAsync(string Name); //add arguments as needed
         void Create(Celebrity Celebrity);
@@ -68,6 +69,11 @@ namespace Heteroboxd.Repository
             await _context.Celebrities
                 .Include(c => c.Credits)
                 .FirstOrDefaultAsync(c => c.Id == Id && !c.Deleted);
+
+        public async Task<List<Celebrity>> GetByTmdbIdsAsync(List<int> TmdbIds) =>
+            await _context.Celebrities
+                .Where(c => !c.Deleted && TmdbIds.Contains(c.TmdbId))
+                .ToListAsync();
 
         public async Task<List<Celebrity>> GetByFilm(Guid FilmId) =>
             await _context.Celebrities

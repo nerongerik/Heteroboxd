@@ -60,6 +60,9 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("TmdbId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("Celebrities");
@@ -73,6 +76,9 @@ namespace Heteroboxd.Migrations
 
                     b.Property<Guid>("CelebrityId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Character")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("FilmId")
                         .HasColumnType("uuid");
@@ -134,10 +140,10 @@ namespace Heteroboxd.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("BackdropUrl")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.PrimitiveCollection<Guid[]>("Collection")
-                        .IsRequired()
                         .HasColumnType("uuid[]");
 
                     b.Property<bool>("Deleted")
@@ -182,9 +188,8 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TmdbId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("TmdbId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
