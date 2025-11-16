@@ -2,53 +2,14 @@
 using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
 
-/*
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- NOTE: IF YOU FIND THAT SEARCH MALFUNCTIONS, IT WILL MOST LIKELY BE DUE TO CASE SENSITIVITY
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- *
-*/
-
 namespace Heteroboxd.Repository
 {
     public interface ICelebrityRepository
     {
         Task<List<Celebrity>> GetAllAsync(CancellationToken CancellationToken = default);
-        Task<Celebrity?> GetById(Guid Id);
-        Task<List<Celebrity>> GetByTmdbIdsAsync(List<int> TmdbIds);
-        Task<List<Celebrity>> GetByFilm(Guid FilmId);
-        Task<List<Celebrity>> SearchAsync(string Name); //add arguments as needed
-        void Create(Celebrity Celebrity);
-        void Update(Celebrity Celebrity);
-        void Delete(Celebrity Celebrity);
-        Task SaveChangesAsync();
+        Task<Celebrity?> GetById(int Id);
+        Task<List<Celebrity>> GetByFilm(int FilmId);
+        Task<List<Celebrity>> SearchAsync(string Name);
     }
 
     public class CelebrityRepository : ICelebrityRepository
@@ -65,17 +26,12 @@ namespace Heteroboxd.Repository
                 .Where(c => !c.Deleted)
                 .ToListAsync(CancellationToken);
 
-        public async Task<Celebrity?> GetById(Guid Id) =>
+        public async Task<Celebrity?> GetById(int Id) =>
             await _context.Celebrities
                 .Include(c => c.Credits)
                 .FirstOrDefaultAsync(c => c.Id == Id && !c.Deleted);
 
-        public async Task<List<Celebrity>> GetByTmdbIdsAsync(List<int> TmdbIds) =>
-            await _context.Celebrities
-                .Where(c => !c.Deleted && TmdbIds.Contains(c.TmdbId))
-                .ToListAsync();
-
-        public async Task<List<Celebrity>> GetByFilm(Guid FilmId) =>
+        public async Task<List<Celebrity>> GetByFilm(int FilmId) =>
             await _context.Celebrities
                 .Include(c => c.Credits)
                 .Where(c => !c.Deleted && c.Credits.Any(cc => cc.FilmId == FilmId))
@@ -86,31 +42,10 @@ namespace Heteroboxd.Repository
             var query = _context.Celebrities.AsQueryable();
             if (!string.IsNullOrEmpty(Name))
                 query = query
-                    .Where(u => EF.Functions.Like(u.Name, $"%{Name}%"));
+                    .Where(c => EF.Functions.Like(c.Name, $"%{Name}%"));
             return await query
-                .Where(u => !u.Deleted)
+                .Where(c => !c.Deleted)
                 .ToListAsync();
         }
-
-        public void Create(Celebrity Celebrity)
-        {
-            _context.Celebrities
-                .Add(Celebrity);
-        }
-
-        public void Update(Celebrity Celebrity)
-        {
-            _context.Celebrities
-                .Update(Celebrity);
-        }
-
-        public void Delete(Celebrity Celebrity)
-        {
-            _context.Celebrities
-                .Remove(Celebrity);
-        }
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
     }
 }

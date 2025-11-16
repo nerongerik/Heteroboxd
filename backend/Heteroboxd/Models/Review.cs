@@ -16,9 +16,9 @@ namespace Heteroboxd.Models
         public ICollection<Comment> Comments { get; private set; }
         public int LikeCount { get; set; }
         public Guid AuthorId { get; private set; }
-        public Guid FilmId { get; private set; }
+        public int FilmId { get; private set; }
 
-        public Review(double Rating, string? Text, int Flags, bool Spoiler, Guid AuthorId, Guid FilmId)
+        public Review(double Rating, string? Text, int Flags, bool Spoiler, Guid AuthorId, int FilmId)
         {
             this.Id = Guid.NewGuid();
             this.Rating = Rating;

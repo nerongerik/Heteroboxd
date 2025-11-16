@@ -1,6 +1,6 @@
 ﻿namespace Heteroboxd.Integrations
 {
-    public class TMDBSyncService
+    public class TMDBSync
     {
         //will somehow be incorporated into a wider monitoring system that only does things once per 24 hours
         //other subsystems will purge database of logically deleted entities, delete expired notifications, used tokens, etc.

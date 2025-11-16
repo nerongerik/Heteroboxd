@@ -39,9 +39,11 @@ namespace Heteroboxd.Migrations
 
             modelBuilder.Entity("Heteroboxd.Models.Celebrity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
@@ -60,9 +62,6 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("TmdbId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.ToTable("Celebrities");
@@ -74,14 +73,14 @@ namespace Heteroboxd.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CelebrityId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("CelebrityId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Character")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("FilmId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("FilmId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
@@ -135,16 +134,18 @@ namespace Heteroboxd.Migrations
 
             modelBuilder.Entity("Heteroboxd.Models.Film", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("BackdropUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.PrimitiveCollection<Guid[]>("Collection")
-                        .HasColumnType("uuid[]");
+                    b.Property<string>("Collection")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
@@ -188,16 +189,9 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("TmdbId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("Slug")
-                        .IsUnique();
-
-                    b.HasIndex("TmdbId")
-                        .IsUnique();
+                    b.HasIndex("Slug");
 
                     b.ToTable("Films");
                 });
@@ -211,8 +205,8 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("DateAdded")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("FilmId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("FilmId")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("Position")
                         .HasColumnType("integer");
@@ -307,8 +301,8 @@ namespace Heteroboxd.Migrations
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("FilmId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("FilmId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Flags")
                         .HasColumnType("integer");
@@ -445,17 +439,17 @@ namespace Heteroboxd.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("Film1")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("Film1")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("Film2")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("Film2")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("Film3")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("Film3")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("Film4")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("Film4")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -722,8 +716,8 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("DateWatched")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("FilmId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("FilmId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("TimesWatched")
                         .HasColumnType("integer");

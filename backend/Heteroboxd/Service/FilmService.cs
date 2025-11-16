@@ -8,14 +8,12 @@ namespace Heteroboxd.Service
     public interface  IFilmService
     {
         Task<List<FilmInfoResponse>> GetAllFilms();
-        Task<FilmInfoResponse?> GetFilm(string FilmId);
+        Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<FilmInfoResponse>> GetFilmsByYear(int Year);
-        Task<List<FilmInfoResponse>> GetFilmsByCelebrity(string CelebrityId);
+        Task<List<FilmInfoResponse>> GetFilmsByCelebrity(int CelebrityId);
         Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
         Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search);
-        //Task UpdateFilm(UpdateFilmRequest FilmRequest);
-        Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange);
-        Task LogicalDeleteFilm(string FilmId);
+        Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, string FavoriteChange);
     }
 
     public class FilmService : IFilmService
@@ -40,9 +38,9 @@ namespace Heteroboxd.Service
             throw new NotImplementedException();
         }
 
-        public async Task<FilmInfoResponse?> GetFilm(string FilmId)
+        public async Task<FilmInfoResponse?> GetFilm(int FilmId)
         {
-            var Film = await _repo.GetByIdAsync(Guid.Parse(FilmId));
+            var Film = await _repo.GetByIdAsync(FilmId);
             return Film == null ? null : new FilmInfoResponse(Film);
         }
 
@@ -52,9 +50,9 @@ namespace Heteroboxd.Service
             return YearsFilms.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
-        public async Task<List<FilmInfoResponse>> GetFilmsByCelebrity(string CelebrityId)
+        public async Task<List<FilmInfoResponse>> GetFilmsByCelebrity(int CelebrityId)
         {
-            var CelebritiesFilms = await _repo.GetByCelebrityAsync(Guid.Parse(CelebrityId));
+            var CelebritiesFilms = await _repo.GetByCelebrityAsync(CelebrityId);
             return CelebritiesFilms.Select(f => new FilmInfoResponse(f)).ToList();
         }
 
@@ -83,48 +81,10 @@ namespace Heteroboxd.Service
             return SearchResults.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
-        /*public async Task UpdateFilm(UpdateFilmRequest FilmRequest)
+        public async Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, string FavoriteChange)
         {
-            var Film = await _repo.GetByIdAsync(Guid.Parse(FilmRequest.FilmId));
-            if (Film == null) throw new KeyNotFoundException();
-            if (FilmRequest.Title != null)
-            {
-                Film.Title = FilmRequest.Title;
-                Film.TitleLocked = true;
-            }
-            if (FilmRequest.Synopsis != null)
-            {
-                Film.Synopsis = FilmRequest.Synopsis;
-                Film.SynopsisLocked = true;
-            }
-            if (FilmRequest.PosterUrl != null)
-            {
-                Film.PosterUrl = FilmRequest.PosterUrl;
-                Film.PosterUrlLocked = true;
-            }
-            if (FilmRequest.BackdropUrl != null)
-            {
-                Film.BackdropUrl = FilmRequest.BackdropUrl;
-                Film.BackdropUrlLocked = true;
-            }
-            _repo.Update(Film);
-            await _repo.SaveChangesAsync();
-        }*/
-
-        public async Task LogicalDeleteFilm(string FilmId)
-        {
-            var Film = await _repo.GetByIdAsync(Guid.Parse(FilmId));
-            if (Film == null) throw new KeyNotFoundException();
-            Film.Deleted = true;
-            _repo.Update(Film);
-            await _repo.SaveChangesAsync();
-        }
-
-        public async Task UpdateFilmFavoriteCountEfCore7Async(string FilmId, string FavoriteChange)
-        {
-            if (!Guid.TryParse(FilmId, out var Id)) throw new ArgumentException();
             if (!int.TryParse(FavoriteChange, out var Delta)) throw new ArgumentException();
-            await _repo.UpdateFilmFavoriteCountEfCore7Async(Id, Delta);
+            await _repo.UpdateFilmFavoriteCountEfCore7Async(FilmId, Delta);
         }
     }
 }

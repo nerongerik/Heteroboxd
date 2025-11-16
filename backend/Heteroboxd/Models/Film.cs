@@ -1,50 +1,56 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Heteroboxd.Models
 {
     public class Film
     {
         [Key]
-        public Guid Id { get; private set; }
+        public int Id { get; set; } //unique
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
         public string Tagline { get; set; }
         public string Synopsis { get; set; }
         public ICollection<string> Genres { get; set; }
         public string PosterUrl { get; set; }
-        public string BackdropUrl { get; set; }
+        public string? BackdropUrl { get; set; }
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
         public string Slug { get; set; } //unique
-        public ICollection<Guid>? Collection { get; set; }
-        public int TmdbId { get; set; } //unique
+        public Dictionary<int, string> Collection { get; set; }
         public DateTime? LastSync { get; set; } //if LastSync < tMDB's last update, resync
+
+        [JsonIgnore]
         public ICollection<CelebrityCredit> CastAndCrew { get; set; }
         public bool Deleted { get; set; }
+
+        [JsonIgnore]
         public ICollection<Review> Reviews { get; set; }
         public int FavoriteCount { get; set; }
+
+        [JsonIgnore]
         public ICollection<UserWatchedFilm> WatchedBy { get; set; }
 
-        public Film(string Title, string? OriginalTitle, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear, string Slug, int TmdbId)
+        public Film(int Id, string Title, string? OriginalTitle, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear, string Slug)
         {
-            this.Id = Guid.NewGuid();
+            this.Id = Id;
             this.Title = Title;
             this.OriginalTitle = OriginalTitle;
             this.Tagline = Tagline;
             this.Synopsis = Synopsis;
-            this.Genres = []; //to be filled during sync
-            this.PosterUrl = PosterUrl;
-            this.BackdropUrl = BackdropUrl;
+            this.Genres = new List<string>(); //to be filled during sync
+            this.PosterUrl = string.IsNullOrEmpty(PosterUrl) ? "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" : PosterUrl;
+            this.BackdropUrl = string.IsNullOrEmpty(BackdropUrl) ? null : BackdropUrl;
             this.Length = Length;
             this.ReleaseYear = ReleaseYear;
             this.Slug = Slug;
-            this.TmdbId = TmdbId;
+            this.Collection = new Dictionary<int, string>();
             this.LastSync = DateTime.UtcNow;
-            this.CastAndCrew = [];
+            this.CastAndCrew = new List<CelebrityCredit>();
             this.Deleted = false;
-            this.Reviews = [];
+            this.Reviews = new List<Review>();
             this.FavoriteCount = 0;
-            this.WatchedBy = [];
+            this.WatchedBy = new List<UserWatchedFilm>();
         }
     }
 }

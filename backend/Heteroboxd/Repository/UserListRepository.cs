@@ -2,40 +2,6 @@
 using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
 
-/*
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- NOTE: IF YOU FIND THAT SEARCH MALFUNCTIONS, IT WILL MOST LIKELY BE DUE TO CASE SENSITIVITY
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- *
-*/
-
 namespace Heteroboxd.Repository
 {
     public interface IUserListRepository
@@ -43,7 +9,7 @@ namespace Heteroboxd.Repository
         Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<UserList?> GetByIdAsync(Guid ListId);
         Task<List<UserList>> GetByUserAsync(Guid UserId);
-        Task<List<UserList>> GetFeaturingFilmAsync(Guid FilmId);
+        Task<List<UserList>> GetFeaturingFilmAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
         void Update(UserList UserList);
@@ -78,7 +44,7 @@ namespace Heteroboxd.Repository
                 .Where(ul => ul.AuthorId == UserId && !ul.Deleted)
                 .ToListAsync();
 
-        public async Task<List<UserList>> GetFeaturingFilmAsync(Guid FilmId) =>
+        public async Task<List<UserList>> GetFeaturingFilmAsync(int FilmId) =>
             await _context.UserLists
                 .Where(ul => ul.Films.Any(le => le.FilmId == FilmId) && !ul.Deleted)
                 .ToListAsync();

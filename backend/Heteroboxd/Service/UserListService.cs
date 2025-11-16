@@ -10,7 +10,7 @@ namespace Heteroboxd.Service
         Task<List<UserListInfoResponse>> GetAllUserLists();
         Task<UserListInfoResponse?> GetUserListById(string ListId);
         Task<List<UserListInfoResponse>> GetUsersUserLists(string UserId);
-        Task<List<UserListInfoResponse>> GetListsFeaturingFilm(string FilmId);
+        Task<List<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId);
         Task<List<UserListInfoResponse>> SearchUserLists(string Search);
         Task AddList(CreateUserListRequest ListRequest);
         Task UpdateList(UpdateUserListRequest ListRequest);
@@ -51,9 +51,9 @@ namespace Heteroboxd.Service
             return Lists.Select(l => new UserListInfoResponse(l)).ToList();
         }
 
-        public async Task<List<UserListInfoResponse>> GetListsFeaturingFilm(string FilmId)
+        public async Task<List<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId)
         {
-            var FilmsLists = await _repo.GetFeaturingFilmAsync(Guid.Parse(FilmId));
+            var FilmsLists = await _repo.GetFeaturingFilmAsync(FilmId);
 
             var ListsTasks = FilmsLists.Select(async ul =>
             {
@@ -86,7 +86,7 @@ namespace Heteroboxd.Service
             UserList NewList = new UserList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, Guid.Parse(ListRequest.AuthorId));
             foreach (CreateListEntryRequest cler in ListRequest.Entries)
             {
-                NewList.Films.Add(new ListEntry(Guid.Parse(cler.FilmId), cler.Position, null, NewList.Id));
+                NewList.Films.Add(new ListEntry(cler.FilmId, cler.Position, null, NewList.Id));
             }
             _repo.Create(NewList);
             await _repo.SaveChangesAsync();
@@ -118,7 +118,7 @@ namespace Heteroboxd.Service
                 {
                     int Position = leir.Position ?? -1;
                     foreach (var f in List.Films.Where(le => le.Position >= Position && Position != -1)) f.Position++;
-                    List.Films.Add(new ListEntry(Guid.Parse(leir.FilmId), leir.Position, null, List.Id));
+                    List.Films.Add(new ListEntry(leir.FilmId, leir.Position, null, List.Id));
                 }
             }
             _repo.Update(List);

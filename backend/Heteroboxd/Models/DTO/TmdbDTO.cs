@@ -6,65 +6,66 @@
 
     public class TMDBInfoResponse
     {
-        public bool? Adult { get; set; }
-        public string? BackdropPath { get; set; }
-        public Collection? BelongsToCollection { get; set; }
-        public int? Budget { get; set; }
-        public List<Genre>? Genres { get; set; }
-        public string? Homepage { get; set; }
-        public int? Id { get; set; }
-        public string? ImdbId { get; set; }
-        public string? OriginalLanguage { get; set; }
-        public string? OriginalTitle { get; set; }
-        public string? Overview { get; set; }
-        public double? Popularity { get; set; }
-        public string? PosterPath { get; set; }
-        public List<ProductionCompany>? ProductionCompanies { get; set; }
-        public List<ProductionCountry>? ProductionCountries { get; set; }
-        public string? ReleaseDate { get; set; }
-        public long? Revenue { get; set; }
-        public int? Runtime { get; set; }
-        public List<SpokenLanguage>? SpokenLanguages { get; set; }
-        public string? Status { get; set; }
-        public string? Tagline { get; set; }
-        public string? Title { get; set; }
-        public bool? Video { get; set; }
-        public double? VoteAverage { get; set; }
-        public int? VoteCount { get; set; }
+        public bool? adult { get; set; }
+        public string? backdrop_path { get; set; }
+        public Collection? belongs_to_collection { get; set; }
+        public int? budget { get; set; }
+        public List<Genre>? genres { get; set; }
+        public string? homepage { get; set; }
+        public int? id { get; set; }
+        public string? imdb_id { get; set; }
+        public List<string>? origin_country { get; set; }
+        public string? original_language { get; set; }
+        public string? original_title { get; set; }
+        public string? overview { get; set; }
+        public double? popularity { get; set; }
+        public string? poster_path { get; set; }
+        public List<ProductionCompany>? production_companies { get; set; }
+        public List<ProductionCountry>? production_countries { get; set; }
+        public string? release_date { get; set; }
+        public long? revenue { get; set; }
+        public int? runtime { get; set; }
+        public List<SpokenLanguage>? spoken_languages { get; set; }
+        public string? status { get; set; }
+        public string? tagline { get; set; }
+        public string? title { get; set; }
+        public bool? video { get; set; }
+        public double? vote_average { get; set; }
+        public int? vote_count { get; set; }
 
         //include credits
-        public Credits? Credits { get; set; }
+        public Credits? credits { get; set; }
     }
 
     public class TMDBCollectionResponse
     {
-        public int? Id { get; set; }
-        public string? Name { get; set; }
-        public string? OriginalLanguage { get; set; }
-        public string? OriginalName { get; set; }
-        public string? Overview { get; set; }
-        public string? PosterPath { get; set; }
-        public string? BackdropPath { get; set; }
+        public int? id { get; set; }
+        public string? name { get; set; }
+        public string? original_language { get; set; }
+        public string? original_name { get; set; }
+        public string? overview { get; set; }
+        public string? poster_path { get; set; }
+        public string? backdrop_path { get; set; }
 
-        public List<CollectionPart>? Parts { get; set; }
+        public List<CollectionPart>? parts { get; set; }
     }
 
     public class TMDBCelebrityResponse
     {
-        public bool? Adult { get; set; }
-        public List<string>? AlsoKnownAs { get; set; }
-        public string? Biography { get; set; }
-        public string? Birthday { get; set; }
-        public string? Deathday { get; set; }
-        public int? Gender { get; set; }
-        public string? Homepage { get; set; }
-        public int? Id { get; set; }
-        public string? ImdbId { get; set; }
-        public string? KnownForDepartment { get; set; }
-        public string? Name { get; set; }
-        public string? PlaceOfBirth { get; set; }
-        public double? Popularity { get; set; }
-        public string? ProfilePath { get; set; }
+        public bool? adult { get; set; }
+        public List<string>? also_known_as { get; set; }
+        public string? biography { get; set; }
+        public string? birthday { get; set; }
+        public string? deathday { get; set; }
+        public int? gender { get; set; }
+        public string? homepage { get; set; }
+        public int? id { get; set; }
+        public string? imdb_id { get; set; }
+        public string? known_for_department { get; set; }
+        public string? name { get; set; }
+        public string? place_of_birth { get; set; }
+        public double? popularity { get; set; }
+        public string? profile_path { get; set; }
     }
 
     /*
@@ -73,37 +74,37 @@
 
     public class Genre
     {
-        public int? Id { get; set; }
-        public string? Name { get; set; }
+        public int? id { get; set; }
+        public string? name { get; set; }
     }
 
     public class ProductionCompany
     {
-        public int? Id { get; set; }
-        public string? LogoPath { get; set; }
-        public string? Name { get; set; }
-        public string? OriginCountry { get; set; }
+        public int? id { get; set; }
+        public string? logo_path { get; set; }
+        public string? name { get; set; }
+        public string? origin_country { get; set; }
     }
 
     public class ProductionCountry
     {
-        public string? Iso31661 { get; set; }
-        public string? Name { get; set; }
+        public string? iso_3166_1 { get; set; }
+        public string? name { get; set; }
     }
 
     public class SpokenLanguage
     {
-        public string? EnglishName { get; set; }
-        public string? Iso6391 { get; set; }
-        public string? Name { get; set; }
+        public string? english_name { get; set; }
+        public string? iso_639_1 { get; set; }
+        public string? name { get; set; }
     }
 
     public class Collection
     {
-        public int? Id { get; set; }
-        public string? Name { get; set; }
-        public string? PosterPath { get; set; }
-        public string? BackdropPath { get; set; }
+        public int? id { get; set; }
+        public string? name { get; set; }
+        public string? poster_path { get; set; }
+        public string? backdrop_path { get; set; }
     }
 
     /*
@@ -112,49 +113,57 @@
 
     public class Credits
     {
-        public List<CastMember>? Cast { get; set; }
-        public List<CrewMember>? Crew { get; set; }
+        public List<CastMember>? cast { get; set; }
+        public List<CrewMember>? crew { get; set; }
     }
 
     public class CastMember
     {
-        public int? CastId { get; set; }
-        public string? Character { get; set; }
-        public string? CreditId { get; set; }
-        public int? Gender { get; set; }
-        public int? Id { get; set; }
-        public string? Name { get; set; }
-        public int? Order { get; set; }
-        public string? ProfilePath { get; set; }
+        public bool? adult { get; set; }
+        public int? gender { get; set; }
+        public int? id { get; set; }
+        public string? known_for_department { get; set; }
+        public string? name { get; set; }
+        public string? original_name { get; set; }
+        public double? popularity { get; set; }
+        public string? profile_path { get; set; }
+        public int? cast_id { get; set; }
+        public string? character { get; set; }
+        public string? credit_id { get; set; }
+        public int? order { get; set; }
     }
 
     public class CrewMember
     {
-        public string? CreditId { get; set; }
-        public string? Department { get; set; }
-        public int? Gender { get; set; }
-        public int? Id { get; set; }
-        public string? Job { get; set; }
-        public string? Name { get; set; }
-        public string? ProfilePath { get; set; }
+        public bool? adult { get; set; }
+        public int? gender { get; set; }
+        public int? id { get; set; }
+        public string? known_for_department { get; set; }
+        public string? name { get; set; }
+        public string? original_name { get; set; }
+        public double? popularity { get; set; }
+        public string? profile_path { get; set; }
+        public string? credit_id { get; set; }
+        public string? department { get; set; }
+        public string? job { get; set; }
     }
 
     public class CollectionPart
     {
-        public bool? Adult { get; set; }
-        public string? BackdropPath { get; set; }
-        public int? Id { get; set; }
-        public string? Title { get; set; }
-        public string? OriginalTitle { get; set; }
-        public string? Overview { get; set; }
-        public string? PosterPath { get; set; }
-        public string? MediaType { get; set; }
-        public string? OriginalLanguage { get; set; }
-        public List<int>? GenreIds { get; set; }
-        public double? Popularity { get; set; }
-        public string? ReleaseDate { get; set; }
-        public bool? Video { get; set; }
-        public double? VoteAverage { get; set; }
-        public int? VoteCount { get; set; }
+        public bool? adult { get; set; }
+        public string? backdrop_path { get; set; }
+        public int? id { get; set; }
+        public string? title { get; set; }
+        public string? original_title { get; set; }
+        public string? overview { get; set; }
+        public string? poster_path { get; set; }
+        public string? media_type { get; set; }
+        public string? original_language { get; set; }
+        public List<int>? genre_ids { get; set; }
+        public double? popularity { get; set; }
+        public string? release_date { get; set; }
+        public bool? video { get; set; }
+        public double? vote_average { get; set; }
+        public int? vote_count { get; set; }
     }
 }

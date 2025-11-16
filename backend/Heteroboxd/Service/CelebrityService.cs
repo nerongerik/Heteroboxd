@@ -8,11 +8,9 @@ namespace Heteroboxd.Service
     public interface ICelebrityService
     {
         Task<List<CelebrityInfoResponse>> GetAllCelebrities();
-        Task<CelebrityInfoResponse?> GetCelebrityById(string CelebrityId);
-        Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(string FilmId);
+        Task<CelebrityInfoResponse?> GetCelebrityById(int CelebrityId);
+        Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(int FilmId);
         Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search);
-        //Task UpdateCelebrity(UpdateCelebrityRequest CelebrityRequest);
-        Task LogicalDeleteCelebrity(string CelebrityId);
     }
 
     public class CelebrityService : ICelebrityService
@@ -32,9 +30,9 @@ namespace Heteroboxd.Service
             return AllCelebrities.Select(c => new CelebrityInfoResponse(c)).ToList();
         }
 
-        public async Task<CelebrityInfoResponse?> GetCelebrityById(string CelebrityId)
+        public async Task<CelebrityInfoResponse?> GetCelebrityById(int CelebrityId)
         {
-            var Celebrity = await _repo.GetById(Guid.Parse(CelebrityId));
+            var Celebrity = await _repo.GetById(CelebrityId);
             if (Celebrity == null) throw new KeyNotFoundException();
 
             //distill film IDs
@@ -53,9 +51,9 @@ namespace Heteroboxd.Service
             return new CelebrityInfoResponse(Celebrity, Films);
         }
 
-        public async Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(string FilmId)
+        public async Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(int FilmId)
         {
-            var Celebrities = await _repo.GetByFilm(Guid.Parse(FilmId));
+            var Celebrities = await _repo.GetByFilm(FilmId);
             return Celebrities.Select(c => new CelebrityInfoResponse(c)).ToList();
         }
 
@@ -63,38 +61,6 @@ namespace Heteroboxd.Service
         {
             var SearchResults = await _repo.SearchAsync(Search);
             return SearchResults.Select(c => new CelebrityInfoResponse(c)).ToList();
-        }
-
-        /*public async Task UpdateCelebrity(UpdateCelebrityRequest CelebrityRequest)
-        {
-            var Celebrity = await _repo.GetById(Guid.Parse(CelebrityRequest.Id));
-            if (Celebrity == null) throw new KeyNotFoundException();
-            if (CelebrityRequest.Name != null)
-            {
-                Celebrity.Name = CelebrityRequest.Name;
-                Celebrity.NameLocked = true;
-            }
-            if (CelebrityRequest.Description != null)
-            {
-                Celebrity.Description = CelebrityRequest.Description;
-                Celebrity.DescriptionLocked = true;
-            }
-            if (CelebrityRequest.PictureUrl != null)
-            {
-                Celebrity.PictureUrl = CelebrityRequest.PictureUrl;
-                Celebrity.PictureUrlLocked = true;
-            }
-            _repo.Update(Celebrity);
-            await _repo.SaveChangesAsync();
-        }*/
-
-        public async Task LogicalDeleteCelebrity(string CelebrityId)
-        {
-            var Celebrity = await _repo.GetById(Guid.Parse(CelebrityId));
-            if (Celebrity == null) throw new KeyNotFoundException();
-            Celebrity.Deleted = true;
-            _repo.Update(Celebrity);
-            await _repo.SaveChangesAsync();
         }
     }
 }

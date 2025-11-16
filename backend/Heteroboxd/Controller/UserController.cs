@@ -221,7 +221,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("watchlist/{UserId}/{FilmId}")]
-        public async Task<IActionResult> UpdateUserWatchlist(string UserId, string FilmId)
+        public async Task<IActionResult> UpdateUserWatchlist(string UserId, int FilmId)
         {
             //adds or removes a film from the user's watchlist
             try
@@ -240,7 +240,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("favorites/{UserId}")]
-        public async Task<IActionResult> UpdateUserFavorites(string UserId, [FromBody] List<string> FilmIds)
+        public async Task<IActionResult> UpdateUserFavorites(string UserId, [FromBody] List<int?> FilmIds)
         {
             //updates the user's top 5 films
             try
@@ -298,7 +298,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("track-film/{UserId}/{FilmId}")]
-        public async Task<IActionResult> TrackUserFilm(string UserId, string FilmId, [FromQuery] string Action)
+        public async Task<IActionResult> TrackUserFilm(string UserId, int FilmId, [FromQuery] string Action)
         {
             //actions: ?action=watched/rewatched/unwatched
             //for the frontend: never delete a UserWatchedFilm, just set the times watched to 0 when unwatched is triggered. display films differently based on this value

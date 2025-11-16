@@ -2,56 +2,18 @@
 using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
 
-/*
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- NOTE: IF YOU FIND THAT SEARCH MALFUNCTIONS, IT WILL MOST LIKELY BE DUE TO CASE SENSITIVITY
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- *
-*/
-
 namespace Heteroboxd.Repository
 {
     public interface IFilmRepository
     {
         Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default);
-        Task<Film?> GetByIdAsync(Guid Id);
-        Task<List<Film>> GetByTmdbIdsAsync(List<int> TmdbIds);
+        Task<Film?> GetByIdAsync(int Id);
+        Task<Film?> GetBySlugAsync(string Slug);
         Task<List<Film>> GetByYearAsync(int Year);
-        Task<List<Film>> GetByCelebrityAsync(Guid CelebrityId);
+        Task<List<Film>> GetByCelebrityAsync(int CelebrityId);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle);
-        void Create(Film Film);
-        void Update(Film Film);
-        Task UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta);
-        void Delete(Film Film);
-        Task SaveChangesAsync();
+        Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta);
     }
     public class FilmRepository : IFilmRepository
     {
@@ -67,22 +29,24 @@ namespace Heteroboxd.Repository
             .Where(f => !f.Deleted)
             .ToListAsync(CancellationToken);
 
-        public async Task<Film?> GetByIdAsync(Guid Id) =>
+        public async Task<Film?> GetByIdAsync(int Id) =>
             await _context.Films
                 .Include(f => f.WatchedBy)
                 .FirstOrDefaultAsync(f => f.Id == Id && !f.Deleted);
 
-        public async Task<List<Film>> GetByTmdbIdsAsync(List<int> TmdbIds) =>
+        public async Task<Film?> GetBySlugAsync(string Slug) =>
             await _context.Films
-                .Where(f => TmdbIds.Contains(f.TmdbId) && !f.Deleted)
-                .ToListAsync();
+                .Include(f => f.CastAndCrew)
+                .Include(f => f.WatchedBy)
+                .Include(f => f.Reviews)
+                .FirstOrDefaultAsync(f => f.Slug == Slug && !f.Deleted);
 
         public async Task<List<Film>> GetByYearAsync(int Year) =>
             await _context.Films
             .Where(f => f.ReleaseYear == Year && !f.Deleted)
             .ToListAsync();
 
-        public async Task<List<Film>> GetByCelebrityAsync(Guid CelebrityId) =>
+        public async Task<List<Film>> GetByCelebrityAsync(int CelebrityId) =>
             await _context.Films
                 .Include(f => f.CastAndCrew) //if there is trouble getting roles, try .ThenInclude(c => c.Role)
                 .Include(f => f.WatchedBy)
@@ -130,19 +94,7 @@ namespace Heteroboxd.Repository
                 .ToListAsync();
         }
 
-        public void Create(Film Film)
-        {
-            _context.Films
-                .Add(Film);
-        }
-
-        public void Update(Film Film)
-        {
-            _context.Films
-                .Update(Film);
-        }
-
-        public async Task UpdateFilmFavoriteCountEfCore7Async(Guid FilmId, int Delta) //increments/decrements favorite count
+        public async Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta) //increments/decrements favorite count
         {
             var Rows = await _context.Films
                 .Where(f => f.Id == FilmId)
@@ -152,13 +104,5 @@ namespace Heteroboxd.Repository
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
         }
-
-        public void Delete(Film Film) //used in big, weekly (or monthly) purge jobs, consider cascades and side effects later
-        {
-            _context.Films.Remove(Film);
-        }
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
     }
 }

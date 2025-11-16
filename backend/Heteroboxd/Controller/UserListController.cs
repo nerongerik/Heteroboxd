@@ -68,7 +68,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("featuring-film/{FilmId}")]
-        public async Task<IActionResult> GetListsFeaturingFilm(string FilmId)
+        public async Task<IActionResult> GetListsFeaturingFilm(int FilmId)
         {
             //retrives all lists featuring a specific film from database
             try

@@ -9,7 +9,7 @@ namespace Heteroboxd.Service
     {
         Task<List<ReviewInfoResponse>> GetAllReviews();
         Task<ReviewInfoResponse?> GetReview(string ReviewId);
-        Task<List<ReviewInfoResponse>> GetReviewsByFilm(string FilmId);
+        Task<List<ReviewInfoResponse>> GetReviewsByFilm(int FilmId);
         Task<List<ReviewInfoResponse>> GetReviewsByAuthor(string UserId);
         Task CreateReview(CreateReviewRequest ReviewRequest);
         Task UpdateReview(UpdateReviewRequest ReviewRequest);
@@ -47,9 +47,9 @@ namespace Heteroboxd.Service
             return new ReviewInfoResponse(Review, Author, Film);
         }
 
-        public async Task<List<ReviewInfoResponse>> GetReviewsByFilm(string FilmId)
+        public async Task<List<ReviewInfoResponse>> GetReviewsByFilm(int FilmId)
         {
-            var FilmReviews = await _repo.GetByFilmAsync(Guid.Parse(FilmId));
+            var FilmReviews = await _repo.GetByFilmAsync(FilmId);
 
             var ReviewTasks = FilmReviews.Select(async r =>
             {
@@ -79,7 +79,7 @@ namespace Heteroboxd.Service
 
         public async Task CreateReview(CreateReviewRequest ReviewRequest)
         {
-            Review Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Flags, ReviewRequest.Spoiler, Guid.Parse(ReviewRequest.AuthorId), Guid.Parse(ReviewRequest.FilmId));
+            Review Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Flags, ReviewRequest.Spoiler, Guid.Parse(ReviewRequest.AuthorId), ReviewRequest.FilmId);
             _repo.Create(Review);
             await _repo.SaveChangesAsync();
         }

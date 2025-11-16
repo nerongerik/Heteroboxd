@@ -13,7 +13,7 @@
         public string AuthorId { get; set; } //necessary navigation quality
         public string? AuthorName { get; set; } //optional decorative
         public string? AuthorProfilePictureUrl { get; set; } //optional decorative
-        public string FilmId { get; set; } //necessary navigation quality
+        public int FilmId { get; set; } //necessary navigation quality
         public string? FilmTitle { get; set; } //optional decorative
         public string? FilmPosterUrl { get; set; } //optional decorative
 
@@ -32,7 +32,7 @@
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
 
-            this.FilmId = Film.Id.ToString();
+            this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
             this.FilmPosterUrl = Film.PosterUrl;
         }
@@ -52,7 +52,7 @@
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
 
-            this.FilmId = Review.FilmId.ToString();
+            this.FilmId = Review.FilmId;
         }
 
         public ReviewInfoResponse(Review Review, Film Film)
@@ -68,7 +68,7 @@
 
             this.AuthorId = Review.AuthorId.ToString();
 
-            this.FilmId = Film.Id.ToString();
+            this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
             this.FilmPosterUrl = Film.PosterUrl;
         }
@@ -86,7 +86,7 @@
 
             this.AuthorId = Review.AuthorId.ToString();
 
-            this.FilmId = Review.FilmId.ToString();
+            this.FilmId = Review.FilmId;
         }
     }
 
@@ -97,7 +97,7 @@
         public int Flags { get; set; }
         public bool Spoiler { get; set; }
         public string AuthorId { get; set; }
-        public string FilmId { get; set; }
+        public int FilmId { get; set; }
     }
 
     public class UpdateReviewRequest
