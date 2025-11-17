@@ -45,7 +45,7 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Found no film with TmdbID: {FilmId}");
                 throw new KeyNotFoundException();
             }
-            return new FilmInfoResponse(Film);
+            return new FilmInfoResponse(Film, true, true);
         }
 
         public async Task<FilmInfoResponse?> GetFilmBySlug(string Slug)
@@ -59,11 +59,11 @@ namespace Heteroboxd.Service
             else if (Films.Count > 1)
             {
                 _logger.LogWarning($"Conflicting slugs: multiple films with {Slug} exist in database!");
-                return new FilmInfoResponse(Films.OrderBy(f => f.FavoriteCount).First());
+                return new FilmInfoResponse(Films.OrderBy(f => f.FavoriteCount).First(), true, true);
             }
             else
             {
-                return new FilmInfoResponse(Films[0]);
+                return new FilmInfoResponse(Films[0], true, true);
             }
         }
 

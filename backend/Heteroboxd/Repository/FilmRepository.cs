@@ -31,11 +31,15 @@ namespace Heteroboxd.Repository
 
         public async Task<Film?> GetByIdAsync(int Id) =>
             await _context.Films
+                .AsSplitQuery()
+                .Include(f => f.CastAndCrew)
                 .Include(f => f.WatchedBy)
+                .Include(f => f.Reviews)
                 .FirstOrDefaultAsync(f => f.Id == Id && !f.Deleted);
 
         public async Task<List<Film>> GetBySlugAsync(string Slug) =>
             await _context.Films
+                .AsSplitQuery()
                 .Include(f => f.CastAndCrew)
                 .Include(f => f.WatchedBy)
                 .Include(f => f.Reviews)

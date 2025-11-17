@@ -48,30 +48,34 @@ const Register = () => {
 
   async function handleRegister() {
     setResponse(0);
-    fetch(`${BaseUrl.api}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        Name: name,
-        Email: email,
-        Password: password,
-        PictureUrl: profileUri,
-        Bio: bio,
-        Gender: gender === 0 ? 'male' : 'female',
-      })
-    }).then((res) => {
+    try {
+      const res = await fetch(`${BaseUrl.api}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          Name: name,
+          Email: email,
+          Password: password,
+          PictureUrl: profileUri,
+          Bio: bio,
+          Gender: gender === 0 ? "male" : "female",
+        }),
+      });
       if (res.status === 200) {
-        setMessage("You have successfully joined the Heteroboxd community. Please check your email to verify your account within 24 hours.");
+        setMessage("You have successfully joined the Heteroboxd community...");
         setResponse(200);
       } else if (res.status === 400) {
-        setMessage(`The email address ${email} is already in use. Did you mean to log in instead?`);
+        setMessage(`The email address ${email} is already in use.`);
         setResponse(400);
       } else {
-        setMessage("Something went wrong! Try again later, or contact Heteroboxd support.");
+        setMessage("Something went wrong! Try again later.");
         setResponse(500);
       }
-      setPopupVisible(true);
-    });
+    } catch (err) {
+      setMessage("Unable to reach the server. Please try again later.");
+      setResponse(500);
+    }
+    setPopupVisible(true);
   }
 
   return (

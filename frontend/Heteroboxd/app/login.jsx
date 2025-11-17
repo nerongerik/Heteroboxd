@@ -23,31 +23,38 @@ const Login = () => {
 
   const handleLoginPress = async () => {
     setResponse(0);
-    await fetch(`${BaseUrl.api}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        Email: email,
-        Password: password
-      })
-    }).then(async (res) => {
+    try {
+      const res = await fetch(`${BaseUrl.api}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          Email: email,
+          Password: password
+        }),
+      });
       if (res.status === 200) {
         const data = await res.json();
         await login(data.jwt, data.refresh);
+
         setResponse(200);
         router.replace('/');
-      } else if (res.status === 401) {
+        return;
+      }
+      if (res.status === 401) {
         setResponse(401);
         setMessage("The email or password you entered is incorrect.");
         setPopupVisible(true);
-      } else {
-        setResponse(500);
-        setMessage("Something went wrong! Try again later.");
-        setPopupVisible(true);
+        return;
       }
-    });
+      setResponse(500);
+      setMessage("Something went wrong! Try again later.");
+      setPopupVisible(true);
+
+    } catch (error) {
+      setResponse(500);
+      setMessage("Unable to reach the server. Please try again later.");
+      setPopupVisible(true);
+    }
   };
 
   return (

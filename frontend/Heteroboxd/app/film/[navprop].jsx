@@ -6,6 +6,8 @@ import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
+import Popup from '../../components/popup';
+import {UserAvatar} from '../../components/userAvatar';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -41,7 +43,7 @@ const Film = () => {
           id: json.filmId, title: json.title, originalTitle: json.originalTitle, genres: json.genres,
           synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
           releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-          collection: json.collection
+          collection: json.collection, castAndCrew: json.castAndCrew
         });
       } else if (fRes.status === 404) {
         setMessage("This film no longer seems to exist.");
@@ -93,7 +95,7 @@ const Film = () => {
           id: json.filmId, title: json.title, originalTitle: json.originalTitle, genres: json.genres,
           synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
           releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-          collection: json.collection
+          collection: json.collection, castAndCrew: json.castAndCrew
         });
       } else if (fRes.status === 404) {
         setMessage("This film no longer seems to exist.");
@@ -187,6 +189,7 @@ const Film = () => {
         }}
         showsVerticalScrollIndicator={false}
       >
+
       </ScrollView>
 
       <Popup visible={result === 400 || result === 404 || result === 500} message={message} onClose={() => {

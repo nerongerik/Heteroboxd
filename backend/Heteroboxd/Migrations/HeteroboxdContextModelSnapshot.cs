@@ -76,6 +76,14 @@ namespace Heteroboxd.Migrations
                     b.Property<int>("CelebrityId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CelebrityName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CelebrityPictureUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Character")
                         .HasColumnType("text");
 

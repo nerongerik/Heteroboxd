@@ -143,7 +143,7 @@ namespace Heteroboxd.Integrations
                     throw new IOException($"FAILED TO SERIALIZE {Celebrity.Id}.json");
                 }
 
-                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, FilmId, Role.Actor, Actor.character ?? "Unnamed Role");
+                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, Celebrity.Name, Celebrity.PictureUrl, FilmId, Role.Actor, Actor.character ?? "Unnamed Role");
                 try
                 {
                     await Serialize<CelebrityCredit>(Credit, Path.Combine(_configuration["TMDB:CreditSerialPath"]!, $"{Credit.Id}.json"));
@@ -198,7 +198,7 @@ namespace Heteroboxd.Integrations
                 {
                     throw new IOException($"FAILED TO SERIALIZE {Celebrity.Id}.json");
                 }
-                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, FilmId, CrewRole, null);
+                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, Celebrity.Name, Celebrity.PictureUrl, FilmId, CrewRole, null);
                 try
                 {
                     await Serialize<CelebrityCredit>(Credit, Path.Combine(_configuration["TMDB:CreditSerialPath"]!, $"{Credit.Id}.json"));

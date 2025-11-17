@@ -16,7 +16,10 @@
         public int? WatchCount { get; set; }
         public Dictionary<int, string>? Collection { get; set; }
 
-        public FilmInfoResponse(Film Film, bool IncludeWatchCount = true)
+        //BIG PROPERTY -> used ONLY on the film details page, NOWHERE ELSE!!!
+        public List<CelebrityCreditInfoResponse>? CastAndCrew { get; set; }
+
+        public FilmInfoResponse(Film Film, bool IncludeWatchCount = true, bool IncludeCredits = false)
         {
             this.FilmId = Film.Id;
             this.Title = Film.Title;
@@ -32,6 +35,14 @@
             if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Count();
             else this.WatchCount = null;
             this.Collection = Film.Collection;
+
+            if (IncludeCredits && Film.CastAndCrew != null)
+            {
+                this.CastAndCrew = Film.CastAndCrew
+                    .Select(c => new CelebrityCreditInfoResponse(c))
+                    .ToList();
+            }
+            else this.CastAndCrew = null;
         }
     }
 
