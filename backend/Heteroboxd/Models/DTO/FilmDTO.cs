@@ -9,7 +9,6 @@
         public string Synopsis { get; set; }
         public string PosterUrl { get; set; }
         public string? BackdropUrl { get; set; }
-        public string? TrailerUrl { get; set; }
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
         public string Slug { get; set; }
@@ -36,15 +35,6 @@
         }
     }
 
-    public class UpdateFilmRequest
-    {
-        public int FilmId { get; set; }
-        public string? Title { get; set; }
-        public string? Synopsis { get; set; }
-        public string? PosterUrl { get; set; }
-        public string? BackdropUrl { get; set; }
-    }
-
     public class FilmSearchRequest
     {
         public string? Title { get; set; }
@@ -57,5 +47,17 @@
         public int Page { get; set; }
         public int PageSize { get; set; }
         public List<FilmInfoResponse> Films { get; set; }
+    }
+
+    public class UserWatchedFilmResponse
+    {
+        public string DateWatched { get; set; }
+        public int TimesWatched { get; set; }
+
+        public UserWatchedFilmResponse(UserWatchedFilm UWF)
+        {
+            this.DateWatched = UWF.DateWatched.ToString("dd/MM/yyyy HH:mm");
+            this.TimesWatched = UWF.TimesWatched;
+        }
     }
 }

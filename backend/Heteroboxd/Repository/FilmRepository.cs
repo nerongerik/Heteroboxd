@@ -8,7 +8,7 @@ namespace Heteroboxd.Repository
     {
         Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Film?> GetByIdAsync(int Id);
-        Task<Film?> GetBySlugAsync(string Slug);
+        Task<List<Film>> GetBySlugAsync(string Slug);
         Task<List<Film>> GetByYearAsync(int Year);
         Task<List<Film>> GetByCelebrityAsync(int CelebrityId);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
@@ -34,12 +34,13 @@ namespace Heteroboxd.Repository
                 .Include(f => f.WatchedBy)
                 .FirstOrDefaultAsync(f => f.Id == Id && !f.Deleted);
 
-        public async Task<Film?> GetBySlugAsync(string Slug) =>
+        public async Task<List<Film>> GetBySlugAsync(string Slug) =>
             await _context.Films
                 .Include(f => f.CastAndCrew)
                 .Include(f => f.WatchedBy)
                 .Include(f => f.Reviews)
-                .FirstOrDefaultAsync(f => f.Slug == Slug && !f.Deleted);
+                .Where(f => f.Slug == Slug && !f.Deleted)
+                .ToListAsync();
 
         public async Task<List<Film>> GetByYearAsync(int Year) =>
             await _context.Films

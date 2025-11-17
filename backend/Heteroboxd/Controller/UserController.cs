@@ -138,6 +138,22 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("uwf/{UserId}/{FilmId}")]
+        [Authorize]
+        public async Task<IActionResult> GetUserWatchedFilm(string UserId, int FilmId)
+        {
+            _logger.LogInformation($"GET UWF endpoint hit for: {UserId}, {FilmId}");
+            try
+            {
+                var UserWatchedFilm = await _service.GetUserWatchedFilm(UserId, FilmId);
+                return UserWatchedFilm == null ? NotFound() : Ok(UserWatchedFilm);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("search")]
         public async Task<IActionResult> SearchUsers([FromQuery] string Search)
         {

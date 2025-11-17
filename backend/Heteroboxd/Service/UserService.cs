@@ -13,6 +13,7 @@ namespace Heteroboxd.Service
         Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId);
         Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId); //example: {"following": [User1, User2, User3], "followers": [User2], "blocked": [User4, User5]}
         Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
+        Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUserEfCore7Async(string UserId);
         Task UpdateUser(UpdateUserRequest UserUpdate);
@@ -207,6 +208,12 @@ namespace Heteroboxd.Service
             };
         }
 
+        public async Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId)
+        {
+            var UserWatchedFilm = await _repo.GetUserWatchedFilmAsync(Guid.Parse(UserId), FilmId);
+            return UserWatchedFilm == null ? null : new UserWatchedFilmResponse(UserWatchedFilm);
+        }
+
         public async Task<List<UserInfoResponse>> SearchUsers(string SearchName)
         {
             var Users = await _repo.SearchAsync(SearchName);
@@ -386,6 +393,7 @@ namespace Heteroboxd.Service
                     var UserReWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
                     if (UserReWatchedFilm == null) throw new KeyNotFoundException();
                     UserReWatchedFilm.TimesWatched++;
+                    UserReWatchedFilm.DateWatched = DateTime.UtcNow;
                     _repo.UpdateUserWatchedFilm(UserReWatchedFilm);
                     await _repo.SaveChangesAsync();
                     break;
@@ -396,6 +404,9 @@ namespace Heteroboxd.Service
                     _repo.UpdateUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();
                     break;
+                default:
+                    _logger.LogError($"Unknown action: {Action}");
+                    throw new ArgumentException();
             }
         }
 
