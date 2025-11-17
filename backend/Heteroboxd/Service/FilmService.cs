@@ -1,7 +1,5 @@
-﻿using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
-using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Service
 {
@@ -9,6 +7,7 @@ namespace Heteroboxd.Service
     {
         Task<List<FilmInfoResponse>> GetAllFilms();
         Task<FilmInfoResponse?> GetFilm(int FilmId);
+        Task<FilmInfoResponse?> GetFilmBySlug(string Slug);
         Task<List<FilmInfoResponse>> GetFilmsByYear(int Year);
         Task<List<FilmInfoResponse>> GetFilmsByCelebrity(int CelebrityId);
         Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
@@ -41,7 +40,31 @@ namespace Heteroboxd.Service
         public async Task<FilmInfoResponse?> GetFilm(int FilmId)
         {
             var Film = await _repo.GetByIdAsync(FilmId);
-            return Film == null ? null : new FilmInfoResponse(Film);
+            if (Film == null)
+            {
+                _logger.LogError($"Found no film with TmdbID: {FilmId}");
+                throw new KeyNotFoundException();
+            }
+            return new FilmInfoResponse(Film);
+        }
+
+        public async Task<FilmInfoResponse?> GetFilmBySlug(string Slug)
+        {
+            var Films = await _repo.GetBySlugAsync(Slug);
+            if (Films.Count == 0)
+            {
+                _logger.LogError($"Found no film with Slug: {Slug}");
+                throw new KeyNotFoundException();
+            }
+            else if (Films.Count > 1)
+            {
+                _logger.LogWarning($"Conflicting slugs: multiple films with {Slug} exist in database!");
+                return new FilmInfoResponse(Films.OrderBy(f => f.FavoriteCount).First());
+            }
+            else
+            {
+                return new FilmInfoResponse(Films[0]);
+            }
         }
 
         public async Task<List<FilmInfoResponse>> GetFilmsByYear(int Year)

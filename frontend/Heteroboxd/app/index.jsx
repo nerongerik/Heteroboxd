@@ -11,7 +11,7 @@ const Home = () => {
     <View style={styles.container}>
       <Text>Home</Text>
       <Link style={styles.link} href='/about'>About Heteroboxd</Link>
-      <Link style={styles.link} href='/notifications'>Notifications</Link>
+      <Link style={styles.link} href='/film/769'>Film</Link>
       <Link style={styles.link} href='/profile/019a699e-189a-72f3-a490-75efd46c1994'>Other User</Link>
       {
         !user ? (

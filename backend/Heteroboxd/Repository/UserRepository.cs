@@ -105,7 +105,7 @@ namespace Heteroboxd.Repository
 
         public async Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId) =>
             await _context.UserWatchedFilms
-                .FirstOrDefaultAsync(uwf => uwf.UserId == UserId && uwf.FilmId == FilmId && uwf.TimesWatched != 0);
+                .FirstOrDefaultAsync(uwf => uwf.UserId == UserId && uwf.FilmId == FilmId);
 
         public async Task<User?> GetFollowing(Guid UserId) =>
             await _context.Users

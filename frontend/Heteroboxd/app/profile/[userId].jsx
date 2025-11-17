@@ -458,7 +458,7 @@ const Profile = () => {
             </View>
           ) : recent.length === 0 ? (
             <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-              <Text style={styles.text}>This user doesn't appear to be a real nigga, as there is no recent activity.</Text>
+              <Text style={styles.text}>This user has no motion.</Text>
             </View>
           ) : (
             <ScrollView

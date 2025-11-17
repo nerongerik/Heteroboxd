@@ -44,14 +44,39 @@ namespace Heteroboxd.Controller
             throw new NotImplementedException();
         }
 
-        [HttpGet("film/{FilmId}")]
+        [HttpGet("{FilmId}")]
+        [AllowAnonymous] //anyone can view films
         public async Task<IActionResult> GetFilm(int FilmId)
         {
-            //retrives specific film from database
+            _logger.LogInformation($"Get Film endpoint hit with TmdbId: {FilmId}");
             try
             {
                 var Film = await _service.GetFilm(FilmId);
-                return Film == null ? NotFound() : Ok(Film);
+                return Ok(Film);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("slug/{Slug}")]
+        [AllowAnonymous] //anyone can view films
+        public async Task<IActionResult> GetFilmBySlug(string Slug)
+        {
+            _logger.LogInformation($"Get Film by Slug endpoint hit with Slug: {Slug}");
+            try
+            {
+                var Film = await _service.GetFilmBySlug(Slug.ToLower());
+                return Ok(Film);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch
             {
