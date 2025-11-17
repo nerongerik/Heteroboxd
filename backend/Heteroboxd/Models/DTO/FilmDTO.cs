@@ -2,9 +2,10 @@
 {
     public class FilmInfoResponse
     {
-        public string FilmId { get; set; }
+        public int FilmId { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
+        public List<string> Genres { get; set; }
         public string Synopsis { get; set; }
         public string PosterUrl { get; set; }
         public string? BackdropUrl { get; set; }
@@ -14,12 +15,14 @@
         public string Slug { get; set; }
         public int FavoriteCount { get; set; }
         public int? WatchCount { get; set; }
+        public Dictionary<int, string>? Collection { get; set; }
 
         public FilmInfoResponse(Film Film, bool IncludeWatchCount = true)
         {
-            this.FilmId = Film.Id.ToString();
+            this.FilmId = Film.Id;
             this.Title = Film.Title;
             this.OriginalTitle = Film.OriginalTitle;
+            this.Genres = Film.Genres.ToList();
             this.Synopsis = Film.Synopsis;
             this.PosterUrl = Film.PosterUrl;
             this.BackdropUrl = Film.BackdropUrl;
@@ -29,12 +32,13 @@
             this.FavoriteCount = Film.FavoriteCount;
             if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Count();
             else this.WatchCount = null;
+            this.Collection = Film.Collection;
         }
     }
 
     public class UpdateFilmRequest
     {
-        public string FilmId { get; set; }
+        public int FilmId { get; set; }
         public string? Title { get; set; }
         public string? Synopsis { get; set; }
         public string? PosterUrl { get; set; }

@@ -5,21 +5,21 @@
     "slug": "Heteroboxd",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/master.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/master.png",
       "resizeMode": "cover",
-      "backgroundColor": "#191d1f"
+      "backgroundColor": "#0075ff"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#191d1f"
+        "foregroundImage": "./assets/foreground.png",
+        "backgroundColor": "#0075ff"
       },
       "edgeToEdgeEnabled": true,
       "backgroundColor": "#191d1f",

@@ -38,16 +38,16 @@ namespace Heteroboxd.Models
             Deleted = false;
             Watchlist = null; //to be set after user creation
             Favorites = null; //to be set after user creation
-            Lists = [];
-            Followers = [];
-            Following = [];
-            Blocked = [];
-            Notifications = [];
-            Reviews = [];
-            LikedReviews = [];
-            LikedComments = [];
-            LikedLists = [];
-            WatchedFilms = [];
+            Lists = new List<UserList>();
+            Followers = new List<User>();
+            Following = new List<User>();
+            Blocked = new List<User>();
+            Notifications = new List<Notification>();
+            Reviews = new List<Review>();
+            LikedReviews = new List<Review>();
+            LikedComments = new List<Comment>();
+            LikedLists = new List<UserList>();
+            WatchedFilms = new List<UserWatchedFilm>();
         }
 
         public User(string Name, string Email, string? PictureUrl, string? Bio, string Gender) : this()

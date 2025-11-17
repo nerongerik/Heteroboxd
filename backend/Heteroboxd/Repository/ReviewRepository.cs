@@ -8,7 +8,7 @@ namespace Heteroboxd.Repository
     {
         Task<List<Review>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Review?> GetByIdAsync(Guid Id);
-        Task<List<Review>> GetByFilmAsync(Guid FilmId);
+        Task<List<Review>> GetByFilmAsync(int FilmId);
         Task<List<Review>> GetByAuthorAsync(Guid AuthorId);
         void Create(Review Review);
         void Update(Review Review);
@@ -36,7 +36,7 @@ namespace Heteroboxd.Repository
             await _context.Reviews
                 .FirstOrDefaultAsync(r => r.Id == Id && !r.Deleted);
 
-        public async Task<List<Review>> GetByFilmAsync(Guid FilmId) =>
+        public async Task<List<Review>> GetByFilmAsync(int FilmId) =>
             await _context.Reviews
                 .Where(r => r.FilmId == FilmId && !r.Deleted)
                 .ToListAsync();

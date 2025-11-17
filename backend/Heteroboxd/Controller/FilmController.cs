@@ -45,7 +45,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("film/{FilmId}")]
-        public async Task<IActionResult> GetFilm(string FilmId)
+        public async Task<IActionResult> GetFilm(int FilmId)
         {
             //retrives specific film from database
             try
@@ -75,7 +75,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("celebrity/{CelebrityId}")]
-        public async Task<IActionResult> GetFilmsByCelebrity(string CelebrityId)
+        public async Task<IActionResult> GetFilmsByCelebrity(int CelebrityId)
         {
             //retrives all films for a specific celebrity from database
             try
@@ -124,31 +124,10 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //POST endpoints -> not allowed, films added via tMDB sync only
-
-        //PUT endpoints -> ADMIN privileges only
-
-        [HttpPut]
-        public async Task<IActionResult> UpdateFilm([FromBody] UpdateFilmRequest FilmRequest)
-        {
-            //updates an existing film in the database
-            try
-            {
-                await _service.UpdateFilm(FilmRequest);
-                return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
+        //PUT endpoints -> free access
 
         [HttpPut("favorite-count/{FilmId}/{FavoriteChange}")]
-        public async Task<IActionResult> UpdateFilmFavoriteCount(string FilmId, string FavoriteChange)
+        public async Task<IActionResult> UpdateFilmFavoriteCount(int FilmId, string FavoriteChange)
         {
             //increments/decriments film's favorite count in database
             try
@@ -163,27 +142,6 @@ namespace Heteroboxd.Controller
             catch (ArgumentException)
             {
                 return BadRequest();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        //DELETE endpoints -> ADMIN privileges only
-
-        [HttpDelete("{FilmId}")]
-        public async Task<IActionResult> DeleteFilm(string FilmId)
-        {
-            //deletes a film from the database
-            try
-            {
-                await _service.LogicalDeleteFilm(FilmId);
-                return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {

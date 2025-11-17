@@ -1,4 +1,5 @@
 using Heteroboxd.Data;
+using Heteroboxd.Integrations;
 using Heteroboxd.Models;
 using Heteroboxd.Repository;
 using Heteroboxd.Service;
@@ -7,14 +8,21 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // --- DATABASE CONTEXT ---
 builder.Services.AddDbContext<HeteroboxdContext>(options =>
-    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(config.GetConnectionString("DefaultConnection"), npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null
+        );
+    })
+);
 
 // --- IDENTITY CONFIGURATION ---
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
@@ -87,6 +95,15 @@ builder.Services.AddScoped<ICelebrityService, CelebrityService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<ITMDBSerializer, TMDBSerializer>();
+builder.Services.AddScoped<ITMDBLoader, TMDBLoader>();
+builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
+{
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config["TMDB:AccessToken"]}");
+});
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 // --- CONTROLLERS ---
@@ -106,5 +123,69 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+/*
+using var Scope = app.Services.CreateScope();
+var TmdbClient = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
+var TmdbService = Scope.ServiceProvider.GetRequiredService<ITMDBSerializer>();
+
+var FilePath = "D:/Code/tmdb/test_1.txt";
+
+if (File.Exists(FilePath))
+{
+    Console.WriteLine("=== DOWNLOAD STARTED ===");
+
+    foreach (var Line in File.ReadLines(FilePath))
+    {
+        if (!int.TryParse(Line, out int TmdbId)) continue;
+
+        Console.WriteLine($"Importing film {TmdbId}...");
+
+        try
+        {
+            var Response = await TmdbClient.FilmDetailsCall(TmdbId);
+            await TmdbService.ParseResponse(Response);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"FAILED {TmdbId}: {ex.Message}");
+        }
+    }
+
+    Console.WriteLine("=== DOWNLOAD FINISHED ===");
+    return;
+}
+*/
+/*
+using var Scope = app.Services.CreateScope();
+var Loader = Scope.ServiceProvider.GetRequiredService<ITMDBLoader>();
+
+Console.WriteLine("=== IMPORT STARTED ===");
+
+try
+{
+    // Step size determines how many JSON files per batch
+    int Step = 10;
+
+    Console.WriteLine("Loading Films...");
+    Loader.LoadFilms(Step);
+    Console.WriteLine("Films loaded.");
+
+    Console.WriteLine("Loading Celebrities...");
+    Loader.LoadCelebs(Step);
+    Console.WriteLine("Celebrities loaded.");
+
+    Console.WriteLine("Loading Credits...");
+    Loader.LoadCredits(Step);
+    Console.WriteLine("Credits loaded.");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"IMPORT FAILED: {ex.Message}");
+}
+
+Console.WriteLine("=== IMPORT FINISHED ===");
+return;
+*/
 
 app.Run();

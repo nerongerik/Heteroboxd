@@ -17,11 +17,11 @@ namespace Heteroboxd.Service
         Task ReportUserEfCore7Async(string UserId);
         Task UpdateUser(UpdateUserRequest UserUpdate);
         Task VerifyUser(String UserId, String Token);
-        Task UpdateWatchlist(string UserId, string FilmId);
-        Task UpdateFavorites(string UserId, List<string> FilmIds);
+        Task UpdateWatchlist(string UserId, int FilmId);
+        Task UpdateFavorites(string UserId, List<int?> FilmIds);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
         Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
-        Task TrackFilm(string UserId, string FilmId, string Action);
+        Task TrackFilm(string UserId, int FilmId, string Action);
         Task LogicalDeleteUser(string UserId);
     }
 
@@ -264,61 +264,61 @@ namespace Heteroboxd.Service
             await _repo.ReportUserEfCore7Async(Id);
         }
 
-        public async Task UpdateWatchlist(string UserId, string FilmId)
+        public async Task UpdateWatchlist(string UserId, int FilmId)
         {
             var Watchlist = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId));
-            var Film = await _filmRepo.GetByIdAsync(Guid.Parse(FilmId));
+            var Film = await _filmRepo.GetByIdAsync(FilmId);
             if (Watchlist == null || Film == null) throw new KeyNotFoundException();
             Watchlist.Films.Add(new ListEntry(Film.Id, null, Watchlist.Id, null));
             _repo.UpdateWatchlist(Watchlist);
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateFavorites(string UserId, List<string> FilmIds)
+        public async Task UpdateFavorites(string UserId, List<int?> FilmIds)
         {
             var UserFavorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
             if (UserFavorites == null) throw new KeyNotFoundException();
 
-            if (string.IsNullOrEmpty(FilmIds[0]))
+            if (FilmIds[0] == null)
             {
                 UserFavorites.Film1 = null;
             }
             else
             {
-                var Film = await _filmRepo.GetByIdAsync(Guid.Parse(FilmIds[0]));
+                var Film = await _filmRepo.GetByIdAsync(FilmIds[0]!.Value);
                 if (Film == null) throw new KeyNotFoundException();
                 UserFavorites.Film1 = Film.Id;
             }
 
-            if (string.IsNullOrEmpty(FilmIds[1]))
+            if (FilmIds[1] == null)
             {
                 UserFavorites.Film2 = null;
             }
             else
             {
-                var Film = await _filmRepo.GetByIdAsync(Guid.Parse(FilmIds[1]));
+                var Film = await _filmRepo.GetByIdAsync(FilmIds[1]!.Value);
                 if (Film == null) throw new KeyNotFoundException();
                 UserFavorites.Film2 = Film.Id;
             }
 
-            if (string.IsNullOrEmpty(FilmIds[2]))
+            if (FilmIds[2] == null)
             {
                 UserFavorites.Film3 = null;
             }
             else
             {
-                var Film = await _filmRepo.GetByIdAsync(Guid.Parse(FilmIds[2]));
+                var Film = await _filmRepo.GetByIdAsync(FilmIds[2]!.Value);
                 if (Film == null) throw new KeyNotFoundException();
                 UserFavorites.Film3 = Film.Id;
             }
 
-            if (string.IsNullOrEmpty(FilmIds[3]))
+            if (FilmIds[3] == null)
             {
                 UserFavorites.Film4 = null;
             }
             else
             {
-                var Film = await _filmRepo.GetByIdAsync(Guid.Parse(FilmIds[3]));
+                var Film = await _filmRepo.GetByIdAsync(FilmIds[3]!.Value);
                 if (Film == null) throw new KeyNotFoundException();
                 UserFavorites.Film4 = Film.Id;
             }
@@ -369,10 +369,10 @@ namespace Heteroboxd.Service
             else throw new ArgumentNullException();
         }
 
-        public async Task TrackFilm(string UserId, string FilmId, string Action)
+        public async Task TrackFilm(string UserId, int FilmId, string Action)
         {
             var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            var Film = await _filmRepo.GetByIdAsync(Guid.Parse(FilmId));
+            var Film = await _filmRepo.GetByIdAsync(FilmId);
             if (User == null || Film == null) throw new KeyNotFoundException();
 
             switch (Action)

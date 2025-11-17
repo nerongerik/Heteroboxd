@@ -67,20 +67,20 @@
         public string Id { get; set; }
         public string DateAdded { get; set; }
         public int? Position { get; set; }
-        public string FilmId { get; set; }
+        public int FilmId { get; set; }
 
         public ListEntryInfoResponse(ListEntry Entry)
         {
             this.Id = Entry.Id.ToString();
             this.DateAdded = Entry.DateAdded.ToString("dd/MM/yyyy HH:mm");
             this.Position = Entry.Position;
-            this.FilmId = Entry.FilmId.ToString();
+            this.FilmId = Entry.FilmId;
         }
     }
 
     public class CreateListEntryRequest
     {
-        public string FilmId { get; set; }
+        public int FilmId { get; set; }
         public int Position { get; set; } //there's no need for this to be nullable, as Watchlist entries are treated separately
     }
 }

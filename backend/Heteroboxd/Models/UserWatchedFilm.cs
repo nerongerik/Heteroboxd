@@ -8,9 +8,9 @@ public class UserWatchedFilm
     public DateTime DateWatched { get; private set; }
     public int TimesWatched { get; set; }
     public Guid UserId { get; private set; }
-    public Guid FilmId { get; private set; }
+    public int FilmId { get; private set; }
 
-    public UserWatchedFilm(Guid UserId, Guid FilmId)
+    public UserWatchedFilm(Guid UserId, int FilmId)
     {
         this.Id = Guid.NewGuid();
         this.UserId = UserId;

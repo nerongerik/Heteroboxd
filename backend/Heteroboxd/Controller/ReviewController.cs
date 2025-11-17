@@ -54,7 +54,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("film-reviews/{FilmId}")]
-        public async Task<IActionResult> GetReviewsByFilm(string FilmId)
+        public async Task<IActionResult> GetReviewsByFilm(int FilmId)
         {
             //retrives all reviews for a specific film from database
             try
@@ -172,12 +172,12 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("report-review/{ReviewId}")]
-        public async Task<IActionResult> ReportReview(string reviewId)
+        public async Task<IActionResult> ReportReview(string ReviewId)
         {
             //increments the flag count for a review
             try
             {
-                await _service.ReportReviewEfCore7Async(reviewId);
+                await _service.ReportReviewEfCore7Async(ReviewId);
                 return Ok();
             }
             catch (ArgumentException)

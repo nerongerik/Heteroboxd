@@ -35,7 +35,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("{CelebrityId}")]
-        public IActionResult GetCelebrity(string CelebrityId)
+        public IActionResult GetCelebrity(int CelebrityId)
         {
             //retrives specific celebrity from database
             try
@@ -54,7 +54,7 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("cast-and-crew/{FilmId}")]
-        public IActionResult GetCelebritiesByFilm(string FilmId)
+        public IActionResult GetCelebritiesByFilm(int FilmId)
         {
             //retrives all celebrity credits for a specific film from database
             try
@@ -76,49 +76,6 @@ namespace Heteroboxd.Controller
             {
                 var Celebrities = _service.SearchCelebrities(Search);
                 return Ok(Celebrities);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        //POST endpoints -> depricated, celebrities added via tMDB sync only
-
-        //PUT endpoints -> ADMIN privileges only
-
-        [HttpPut]
-        public IActionResult UpdateCelebrity([FromBody] UpdateCelebrityRequest CelebrityRequest)
-        {
-            //updates an existing celebrity in the database
-            try
-            {
-                _service.UpdateCelebrity(CelebrityRequest);
-                return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        //DELETE endpoints -> ADMIN privileges only
-        [HttpDelete("{CelebrityId}")]
-        public IActionResult DeleteCelebrity(string CelebrityId)
-        {
-            //logical delete, physical rarely or perhaps never
-            try
-            {
-                _service.LogicalDeleteCelebrity(CelebrityId);
-                return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {

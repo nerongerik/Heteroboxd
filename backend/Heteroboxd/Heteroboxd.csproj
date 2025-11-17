@@ -25,7 +25,14 @@
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Data\SerializedCredits\" />
+	  <Folder Include="Data\SerializedCelebs\" />
+	  <Folder Include="Data\SerializedFilms\" />
 	</ItemGroup>
 
 </Project>

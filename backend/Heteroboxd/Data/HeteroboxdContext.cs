@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Text.Json;
 
 namespace Heteroboxd.Data
 {
@@ -135,8 +137,7 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<Film>(entity =>
             {
                 entity.HasKey(f => f.Id);
-                entity.HasIndex(f => f.Slug).IsUnique();
-                entity.HasIndex(f => f.TmdbId).IsUnique();
+                entity.HasIndex(f => f.Slug); //.IsUnique(); -> what if two films have same title and release year?
 
                 entity.HasMany(f => f.Reviews)
                       .WithOne()
@@ -152,6 +153,24 @@ namespace Heteroboxd.Data
                       .WithOne()
                       .HasForeignKey(uwf => uwf.FilmId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(f => f.Collection)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                        v => JsonSerializer.Deserialize<Dictionary<int, string>>(v, (JsonSerializerOptions)null)
+                    )
+                    .HasColumnType("jsonb")
+                    .Metadata.SetValueComparer(
+                        new ValueComparer<Dictionary<int, string>>(
+                            (d1, d2) => JsonSerializer.Serialize(d1, (JsonSerializerOptions)null) ==
+                                        JsonSerializer.Serialize(d2, (JsonSerializerOptions)null),
+                            d => d == null ? 0 : JsonSerializer.Serialize(d, (JsonSerializerOptions)null).GetHashCode(),
+                            d => d == null ? new Dictionary<int, string>()
+                                : JsonSerializer.Deserialize<Dictionary<int, string>>(
+                                        JsonSerializer.Serialize(d, (JsonSerializerOptions)null),
+                                        (JsonSerializerOptions)null)
+                        )
+                    );
             });
 
             // UserWatchedFilm

@@ -44,7 +44,7 @@ namespace Heteroboxd.Repository
         Task<User?> GetByIdAsync(Guid Id);
         Task<Watchlist?> GetUserWatchlistAsync(Guid UserId);
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
-        Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, Guid FilmId);
+        Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<User?> GetFollowing(Guid UserId);
         Task<User?> GetFollowers(Guid UserId);
         Task<User?> GetBlocked(Guid UserId);
@@ -103,7 +103,7 @@ namespace Heteroboxd.Repository
             await _context.UserFavorites
                 .FirstOrDefaultAsync(uf => uf.UserId == UserId);
 
-        public async Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, Guid FilmId) =>
+        public async Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId) =>
             await _context.UserWatchedFilms
                 .FirstOrDefaultAsync(uwf => uwf.UserId == UserId && uwf.FilmId == FilmId && uwf.TimesWatched != 0);
 

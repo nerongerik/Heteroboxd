@@ -1,49 +1,50 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Heteroboxd.Models
 {
     public class Film
     {
         [Key]
-        public Guid Id { get; private set; }
+        public int Id { get; set; } //unique
         public string Title { get; set; }
-        public string? OriginalTitle { get; private set; }
+        public string? OriginalTitle { get; set; }
+        public string Tagline { get; set; }
         public string Synopsis { get; set; }
+        public ICollection<string> Genres { get; set; }
         public string PosterUrl { get; set; }
         public string? BackdropUrl { get; set; }
-        public string? TrailerUrl { get; private set; }
-        public int Length { get; private set; }
-        public int ReleaseYear { get; private set; }
-        public string Slug { get; private set; } //unique
-        public string TmdbId { get; private set; } //unique
-        public DateTime? LastSync { get; private set; } //if LastSync < tMDB's last update, resync
-        public bool TitleLocked { get; set; } //if true, title won't be updated during sync
-        public bool SynopsisLocked { get; set; } //if true, synopsis won't be updated during sync
-        public bool PosterUrlLocked { get; set; } //if true, poster url won't be updated during sync
-        public bool BackdropUrlLocked { get; set; } //if true, backdrop url won't be updated during sync
-        public ICollection<CelebrityCredit> CastAndCrew { get; private set; }
-        public bool Deleted { get; set; }
-        public ICollection<Review> Reviews { get; private set; }
-        public int FavoriteCount { get; set; }
-        public ICollection<UserWatchedFilm> WatchedBy { get; private set; }
+        public int Length { get; set; }
+        public int ReleaseYear { get; set; }
+        public string Slug { get; set; } //unique
+        public Dictionary<int, string> Collection { get; set; }
+        public DateTime? LastSync { get; set; } //if LastSync < tMDB's last update, resync
 
-        public Film(string Title, string? OriginalTitle, string Synopsis, string? PosterUrl, string? BackdropUrl, string? TrailerUrl, int Length, int ReleaseYear, string Slug, string TmdbId)
+        [JsonIgnore]
+        public ICollection<CelebrityCredit> CastAndCrew { get; set; }
+        public bool Deleted { get; set; }
+
+        [JsonIgnore]
+        public ICollection<Review> Reviews { get; set; }
+        public int FavoriteCount { get; set; }
+
+        [JsonIgnore]
+        public ICollection<UserWatchedFilm> WatchedBy { get; set; }
+
+        public Film(int Id, string Title, string? OriginalTitle, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear, string Slug)
         {
-            this.Id = Guid.NewGuid();
+            this.Id = Id;
             this.Title = Title;
             this.OriginalTitle = OriginalTitle;
+            this.Tagline = Tagline;
             this.Synopsis = Synopsis;
-            this.PosterUrl = PosterUrl ?? "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
-            this.BackdropUrl = BackdropUrl;
-            this.TrailerUrl = TrailerUrl;
+            this.Genres = new List<string>(); //to be filled during sync
+            this.PosterUrl = string.IsNullOrEmpty(PosterUrl) ? "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" : PosterUrl;
+            this.BackdropUrl = string.IsNullOrEmpty(BackdropUrl) ? null : BackdropUrl;
             this.Length = Length;
             this.ReleaseYear = ReleaseYear;
             this.Slug = Slug;
-            this.TmdbId = TmdbId;
-            this.TitleLocked = false;
-            this.SynopsisLocked = false;
-            this.PosterUrlLocked = false;
-            this.BackdropUrlLocked = false;
+            this.Collection = new Dictionary<int, string>();
             this.LastSync = DateTime.UtcNow;
             this.CastAndCrew = new List<CelebrityCredit>();
             this.Deleted = false;

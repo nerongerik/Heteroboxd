@@ -41,6 +41,15 @@ const About = () => {
           costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest
           <Link style={styles.link} href='sponsor'> and funding.</Link>
         </Text>
+
+        <Text style={styles.subtitle}>
+          Why is Heteroboxd so slow?
+        </Text>
+        <Text style={styles.text}>
+          Heteroboxd is an open-source project developed without profits out of the kindness of our hearts. We pay for the servers from
+          our own pocket, and unless you choose to support us with <Link style={styles.link} href='sponsor'>donations</Link>,
+          getting faster service will not be feasible.
+        </Text>
     
         <Text style={styles.subtitle}>
           How does Heteroboxd work?
@@ -56,7 +65,7 @@ const About = () => {
         <Text style={styles.text}>  
           Yes... and no. Heteroboxd enforces no speech restrictions per se, but remains very serious about both the privacy of its
           users and the integrity of the founding vision. The community is encouraged to report any behavior that threatens these
-          core tenets (e.g. doxxing, faggotry) so they can recieve the treatment that all utter woke nonsense deserves.
+          core tenets so they can recieve the treatment that all utter woke nonsense deserves.
         </Text>
     
         <Text style={styles.subtitle}>
@@ -78,7 +87,7 @@ const About = () => {
         </Text>
         <Text style={styles.text}>
           Heteroboxd's film database is powered by the one and only tMDB API, wherefrom we source all film metadata and images
-          in regular syncs.
+          in regular syncs. tMDB does not endorse Heteroboxd.
         </Text>
     
         <Text style={styles.subtitle}>
