@@ -8,6 +8,7 @@ import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
 import Popup from '../../components/popup';
 import {UserAvatar} from '../../components/userAvatar';
+import {Countries} from '../../constants/countries';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -40,11 +41,12 @@ const Film = () => {
       if (fRes.status === 200) {
         const json = await fRes.json();
         setFilm({
-          id: json.filmId, title: json.title, originalTitle: json.originalTitle, genres: json.genres,
+          id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
           synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
           releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
           collection: json.collection, castAndCrew: json.castAndCrew
         });
+        setResult(200);
       } else if (fRes.status === 404) {
         setMessage("This film no longer seems to exist.");
         setResult(404);
@@ -83,20 +85,23 @@ const Film = () => {
         setUwf(null);
       }
     } else {
+      //fetching by slug will ONLY be happening on browsers, meaning it's genuenly meaningful to make sure its the same film on refresh
+      //but if a user manually enters url (id unknown) then it's ok to fetch by slug alone (it's not that deep)
       let json;
-      //fetch film by slug (slower)
-      const fRes = await fetch(`${BaseUrl.api}/films/slug/${navprop}`, {
+      const url = film ? `${BaseUrl.api}/films/slug/${navprop}?FilmId=${film.id}` : `${BaseUrl.api}/films/slug/${navprop}`;
+      const fRes = await fetch(url, {
         method: "GET",
         headers: {'Accept': 'application/json'}
       });
       if (fRes.status === 200) {
         json = await fRes.json();
         setFilm({
-          id: json.filmId, title: json.title, originalTitle: json.originalTitle, genres: json.genres,
+          id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
           synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
           releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
           collection: json.collection, castAndCrew: json.castAndCrew
         });
+        setResult(200);
       } else if (fRes.status === 404) {
         setMessage("This film no longer seems to exist.");
         setResult(404);
@@ -144,7 +149,7 @@ const Film = () => {
 
   useEffect(() => {
     (async () => {
-      if (/^\d+$/.test(navprop) && film && film.slug && navprop !== film.slug) { //replace id for slug
+      if (Platform.OS === 'web' && /^\d+$/.test(navprop) && film && film.slug && navprop !== film.slug) { //replace id for slug
         router.setParams({ navprop: film.slug });
       }
       //once we implement reviews, we might want to call for it and display user's rating differently from the usual "interact with this feature" view
@@ -158,6 +163,12 @@ const Film = () => {
     const day = nums[0]; const year = nums[2];
     const month = months[parseInt(nums[1] - 1)];
     return `last watched on ${month} ${day}, ${year}`;
+  }
+
+  function parseCountry(country) {
+    if (!country || country.toLowerCase() !== "kosovo" || country.toLowerCase() !== "serbia and montenegro" || country.toLowerCase() !== "yugoslavia") return country;
+    return "Serbia";
+    //return ("Serbia", Countries["Serbia"]);
   }
   
   if (!film) {

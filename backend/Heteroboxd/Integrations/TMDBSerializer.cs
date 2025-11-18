@@ -82,6 +82,7 @@ namespace Heteroboxd.Integrations
         {
             string Title = Response.title ?? Response.original_title!;
             string? OriginalTitle = Response.title == null ? null : Response.original_title;
+            string Country = Response.production_countries != null && Response.production_countries.Count > 0 ? Response.production_countries[0].name! : "UNKNOWN";
             string Tagline = Response.tagline ?? "";
             string Synopsis = Response.overview ?? "[no overview available for this feature]";
             string? PosterUrl = FormUrls(Response.poster_path);
@@ -91,7 +92,7 @@ namespace Heteroboxd.Integrations
             string Slug = GenerateSlug(Title, ReleaseYear);
             int TmdbId = Response.id ?? throw new Exception("TMDB response missing ID");
 
-            Film Film = new Film(TmdbId, Title, OriginalTitle, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear, Slug);
+            Film Film = new Film(TmdbId, Title, OriginalTitle, Country, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear, Slug);
             foreach (var Genre in Response.genres ?? new List<Genre>())
             {
                 Film.Genres.Add(Genre.name!);

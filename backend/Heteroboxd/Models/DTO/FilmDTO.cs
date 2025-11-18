@@ -5,6 +5,7 @@
         public int FilmId { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
+        public string Country { get; set; }
         public List<string> Genres { get; set; }
         public string Synopsis { get; set; }
         public string PosterUrl { get; set; }
@@ -24,6 +25,7 @@
             this.FilmId = Film.Id;
             this.Title = Film.Title;
             this.OriginalTitle = Film.OriginalTitle;
+            this.Country = Film.Country;
             this.Genres = Film.Genres.ToList();
             this.Synopsis = Film.Synopsis;
             this.PosterUrl = Film.PosterUrl;

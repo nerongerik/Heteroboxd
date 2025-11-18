@@ -155,6 +155,10 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
 

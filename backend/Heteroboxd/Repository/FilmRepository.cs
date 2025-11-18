@@ -9,8 +9,9 @@ namespace Heteroboxd.Repository
         Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Film?> GetByIdAsync(int Id);
         Task<List<Film>> GetBySlugAsync(string Slug);
-        Task<List<Film>> GetByYearAsync(int Year);
-        Task<List<Film>> GetByCelebrityAsync(int CelebrityId);
+        Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize);
+        Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize);
+        Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle);
         Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta);
@@ -46,17 +47,54 @@ namespace Heteroboxd.Repository
                 .Where(f => f.Slug == Slug && !f.Deleted)
                 .ToListAsync();
 
-        public async Task<List<Film>> GetByYearAsync(int Year) =>
-            await _context.Films
-            .Where(f => f.ReleaseYear == Year && !f.Deleted)
-            .ToListAsync();
+        public async Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize)
+        {
+            var YearQuery = _context.Films
+                .Where(f => f.ReleaseYear == Year && !f.Deleted)
+                .OrderByDescending(f => f.FavoriteCount);
 
-        public async Task<List<Film>> GetByCelebrityAsync(int CelebrityId) =>
-            await _context.Films
-                .Include(f => f.CastAndCrew) //if there is trouble getting roles, try .ThenInclude(c => c.Role)
-                .Include(f => f.WatchedBy)
-                .Where(f => f.CastAndCrew.Any(c => c.CelebrityId == CelebrityId) && !f.Deleted)
+            var TotalCount = await YearQuery.CountAsync();
+
+            var Films = await YearQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
+
+            return (Films, TotalCount);
+        }
+
+        public async Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize)
+        {
+            var GenreQuery = _context.Films
+                .Where(f => f.Genres.Contains(Genre) && !f.Deleted)
+                .OrderByDescending(f => f.FavoriteCount);
+
+            var TotalCount = await GenreQuery.CountAsync();
+
+            var Films = await GenreQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Films, TotalCount);
+        }
+
+        public async Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize)
+        {
+            var CelebQuery = _context.Films
+                .Include(f => f.CastAndCrew)
+                .Where(f => f.CastAndCrew.Any(c => c.CelebrityId == CelebrityId) && !f.Deleted)
+                .OrderByDescending(f => f.FavoriteCount);
+
+            var TotalCount = await CelebQuery.CountAsync();
+
+            var Films = await CelebQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Films, TotalCount);
+        }
 
         public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {

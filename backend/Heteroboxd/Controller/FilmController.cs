@@ -66,12 +66,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("slug/{Slug}")]
         [AllowAnonymous] //anyone can view films
-        public async Task<IActionResult> GetFilmBySlug(string Slug)
+        public async Task<IActionResult> GetFilmBySlug(string Slug, [FromQuery] int? FilmId)
         {
             _logger.LogInformation($"Get Film by Slug endpoint hit with Slug: {Slug}");
             try
             {
-                var Film = await _service.GetFilmBySlug(Slug.ToLower());
+                var Film = await _service.GetFilmBySlug(Slug.ToLower(), FilmId);
                 return Ok(Film);
             }
             catch (KeyNotFoundException)
@@ -85,12 +85,12 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("year/{Year}")]
-        public async Task<IActionResult> GetFilmsByYear(int Year)
+        public async Task<IActionResult> GetFilmsByYear(int Year, int Page = 1, int PageSize = 20)
         {
             //retrives all specific year's films from database
             try
             {
-                var YearsFilms = await _service.GetFilmsByYear(Year);
+                var YearsFilms = await _service.GetFilmsByYear(Year, Page, PageSize);
                 return Ok(YearsFilms);
             }
             catch
@@ -99,13 +99,28 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("genre/{Genre}")]
+        public async Task<IActionResult> GetFilmsByGenre(string Genre, int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation($"Get by Genre enpoint hit with Genre: {Genre}");
+            try
+            {
+                var Results = await _service.GetFilmsByGenre(Genre, Page, PageSize);
+                return Ok(Results);
+            }
+            catch             
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("celebrity/{CelebrityId}")]
-        public async Task<IActionResult> GetFilmsByCelebrity(int CelebrityId)
+        public async Task<IActionResult> GetFilmsByCelebrity(int CelebrityId, int Page = 1, int PageSize = 20)
         {
             //retrives all films for a specific celebrity from database
             try
             {
-                var CelebritiesFilms = await _service.GetFilmsByCelebrity(CelebrityId);
+                var CelebritiesFilms = await _service.GetFilmsByCelebrity(CelebrityId, Page, PageSize);
                 return Ok(CelebritiesFilms);
             }
             catch
