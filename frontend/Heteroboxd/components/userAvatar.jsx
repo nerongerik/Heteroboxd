@@ -17,7 +17,7 @@ export const UserAvatar = ({ pictureUrl, style }) => {
       // const signedUrl = await fetchSignedUrl(pictureUrl)
       // if (isMounted) setResolvedUrl(signedUrl);
 
-      setResolvedUrl(pictureUrl); // For now assume it's ready-to-use
+      setResolvedUrl(pictureUrl); //functional placeholder, you will delete this once azure blob storage presigned urls are configured
     };
 
     resolveImage();

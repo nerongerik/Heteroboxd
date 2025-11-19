@@ -9,6 +9,8 @@ import * as auth from '../../helpers/auth';
 import Popup from '../../components/popup';
 import {UserAvatar} from '../../components/userAvatar';
 import {Countries} from '../../constants/countries';
+import { Poster } from '../../components/poster';
+import { Backdrop } from '../../components/backdrop';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user

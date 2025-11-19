@@ -9,7 +9,7 @@ import { BaseUrl } from '../../constants/api';
 import Popup from '../../components/popup';
 import LoadingResponse from '../../components/loadingResponse';
 import GlowingText from '../../components/glowingText';
-import { FavoritePoster } from '../../components/favoritePoster';
+import { Poster } from '../../components/poster';
 import { Snackbar } from 'react-native-paper';
 import * as auth from '../../helpers/auth';
 import Foundation from '@expo/vector-icons/Foundation';
@@ -424,7 +424,7 @@ const Profile = () => {
               }}
               style={{ alignItems: "center" }}
             >
-              <FavoritePoster
+              <Poster
                 posterUrl={favoritesResult === 404 ? 'error' : (film?.posterUrl ?? null)}
                 style={{
                   width: posterWidth,
@@ -472,7 +472,7 @@ const Profile = () => {
                   onPress={() => router.replace(`/film/${film.filmId}`)}
                   style={{ marginRight: 8 }}
                 >
-                  <FavoritePoster
+                  <Poster
                     posterUrl={film?.posterUrl ?? null}
                     style={{
                       width: posterWidth,
@@ -491,7 +491,7 @@ const Profile = () => {
                 onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
                 style={{ marginRight: 8 }}
               >
-                <FavoritePoster
+                <Poster
                   posterUrl={'more'}
                   style={{
                     width: posterWidth,
