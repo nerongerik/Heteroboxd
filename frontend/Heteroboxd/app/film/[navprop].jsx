@@ -25,7 +25,7 @@ const Film = () => {
 
   const { navprop } = useLocalSearchParams(); //navigational property
   const router = useRouter();
-  const width = useWindowDimensions();
+  const {width} = useWindowDimensions();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -44,7 +44,7 @@ const Film = () => {
         const json = await fRes.json();
         setFilm({
           id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
-          synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
+          tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
           releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
           collection: json.collection, castAndCrew: json.castAndCrew
         });
@@ -99,7 +99,7 @@ const Film = () => {
         json = await fRes.json();
         setFilm({
           id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
-          synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
+          tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
           releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
           collection: json.collection, castAndCrew: json.castAndCrew
         });
@@ -167,10 +167,11 @@ const Film = () => {
     return `last watched on ${month} ${day}, ${year}`;
   }
 
+  const malformedCountries = ["kosovo", "serbia and montenegro", "yugoslavia"];
+
   function parseCountry(country) {
-    if (!country || country.toLowerCase() !== "kosovo" || country.toLowerCase() !== "serbia and montenegro" || country.toLowerCase() !== "yugoslavia") return country;
-    return "Serbia";
-    //return ("Serbia", Countries["Serbia"]);
+    if (!country) return country;
+    return malformedCountries.includes(country.toLowerCase()) ? "Serbia" : country;
   }
   
   if (!film) {
@@ -187,6 +188,17 @@ const Film = () => {
     )
   }
 
+  //extract cast and crew for easier access
+  const actors = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'actor');
+  const directors = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId);
+  const writers = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'writer');
+  const producers = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'producer');
+  const composers = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'composer');
+  //poster computation
+  //minimum spacing between posters
+  const posterWidth = Math.min(width * 0.20, 300);
+  const posterHeight = posterWidth * (3 / 2); //maintain 2:3 aspect
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -202,7 +214,23 @@ const Film = () => {
         }}
         showsVerticalScrollIndicator={false}
       >
-
+        <Backdrop backdropUrl={film.backdropUrl} />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', alignSelf: 'center', width: Platform.OS === "web" && width > 1000 ? 1000 : "100%" }}>
+          <View>
+            <Text>{film.title}</Text>
+            {
+              film.originalTitle && film.originalTitle !== film.title
+                ? (<Text>{film.originalTitle}</Text>)
+                : null
+            }
+            <Text>DIRECTED BY</Text>
+            <Text>{directors.map(director => director.celebrityName).join(', ')}</Text>
+            <Text>{film.releaseYear} • {film.length} min • X{/*{Countries[film.country]}*/}</Text>
+          </View>
+          <Poster posterUrl={film.posterUrl} style={{ width: posterWidth, height: posterHeight }} />
+        </View>
+        <Text>{film.tagline}</Text>
+        <Text>{film.synopsis}</Text>
       </ScrollView>
 
       <Popup visible={result === 400 || result === 404 || result === 500} message={message} onClose={() => {

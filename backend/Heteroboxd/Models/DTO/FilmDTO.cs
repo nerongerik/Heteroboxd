@@ -7,6 +7,7 @@
         public string? OriginalTitle { get; set; }
         public string Country { get; set; }
         public List<string> Genres { get; set; }
+        public string Tagline { get; set; }
         public string Synopsis { get; set; }
         public string PosterUrl { get; set; }
         public string? BackdropUrl { get; set; }
@@ -27,6 +28,7 @@
             this.OriginalTitle = Film.OriginalTitle;
             this.Country = Film.Country;
             this.Genres = Film.Genres.ToList();
+            this.Tagline = Film.Tagline;
             this.Synopsis = Film.Synopsis;
             this.PosterUrl = Film.PosterUrl;
             this.BackdropUrl = Film.BackdropUrl;

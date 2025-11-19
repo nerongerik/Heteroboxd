@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import MaskedView from "@react-native-masked-view/masked-view";
-import LinearGradient from "react-native-linear-gradient";
-import { Image, Platform, useWindowDimensions } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Image, Platform, useWindowDimensions, View } from "react-native";
+import { Colors } from "../constants/colors";
 
 export const Backdrop = ({ backdropUrl }) => {
   const [resolvedUrl, setResolvedUrl] = useState(null);
@@ -19,18 +19,7 @@ export const Backdrop = ({ backdropUrl }) => {
   const imageHeight = imageWidth / 1.78;
 
   return (
-    <MaskedView
-      style={{ width: imageWidth, height: imageHeight }}
-      maskElement={
-        <LinearGradient
-          colors={["white", "transparent"]}
-          locations={[0, 1]}
-          style={{ flex: 1 }}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-      }
-    >
+    <View style={{ width: imageWidth, height: imageHeight, alignSelf: 'center', marginBottom: 10 }}>
       <Image
         source={
           resolvedUrl === 'error'
@@ -38,7 +27,44 @@ export const Backdrop = ({ backdropUrl }) => {
             : { uri: resolvedUrl }
         }
         style={{ width: imageWidth, height: imageHeight }}
+        resizeMode="cover"
       />
-    </MaskedView>
+      <LinearGradient
+        colors={['transparent', Colors.background]}
+        style={{position: 'absolute', left: 0, right: 0, bottom: 0, height: 30}}
+        // Start the gradient at the bottom (y=0.5) and end at the bottom edge (y=1)
+        start={{ x: 0, y: 0.5 }} 
+        end={{ x: 0, y: 1 }} 
+      />
+
+      {(Platform.OS === 'web' && width > 1000) && (
+        <>
+          <LinearGradient
+            colors={[Colors.background, "transparent"]}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: 10,
+            }}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+          />
+          <LinearGradient
+            colors={["transparent", Colors.background]}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: 10,
+            }}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+          />
+        </>
+      )}
+    </View>
   );
 };
