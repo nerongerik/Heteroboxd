@@ -3,6 +3,7 @@ import { Stack } from 'expo-router'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/profileOptionsButton'
+import './browser.css'
 
 const RootLayout = () => {
   return (

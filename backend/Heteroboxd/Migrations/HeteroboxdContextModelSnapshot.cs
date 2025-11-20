@@ -59,7 +59,6 @@ namespace Heteroboxd.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("PictureUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -81,13 +80,15 @@ namespace Heteroboxd.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("CelebrityPictureUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Character")
                         .HasColumnType("text");
 
                     b.Property<int>("FilmId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Order")
                         .HasColumnType("integer");
 
                     b.Property<int>("Role")

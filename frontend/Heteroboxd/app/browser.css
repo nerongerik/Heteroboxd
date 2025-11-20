@@ -1,0 +1,26 @@
+/* ==== Heteroboxd Dark Scrollbar ==== */
+::-webkit-scrollbar {
+  height: 10px; /* horizontal bar height */
+}
+
+::-webkit-scrollbar-track {
+  background: #191d1f;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262a2d;
+  border-radius: 5px;
+  border: 2px solid #191d1f;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff8a00;
+}
+
+/* Firefox */
+* {
+  scrollbar-color: #262a2d #191d1f;
+  scrollbar-width: thin;
+}
+/* ==== End Heteroboxd Dark Scrollbar ==== */

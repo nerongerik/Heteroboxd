@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Pressable } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
@@ -12,6 +12,8 @@ import {Countries} from '../../constants/countries';
 import { Poster } from '../../components/poster';
 import { Backdrop } from '../../components/backdrop';
 import React from 'react';
+import { Headshot } from '../../components/headshot';
+import { useMemo } from 'react';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -29,7 +31,6 @@ const Film = () => {
   const {width} = useWindowDimensions();
 
   const [refreshing, setRefreshing] = useState(false);
-  const scrollRef = React.useRef(null);
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
@@ -160,26 +161,6 @@ const Film = () => {
     })();
   }, [film])
 
-  React.useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const node = scrollRef.current;
-
-    if (!node) return;
-
-    // custom wheel handler
-    const handleWheel = (e) => {
-      e.preventDefault(); // NOW this works
-      node.scrollLeft += e.deltaY;
-    };
-
-    // attach non-passive listener
-    node.addEventListener("wheel", handleWheel, { passive: false });
-
-    return () => {
-      node.removeEventListener("wheel", handleWheel);
-    };
-  }, []);
-
   function parseDate(date) {
     if (!date) return date;
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -195,7 +176,25 @@ const Film = () => {
     if (!country) return country;
     return malformedCountries.includes(country.toLowerCase()) ? "Serbia" : country;
   }
-  
+
+  //credits parsing
+  const actors = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film]);
+  const directors = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film]);
+  const crew = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() !== 'actor') ?? [], [film]);
+  //poster sizing
+  const posterWidth = useMemo(() => Math.min(width * 0.33, 250), [width]);
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]); //maintain 2:3 aspect
+  //collection sizing
+  const spacing = useMemo(() => Platform.OS === 'web' && width > 1000 ? 50 : 5, [width]); //minimum spacing between posters
+  const maxRowWidth = useMemo(() => Platform.OS === 'web' && width > 1000 ? 1000 : width * 0.95, [width]); //determines max usable row width:
+  //compute poster width
+  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
+  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth]); //maintain 2:3 aspect
+  //compute picture dimensions
+  const headshotSize = useMemo(() => width > 1000 ? 100 : 72, [width]);
+  //cache backdrop
+  const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl])
+
   if (!film) {
     return (
       <View style={{
@@ -209,23 +208,6 @@ const Film = () => {
       </View>
     )
   }
-
-  //extract cast and crew for easier access
-  const actors = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor') ?? [];
-  const directors = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [];
-  const writers = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'writer') ?? [];
-  const producers = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'producer') ?? [];
-  const composers = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'composer') ?? [];
-  //poster computation
-  //minimum spacing between posters
-  const posterWidth = Math.min(width * 0.33, 250);
-  const posterHeight = posterWidth * (3 / 2); //maintain 2:3 aspect
-  //collection sizing
-  const spacing = Platform.OS === 'web' && width > 1000 ? 50 : 5; //minimum spacing between posters
-  const maxRowWidth = (Platform.OS === 'web' && width > 1000 ? 1000 : width * 0.95); //determines max usable row width:
-  //compute poster width:
-  const colPosterWidth = (maxRowWidth - spacing * 4) / 4;
-  const colPosterHeight = colPosterWidth * (3 / 2); //maintain 2:3 aspect
 
   return (
     <View style={styles.container}>
@@ -242,7 +224,7 @@ const Film = () => {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Backdrop backdropUrl={film.backdropUrl} />
+        {MemoBackdrop}
 
         <View style={[styles.row, {width: Platform.OS === "web" && width > 1000 ? 1000 : "100%"}]}>
           <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
@@ -284,7 +266,42 @@ const Film = () => {
 
         <View style={styles.divider}></View>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[CAST SCROLLER]</Text>
+        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Cast</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={Platform.OS === 'web' && width > 1000}
+          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center" }}
+        >
+          {actors.map((actor, index) => {
+            return (
+              <Pressable
+                key={actor.celebrityId}
+                onPress={() => router.replace(`/celebrity/${actor.celebrityId}`)}
+                style={{ marginRight: index < actors.length - 1 ? 15 : 0 }}
+              >
+                <View style={{ width: headshotSize, alignItems: "center", }}>
+                  <Headshot
+                    pictureUrl={actor.celebrityPictureUrl}
+                    style={{
+                      width: headshotSize,
+                      height: headshotSize,
+                      borderRadius: headshotSize / 2,
+                      borderWidth: 2,
+                      borderColor: Colors.border_color
+                    }}
+                  />
+                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: 13 }]} numberOfLines={1}>
+                    {actor.celebrityName}
+                  </Text>
+                  <Text style={[styles.text, { textAlign: "center", fontSize: 12, opacity: 0.8 }, ]} numberOfLines={1}>
+                    {`(${actor.character})`}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
         <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[CREW SCROLLER]</Text>
 
         <View style={styles.divider}></View>
@@ -308,19 +325,15 @@ const Film = () => {
               }}
             >
               <ScrollView
-                ref={scrollRef}
                 horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing,
-                }}
+                showsHorizontalScrollIndicator={Platform.OS === 'web' && width > 1000}
+                style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center" }}
               >
-                {Object.entries(film.collection).map(([tmdbId, posterLink]) => (
-                  <TouchableOpacity
+                {Object.entries(film.collection).map(([tmdbId, posterLink], index) => (
+                  <Pressable
                     key={tmdbId}
                     onPress={() => router.replace(`/film/${tmdbId}`)}
+                    style={{ marginRight: index < Object.entries(film.collection).length - 1 ? spacing : 0 }}
                   >
                     <Poster
                       posterUrl={posterLink}
@@ -328,12 +341,11 @@ const Film = () => {
                         width: colPosterWidth,
                         height: colPosterHeight,
                         borderRadius: 8,
-                        borderWidth: film ? 0 : 1,
-                        borderColor: film ? "transparent" : Colors.border_color,
-                        opacity: film ? 1 : 0.4,
+                        borderWidth: 2,
+                        borderColor: Colors.border_color
                       }}
                     />
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </ScrollView>
             </View>

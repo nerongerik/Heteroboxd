@@ -11,9 +11,9 @@ export const Backdrop = ({ backdropUrl }) => {
     if (backdropUrl === 'error') {
       setResolvedUrl('error');
     } else {
-      setResolvedUrl(backdropUrl);
+      setResolvedUrl(width > 1000 ? backdropUrl.replace('original', 'w1280') : backdropUrl.replace('original', 'w780'));
     }
-  }, [backdropUrl]);
+  }, [backdropUrl, width]);
 
   const imageWidth = Platform.OS === 'web' && width > 1000 ? 1000 : width;
   const imageHeight = imageWidth / 1.78;

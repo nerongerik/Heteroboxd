@@ -8,7 +8,7 @@ export const Poster = ({ posterUrl, style, other }) => {
     if (!posterUrl) {
       setResolvedUrl(null);
     } else {
-      setResolvedUrl(posterUrl);
+      setResolvedUrl(posterUrl.replace('original', 'w780'));
     }
   }, [posterUrl]);
 

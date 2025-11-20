@@ -7,7 +7,7 @@ namespace Heteroboxd.Models.DTO
         public int Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
-        public string PictureUrl { get; set; }
+        public string? PictureUrl { get; set; }
         public List<CelebrityCreditInfoResponse> Credits { get; set; }
 
         //when viewed from film page, we don't need film info in credits (nor other films)
@@ -50,6 +50,7 @@ namespace Heteroboxd.Models.DTO
         public string? FilmReleaseDate { get; set; }
         public string Role { get; set; }
         public string? Character { get; set; }
+        public int? Order { get; set; }
 
         public CelebrityCreditInfoResponse(CelebrityCredit Credit, Film Film) //from celebrity page
         {
@@ -67,6 +68,7 @@ namespace Heteroboxd.Models.DTO
             this.CelebrityPictureUrl = Role.CelebrityPictureUrl;
             this.Role = Role.Role.ToString();
             this.Character = Role.Character;
+            this.Order = Role.Order;
         }
     }
 }
