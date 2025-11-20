@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Dimensions } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
 import { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
@@ -11,6 +11,7 @@ import {UserAvatar} from '../../components/userAvatar';
 import {Countries} from '../../constants/countries';
 import { Poster } from '../../components/poster';
 import { Backdrop } from '../../components/backdrop';
+import React from 'react';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -189,14 +190,14 @@ const Film = () => {
   }
 
   //extract cast and crew for easier access
-  const actors = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'actor');
-  const directors = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId);
-  const writers = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'writer');
-  const producers = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'producer');
-  const composers = film.castAndCrew.filter(credit => credit.role.toLowerCase() === 'composer');
+  const actors = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor') ?? [];
+  const directors = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [];
+  const writers = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'writer') ?? [];
+  const producers = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'producer') ?? [];
+  const composers = film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'composer') ?? [];
   //poster computation
   //minimum spacing between posters
-  const posterWidth = Math.min(width * 0.20, 300);
+  const posterWidth = Math.min(width * 0.33, 250);
   const posterHeight = posterWidth * (3 / 2); //maintain 2:3 aspect
 
   return (
@@ -215,22 +216,63 @@ const Film = () => {
         showsVerticalScrollIndicator={false}
       >
         <Backdrop backdropUrl={film.backdropUrl} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', alignSelf: 'center', width: Platform.OS === "web" && width > 1000 ? 1000 : "100%" }}>
-          <View>
-            <Text>{film.title}</Text>
-            {
-              film.originalTitle && film.originalTitle !== film.title
-                ? (<Text>{film.originalTitle}</Text>)
-                : null
-            }
-            <Text>DIRECTED BY</Text>
-            <Text>{directors.map(director => director.celebrityName).join(', ')}</Text>
-            <Text>{film.releaseYear} • {film.length} min • X{/*{Countries[film.country]}*/}</Text>
+
+        <View style={[styles.row, {width: Platform.OS === "web" && width > 1000 ? 1000 : "100%"}]}>
+          <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
+            <View>
+              <Text style={[styles.title, { fontSize: Platform.OS === 'web' && width > 1000 ? 50 : 28, lineHeight: Platform.OS === 'web' && width > 1000 ? 55 : 33 }]}>{film.title}</Text>
+              {
+                film.originalTitle && film.originalTitle !== film.title
+                  ? (<Text style={[styles.text, { fontSize: Platform.OS === 'web' && width > 1000 ? 25 : 14 }]}>{film.originalTitle}</Text>)
+                  : null
+              }
+            </View>
+            <View>
+              <Text style={[styles.subtitle, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 14 }]}>DIRECTED BY</Text>
+              {directors.map((director, index) => (
+                <React.Fragment key={director.celebrityId}>
+                  <Link
+                    href={`/celebrity/${director.celebrityId}`}
+                    style={[styles.link, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 14 }]}
+                  >
+                    {director.celebrityName}
+                  </Link>
+                  {index < directors.length - 1 && ', '}
+                </React.Fragment>
+              ))}
+            </View>
+            <Text style={[styles.text, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 14 }]}>{film.releaseYear} • {film.length} min • X{/*{Countries[film.country]}*/}</Text>
           </View>
-          <Poster posterUrl={film.posterUrl} style={{ width: posterWidth, height: posterHeight }} />
+          <Poster posterUrl={film.posterUrl} style={{ width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color }} />
         </View>
-        <Text>{film.tagline}</Text>
-        <Text>{film.synopsis}</Text>
+
+        <View style={styles.divider} />
+
+        <Text style={[styles.tag, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 18, marginBottom: 10, marginTop: 10 }]}>{film.tagline}</Text>
+        <Text style={[styles.text, { fontSize: Platform.OS === 'web' && width > 1000 ? 18 : 16, paddingHorizontal: 10,  marginBottom: 10 }]}>{film.synopsis}</Text>
+        
+        <View style={styles.divider}></View>
+
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[RATINGS GRAPH PLACEHOLDER]</Text>
+
+        <View style={styles.divider}></View>
+
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[CAST SCROLLER]</Text>
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[CREW SCROLLER]</Text>
+
+        <View style={styles.divider}></View>
+
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[REVIEWS]</Text>
+
+        <View style={styles.divider}></View>
+
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[RELATED FILMS]</Text>
+
+        <View style={styles.divider}></View>
+
+        <Text style={[styles.text, {alignSelf: 'center', fontSize: 16}]}>
+          The metadata for this film was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link> bearing no endorsment of Heteroboxd whatsoever.
+        </Text>
       </ScrollView>
 
       <Popup visible={result === 400 || result === 404 || result === 500} message={message} onClose={() => {
@@ -251,5 +293,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingBottom: 50,
+    overflow: 'hidden',
+  },
+  row: {
+    marginTop: -15,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    alignSelf: 'center'
+  },
+  title: {
+    fontWeight: "700",
+    color: Colors.text_title,
+    textAlign: "left"
+  },
+  subtitle: {
+    fontWeight: '900',
+    color: Colors.text,
+    textAlign: "left",
+  },
+  text: {
+    fontWeight: "350",
+    color: Colors.text,
+    textAlign: "left",
+  },
+  link: {
+    color: Colors.text_link,
+    fontWeight: "700",
+  },
+  tag: {
+    fontWeight: '700',
+    color: Colors.text,
+    textAlign: "left",
+    paddingHorizontal: 10,
+  },
+  divider: {
+    height: 1.5,
+    backgroundColor: Colors.border_color,
+    marginVertical: 20,
+    width: "75%",
+    alignSelf: "center",
+    opacity: 0.5,
   },
 })
