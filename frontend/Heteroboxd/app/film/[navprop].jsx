@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Dimensions } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, TouchableOpacity } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
@@ -29,6 +29,7 @@ const Film = () => {
   const {width} = useWindowDimensions();
 
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = React.useRef(null);
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
@@ -159,6 +160,26 @@ const Film = () => {
     })();
   }, [film])
 
+  React.useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const node = scrollRef.current;
+
+    if (!node) return;
+
+    // custom wheel handler
+    const handleWheel = (e) => {
+      e.preventDefault(); // NOW this works
+      node.scrollLeft += e.deltaY;
+    };
+
+    // attach non-passive listener
+    node.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      node.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
   function parseDate(date) {
     if (!date) return date;
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -199,6 +220,12 @@ const Film = () => {
   //minimum spacing between posters
   const posterWidth = Math.min(width * 0.33, 250);
   const posterHeight = posterWidth * (3 / 2); //maintain 2:3 aspect
+  //collection sizing
+  const spacing = Platform.OS === 'web' && width > 1000 ? 50 : 5; //minimum spacing between posters
+  const maxRowWidth = (Platform.OS === 'web' && width > 1000 ? 1000 : width * 0.95); //determines max usable row width:
+  //compute poster width:
+  const colPosterWidth = (maxRowWidth - spacing * 4) / 4;
+  const colPosterHeight = colPosterWidth * (3 / 2); //maintain 2:3 aspect
 
   return (
     <View style={styles.container}>
@@ -262,11 +289,56 @@ const Film = () => {
 
         <View style={styles.divider}></View>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[REVIEWS]</Text>
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[FRIENDS WHO'VE WATCHED PLACEHOLDER]</Text>
 
         <View style={styles.divider}></View>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[RELATED FILMS]</Text>
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[REVIEWS]</Text>
+
+        <View style={styles.divider}></View>
+        
+        {film.collection && Object.keys(film.collection).length > 0 && (
+          <>
+            <Text style={styles.regionalTitle}>Related Films</Text>
+            <View 
+              style={{
+                width: colPosterWidth * 4 + spacing * 3,
+                maxWidth: "100%",
+                alignSelf: "center",
+              }}
+            >
+              <ScrollView
+                ref={scrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing,
+                }}
+              >
+                {Object.entries(film.collection).map(([tmdbId, posterLink]) => (
+                  <TouchableOpacity
+                    key={tmdbId}
+                    onPress={() => router.replace(`/film/${tmdbId}`)}
+                  >
+                    <Poster
+                      posterUrl={posterLink}
+                      style={{
+                        width: colPosterWidth,
+                        height: colPosterHeight,
+                        borderRadius: 8,
+                        borderWidth: film ? 0 : 1,
+                        borderColor: film ? "transparent" : Colors.border_color,
+                        opacity: film ? 1 : 0.4,
+                      }}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </>
+        )}
 
         <View style={styles.divider}></View>
 
@@ -311,6 +383,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontWeight: '900',
     color: Colors.text,
+    textAlign: "left",
+  },
+  regionalTitle: {
+    fontWeight: "500",
+    marginBottom: 5,
+    marginLeft: 12,
+    fontSize: 20,
+    color: Colors.text_title,
     textAlign: "left",
   },
   text: {
