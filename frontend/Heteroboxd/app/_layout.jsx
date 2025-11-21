@@ -26,7 +26,16 @@ const RootLayout = () => {
             headerRight: () => <ProfileOptionsButton userId={route.params?.userId} />
           })}
         />
-        <Stack.Screen name='film/[navprop]' options={{ headerShown: Platform.OS === 'web' ? false : true }} />
+        <Stack.Screen
+          name='film/[navprop]'
+          options={{
+            headerShown: Platform.OS === 'web' ? false : true,
+            headerTransparent: true,
+            headerBackground: () => null,
+            headerTitle: '',
+            headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
+            }}
+        />
       </Stack>
     </AuthProvider>
   )

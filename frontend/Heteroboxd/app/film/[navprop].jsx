@@ -177,21 +177,24 @@ const Film = () => {
     return malformedCountries.includes(country.toLowerCase()) ? "Serbia" : country;
   }
 
+  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
+
   //credits parsing
   const actors = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film]);
   const directors = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film]);
-  const crew = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() !== 'actor') ?? [], [film]);
+  const crew = useMemo(() => film?.castAndCrew?.filter(credit => !['actor', 'director'].includes(credit.role.toLowerCase())) ?? [], [film]);
   //poster sizing
   const posterWidth = useMemo(() => Math.min(width * 0.33, 250), [width]);
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]); //maintain 2:3 aspect
   //collection sizing
-  const spacing = useMemo(() => Platform.OS === 'web' && width > 1000 ? 50 : 5, [width]); //minimum spacing between posters
-  const maxRowWidth = useMemo(() => Platform.OS === 'web' && width > 1000 ? 1000 : width * 0.95, [width]); //determines max usable row width:
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]); //minimum spacing between posters
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width]); //determines max usable row width:
   //compute poster width
   const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth]); //maintain 2:3 aspect
   //compute picture dimensions
-  const headshotSize = useMemo(() => width > 1000 ? 100 : 72, [width]);
+  const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen]);
+  const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen]);
   //cache backdrop
   const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl])
 
@@ -217,8 +220,9 @@ const Film = () => {
         }
         contentContainerStyle={{
           padding: 5,
-          minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
-          maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%",
+          paddingTop: 0,
+          minWidth: widescreen ? 1000 : 'auto',
+          maxWidth: widescreen ? 1000 : "100%",
           width: "100%",
           alignSelf: "center",
         }}
@@ -226,23 +230,23 @@ const Film = () => {
       >
         {MemoBackdrop}
 
-        <View style={[styles.row, {width: Platform.OS === "web" && width > 1000 ? 1000 : "100%"}]}>
+        <View style={[styles.row, {width: widescreen ? 1000 : "100%"}]}>
           <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
             <View>
-              <Text style={[styles.title, { fontSize: Platform.OS === 'web' && width > 1000 ? 50 : 28, lineHeight: Platform.OS === 'web' && width > 1000 ? 55 : 33 }]}>{film.title}</Text>
+              <Text style={[styles.title, { fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33 }]}>{film.title}</Text>
               {
                 film.originalTitle && film.originalTitle !== film.title
-                  ? (<Text style={[styles.text, { fontSize: Platform.OS === 'web' && width > 1000 ? 25 : 14 }]}>{film.originalTitle}</Text>)
+                  ? (<Text style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</Text>)
                   : null
               }
             </View>
             <View>
-              <Text style={[styles.subtitle, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 14 }]}>DIRECTED BY</Text>
+              <Text style={[styles.subtitle, { fontSize: widescreen ? 20 : 14 }]}>DIRECTED BY</Text>
               {directors.map((director, index) => (
                 <React.Fragment key={director.celebrityId}>
                   <Link
                     href={`/celebrity/${director.celebrityId}`}
-                    style={[styles.link, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 14 }]}
+                    style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}
                   >
                     {director.celebrityName}
                   </Link>
@@ -250,15 +254,15 @@ const Film = () => {
                 </React.Fragment>
               ))}
             </View>
-            <Text style={[styles.text, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 14 }]}>{film.releaseYear} • {film.length} min • X{/*{Countries[film.country]}*/}</Text>
+            <Text style={[styles.text, { fontSize: widescreen ? 20 : 14 }]}>{film.releaseYear} • {film.length} min • X{/*{Countries[film.country]}*/}</Text>
           </View>
           <Poster posterUrl={film.posterUrl} style={{ width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color }} />
         </View>
 
         <View style={styles.divider} />
 
-        <Text style={[styles.tag, { fontSize: Platform.OS === 'web' && width > 1000 ? 20 : 18, marginBottom: 10, marginTop: 10 }]}>{film.tagline}</Text>
-        <Text style={[styles.text, { fontSize: Platform.OS === 'web' && width > 1000 ? 18 : 16, paddingHorizontal: 10,  marginBottom: 10 }]}>{film.synopsis}</Text>
+        <Text style={[styles.tag, { fontSize: widescreen ? 20 : 18, marginBottom: 10, marginTop: 10 }]}>{film.tagline}</Text>
+        <Text style={[styles.text, { fontSize: widescreen ? 18 : 16, paddingHorizontal: 10,  marginBottom: 10 }]}>{film.synopsis}</Text>
         
         <View style={styles.divider}></View>
 
@@ -269,8 +273,8 @@ const Film = () => {
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Cast</Text>
         <ScrollView
           horizontal
-          showsHorizontalScrollIndicator={Platform.OS === 'web' && width > 1000}
-          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center" }}
+          showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
+          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
         >
           {actors.map((actor, index) => {
             return (
@@ -279,7 +283,7 @@ const Film = () => {
                 onPress={() => router.replace(`/celebrity/${actor.celebrityId}`)}
                 style={{ marginRight: index < actors.length - 1 ? 15 : 0 }}
               >
-                <View style={{ width: headshotSize, alignItems: "center", }}>
+                <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
                   <Headshot
                     pictureUrl={actor.celebrityPictureUrl}
                     style={{
@@ -290,10 +294,10 @@ const Film = () => {
                       borderColor: Colors.border_color
                     }}
                   />
-                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: 13 }]} numberOfLines={1}>
+                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
                     {actor.celebrityName}
                   </Text>
-                  <Text style={[styles.text, { textAlign: "center", fontSize: 12, opacity: 0.8 }, ]} numberOfLines={1}>
+                  <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
                     {`(${actor.character})`}
                   </Text>
                 </View>
@@ -302,11 +306,73 @@ const Film = () => {
           })}
         </ScrollView>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[CREW SCROLLER]</Text>
+        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Crew</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={widescreen}
+          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+        >
+          {directors.map((director, index) => {
+            return (
+              <Pressable
+                key={director.celebrityId}
+                onPress={() => router.replace(`/celebrity/${director.celebrityId}`)}
+                style={{ marginRight: 15 }}
+              >
+                <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
+                  <Headshot
+                    pictureUrl={director.celebrityPictureUrl}
+                    style={{
+                      width: headshotSize,
+                      height: headshotSize,
+                      borderRadius: headshotSize / 2,
+                      borderWidth: 2,
+                      borderColor: Colors.border_color
+                    }}
+                  />
+                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
+                    {director.celebrityName}
+                  </Text>
+                  <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
+                    {`(${director.role})`}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+          {crew.map((crewer, index) => {
+            return (
+              <Pressable
+                key={crewer.celebrityId}
+                onPress={() => router.replace(`/celebrity/${crewer.celebrityId}`)}
+                style={{ marginRight: index < crew.length - 1 ? 15 : 0 }}
+              >
+                <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
+                  <Headshot
+                    pictureUrl={crewer.celebrityPictureUrl}
+                    style={{
+                      width: headshotSize,
+                      height: headshotSize,
+                      borderRadius: headshotSize / 2,
+                      borderWidth: 2,
+                      borderColor: Colors.border_color
+                    }}
+                  />
+                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
+                    {crewer.celebrityName}
+                  </Text>
+                  <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
+                    {`(${crewer.role})`}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
         <View style={styles.divider}></View>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[FRIENDS WHO'VE WATCHED PLACEHOLDER]</Text>
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center", textAlign: "center"}]}>[FRIENDS WHO'VE WATCHED PLACEHOLDER]</Text>
 
         <View style={styles.divider}></View>
 
@@ -326,8 +392,8 @@ const Film = () => {
             >
               <ScrollView
                 horizontal
-                showsHorizontalScrollIndicator={Platform.OS === 'web' && width > 1000}
-                style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center" }}
+                showsHorizontalScrollIndicator={widescreen}
+                style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
               >
                 {Object.entries(film.collection).map(([tmdbId, posterLink], index) => (
                   <Pressable
@@ -352,10 +418,8 @@ const Film = () => {
           </>
         )}
 
-        <View style={styles.divider}></View>
-
-        <Text style={[styles.text, {alignSelf: 'center', fontSize: 16}]}>
-          The metadata for this film was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link> bearing no endorsment of Heteroboxd whatsoever.
+        <Text style={[styles.text, {marginTop: 50, textAlign: 'center', alignSelf: 'center', fontSize: widescreen ? 16 : 12}]}>
+          The metadata for this film was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link>, bearing no endorsment of Heteroboxd whatsoever.
         </Text>
       </ScrollView>
 
