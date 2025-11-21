@@ -5,7 +5,7 @@
         public int FilmId { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
-        public string Country { get; set; }
+        public Dictionary<string, string> Country { get; set; }
         public List<string> Genres { get; set; }
         public string Tagline { get; set; }
         public string Synopsis { get; set; }

@@ -1,6 +1,8 @@
 ﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Models.Enums;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -82,7 +84,17 @@ namespace Heteroboxd.Integrations
         {
             string Title = Response.title ?? Response.original_title!;
             string? OriginalTitle = Response.title == null ? null : Response.original_title;
-            string Country = Response.production_countries != null && Response.production_countries.Count > 0 ? Response.production_countries[0].name! : "UNKNOWN";
+            Dictionary<string, string> Country = new Dictionary<string, string>();
+            foreach (ProductionCountry pc in Response.production_countries ?? new List<ProductionCountry>())
+            {
+                if (pc.name?.ToLower() == "kosovo" || pc.name?.ToLower() == "serbia and montenegro" || pc.name?.ToLower() == "yugoslavia")
+                {
+                    Country["Serbia"] = "RS";
+                } else
+                {
+                    Country[pc.name ?? "UNKNOWN"] = pc.iso_3166_1 ?? "XX";
+                }
+            }
             string Tagline = Response.tagline ?? "";
             string Synopsis = Response.overview ?? "[no overview available for this feature]";
             string? PosterUrl = FormUrls(Response.poster_path);

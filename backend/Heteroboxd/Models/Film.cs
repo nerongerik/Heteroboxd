@@ -9,7 +9,7 @@ namespace Heteroboxd.Models
         public int Id { get; set; } //unique
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
-        public string Country { get; set; }
+        public Dictionary<string, string> Country { get; set; }
         public string Tagline { get; set; }
         public string Synopsis { get; set; }
         public ICollection<string> Genres { get; set; }
@@ -32,7 +32,7 @@ namespace Heteroboxd.Models
         [JsonIgnore]
         public ICollection<UserWatchedFilm> WatchedBy { get; set; }
 
-        public Film(int Id, string Title, string? OriginalTitle, string Country, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear, string Slug)
+        public Film(int Id, string Title, string? OriginalTitle, Dictionary<string, string> Country, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear, string Slug)
         {
             this.Id = Id;
             this.Title = Title;

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Pressable } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
-import { use, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
@@ -8,12 +8,10 @@ import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
 import Popup from '../../components/popup';
 import {UserAvatar} from '../../components/userAvatar';
-import {Countries} from '../../constants/countries';
 import { Poster } from '../../components/poster';
 import { Backdrop } from '../../components/backdrop';
 import React from 'react';
 import { Headshot } from '../../components/headshot';
-import { useMemo } from 'react';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -170,13 +168,20 @@ const Film = () => {
     return `last watched on ${month} ${day}, ${year}`;
   }
 
-  const malformedCountries = ["kosovo", "serbia and montenegro", "yugoslavia"];
-
   function parseCountry(country) {
-    if (!country) return country;
-    return malformedCountries.includes(country.toLowerCase()) ? "Serbia" : country;
+    if (!country || country.length === 0) return null;
+    return Object.keys(country).map(c => {
+      const code = country[c]?.toUpperCase() ?? null;
+      if (!code || code === "XX") return null;
+      if (Platform.OS === "web") {
+        return code.toLowerCase();
+      }
+      return code.replace(/./g, char =>
+        String.fromCodePoint(127397 + char.charCodeAt(0))
+      );
+    });
   }
-
+  
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
 
   //credits parsing
@@ -254,7 +259,18 @@ const Film = () => {
                 </React.Fragment>
               ))}
             </View>
-            <Text style={[styles.text, { fontSize: widescreen ? 20 : 14 }]}>{film.releaseYear} • {film.length} min • X{/*{Countries[film.country]}*/}</Text>
+            
+            <Text style={[styles.text, { fontSize: widescreen ? 20 : 14 }]}>
+              {film.releaseYear} • {film.length} min •{" "}
+              {film.country.map((c, i) =>
+                Platform.OS === "web" ? (
+                  <img key={i} src={`https://flagcdn.com/24x18/${c}.png`} style={{ marginRight: 6, width: 20, height: 15 }} />
+                ) : (
+                  <Text key={i}>{c} </Text>
+                )
+              )}
+            </Text>
+
           </View>
           <Poster posterUrl={film.posterUrl} style={{ width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color }} />
         </View>
