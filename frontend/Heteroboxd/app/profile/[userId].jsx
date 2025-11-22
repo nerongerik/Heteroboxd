@@ -232,8 +232,8 @@ const Profile = () => {
 
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
   const isOwnProfile = useMemo(() => user?.userId === userId, [user?.userId, userId]);
-  const isDonor = useMemo(() => data?.tier.toLowerCase() === "donor", [data]);
-  const isAdmin = useMemo(() => data?.tier.toLowerCase() === 'admin', [data]);
+  const isDonor = useMemo(() => data?.tier?.toLowerCase() === "donor", [data]);
+  const isAdmin = useMemo(() => data?.tier?.toLowerCase() === 'admin', [data]);
   //minimum spacing between posters
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
   //determine max usable row width:

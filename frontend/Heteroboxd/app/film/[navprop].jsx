@@ -12,6 +12,7 @@ import { Poster } from '../../components/poster';
 import { Backdrop } from '../../components/backdrop';
 import React from 'react';
 import { Headshot } from '../../components/headshot';
+import FilmInteract from '../../components/filmInteract';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -189,7 +190,7 @@ const Film = () => {
   const directors = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film]);
   const crew = useMemo(() => film?.castAndCrew?.filter(credit => !['actor', 'director'].includes(credit.role.toLowerCase())) ?? [], [film]);
   //poster sizing
-  const posterWidth = useMemo(() => Math.min(width * 0.33, 250), [width]);
+  const posterWidth = useMemo(() => Math.min(width * 0.3, 225), [width]);
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]); //maintain 2:3 aspect
   //collection sizing
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]); //minimum spacing between posters
@@ -202,6 +203,14 @@ const Film = () => {
   const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen]);
   //cache backdrop
   const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl])
+  //cache interact
+  const Interact = useMemo(() => {
+    return isValidSession()
+      ?
+        <FilmInteract userAvatar={user?.pictureUrl} widescreen={widescreen} />
+      :
+        null;
+  }, [user?.pictureUrl, widescreen]);
 
   if (!film) {
     return (
@@ -275,14 +284,18 @@ const Film = () => {
           <Poster posterUrl={film.posterUrl} style={{ width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color }} />
         </View>
 
-        <View style={styles.divider} />
-
-        <Text style={[styles.tag, { fontSize: widescreen ? 20 : 18, marginBottom: 10, marginTop: 10 }]}>{film.tagline}</Text>
-        <Text style={[styles.text, { fontSize: widescreen ? 18 : 16, paddingHorizontal: 10,  marginBottom: 10 }]}>{film.synopsis}</Text>
+        <View style={[styles.divider, {marginVertical: 15}]} />
         
-        <View style={styles.divider}></View>
+        <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
+        <Text style={[styles.text, { fontSize: widescreen ? 18 : 14, paddingHorizontal: 10 }]}>{film.synopsis}</Text>
+        
+        <View style={[styles.divider, {marginVertical: 15}]} />
 
         <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[RATINGS GRAPH PLACEHOLDER]</Text>
+
+        <View style={styles.divider}></View>
+        
+        {Interact}
 
         <View style={styles.divider}></View>
 
