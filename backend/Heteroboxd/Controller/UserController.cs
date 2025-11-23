@@ -314,10 +314,11 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("track-film/{UserId}/{FilmId}")]
+        [Authorize]
         public async Task<IActionResult> TrackUserFilm(string UserId, int FilmId, [FromQuery] string Action)
         {
             //actions: ?action=watched/rewatched/unwatched
-            //for the frontend: never delete a UserWatchedFilm, just set the times watched to 0 when unwatched is triggered. display films differently based on this value
+            _logger.LogInformation($"Track Film endpoint hint for User: {UserId}, Film: {FilmId}; action: {Action}");
             try
             {
                 await _service.TrackFilm(UserId, FilmId, Action);
@@ -326,6 +327,10 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch
             {

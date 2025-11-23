@@ -118,6 +118,8 @@ const Profile = () => {
       setResult(500);
     }
 
+    // --- FETCH WATCHLIST AND SET IT DOWN IN THE BUTTONS ---
+
     setRefreshing(false);
   };
 
@@ -483,24 +485,27 @@ const Profile = () => {
                   />
                 </Pressable>
               ))}
-
-              <Pressable
-                onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
-                style={{ marginRight: 8 }}
-              >
-                <Poster
-                  posterUrl={'more'}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: Colors.border_color,
-                    opacity: 0.4,
-                  }}
-                  other={!isOwnProfile}
-                />
-              </Pressable>
+              {
+                recent.length < 8 ? null : (
+                  <Pressable
+                    onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
+                    style={{ marginRight: 8 }}
+                  >
+                    <Poster
+                      posterUrl={'more'}
+                      style={{
+                        width: posterWidth,
+                        height: posterHeight,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: Colors.border_color,
+                        opacity: 0.4,
+                      }}
+                      other={!isOwnProfile}
+                    />
+                  </Pressable>              
+                )
+              }
             </ScrollView>
           )}
         </View>
@@ -509,7 +514,7 @@ const Profile = () => {
 
         <View style={styles.buttons}>
           {[
-            ...(isOwnProfile ? [{ label: "Watchlist", count: data.watched }] : []),
+            ...(isOwnProfile ? [{ label: "Watchlist", count: '0' }] : []),
             { label: "Reviews", count: data.reviewsCount },
             { label: "Lists", count: data.listsCount },
             { label: "Likes", count: data.likes },

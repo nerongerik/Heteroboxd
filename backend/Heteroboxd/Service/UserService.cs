@@ -385,13 +385,23 @@ namespace Heteroboxd.Service
             switch (Action)
             {
                 case ("watched"):
+                    var Stale = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
+                    if (Stale != null)
+                    {
+                        _logger.LogError($"Stale frontend state for {FilmId}; ignoring...");
+                        return;
+                    }
                     UserWatchedFilm UserWatchedFilm = new UserWatchedFilm(User.Id, Film.Id);
                     _repo.CreateUserWatchedFilm(UserWatchedFilm);
                     await _repo.SaveChangesAsync();
                     break;
                 case ("rewatched"):
                     var UserReWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
-                    if (UserReWatchedFilm == null) throw new KeyNotFoundException();
+                    if (UserReWatchedFilm == null)
+                    {
+                        _logger.LogError($"Failed to rewatch UserWatchedFilm for {UserId} -> {FilmId}; UWF not found;");
+                        throw new KeyNotFoundException();
+                    }
                     UserReWatchedFilm.TimesWatched++;
                     UserReWatchedFilm.DateWatched = DateTime.UtcNow;
                     _repo.UpdateUserWatchedFilm(UserReWatchedFilm);
@@ -399,7 +409,11 @@ namespace Heteroboxd.Service
                     break;
                 case ("unwatched"):
                     var UserUnWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
-                    if (UserUnWatchedFilm == null) throw new KeyNotFoundException();
+                    if (UserUnWatchedFilm == null)
+                    {
+                        _logger.LogError($"Failed to unwatch UserWatchedFilm for {UserId} -> {FilmId}; UWF not found;");
+                        throw new KeyNotFoundException();
+                    }
                     UserUnWatchedFilm.TimesWatched--;
                     _repo.UpdateUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();

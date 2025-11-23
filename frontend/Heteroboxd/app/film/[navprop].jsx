@@ -19,12 +19,6 @@ const Film = () => {
   const [film, setFilm] = useState(null); //basic film data
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
 
-  /*
-
-  IF USERWATCHEDFILM EXISTS, BUT WATCHCOUNT IS 0 (USER UNWATCHED A FILM), DISPLAY AS IF IT DOESN'T, BUT FETCH URL QUERY AS 'REWATCHED'
-
-  */
-
   const { navprop } = useLocalSearchParams(); //navigational property
   const router = useRouter();
   const {width} = useWindowDimensions();
@@ -76,14 +70,17 @@ const Film = () => {
         });
         if (uwfRes.status === 200) { //user HAS watched film before
           const json2 = await uwfRes.json();
+          console.log(json2);
           setUwf({
-            dateWatched: parseDate(json2.dateWatched), timesWatched: json2.timesWatched
+            dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
           });
         } else if (uwfRes.status === 404) {
           console.log("User has never seen this film before.");
+          setUwf(null);
         } else {
           setMessage("Something went wrong! Contact Heteroboxd support for more information!");
           setResult(500);
+          setUwf(null);
         }
       } else {
         setUwf(null);
@@ -136,9 +133,11 @@ const Film = () => {
           });
         } else if (uwfRes.status === 404) {
           console.log("User has never seen this film before.");
+          setUwf(null);
         } else {
           setMessage("Something went wrong! Contact Heteroboxd support for more information!");
           setResult(500);
+          setUwf(null);
         }
       } else {
         setUwf(null);
@@ -203,14 +202,6 @@ const Film = () => {
   const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen]);
   //cache backdrop
   const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl])
-  //cache interact
-  const Interact = useMemo(() => {
-    return isValidSession()
-      ?
-        <FilmInteract userAvatar={user?.pictureUrl} widescreen={widescreen} />
-      :
-        null;
-  }, [user?.pictureUrl, widescreen]);
 
   if (!film) {
     return (
@@ -295,7 +286,11 @@ const Film = () => {
 
         <View style={styles.divider}></View>
         
-        {Interact}
+        {
+          isValidSession() && (
+            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched}/>
+          )
+        }
 
         <View style={styles.divider}></View>
 
