@@ -64,6 +64,30 @@
         public List<FilmInfoResponse> Films { get; set; }
     }
 
+    public class PagedWatchlistResponse
+    {
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public List<WatchlistEntryInfoResponse> Entries { get; set; }
+    }
+
+    public class WatchlistEntryInfoResponse
+    {
+        public string Id { get; set; }
+        public string DateAdded { get; set; }
+        public int FilmId { get; set; }
+        public string FilmPosterUrl { get; set; }
+
+        public WatchlistEntryInfoResponse(WatchlistEntry Entry)
+        {
+            this.Id = Entry.Id.ToString();
+            this.DateAdded = Entry.DateAdded.ToString("dd/MM/yyyy HH:mm");
+            this.FilmId = Entry.FilmId;
+            this.FilmPosterUrl = Entry.FilmPosterUrl;
+        }
+    }
+
     public class UserWatchedFilmResponse
     {
         public string DateWatched { get; set; }

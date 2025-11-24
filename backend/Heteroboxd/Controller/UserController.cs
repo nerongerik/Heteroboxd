@@ -56,18 +56,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-watchlist/{UserId}")]
-        public async Task<IActionResult> GetUserWatchlist(string UserId)
+        [HttpGet("watchlist/{UserId}")]
+        [Authorize] //you can only see your own watchlist
+        public async Task<IActionResult> GetUserWatchlist(string UserId, int Page = 1, int PageSize = 20)
         {
-            //retrives a specific user's watchlist from database
+            _logger.LogInformation($"Get Watchlist endpoint hit for User: {UserId}");
             try
             {
-                var Watchlist = await _service.GetWatchlist(UserId);
-                return Ok(Watchlist);
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
+                var Response = await _service.GetWatchlist(UserId, Page, PageSize);
+                return Ok(Response);
             }
             catch
             {
@@ -237,9 +234,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("watchlist/{UserId}/{FilmId}")]
+        [Authorize] //only own watchlist can be modified
         public async Task<IActionResult> UpdateUserWatchlist(string UserId, int FilmId)
         {
-            //adds or removes a film from the user's watchlist
+            _logger.LogInformation($"Update Watchlist endpoint hit for User: {UserId}, Film: {FilmId}");
             try
             {
                 await _service.UpdateWatchlist(UserId, FilmId);

@@ -5,14 +5,14 @@ namespace Heteroboxd.Models
     public class Watchlist
     {
         [Key]
-        public Guid Id { get; private set; }
-        public ICollection<ListEntry> Films { get; private set; }
-        public Guid UserId { get; private set; }
+        public Guid Id { get; set; }
+        public ICollection<WatchlistEntry> Films { get; set; }
+        public Guid UserId { get; set; }
 
         public Watchlist(Guid UserId)
         {
             this.Id = Guid.NewGuid();
-            this.Films = new List<ListEntry>();
+            this.Films = new List<WatchlistEntry>();
             this.UserId = UserId;
         }
     }

@@ -7,6 +7,7 @@ namespace Heteroboxd.Repository
     public interface IFilmRepository
     {
         Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default);
+        Task<Film?> LightweightFetcher(int FilmId);
         Task<Film?> GetByIdAsync(int Id);
         Task<List<Film>> GetBySlugAsync(string Slug);
         Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize);
@@ -29,6 +30,11 @@ namespace Heteroboxd.Repository
             await _context.Films
             .Where(f => !f.Deleted)
             .ToListAsync(CancellationToken);
+
+        public async Task<Film?> LightweightFetcher(int FilmId) =>
+            await _context.Films
+                .AsNoTracking()
+                .FirstOrDefaultAsync(f => f.Id == FilmId && !f.Deleted);
 
         public async Task<Film?> GetByIdAsync(int Id) =>
             await _context.Films
@@ -99,7 +105,7 @@ namespace Heteroboxd.Repository
         public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {
             var UwQuery = _context.UserWatchedFilms
-                .Where(uw => uw.UserId == UserId)
+                .Where(uw => uw.UserId == UserId && uw.TimesWatched != 0)
                 .OrderByDescending(uw => uw.DateWatched);
 
             var TotalCount = await UwQuery.CountAsync();

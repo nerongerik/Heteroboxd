@@ -30,118 +30,123 @@ const Film = () => {
 
   const loadFilmPage = async () => {
     setRefreshing(true);
-    if (/^\d+$/.test(navprop)) {
-      //fetch film
-      const fRes = await fetch(`${BaseUrl.api}/films/${Number(navprop)}`, {
-        method: "GET",
-        headers: {'Accept': 'application/json'}
-      });
-      if (fRes.status === 200) {
-        const json = await fRes.json();
-        setFilm({
-          id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
-          tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
-          releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-          collection: json.collection, castAndCrew: json.castAndCrew
+    try {
+      if (/^\d+$/.test(navprop)) {
+        //fetch film
+        const fRes = await fetch(`${BaseUrl.api}/films/${Number(navprop)}`, {
+          method: "GET",
+          headers: {'Accept': 'application/json'}
         });
-        setResult(200);
-      } else if (fRes.status === 404) {
-        setMessage("This film no longer seems to exist.");
-        setResult(404);
-        setFilm({});
-        setRefreshing(false);
-        return;
-      } else {
-        setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-        setResult(500);
-        setFilm({});
-        setRefreshing(false);
-        return;
-      }
-      //fetch uwf
-      if (user && isValidSession()) {
-        const jwt = await auth.getJwt();
-        const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(navprop)}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${jwt}`
-          }
-        });
-        if (uwfRes.status === 200) { //user HAS watched film before
-          const json2 = await uwfRes.json();
-          console.log(json2);
-          setUwf({
-            dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
+        if (fRes.status === 200) {
+          const json = await fRes.json();
+          setFilm({
+            id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
+            tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
+            releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
+            collection: json.collection, castAndCrew: json.castAndCrew
           });
-        } else if (uwfRes.status === 404) {
-          console.log("User has never seen this film before.");
-          setUwf(null);
+          setResult(200);
+        } else if (fRes.status === 404) {
+          setMessage("This film no longer seems to exist.");
+          setResult(404);
+          setFilm({});
+          setRefreshing(false);
+          return;
         } else {
           setMessage("Something went wrong! Contact Heteroboxd support for more information!");
           setResult(500);
+          setFilm({});
+          setRefreshing(false);
+          return;
+        }
+        //fetch uwf
+        if (user && isValidSession()) {
+          const jwt = await auth.getJwt();
+          const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(navprop)}`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${jwt}`
+            }
+          });
+          if (uwfRes.status === 200) { //user HAS watched film before
+            const json2 = await uwfRes.json();
+            console.log(json2);
+            setUwf({
+              dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
+            });
+          } else if (uwfRes.status === 404) {
+            console.log("User has never seen this film before.");
+            setUwf(null);
+          } else {
+            setMessage("Something went wrong! Contact Heteroboxd support for more information!");
+            setResult(500);
+            setUwf(null);
+          }
+        } else {
           setUwf(null);
         }
       } else {
-        setUwf(null);
-      }
-    } else {
-      //fetching by slug will ONLY be happening on browsers, meaning it's genuenly meaningful to make sure its the same film on refresh
-      //but if a user manually enters url (id unknown) then it's ok to fetch by slug alone (it's not that deep)
-      let json;
-      const url = film ? `${BaseUrl.api}/films/slug/${navprop}?FilmId=${film.id}` : `${BaseUrl.api}/films/slug/${navprop}`;
-      const fRes = await fetch(url, {
-        method: "GET",
-        headers: {'Accept': 'application/json'}
-      });
-      if (fRes.status === 200) {
-        json = await fRes.json();
-        setFilm({
-          id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
-          tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
-          releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-          collection: json.collection, castAndCrew: json.castAndCrew
+        //fetching by slug will ONLY be happening on browsers, meaning it's genuenly meaningful to make sure its the same film on refresh
+        //but if a user manually enters url (id unknown) then it's ok to fetch by slug alone (it's not that deep)
+        let json;
+        const url = film ? `${BaseUrl.api}/films/slug/${navprop}?FilmId=${film.id}` : `${BaseUrl.api}/films/slug/${navprop}`;
+        const fRes = await fetch(url, {
+          method: "GET",
+          headers: {'Accept': 'application/json'}
         });
-        setResult(200);
-      } else if (fRes.status === 404) {
-        setMessage("This film no longer seems to exist.");
-        setResult(404);
-        setFilm({});
-        setRefreshing(false);
-        return;
-      } else {
-        setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-        setResult(500);
-        setFilm({});
-        setRefreshing(false);
-        return;
-      }
-      //fetch uwf
-      if (user && isValidSession()) {
-        const jwt = await auth.getJwt();
-        const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(json.filmId)}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${jwt}`
-          }
-        });
-        if (uwfRes.status === 200) { //user HAS watched film before
-          const json2 = await uwfRes.json();
-          setUwf({
-            dateWatched: parseDate(json2.dateWatched), timesWatched: json2.timesWatched
+        if (fRes.status === 200) {
+          json = await fRes.json();
+          setFilm({
+            id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
+            tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
+            releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
+            collection: json.collection, castAndCrew: json.castAndCrew
           });
-        } else if (uwfRes.status === 404) {
-          console.log("User has never seen this film before.");
-          setUwf(null);
+          setResult(200);
+        } else if (fRes.status === 404) {
+          setMessage("This film no longer seems to exist.");
+          setResult(404);
+          setFilm({});
+          setRefreshing(false);
+          return;
         } else {
           setMessage("Something went wrong! Contact Heteroboxd support for more information!");
           setResult(500);
+          setFilm({});
+          setRefreshing(false);
+          return;
+        }
+        //fetch uwf
+        if (user && isValidSession()) {
+          const jwt = await auth.getJwt();
+          const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(json.filmId)}`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${jwt}`
+            }
+          });
+          if (uwfRes.status === 200) { //user HAS watched film before
+            const json2 = await uwfRes.json();
+            setUwf({
+              dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
+            });
+          } else if (uwfRes.status === 404) {
+            console.log("User has never seen this film before.");
+            setUwf(null);
+          } else {
+            setMessage("Something went wrong! Contact Heteroboxd support for more information!");
+            setResult(500);
+            setUwf(null);
+          }
+        } else {
           setUwf(null);
         }
-      } else {
-        setUwf(null);
       }
+    } catch {
+      setMessage("Network error - Please check your internet connection!");
+      setResult(500);
     }
     setRefreshing(false);
   }
@@ -288,7 +293,7 @@ const Film = () => {
         
         {
           isValidSession() && (
-            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched}/>
+            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched > 0}/>
           )
         }
 

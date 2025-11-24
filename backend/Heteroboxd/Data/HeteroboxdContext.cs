@@ -17,6 +17,7 @@ namespace Heteroboxd.Data
         public DbSet<Celebrity> Celebrities { get; set; }
         public DbSet<CelebrityCredit> CelebrityCredits { get; set; }
         public DbSet<ListEntry> ListEntries { get; set; }
+        public DbSet<WatchlistEntry> WatchlistEntries { get; set; }
         public DbSet<UserList> UserLists { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Watchlist> Watchlists { get; set; }
@@ -235,7 +236,24 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<ListEntry>(entity =>
             {
                 entity.HasKey(le => le.Id);
+
+                entity.HasOne<UserList>()
+                      .WithMany(ul => ul.Films)
+                      .HasForeignKey(le => le.UserListId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
+
+            // WatchlistEntry
+            modelBuilder.Entity<WatchlistEntry>(entity =>
+            {
+                entity.HasKey(le => le.Id);
+
+                entity.HasOne<Watchlist>()
+                      .WithMany(wl => wl.Films)
+                      .HasForeignKey(wle => wle.WatchlistId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
 
             // UserList
             modelBuilder.Entity<UserList>(entity =>

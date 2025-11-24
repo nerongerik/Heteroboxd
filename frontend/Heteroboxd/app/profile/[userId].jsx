@@ -39,10 +39,12 @@ const Profile = () => {
 
   const [blocked, setBlocked] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [watchlistCount, setWatchlistCount] = useState('0');
 
   //context menu
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
   const [contextMenuMessage, setContextMenuMessage] = useState("");
+
 
   const loadProfileData = async () => {
     setRefreshing(true);
@@ -55,8 +57,8 @@ const Profile = () => {
         const json = await res.json();
         setData({ 
           name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
-          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), flags: json.flags, listsCount: json.listsCount,
-          followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
+          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
+          listsCount: json.listsCount, followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
           reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
         if (json.gender === 'female' || json.gender === 'Female') setPronoun(['she', 'her', 'hers']);
@@ -118,8 +120,6 @@ const Profile = () => {
       setResult(500);
     }
 
-    // --- FETCH WATCHLIST AND SET IT DOWN IN THE BUTTONS ---
-
     setRefreshing(false);
   };
 
@@ -155,8 +155,7 @@ const Profile = () => {
     if (!blocked) {
       loadProfileData();
     }
-  }, [userId]);
-
+  }, [userId, blocked]);
 
   function parseDate(date) {
     if (!date) return date;
@@ -243,6 +242,7 @@ const Profile = () => {
   //compute poster width:
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
+
 
   if (blocked) {
     return (
@@ -514,7 +514,7 @@ const Profile = () => {
 
         <View style={styles.buttons}>
           {[
-            ...(isOwnProfile ? [{ label: "Watchlist", count: '0' }] : []),
+            ...(isOwnProfile ? [{ label: "Watchlist", count: data.watchlistCount }] : []),
             { label: "Reviews", count: data.reviewsCount },
             { label: "Lists", count: data.listsCount },
             { label: "Likes", count: data.likes },

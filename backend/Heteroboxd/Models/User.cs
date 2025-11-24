@@ -8,11 +8,11 @@ namespace Heteroboxd.Models
         public string Name { get; set; }
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
-        public Gender Gender { get; private set; }
+        public Gender Gender { get; set; }
         public Tier Tier { get; set; } //current tier
         public DateTime? TierExpiry { get; set; } //null if free tier
         public bool IsPatron { get; set; } //indicates if user ever donated >$50 at once
-        public DateTime DateJoined { get; private set; }
+        public DateTime DateJoined { get; set; }
         public int Flags { get; set; }
         public bool Deleted { get; set; }
         public Watchlist? Watchlist { get; set; }

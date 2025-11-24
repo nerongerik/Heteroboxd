@@ -43,7 +43,7 @@ const Guidelines = () => {
         </Text>
         <Text style={styles.text}>
           We firmly believe that we should ALL know less about each other. Keep your sexual preferences, kinks, and fetishes to yourself.
-          This is an app for MOVIES, not a Red-light district — drooling over fictional characters doesn't constitute a critique.{'\n'}
+          This is an app for MOVIES, not a Red-light district — drooling over fictional characters doesn't constitute a critique.{'\n\n'}
           <Text style={[styles.text, { fontStyle: "italic" }]}>(this rule doesn't apply for Ryan Gosling, Sydney Sweeney, and Danny DeVito)</Text>
         </Text>
 

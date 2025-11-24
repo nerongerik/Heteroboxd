@@ -4,11 +4,11 @@ using System.ComponentModel.DataAnnotations;
 public class UserWatchedFilm
 {
     [Key]
-    public Guid Id { get; private set; }
+    public Guid Id { get; set; }
     public DateTime DateWatched { get; set; }
     public int TimesWatched { get; set; }
-    public Guid UserId { get; private set; }
-    public int FilmId { get; private set; }
+    public Guid UserId { get; set; }
+    public int FilmId { get; set; }
 
     public UserWatchedFilm(Guid UserId, int FilmId)
     {

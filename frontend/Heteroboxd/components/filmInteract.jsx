@@ -65,7 +65,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
           <UserAvatar pictureUrl={user?.pictureUrl ?? null} style={[styles.avatar, {width: widescreen ? 28 : 24, height: widescreen ? 28 : 24, borderRadius: widescreen ? 14 : 12}]} />
           <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 13}}>
             {
-              seenLocalCopy && seenLocalCopy !== 0
+              seenLocalCopy
                 ? ratingLocalCopy
                   ? `You rated this film {stars}`
                   : "You have watched this film."
@@ -97,7 +97,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
 
   const rewatch =
     <View style={styles.buttonContainer}>
-      <TouchableOpacity onPress={handleRewatch}>
+      <TouchableOpacity onPress={handleWatch}>
         <MaterialCommunityIcons name="eye-refresh" size={widescreen ? 50 : 35} color={Colors.text} />
       </TouchableOpacity>
       <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Rewatch</Text>
@@ -113,7 +113,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
 
   const watchlist =
     <View style={styles.buttonContainer}>
-      <TouchableOpacity onPress={handleAddWatchlist}>
+      <TouchableOpacity onPress={handleWatchlist}>
         <MaterialCommunityIcons name="bookmark-plus-outline" size={widescreen ? 50 : 35} color={Colors.text} />
       </TouchableOpacity>
       <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Watchlist</Text>
@@ -121,7 +121,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
 
   const unwatchlist =
     <View style={styles.buttonContainer}>
-      <TouchableOpacity onPress={handleRemoveWatchlist}>
+      <TouchableOpacity onPress={handleWatchlist}>
         <MaterialCommunityIcons name="bookmark-remove" size={widescreen ? 50 : 35} color={Colors.heteroboxd} />
       </TouchableOpacity>
       <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Watchlist</Text>
@@ -140,7 +140,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
         });
         if (res.status === 200) {
           setSeenPressed(false); //just in case
-          setSeenLocalCopy(1);
+          setSeenLocalCopy(true);
           setWatchlistedLocalCopy(false);
         } else if (res.status === 404) {
           setSnackMessage("We failed to find your earlier records.");
@@ -165,20 +165,19 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
     }
   }
 
-  async function handleRewatch() {
+  async function handleUnwatch() {
     if (isValidSession()) {
       try {
         const jwt = await auth.getJwt();
-        const res = await fetch(`${BaseUrl.api}/users/track-film/${user.userId}/${filmId}?Action=rewatched`, {
+        const res = await fetch(`${BaseUrl.api}/users/track-film/${user.userId}/${filmId}?Action=unwatched`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${jwt}`,
           }
         });
         if (res.status === 200) {
-          setSeenPressed(false); //just in case
-          setSeenLocalCopy(sl => sl + 1);
-          setWatchlistedLocalCopy(false);
+          setSeenPressed(false); //reset state
+          setSeenLocalCopy(false);
         } else if (res.status === 404) {
           setSnackMessage("We failed to find your earlier records.");
           setSnackVisible(true);
@@ -201,18 +200,37 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
       setSnackVisible(true);
     }
   }
-  async function handleUnwatch() {
-    setSeenPressed(false); //reset state
-    setSeenLocalCopy(false);
-    //fetch call -> this one COULD take a while if we are deleting reviews, so consider a loading state
-  }
-  async function handleAddWatchlist() {
-    setWatchlistedLocalCopy(true);
-    //fetch call
-  }
-  async function handleRemoveWatchlist() {
-    setWatchlistedLocalCopy(false);
-    //fetch call
+
+  async function handleWatchlist() {
+    if (!isValidSession()) {
+      setSnackMessage("Session expired - try logging in again.");
+      setSnackVisible(true);
+      return;
+    }
+    try {
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/users/watchlist/${user.userId}/${filmId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+        }
+      });
+      if (res.status === 200) {
+        setWatchlistedLocalCopy(w => !w);
+      } else if (res.status === 404) {
+        setSnackMessage("This film doesn't exist anymore.");
+        setSnackVisible(true);
+      } else if (res.status === 401) {
+        setSnackMessage("Session expired - try logging in again.");
+        setSnackVisible(true);
+      } else {
+        setSnackMessage("Something went wrong. Contact support if error persists.");
+        setSnackVisible(true);
+      }
+    } catch {
+      setSnackMessage("Network error - are you connected to the internet?");
+      setSnackVisible(true);
+    }
   }
 
   return (
@@ -251,26 +269,26 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
             {watchlistedLocalCopy ? unwatchlist : watchlist}
           
           </View>
+          <Snackbar
+            visible={snackVisible}
+            onDismiss={() => setSnackVisible(false)}
+            duration={3000}
+            style={{
+              backgroundColor: Colors.card,
+              width: widescreen ? '50%' : '90%',
+              alignSelf: 'center',
+              borderRadius: 8,
+            }}
+            action={{
+              label: ':(',
+              onPress: () => setSnackVisible(false),
+              textColor: Colors.text_link
+            }}
+          >
+            {snackMessage}
+          </Snackbar>
         </Animated.View>
       </Modal>
-      <Snackbar
-        visible={snackVisible}
-        onDismiss={() => setSnackVisible(false)}
-        duration={3000}
-        style={{
-          backgroundColor: Colors.card,
-          width: widescreen ? '50%' : '90%',
-          alignSelf: 'center',
-          borderRadius: 8,
-        }}
-        action={{
-          label: ':(',
-          onPress: () => setSnackVisible(false),
-          textColor: Colors.text_link
-        }}
-      >
-        {snackMessage}
-      </Snackbar>
     </>
   )
 }

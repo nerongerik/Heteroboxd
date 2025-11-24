@@ -9,7 +9,9 @@ namespace Heteroboxd.Service
     {
         Task<List<UserInfoResponse>> GetAllUsers();
         Task<UserInfoResponse?> GetUser(string UserId);
-        Task<Watchlist> GetWatchlist(string UserId);
+
+        Task<PagedWatchlistResponse> GetWatchlist(string UserId, int Page, int PageSize); //for viewing
+
         Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId);
         Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId); //example: {"following": [User1, User2, User3], "followers": [User2], "blocked": [User4, User5]}
         Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
@@ -17,8 +19,10 @@ namespace Heteroboxd.Service
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUserEfCore7Async(string UserId);
         Task UpdateUser(UpdateUserRequest UserUpdate);
-        Task VerifyUser(String UserId, String Token);
+        Task VerifyUser(string UserId, string Token);
+
         Task UpdateWatchlist(string UserId, int FilmId);
+
         Task UpdateFavorites(string UserId, List<int?> FilmIds);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
         Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
@@ -30,14 +34,16 @@ namespace Heteroboxd.Service
     {
         private readonly IUserRepository _repo;
         private readonly IFilmRepository _filmRepo;
+        private readonly IReviewRepository _reviewRepo;
         private readonly IAuthService _authService;
         private readonly UserManager<User> _userManager;
         private readonly ILogger<UserService> _logger;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger)
         {
             _repo = repo;
             _filmRepo = filmRepo;
+            _reviewRepo = reviewRepository;
             _authService = authService;
             _userManager = userManager;
             _logger = logger;
@@ -65,11 +71,16 @@ namespace Heteroboxd.Service
             return new UserInfoResponse(User);
         }
 
-        public async Task<Watchlist> GetWatchlist(string UserId)
+        public async Task<PagedWatchlistResponse> GetWatchlist(string UserId, int Page, int PageSize)
         {
-            var Watchlist = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId));
-            if (Watchlist == null) throw new ArgumentException();
-            return Watchlist;
+            var (WatchlistPage, TotalCount) = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId), Page, PageSize);
+            return new PagedWatchlistResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Entries = WatchlistPage.Select(wle => new WatchlistEntryInfoResponse(wle)).ToList()
+            };
         }
 
         public async Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId)
@@ -273,11 +284,18 @@ namespace Heteroboxd.Service
 
         public async Task UpdateWatchlist(string UserId, int FilmId)
         {
-            var Watchlist = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId));
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
             var Film = await _filmRepo.GetByIdAsync(FilmId);
-            if (Watchlist == null || Film == null) throw new KeyNotFoundException();
-            Watchlist.Films.Add(new ListEntry(Film.Id, null, Watchlist.Id, null));
-            _repo.UpdateWatchlist(Watchlist);
+            if (User == null || Film == null) throw new KeyNotFoundException();
+            var ExistingEntry = await _repo.IsWatchlisted(FilmId, Guid.Parse(UserId));
+            if (ExistingEntry != null)
+            {
+                await _repo.RemoveFromWatchlist(ExistingEntry);
+            }
+            else
+            {
+                await _repo.AddToWatchlist(new WatchlistEntry(Film.PosterUrl, FilmId, Guid.Parse(UserId), User.Watchlist!.Id));
+            }
             await _repo.SaveChangesAsync();
         }
 
@@ -385,27 +403,24 @@ namespace Heteroboxd.Service
             switch (Action)
             {
                 case ("watched"):
-                    var Stale = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
-                    if (Stale != null)
+                    var Existing = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
+                    if (Existing != null)
                     {
-                        _logger.LogError($"Stale frontend state for {FilmId}; ignoring...");
-                        return;
+                        Existing.TimesWatched++;
+                        Existing.DateWatched = DateTime.UtcNow;
+                        _repo.UpdateUserWatchedFilm(Existing);
                     }
-                    UserWatchedFilm UserWatchedFilm = new UserWatchedFilm(User.Id, Film.Id);
-                    _repo.CreateUserWatchedFilm(UserWatchedFilm);
-                    await _repo.SaveChangesAsync();
-                    break;
-                case ("rewatched"):
-                    var UserReWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
-                    if (UserReWatchedFilm == null)
+                    else
                     {
-                        _logger.LogError($"Failed to rewatch UserWatchedFilm for {UserId} -> {FilmId}; UWF not found;");
-                        throw new KeyNotFoundException();
+                        UserWatchedFilm UserWatchedFilm = new UserWatchedFilm(User.Id, Film.Id);
+                        _repo.CreateUserWatchedFilm(UserWatchedFilm);
                     }
-                    UserReWatchedFilm.TimesWatched++;
-                    UserReWatchedFilm.DateWatched = DateTime.UtcNow;
-                    _repo.UpdateUserWatchedFilm(UserReWatchedFilm);
-                    await _repo.SaveChangesAsync();
+                    //remove film from watchlist
+                    var ExistingEntry = await _repo.IsWatchlisted(Film.Id, User.Id);
+                    if (ExistingEntry != null)
+                    {
+                        await _repo.RemoveFromWatchlist(ExistingEntry);
+                    }
                     break;
                 case ("unwatched"):
                     var UserUnWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
@@ -414,9 +429,13 @@ namespace Heteroboxd.Service
                         _logger.LogError($"Failed to unwatch UserWatchedFilm for {UserId} -> {FilmId}; UWF not found;");
                         throw new KeyNotFoundException();
                     }
-                    UserUnWatchedFilm.TimesWatched--;
+                    //update uwf
+                    UserUnWatchedFilm.TimesWatched = 0;
                     _repo.UpdateUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();
+                    //mark associated reviews for deletion
+                    _reviewRepo.DeleteByUserFilm(UserUnWatchedFilm);
+                    await _reviewRepo.SaveChangesAsync(); //true save, ensuring all reviews are deleted
                     break;
                 default:
                     _logger.LogError($"Unknown action: {Action}");

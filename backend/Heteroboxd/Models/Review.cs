@@ -5,18 +5,18 @@ namespace Heteroboxd.Models
     public class Review
     {
         [Key]
-        public Guid Id { get; private set; }
+        public Guid Id { get; set; }
         public double Rating { get; set; }
         public string? Text { get; set; }
-        public DateTime Date { get; private set; }
+        public DateTime Date { get; set; }
         public int Flags { get; set; }
         public bool Spoiler { get; set; }
         public bool NotificationsOn { get; set; }
         public bool Deleted { get; set; }
-        public ICollection<Comment> Comments { get; private set; }
+        public ICollection<Comment> Comments { get; set; }
         public int LikeCount { get; set; }
-        public Guid AuthorId { get; private set; }
-        public int FilmId { get; private set; }
+        public Guid AuthorId { get; set; }
+        public int FilmId { get; set; }
 
         public Review(double Rating, string? Text, int Flags, bool Spoiler, Guid AuthorId, int FilmId)
         {

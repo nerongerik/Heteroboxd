@@ -16,6 +16,7 @@ namespace Heteroboxd.Repository
         Task ToggleNotificationsEfCore7Async(Guid ReviewId);
         Task ReportReviewEfCore7Async(Guid ReviewId);
         void Delete(Review Review);
+        void DeleteByUserFilm(UserWatchedFilm UserFilm);
         Task SaveChangesAsync();
     }
     public class ReviewRepository : IReviewRepository
@@ -95,6 +96,15 @@ namespace Heteroboxd.Repository
         {
             _context.Reviews
                 .Remove(Review);
+        }
+
+        public void DeleteByUserFilm(UserWatchedFilm UserFilm)
+        {
+            var RelevantReviews = _context.Reviews
+                .Where(r => r.AuthorId == UserFilm.UserId && r.FilmId == UserFilm.FilmId)
+                .ToList();
+
+            foreach (var r in RelevantReviews) r.Deleted = true;
         }
 
         public async Task SaveChangesAsync() =>
