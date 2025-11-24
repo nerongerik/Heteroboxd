@@ -23,11 +23,13 @@ namespace Heteroboxd.Service
     {
         private readonly IUserListRepository _repo;
         private readonly IUserRepository _userRepo;
+        private readonly IFilmRepository _filmRepo;
 
-        public UserListService(IUserListRepository repo, IUserRepository userRepo)
+        public UserListService(IUserListRepository repo, IUserRepository userRepo, IFilmRepository filmRepo)
         {
             _repo = repo;
             _userRepo = userRepo;
+            _filmRepo = filmRepo;
         }
 
         public async Task<List<UserListInfoResponse>> GetAllUserLists()
@@ -81,12 +83,14 @@ namespace Heteroboxd.Service
             return Results.ToList();
         }
 
-        public async Task AddList(CreateUserListRequest ListRequest)
+        public async Task AddList(CreateUserListRequest ListRequest) // PLACEHOLDER - PROBABLY REFORM ENTRY CREATION LATER
         {
             UserList NewList = new UserList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, Guid.Parse(ListRequest.AuthorId));
             foreach (CreateListEntryRequest cler in ListRequest.Entries)
             {
-                NewList.Films.Add(new ListEntry(cler.FilmId, cler.Position, null, NewList.Id));
+                var Film = await _filmRepo.LightweightFetcher(cler.FilmId);
+                if (Film == null) continue; //skip invalid films
+                NewList.Films.Add(new ListEntry(cler.Position, Film.PosterUrl, Film.Id, Guid.Parse(ListRequest.AuthorId), NewList.Id));
             }
             _repo.Create(NewList);
             await _repo.SaveChangesAsync();
@@ -116,12 +120,13 @@ namespace Heteroboxd.Service
             {
                 foreach (ListEntryInfoResponse leir in ListRequest.ToAdd)
                 {
+                    var Film = await _filmRepo.LightweightFetcher(leir.FilmId);
+                    if (Film == null) continue;
                     int Position = leir.Position ?? -1;
                     foreach (var f in List.Films.Where(le => le.Position >= Position && Position != -1)) f.Position++;
-                    List.Films.Add(new ListEntry(leir.FilmId, leir.Position, null, List.Id));
+                    List.Films.Add(new ListEntry(Position, Film.PosterUrl, Film.Id, List.AuthorId, List.Id));
                 }
             }
-            _repo.Update(List);
             await _repo.SaveChangesAsync();
         }
 

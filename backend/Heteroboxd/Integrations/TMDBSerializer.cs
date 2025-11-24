@@ -1,6 +1,8 @@
 ﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Models.Enums;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -82,6 +84,17 @@ namespace Heteroboxd.Integrations
         {
             string Title = Response.title ?? Response.original_title!;
             string? OriginalTitle = Response.title == null ? null : Response.original_title;
+            Dictionary<string, string> Country = new Dictionary<string, string>();
+            foreach (ProductionCountry pc in Response.production_countries ?? new List<ProductionCountry>())
+            {
+                if (pc.name?.ToLower() == "kosovo" || pc.name?.ToLower() == "serbia and montenegro" || pc.name?.ToLower() == "yugoslavia")
+                {
+                    Country["Serbia"] = "RS";
+                } else
+                {
+                    Country[pc.name ?? "UNKNOWN"] = pc.iso_3166_1 ?? "XX";
+                }
+            }
             string Tagline = Response.tagline ?? "";
             string Synopsis = Response.overview ?? "[no overview available for this feature]";
             string? PosterUrl = FormUrls(Response.poster_path);
@@ -91,7 +104,7 @@ namespace Heteroboxd.Integrations
             string Slug = GenerateSlug(Title, ReleaseYear);
             int TmdbId = Response.id ?? throw new Exception("TMDB response missing ID");
 
-            Film Film = new Film(TmdbId, Title, OriginalTitle, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear, Slug);
+            Film Film = new Film(TmdbId, Title, OriginalTitle, Country, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear, Slug);
             foreach (var Genre in Response.genres ?? new List<Genre>())
             {
                 Film.Genres.Add(Genre.name!);
@@ -143,7 +156,7 @@ namespace Heteroboxd.Integrations
                     throw new IOException($"FAILED TO SERIALIZE {Celebrity.Id}.json");
                 }
 
-                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, FilmId, Role.Actor, Actor.character ?? "Unnamed Role");
+                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, Celebrity.Name, Celebrity.PictureUrl, FilmId, Role.Actor, Actor.character ?? "Unnamed Role", Actor.order ?? 50);
                 try
                 {
                     await Serialize<CelebrityCredit>(Credit, Path.Combine(_configuration["TMDB:CreditSerialPath"]!, $"{Credit.Id}.json"));
@@ -198,7 +211,7 @@ namespace Heteroboxd.Integrations
                 {
                     throw new IOException($"FAILED TO SERIALIZE {Celebrity.Id}.json");
                 }
-                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, FilmId, CrewRole, null);
+                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, Celebrity.Name, Celebrity.PictureUrl, FilmId, CrewRole, null, null);
                 try
                 {
                     await Serialize<CelebrityCredit>(Credit, Path.Combine(_configuration["TMDB:CreditSerialPath"]!, $"{Credit.Id}.json"));

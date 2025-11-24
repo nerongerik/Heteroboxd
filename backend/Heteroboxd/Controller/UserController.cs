@@ -56,18 +56,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-watchlist/{UserId}")]
-        public async Task<IActionResult> GetUserWatchlist(string UserId)
+        [HttpGet("watchlist/{UserId}")]
+        [Authorize] //you can only see your own watchlist
+        public async Task<IActionResult> GetUserWatchlist(string UserId, int Page = 1, int PageSize = 20)
         {
-            //retrives a specific user's watchlist from database
+            _logger.LogInformation($"Get Watchlist endpoint hit for User: {UserId}");
             try
             {
-                var Watchlist = await _service.GetWatchlist(UserId);
-                return Ok(Watchlist);
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
+                var Response = await _service.GetWatchlist(UserId, Page, PageSize);
+                return Ok(Response);
             }
             catch
             {
@@ -131,6 +128,22 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("uwf/{UserId}/{FilmId}")]
+        [Authorize]
+        public async Task<IActionResult> GetUserWatchedFilm(string UserId, int FilmId)
+        {
+            _logger.LogInformation($"GET UWF endpoint hit for: {UserId}, {FilmId}");
+            try
+            {
+                var UserWatchedFilm = await _service.GetUserWatchedFilm(UserId, FilmId);
+                return UserWatchedFilm == null ? NotFound() : Ok(UserWatchedFilm);
             }
             catch
             {
@@ -221,9 +234,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("watchlist/{UserId}/{FilmId}")]
+        [Authorize] //only own watchlist can be modified
         public async Task<IActionResult> UpdateUserWatchlist(string UserId, int FilmId)
         {
-            //adds or removes a film from the user's watchlist
+            _logger.LogInformation($"Update Watchlist endpoint hit for User: {UserId}, Film: {FilmId}");
             try
             {
                 await _service.UpdateWatchlist(UserId, FilmId);
@@ -298,10 +312,11 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("track-film/{UserId}/{FilmId}")]
+        [Authorize]
         public async Task<IActionResult> TrackUserFilm(string UserId, int FilmId, [FromQuery] string Action)
         {
             //actions: ?action=watched/rewatched/unwatched
-            //for the frontend: never delete a UserWatchedFilm, just set the times watched to 0 when unwatched is triggered. display films differently based on this value
+            _logger.LogInformation($"Track Film endpoint hint for User: {UserId}, Film: {FilmId}; action: {Action}");
             try
             {
                 await _service.TrackFilm(UserId, FilmId, Action);
@@ -310,6 +325,10 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
             }
             catch
             {

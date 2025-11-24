@@ -7,7 +7,7 @@ namespace Heteroboxd.Models.DTO
         public int Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
-        public string PictureUrl { get; set; }
+        public string? PictureUrl { get; set; }
         public List<CelebrityCreditInfoResponse> Credits { get; set; }
 
         //when viewed from film page, we don't need film info in credits (nor other films)
@@ -42,16 +42,18 @@ namespace Heteroboxd.Models.DTO
     public class CelebrityCreditInfoResponse
     {
         public int? CelebrityId { get; set; }
+        public string? CelebrityName { get; set; }
+        public string? CelebrityPictureUrl { get; set; }
         public int? FilmId { get; set; }
         public string? FilmTitle { get; set; }
         public string? FilmPosterUrl { get; set; }
         public string? FilmReleaseDate { get; set; }
         public string Role { get; set; }
         public string? Character { get; set; }
+        public int? Order { get; set; }
 
-        public CelebrityCreditInfoResponse(CelebrityCredit Credit, Film Film)
+        public CelebrityCreditInfoResponse(CelebrityCredit Credit, Film Film) //from celebrity page
         {
-            this.CelebrityId = Credit.CelebrityId;
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
             this.FilmPosterUrl = Film.PosterUrl;
@@ -59,10 +61,14 @@ namespace Heteroboxd.Models.DTO
             this.Role = Credit.Role.ToString();
         }
 
-        public CelebrityCreditInfoResponse(CelebrityCredit Role)
+        public CelebrityCreditInfoResponse(CelebrityCredit Role) //from film page
         {
+            this.CelebrityId = Role.CelebrityId;
+            this.CelebrityName = Role.CelebrityName;
+            this.CelebrityPictureUrl = Role.CelebrityPictureUrl;
             this.Role = Role.Role.ToString();
             this.Character = Role.Character;
+            this.Order = Role.Order;
         }
     }
 }

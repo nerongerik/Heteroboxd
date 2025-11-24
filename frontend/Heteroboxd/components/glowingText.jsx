@@ -1,7 +1,7 @@
 import { Animated, Platform, StyleSheet } from "react-native";
 import { useEffect, useRef, useState } from "react";
 
-const GlowingText = ({ children, color }) => {
+const GlowingText = ({ children, color, div }) => {
   const glowAnim = useRef(new Animated.Value(0)).current;
 
   // Web-specific glow level
@@ -44,6 +44,21 @@ const GlowingText = ({ children, color }) => {
 
   if (Platform.OS === "web") {
     const radius = 4 + glow * 2; //animate
+    if (div) {
+      return (
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignSelf: "center",
+            filter: `drop-shadow(0 0 ${radius}px ${color})`,
+          }}
+        >
+          {children}
+        </div>
+      );
+    }
     return (
       <span
         style={{
@@ -60,6 +75,7 @@ const GlowingText = ({ children, color }) => {
   }
 
   //iOS + Android version
+
   const animatedStyle = {
     textShadowColor: color,
     textShadowRadius: glowAnim.interpolate({

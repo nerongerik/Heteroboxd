@@ -3,6 +3,7 @@ import { Stack } from 'expo-router'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/profileOptionsButton'
+import './browser.css'
 
 const RootLayout = () => {
   return (
@@ -24,6 +25,16 @@ const RootLayout = () => {
           options={({ route }) => ({
             headerRight: () => <ProfileOptionsButton userId={route.params?.userId} />
           })}
+        />
+        <Stack.Screen
+          name='film/[navprop]'
+          options={{
+            headerShown: Platform.OS === 'web' ? false : true,
+            headerTransparent: true,
+            headerBackground: () => null,
+            headerTitle: '',
+            headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
+            }}
         />
       </Stack>
     </AuthProvider>

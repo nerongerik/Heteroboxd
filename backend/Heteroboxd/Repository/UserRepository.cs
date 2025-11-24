@@ -2,47 +2,15 @@
 using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
 
-/*
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- NOTE: IF YOU FIND THAT SEARCH MALFUNCTIONS, IT WILL MOST LIKELY BE DUE TO CASE SENSITIVITY
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- *
-*/
-
 namespace Heteroboxd.Repository
 {
     public interface IUserRepository
     {
         Task<List<User>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<User?> GetByIdAsync(Guid Id);
-        Task<Watchlist?> GetUserWatchlistAsync(Guid UserId);
+
+        Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize);
+
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<User?> GetFollowing(Guid UserId);
@@ -54,7 +22,12 @@ namespace Heteroboxd.Repository
         Task<List<User>> SearchAsync(string Name);
         void Update(User User);
         Task ReportUserEfCore7Async(Guid UserId);
-        void UpdateWatchlist(Watchlist Watchlist);
+
+        Task<WatchlistEntry?> IsWatchlisted(int FilmId, Guid UserId);
+        Task AddToWatchlist(WatchlistEntry Entry);
+        Task RemoveFromWatchlist(WatchlistEntry Entry);
+
+        
         void UpdateFavorites(UserFavorites Favorites);
         void CreateUserWatchedFilm(UserWatchedFilm WatchedFilm);
         void UpdateUserWatchedFilm(UserWatchedFilm WatchedFilm);
@@ -83,6 +56,7 @@ namespace Heteroboxd.Repository
 
         public async Task<User?> GetByIdAsync(Guid Id) =>
             await _context.Users
+                .Include(u => u.Watchlist).ThenInclude(wl => wl!.Films)
                 .Include(u => u.Followers)
                 .Include(u => u.Following)
                 .Include(u => u.Blocked)
@@ -94,10 +68,23 @@ namespace Heteroboxd.Repository
                 .Include(u => u.WatchedFilms)
                 .FirstOrDefaultAsync(u => u.Id == Id && !u.Deleted);
 
-        public async Task<Watchlist?> GetUserWatchlistAsync(Guid UserId) =>
-            await _context.Watchlists
+        public async Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize)
+        {
+            var WatchlistId = await _context.Watchlists
                 .Include(wl => wl.Films)
-                .FirstOrDefaultAsync(wl => wl.UserId == UserId);
+                .Where(wl => wl.UserId == UserId)
+                .Select(wl => wl.Id)
+                .FirstOrDefaultAsync();
+            var EntriesQuery = _context.WatchlistEntries
+                .Where(wle => wle.WatchlistId == WatchlistId)
+                .OrderByDescending(le => le.DateAdded);
+            var TotalCount = await EntriesQuery.CountAsync();
+            var Entries = await EntriesQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+            return (Entries, TotalCount);
+        }
 
         public async Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId) => //if it fails to fetch ids, explicitally .Include() them
             await _context.UserFavorites
@@ -105,7 +92,7 @@ namespace Heteroboxd.Repository
 
         public async Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId) =>
             await _context.UserWatchedFilms
-                .FirstOrDefaultAsync(uwf => uwf.UserId == UserId && uwf.FilmId == FilmId && uwf.TimesWatched != 0);
+                .FirstOrDefaultAsync(uwf => uwf.UserId == UserId && uwf.FilmId == FilmId);
 
         public async Task<User?> GetFollowing(Guid UserId) =>
             await _context.Users
@@ -162,8 +149,21 @@ namespace Heteroboxd.Repository
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public void UpdateWatchlist(Watchlist Watchlist) =>
-            _context.Watchlists.Update(Watchlist);
+        public async Task<WatchlistEntry?> IsWatchlisted(int FilmId, Guid UserId) =>
+            await _context.WatchlistEntries
+                .FirstOrDefaultAsync(wle => wle.FilmId == FilmId && wle.UserId == UserId);
+
+        public async Task AddToWatchlist(WatchlistEntry Entry)
+        {
+            _context.WatchlistEntries.Add(Entry);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveFromWatchlist(WatchlistEntry Entry)
+        {
+            _context.WatchlistEntries.Remove(Entry); //one of the rare immediate deletions -> not vital infrastructure
+            await _context.SaveChangesAsync();
+        }
 
         public void UpdateFavorites(UserFavorites Favorites) =>
             _context.UserFavorites.Update(Favorites);

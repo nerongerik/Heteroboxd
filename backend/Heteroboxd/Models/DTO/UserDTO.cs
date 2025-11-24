@@ -18,6 +18,7 @@ namespace Heteroboxd.Models.DTO
         public string Patron { get; set; }
         public string Joined { get; set; }
         public int Flags { get; set; }
+        public string WatchlistCount { get; set; }
         public string ListsCount { get; set; }
         public string FollowersCount { get; set; }
         public string FollowingCount { get; set; }
@@ -38,6 +39,7 @@ namespace Heteroboxd.Models.DTO
             this.Patron = User.IsPatron.ToString();
             this.Joined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
             this.Flags = User.Flags;
+            this.WatchlistCount = User.Watchlist!.Films.Count.ToString();
             this.ListsCount = User.Lists.Count.ToString();
             this.FollowersCount = User.Followers.Count.ToString();
             this.FollowingCount = User.Following.Count.ToString();

@@ -17,6 +17,7 @@ namespace Heteroboxd.Data
         public DbSet<Celebrity> Celebrities { get; set; }
         public DbSet<CelebrityCredit> CelebrityCredits { get; set; }
         public DbSet<ListEntry> ListEntries { get; set; }
+        public DbSet<WatchlistEntry> WatchlistEntries { get; set; }
         public DbSet<UserList> UserLists { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Watchlist> Watchlists { get; set; }
@@ -171,6 +172,24 @@ namespace Heteroboxd.Data
                                         (JsonSerializerOptions)null)
                         )
                     );
+
+                entity.Property(f => f.Country)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                        v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, (JsonSerializerOptions)null)
+                    )
+                    .HasColumnType("jsonb")
+                    .Metadata.SetValueComparer(
+                        new ValueComparer<Dictionary<string, string>>(
+                            (d1, d2) => JsonSerializer.Serialize(d1, (JsonSerializerOptions)null) ==
+                                        JsonSerializer.Serialize(d2, (JsonSerializerOptions)null),
+                            d => d == null ? 0 : JsonSerializer.Serialize(d, (JsonSerializerOptions)null).GetHashCode(),
+                            d => d == null ? new Dictionary<string, string>()
+                                : JsonSerializer.Deserialize<Dictionary<string, string>>(
+                                        JsonSerializer.Serialize(d, (JsonSerializerOptions)null),
+                                        (JsonSerializerOptions)null)
+                        )
+                    );
             });
 
             // UserWatchedFilm
@@ -217,7 +236,24 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<ListEntry>(entity =>
             {
                 entity.HasKey(le => le.Id);
+
+                entity.HasOne<UserList>()
+                      .WithMany(ul => ul.Films)
+                      .HasForeignKey(le => le.UserListId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
+
+            // WatchlistEntry
+            modelBuilder.Entity<WatchlistEntry>(entity =>
+            {
+                entity.HasKey(le => le.Id);
+
+                entity.HasOne<Watchlist>()
+                      .WithMany(wl => wl.Films)
+                      .HasForeignKey(wle => wle.WatchlistId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
 
             // UserList
             modelBuilder.Entity<UserList>(entity =>

@@ -2,14 +2,14 @@ import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, P
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { UserAvatar } from '../../components/userAvatar';
 import { BaseUrl } from '../../constants/api';
 import Popup from '../../components/popup';
 import LoadingResponse from '../../components/loadingResponse';
 import GlowingText from '../../components/glowingText';
-import { FavoritePoster } from '../../components/favoritePoster';
+import { Poster } from '../../components/poster';
 import { Snackbar } from 'react-native-paper';
 import * as auth from '../../helpers/auth';
 import Foundation from '@expo/vector-icons/Foundation';
@@ -39,10 +39,12 @@ const Profile = () => {
 
   const [blocked, setBlocked] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [watchlistCount, setWatchlistCount] = useState('0');
 
   //context menu
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
   const [contextMenuMessage, setContextMenuMessage] = useState("");
+
 
   const loadProfileData = async () => {
     setRefreshing(true);
@@ -55,8 +57,8 @@ const Profile = () => {
         const json = await res.json();
         setData({ 
           name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
-          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), flags: json.flags, listsCount: json.listsCount,
-          followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
+          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
+          listsCount: json.listsCount, followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
           reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
         if (json.gender === 'female' || json.gender === 'Female') setPronoun(['she', 'her', 'hers']);
@@ -153,8 +155,7 @@ const Profile = () => {
     if (!blocked) {
       loadProfileData();
     }
-  }, [userId]);
-
+  }, [userId, blocked]);
 
   function parseDate(date) {
     if (!date) return date;
@@ -214,6 +215,35 @@ const Profile = () => {
     });
   }
 
+  //context menu
+  const handlePress = () => {
+    let message = "";
+
+    if (isAdmin) {
+      message = "This person is a community moderator. Learn how you can join our moderation team ";
+    } else if (data.patron) {
+      message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
+    } else if (isDonor) {
+      message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
+    }
+
+    setContextMenuMessage(message);
+    setContextMenuVisible(true);
+  };
+
+  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
+  const isOwnProfile = useMemo(() => user?.userId === userId, [user?.userId, userId]);
+  const isDonor = useMemo(() => data?.tier?.toLowerCase() === "donor", [data]);
+  const isAdmin = useMemo(() => data?.tier?.toLowerCase() === 'admin', [data]);
+  //minimum spacing between posters
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
+  //determine max usable row width:
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
+  //compute poster width:
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
+  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
+
+
   if (blocked) {
     return (
       <View style={{
@@ -242,35 +272,6 @@ const Profile = () => {
     );
   }
 
-  const isOwnProfile = user && user.userId === userId;
-
-  const isDonor = data.tier === "DONOR" || data.tier === "donor" || data.tier === "Donor";
-  const isAdmin = data.tier === 'ADMIN' || data.tier === 'admin' || data.tier === 'Admin';
-
-  //minimum spacing between posters
-  const spacing = Platform.OS === 'web' ? 50 : 5;
-  //determine max usable row width:
-  const maxRowWidth = (Platform.OS === 'web' && width > 1000 ? 1000 : width * 0.95);
-  //compute poster width:
-  const posterWidth = (maxRowWidth - spacing * 4) / 4;
-  const posterHeight = posterWidth * (3 / 2); //maintain 2:3 aspect
-
-  //context menu
-  const handlePress = () => {
-    let message = "";
-
-    if (isAdmin) {
-      message = "This person is a community moderator. Learn how you can join our moderation team ";
-    } else if (data.patron) {
-      message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
-    } else if (isDonor) {
-      message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
-    }
-
-    setContextMenuMessage(message);
-    setContextMenuVisible(true);
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -279,8 +280,8 @@ const Profile = () => {
         }
         contentContainerStyle={{
           padding: 5,
-          minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
-          maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%",
+          minWidth: widescreen ? 1000 : 'auto',
+          maxWidth: widescreen ? 1000 : "100%",
           width: "100%",
           alignSelf: "center",
         }}
@@ -304,17 +305,17 @@ const Profile = () => {
                       borderWidth: 3,
                       borderColor: Colors.button_reject,
                       borderRadius: 3,
-                      paddingVertical: Platform.OS === 'web' ? 8 : 6,
-                      paddingHorizontal: Platform.OS === 'web' ? 8 : 6,
+                      paddingVertical: widescreen ? 8 : 6,
+                      paddingHorizontal: widescreen ? 8 : 6,
                       justifyContent: 'center',
                       alignSelf: 'center',
                       position: 'absolute',
-                      right: Platform.OS === 'web' && width < 500 ? -85 : (Platform.OS === 'web' ? -120 : -100)
+                      right: Platform.OS === 'web' && width < 500 ? -85 : (widescreen ? -120 : -100)
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (Platform.OS === 'web' ? 16 : (width > 350 ? 14 : 10)),
+                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (widescreen ? 16 : (width > 350 ? 14 : 10)),
                         fontWeight: '700',
                         color: Colors.button_reject,
                         textAlign: 'center',
@@ -331,17 +332,17 @@ const Profile = () => {
                       borderWidth: 3,
                       borderColor: Colors.button_confirm,
                       borderRadius: 3,
-                      paddingVertical: Platform.OS === 'web' ? 8 : 6,
-                      paddingHorizontal: Platform.OS === 'web' ? 8 : 6,
+                      paddingVertical: widescreen ? 8 : 6,
+                      paddingHorizontal: widescreen ? 8 : 6,
                       justifyContent: 'center',
                       alignSelf: 'center',
                       position: 'absolute',
-                      right: Platform.OS === 'web' && width < 500 ? -75 : (Platform.OS === 'web' ? -100 : -85)
+                      right: Platform.OS === 'web' && width < 500 ? -75 : (widescreen ? -100 : -85)
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (Platform.OS === 'web' ? 16 : (width > 350 ? 14 : 10)),
+                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (widescreen ? 16 : (width > 350 ? 14 : 10)),
                         fontWeight: '700',
                         color: Colors.button_confirm,
                         textAlign: 'center',
@@ -406,7 +407,7 @@ const Profile = () => {
         ) : (
         <View style={[styles.movies, { width: "100%", justifyContent: "space-between", paddingHorizontal: 10 }]}>
           {favorites.map((film, index) => (
-            <TouchableOpacity
+            <Pressable
               key={index}
               onPress={() => {
                 if (favoritesResult === 404) {
@@ -424,19 +425,18 @@ const Profile = () => {
               }}
               style={{ alignItems: "center" }}
             >
-              <FavoritePoster
+              <Poster
                 posterUrl={favoritesResult === 404 ? 'error' : (film?.posterUrl ?? null)}
                 style={{
                   width: posterWidth,
                   height: posterHeight,
                   borderRadius: 8,
-                  borderWidth: film ? 0 : 1,
-                  borderColor: film ? "transparent" : Colors.border_color,
-                  opacity: film ? 1 : 0.4,
+                  borderWidth: 2,
+                  borderColor: Colors.border_color,
                 }}
                 other={!isOwnProfile}
               />
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
         )}
@@ -458,7 +458,7 @@ const Profile = () => {
             </View>
           ) : recent.length === 0 ? (
             <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-              <Text style={styles.text}>This user doesn't appear to be a real nigga, as there is no recent activity.</Text>
+              <Text style={styles.text}>This user has no motion.</Text>
             </View>
           ) : (
             <ScrollView
@@ -467,43 +467,45 @@ const Profile = () => {
               contentContainerStyle={{ paddingHorizontal: 10 }}
             >
               {recent.slice(0, 8).map((film, index) => (
-                <TouchableOpacity
+                <Pressable
                   key={index}
                   onPress={() => router.replace(`/film/${film.filmId}`)}
                   style={{ marginRight: 8 }}
                 >
-                  <FavoritePoster
+                  <Poster
                     posterUrl={film?.posterUrl ?? null}
                     style={{
                       width: posterWidth,
                       height: posterHeight,
                       borderRadius: 8,
-                      borderWidth: film ? 0 : 1,
-                      borderColor: film ? "transparent" : Colors.border_color,
-                      opacity: film ? 1 : 0.4,
+                      borderWidth: 2,
+                      borderColor: Colors.border_color,
                     }}
                     other={!isOwnProfile}
                   />
-                </TouchableOpacity>
+                </Pressable>
               ))}
-
-              <TouchableOpacity
-                onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
-                style={{ marginRight: 8 }}
-              >
-                <FavoritePoster
-                  posterUrl={'more'}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: Colors.border_color,
-                    opacity: 0.4,
-                  }}
-                  other={!isOwnProfile}
-                />
-              </TouchableOpacity>
+              {
+                recent.length < 8 ? null : (
+                  <Pressable
+                    onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
+                    style={{ marginRight: 8 }}
+                  >
+                    <Poster
+                      posterUrl={'more'}
+                      style={{
+                        width: posterWidth,
+                        height: posterHeight,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: Colors.border_color,
+                        opacity: 0.4,
+                      }}
+                      other={!isOwnProfile}
+                    />
+                  </Pressable>              
+                )
+              }
             </ScrollView>
           )}
         </View>
@@ -512,7 +514,7 @@ const Profile = () => {
 
         <View style={styles.buttons}>
           {[
-            ...(isOwnProfile ? [{ label: "Watchlist", count: data.watched }] : []),
+            ...(isOwnProfile ? [{ label: "Watchlist", count: data.watchlistCount }] : []),
             { label: "Reviews", count: data.reviewsCount },
             { label: "Lists", count: data.listsCount },
             { label: "Likes", count: data.likes },
@@ -541,6 +543,7 @@ const Profile = () => {
           <Text style={[styles.text, {marginTop: 50}]}>{data.joined}</Text>
         </View>
       </ScrollView>
+
       <Popup visible={result === 400 || result === 404 || result === 500} message={error} onClose={() => {
         result === 500 ? router.replace('/contact') : router.replace('/');
         }}
@@ -601,6 +604,7 @@ const Profile = () => {
           </Pressable>
         </Modal>
       )}
+      
     </View>
   );
 };

@@ -59,7 +59,6 @@ namespace Heteroboxd.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("PictureUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -76,10 +75,20 @@ namespace Heteroboxd.Migrations
                     b.Property<int>("CelebrityId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CelebrityName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CelebrityPictureUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("Character")
                         .HasColumnType("text");
 
                     b.Property<int>("FilmId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Order")
                         .HasColumnType("integer");
 
                     b.Property<int>("Role")
@@ -147,6 +156,10 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
 
@@ -202,26 +215,28 @@ namespace Heteroboxd.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("DateAdded")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("FilmId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("FilmPosterUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int?>("Position")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("UserListId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("WatchlistId")
+                    b.Property<Guid>("UserListId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserListId");
-
-                    b.HasIndex("WatchlistId");
 
                     b.ToTable("ListEntries");
                 });
@@ -517,6 +532,35 @@ namespace Heteroboxd.Migrations
                     b.ToTable("Watchlists");
                 });
 
+            modelBuilder.Entity("Heteroboxd.Models.WatchlistEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("DateAdded")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FilmId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FilmPosterUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WatchlistId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WatchlistId");
+
+                    b.ToTable("WatchlistEntries");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -778,12 +822,8 @@ namespace Heteroboxd.Migrations
                     b.HasOne("Heteroboxd.Models.UserList", null)
                         .WithMany("Films")
                         .HasForeignKey("UserListId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Heteroboxd.Models.Watchlist", null)
-                        .WithMany("Films")
-                        .HasForeignKey("WatchlistId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Heteroboxd.Models.Notification", b =>
@@ -833,6 +873,15 @@ namespace Heteroboxd.Migrations
                     b.HasOne("Heteroboxd.Models.User", null)
                         .WithOne("Watchlist")
                         .HasForeignKey("Heteroboxd.Models.Watchlist", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Heteroboxd.Models.WatchlistEntry", b =>
+                {
+                    b.HasOne("Heteroboxd.Models.Watchlist", null)
+                        .WithMany("Films")
+                        .HasForeignKey("WatchlistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

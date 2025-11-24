@@ -202,9 +202,9 @@ const ProfileOptionsButton = ({ userId }) => {
 
   return (
     <View>
-      <TouchableOpacity onPress={openMenu}>
+      <Pressable onPress={openMenu}>
         <MaterialIcons name="more-vert" size={24} color={Colors.text} />
-      </TouchableOpacity>
+      </Pressable>
 
       <Modal transparent visible={menuShown} animationType="fade">
         <Pressable style={styles.overlay} onPress={closeMenu}>

@@ -5,13 +5,13 @@ namespace Heteroboxd.Models
     public class Notification
     {
         [Key]
-        public Guid Id { get; private set; }
-        public string Title { get; private set; }
-        public string Text { get; private set; }
-        public DateTime Date { get; private set; }
+        public Guid Id { get; set; }
+        public string Title { get; set; }
+        public string Text { get; set; }
+        public DateTime Date { get; set; }
         public bool Read { get; set; }
         public bool Deleted { get; set; }
-        public Guid UserId { get; private set; }
+        public Guid UserId { get; set; }
 
         public Notification(string Title, string Text, Guid UserId)
         {
