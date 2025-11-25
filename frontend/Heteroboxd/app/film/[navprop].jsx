@@ -19,6 +19,8 @@ const Film = () => {
   const [film, setFilm] = useState(null); //basic film data
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
 
+  const [watchlisted, setWatchlisted] = useState(null);
+
   const { navprop } = useLocalSearchParams(); //navigational property
   const router = useRouter();
   const {width} = useWindowDimensions();
@@ -155,6 +157,26 @@ const Film = () => {
     loadFilmPage();
   }, [navprop]);
 
+  useEffect(() => { //checks if user previously watchlisted this film
+    (async () => {
+      if (user && film && isValidSession()) {
+        const jwt = await auth.getJwt();
+        const wlRes = await fetch(`${BaseUrl.api}/users/${user.userId}/watchlist/${film.id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${jwt}`,
+          }
+        });
+        if (wlRes.status === 200) {
+          const json = await wlRes.json();
+          setWatchlisted(json);
+        } else {
+          setWatchlisted(false); //fallback
+        }
+      }
+    })();
+  }, [film, user]);
+
   useEffect(() => {
     (async () => {
       if (Platform.OS === 'web' && /^\d+$/.test(navprop) && film && film.slug && navprop !== film.slug) { //replace id for slug
@@ -243,7 +265,7 @@ const Film = () => {
         <View style={[styles.row, {width: widescreen ? 1000 : "100%"}]}>
           <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
             <View>
-              <Text style={[styles.title, { fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33 }]}>{film.title}</Text>
+              <Text style={[styles.title, { fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33, paddingHorizontal: 1 }]}>{film.title}</Text>
               {
                 film.originalTitle && film.originalTitle !== film.title
                   ? (<Text style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</Text>)
@@ -293,7 +315,7 @@ const Film = () => {
         
         {
           isValidSession() && (
-            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched > 0}/>
+            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched > 0} watchlisted={watchlisted} rating={null}/>
           )
         }
 
