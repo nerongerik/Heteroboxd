@@ -62,7 +62,7 @@ const Register = () => {
         }),
       });
       if (res.status === 200) {
-        setMessage("You have successfully joined the Heteroboxd community...");
+        setMessage("You have successfully joined the Heteroboxd community! We sent you an e-mail verification message needed to proceed.");
         setResponse(200);
       } else if (res.status === 400) {
         setMessage(`The email address ${email} is already in use.`);

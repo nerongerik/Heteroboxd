@@ -14,7 +14,7 @@ const RootLayout = () => {
           headerTintColor: Colors.text,
           headerShadowVisible: false,
           title: '',
-          headerLeft: Platform.OS === 'web' ? () => null : undefined, // hide back arrow on web globally
+          headerLeft: Platform.OS === 'web' ? () => null : undefined, //hide back arrow on web globally
         }}
       >
         <Stack.Screen name='index' options={{ headerShown: false }} />
@@ -35,6 +35,14 @@ const RootLayout = () => {
             headerTitle: '',
             headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
             }}
+        />
+        <Stack.Screen 
+          name="films/watchlist/[userId]" 
+          options={{
+            headerTitle: 'Watchlist',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title, fontSize: 24}
+          }}
         />
       </Stack>
     </AuthProvider>

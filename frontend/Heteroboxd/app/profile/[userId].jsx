@@ -39,7 +39,6 @@ const Profile = () => {
 
   const [blocked, setBlocked] = useState(false);
   const [following, setFollowing] = useState(false);
-  const [watchlistCount, setWatchlistCount] = useState('0');
 
   //context menu
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
@@ -169,7 +168,7 @@ const Profile = () => {
   function handleButtons(button) {
     switch(button) {
       case 'Watchlist':
-        router.replace(`/watchlist/${userId}`);
+        router.replace(`/films/watchlist/${userId}`);
         break;
       case 'Reviews':
         router.replace(`/reviews/user/${userId}`);
@@ -301,7 +300,7 @@ const Profile = () => {
             }
             {!isOwnProfile && (
               following ? (
-                  <TouchableOpacity
+                  <Pressable
                     onPress={handleFollow}
                     style={{
                       backgroundColor: 'transparent',
@@ -326,9 +325,9 @@ const Profile = () => {
                     >
                       UNFOLLOW
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 ) : (
-                  <TouchableOpacity
+                  <Pressable
                     onPress={handleFollow}
                     style={{
                       backgroundColor: 'transparent',
@@ -353,7 +352,7 @@ const Profile = () => {
                     >
                       FOLLOW
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 )
               )}
           </View>
@@ -420,7 +419,7 @@ const Profile = () => {
                 else if (film && film.filmId) {
                   router.replace(`/film/${film.filmId}`);
                 } else if (!isOwnProfile) {
-                  setSnackbarMessage("You can't choose favorites for other people, retard!");
+                  setSnackbarMessage("You can't choose favorites for other people!");
                   setVisible(true);
                 } else {
                   console.log(index + 1);
