@@ -415,7 +415,6 @@ namespace Heteroboxd.Service
                     {
                         Existing.TimesWatched++;
                         Existing.DateWatched = DateTime.UtcNow;
-                        _repo.UpdateUserWatchedFilm(Existing);
                     }
                     else
                     {
@@ -428,6 +427,7 @@ namespace Heteroboxd.Service
                     {
                         await _repo.RemoveFromWatchlist(ExistingEntry);
                     }
+                    await _repo.SaveChangesAsync();
                     break;
                 case ("unwatched"):
                     var UserUnWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);

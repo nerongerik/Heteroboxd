@@ -67,8 +67,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
           <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 13}}>
             {
               seenLocalCopy
-                ? ratingLocalCopy
-                  ? `You rated this film {stars}`
+                ? (ratingLocalCopy && ratingLocalCopy > 0)
+                  ? <Stars size={widescreen ? 16 : 13} rating={ratingLocalCopy} readonly={true} />
                   : "You have watched this film."
                 : watchlistedLocalCopy
                   ? "This film is in your watchlist."
@@ -266,8 +266,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
             ) : (
               watch
             )}
-
             {watchlistedLocalCopy ? unwatchlist : watchlist}
+
           </View>
           <View style={styles.divider} />
           <Stars size={60} rating={ratingLocalCopy} onRatingChange={(newRating) => setRatingLocalCopy(newRating)} />

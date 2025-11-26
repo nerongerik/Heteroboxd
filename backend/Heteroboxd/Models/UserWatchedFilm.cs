@@ -1,5 +1,4 @@
-﻿using Heteroboxd.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 public class UserWatchedFilm
 {

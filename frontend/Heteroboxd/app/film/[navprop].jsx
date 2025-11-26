@@ -7,7 +7,6 @@ import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
 import Popup from '../../components/popup';
-import {UserAvatar} from '../../components/userAvatar';
 import { Poster } from '../../components/poster';
 import { Backdrop } from '../../components/backdrop';
 import React from 'react';
@@ -288,8 +287,8 @@ const Film = () => {
             </View>
             
             <Text style={[styles.text, { fontSize: widescreen ? 20 : 14 }]}>
-              {film.releaseYear} • {film.length} min •{" "}
-              {film.country.map((c, i) =>
+              {film.releaseYear} • {film.length} min {film?.country?.length > 0 && " • "}
+              {film?.country?.map((c, i) =>
                 Platform.OS === "web" ? (
                   <img key={i} src={`https://flagcdn.com/24x18/${c}.png`} style={{ marginRight: 6, width: 20, height: 15 }} />
                 ) : (
@@ -327,6 +326,11 @@ const Film = () => {
           showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
           style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
         >
+          {actors.length === 0 && (
+            <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
+              <Text style={[styles.text, {fontSize: 20}]}>There's no recorded cast for this feature.</Text>
+            </View>
+          )}
           {actors.map((actor, index) => {
             return (
               <Pressable
@@ -363,6 +367,11 @@ const Film = () => {
           showsHorizontalScrollIndicator={widescreen}
           style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
         >
+          {(directors.length === 0 && crew.length === 0) && (
+            <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
+              <Text style={[styles.text, {fontSize: 20}]}>There's no recorded crew for this feature.</Text>
+            </View>
+          )}
           {directors.map((director, index) => {
             return (
               <Pressable
@@ -446,7 +455,7 @@ const Film = () => {
                 showsHorizontalScrollIndicator={widescreen}
                 style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
               >
-                {Object.entries(film.collection).map(([tmdbId, posterLink], index) => (
+                {Object.entries(film?.collection).map(([tmdbId, posterLink], index) => (
                   <Pressable
                     key={tmdbId}
                     onPress={() => router.replace(`/film/${tmdbId}`)}
