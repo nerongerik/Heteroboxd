@@ -496,7 +496,7 @@ const Profile = () => {
               {
                 recent.length < 8 ? null : (
                   <Pressable
-                    onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
+                    onPress={() => {router.replace(`/films/user-watched/${userId}`)}}
                     style={{ marginRight: 8 }}
                   >
                     <Poster

@@ -10,8 +10,7 @@ import Popup from '../../../components/popup';
 import PaginationBar from '../../../components/paginationBar';
 import { Poster } from '../../../components/poster';
 
-const Watchlist = () => {
-
+const UserWatchedFilms = () => {
   const { userId } = useLocalSearchParams();
   const { user, isValidSession } = useAuth();
 
@@ -28,17 +27,15 @@ const Watchlist = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEnd, setIsEnd] = useState(false);
 
-  const loadWatchlistPage = async (page, replace = false) => {
+  const loadUserWatchedPage = async (page, replace = false) => {
     try {
       if (await isValidSession() && user && user.userId === userId) {
         setIsLoading(true);
 
-        const jwt = await auth.getJwt();
-        const res = await fetch(`${BaseUrl.api}/users/watchlist/${userId}?Page=${page}&PageSize=${pageSize}`, {
+        const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=${page}&PageSize=${pageSize}`, {
           method: 'GET',
           headers: {
             Accept: 'application/json',
-            Authorization: `Bearer ${jwt}`,
           }
         });
 
@@ -48,9 +45,9 @@ const Watchlist = () => {
           setTotalCount(json.totalCount);
           setPageSize(json.pageSize);
           setEntries(prev =>
-            replace ? json.entries : [...prev, ...json.entries]
+            replace ? json.films : [...prev, ...json.films]
           );
-          if (json.entries.length < json.pageSize)
+          if (json.films.length < json.pageSize)
             setIsEnd(true);
         } else {
           setResult(500);
@@ -71,7 +68,7 @@ const Watchlist = () => {
   useEffect(() => {
     setEntries([]);
     setIsEnd(false);
-    loadWatchlistPage(1, true);
+    loadUserWatchedPage(1, true);
   }, [userId]);
 
   //web on compooper?
@@ -99,7 +96,7 @@ const Watchlist = () => {
               style={{ margin: spacing / 2 }}       // ← uniform spacing on all sides
             >
               <Poster
-                posterUrl={item.filmPosterUrl}
+                posterUrl={item.posterUrl}
                 style={{
                   width: posterWidth,
                   height: posterHeight,
@@ -118,7 +115,7 @@ const Watchlist = () => {
           }}
           onEndReached={() => {
             if (!isLoading && !isEnd) {
-              loadWatchlistPage(page + 1, false);
+              loadUserWatchedPage(page + 1, false);
             }
           }}
           onEndReachedThreshold={0.8}
@@ -136,7 +133,7 @@ const Watchlist = () => {
                 style={{ margin: spacing / 2 }}
               >
                 <Poster
-                  posterUrl={item.filmPosterUrl}
+                  posterUrl={item.posterUrl}
                   style={{
                     width: posterWidth,
                     height: posterHeight,
@@ -163,7 +160,7 @@ const Watchlist = () => {
             onPagePress={(num) => {
               setEntries([]);
               setIsEnd(false);
-              loadWatchlistPage(num, true);
+              loadUserWatchedPage(num, true);
             }}
           />
         </>
@@ -175,7 +172,7 @@ const Watchlist = () => {
   );
 }
 
-export default Watchlist
+export default UserWatchedFilms
 
 const styles = StyleSheet.create({
   container: {

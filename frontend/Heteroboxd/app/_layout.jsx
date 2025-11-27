@@ -14,7 +14,6 @@ const RootLayout = () => {
           headerTintColor: Colors.text,
           headerShadowVisible: false,
           title: '',
-          headerLeft: Platform.OS === 'web' ? () => null : undefined, //hide back arrow on web globally
         }}
       >
         <Stack.Screen name='index' options={{ headerShown: false }} />
@@ -41,7 +40,23 @@ const RootLayout = () => {
           options={{
             headerTitle: 'Watchlist',
             headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title, fontSize: 24}
+            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+          }}
+        />
+        <Stack.Screen 
+          name="films/user-watched/[userId]" 
+          options={{
+            headerTitle: 'Recents',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+          }}
+        />
+        <Stack.Screen 
+          name="list/create" 
+          options={{
+            headerTitle: 'New List',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
           }}
         />
       </Stack>
