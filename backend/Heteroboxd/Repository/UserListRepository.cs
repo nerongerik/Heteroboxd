@@ -12,6 +12,7 @@ namespace Heteroboxd.Repository
         Task<List<UserList>> GetFeaturingFilmAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
+        void CreateEntry(ListEntry ListEntry);
         void Update(UserList UserList);
         Task UpdateLikeCountEfCore7Async(Guid ListId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid ListId);
@@ -64,6 +65,12 @@ namespace Heteroboxd.Repository
         {
             _context.UserLists
                 .Add(UserList);
+        }
+
+        public void CreateEntry(ListEntry ListEntry)
+        {
+            _context.ListEntries
+                .Add(ListEntry);
         }
 
         public void Update(UserList UserList)

@@ -12,7 +12,8 @@ namespace Heteroboxd.Service
         Task<List<UserListInfoResponse>> GetUsersUserLists(string UserId);
         Task<List<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId);
         Task<List<UserListInfoResponse>> SearchUserLists(string Search);
-        Task AddList(CreateUserListRequest ListRequest);
+        Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
+        Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries);
         Task UpdateList(UpdateUserListRequest ListRequest);
         Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange);
         Task ToggleNotificationsEfCore7Async(string ListId);
@@ -83,16 +84,22 @@ namespace Heteroboxd.Service
             return Results.ToList();
         }
 
-        public async Task AddList(CreateUserListRequest ListRequest) // PLACEHOLDER - PROBABLY REFORM ENTRY CREATION LATER
+        public async Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId)
         {
-            UserList NewList = new UserList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, Guid.Parse(ListRequest.AuthorId));
-            foreach (CreateListEntryRequest cler in ListRequest.Entries)
-            {
-                var Film = await _filmRepo.LightweightFetcher(cler.FilmId);
-                if (Film == null) continue; //skip invalid films
-                NewList.Films.Add(new ListEntry(cler.Position, Film.PosterUrl, Film.Id, Guid.Parse(ListRequest.AuthorId), NewList.Id));
-            }
+            UserList NewList = new UserList(Name, Description, Ranked, Guid.Parse(AuthorId));
             _repo.Create(NewList);
+            await _repo.SaveChangesAsync();
+            return NewList.Id;
+        }
+
+        public async Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries)
+        {
+            foreach (CreateListEntryRequest Request in Entries)
+            {
+                var Film = await _filmRepo.LightweightFetcher(Request.FilmId);
+                if (Film == null) continue;
+                _repo.CreateEntry(new ListEntry(Request.Position, Film.PosterUrl, Request.FilmId, Guid.Parse(AuthorId), ListId));
+            }
             await _repo.SaveChangesAsync();
         }
 
@@ -110,8 +117,7 @@ namespace Heteroboxd.Service
                 {
                     var Entry = List.Films.FirstOrDefault(le => le.Id == Guid.Parse(leid));
                     if (Entry == null) throw new ArgumentException();
-                    int Position = Entry.Position ?? -1;
-                    foreach (var f in List.Films.Where(le => le.Position > Position && Position != -1)) f.Position--;
+                    foreach (var f in List.Films.Where(le => le.Position > Entry.Position)) f.Position--;
                     List.Films.Remove(Entry);
                 }
             }
@@ -122,9 +128,8 @@ namespace Heteroboxd.Service
                 {
                     var Film = await _filmRepo.LightweightFetcher(leir.FilmId);
                     if (Film == null) continue;
-                    int Position = leir.Position ?? -1;
-                    foreach (var f in List.Films.Where(le => le.Position >= Position && Position != -1)) f.Position++;
-                    List.Films.Add(new ListEntry(Position, Film.PosterUrl, Film.Id, List.AuthorId, List.Id));
+                    foreach (var f in List.Films.Where(le => le.Position >= leir.Position)) f.Position++;
+                    List.Films.Add(new ListEntry(leir.Position, Film.PosterUrl, Film.Id, List.AuthorId, List.Id));
                 }
             }
             await _repo.SaveChangesAsync();

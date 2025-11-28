@@ -1,11 +1,17 @@
-import { ScrollView, StyleSheet, useWindowDimensions, View, Platform, TextInput, Text, Pressable, FlatList, TouchableOpacity } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, Platform, TextInput, Text, Pressable, FlatList } from 'react-native'
 import { useAuth } from '../../hooks/useAuth';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Colors } from '../../constants/colors';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Poster } from '../../components/poster';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import * as auth from '../../helpers/auth';
+import { BaseUrl } from '../../constants/api';
+import LoadingResponse from '../../components/loadingResponse';
+import { Snackbar } from 'react-native-paper';
+import { TouchableOpacity } from 'react-native';
 
 const CreateList = () => {
   const { user, isValidSession } = useAuth();
@@ -17,6 +23,21 @@ const CreateList = () => {
   const [ranked, setRanked] = useState(false);
 
   const router = useRouter();
+  const navigation = useNavigation();
+
+  const [result, setResult] = useState(-1);
+  const [snack, setSnack] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={handleSubmit} disabled={!listName || entries.length === 0} style={(!listName || entries.length === 0) && {opacity: 0.5}}>
+          <Ionicons name="checkmark" size={24} color={Colors.text_title} />
+        </TouchableOpacity>
+      )
+    });
+  }, [listName, desc, entries, ranked]);
 
   //web on compooper?
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
@@ -49,7 +70,50 @@ const CreateList = () => {
   }
 
   async function handleSubmit() {
-    //send fetch call for list create
+    try {
+      if (!user || !isValidSession()) {
+        //snackbar
+        return;
+      }
+      setResult(0);
+      const payload = entries.map((e, i) => ({
+        FilmId: e.filmId,
+        Position: i + 1
+      }));
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/lists`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          "Name": listName,
+          "Description": desc,
+          "Ranked": ranked,
+          "AuthorId": user.userId,
+          "Entries": payload
+        })
+      });
+      if (res.status === 200) {
+        setResult(200);
+        router.replace(`/lists/user/${user.userId}`);
+      } else if (res.status === 401) {
+        setMessage("Credentials expired - try logging in again!");
+        setResult(401);
+        setSnack(true);
+      } else {
+        console.log(res.status)
+        setMessage("Something went wrong! Contact Heteroboxd support for more information.");
+        setResult(500);
+        setSnack(true);
+      }
+    } catch {
+        setMessage("Network error! Please check your internet connection.");
+        setResult(500);
+        setSnack(true);
+      return;
+    }
   }
 
   return (
@@ -135,6 +199,27 @@ const CreateList = () => {
         <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
         <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
       </Pressable>
+
+      <LoadingResponse visible={result === 0} />
+      <Snackbar
+        visible={snack}
+        onDismiss={() => setSnack(false)}
+        duration={3000}
+        style={{
+          backgroundColor: Colors.card,
+          width: widescreen ? '50%' : '90%',
+          alignSelf: 'center',
+          borderRadius: 8,
+        }}
+        action={{
+          label: 'OK',
+          onPress: () => setSnack(false),
+          textColor: Colors.text_link
+        }}
+      >
+        {message}
+      </Snackbar>
+
     </View>
   )
 }

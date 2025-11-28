@@ -22,7 +22,7 @@ namespace Heteroboxd.Models
             this.Name = Name;
             this.Description = Description;
             this.Ranked = Ranked;
-            this.DateCreated = DateTime.Now;
+            this.DateCreated = DateTime.UtcNow;
             this.NotificationsOn = true;
             this.Deleted = false;
             this.Films = new List<ListEntry>();
