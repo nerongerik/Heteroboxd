@@ -168,26 +168,26 @@ const Profile = () => {
   function handleButtons(button) {
     switch(button) {
       case 'Watchlist':
-        router.replace(`/films/watchlist/${userId}`);
+        router.push(`/films/watchlist/${userId}`);
         break;
       case 'Reviews':
-        router.replace(`/reviews/user/${userId}`);
+        router.push(`/reviews/user/${userId}`);
         break;
       case 'Lists':
-        if (data.listsCount === '0') router.replace(`/list/create`)
-        else router.replace(`/lists/user/${userId}`);
+        if (data.listsCount === '0') router.push(`/list/create`)
+        else router.push(`/lists/user/${userId}`);
         break;
       case 'Likes':
         console.log('I am yet to decide on the most practical way to make this happen with tabs and all.');
         break;
       case 'Followers':
-        router.replace(`/relationships/${userId}?t=followers`);
+        router.push(`/relationships/${userId}?t=followers`);
         break;
       case 'Following':
-        router.replace(`/relationships/${userId}?t=following`);
+        router.push(`/relationships/${userId}?t=following`);
         break;
       case 'Blocked':
-        router.replace(`/relationships/${userId}?t=blocked`);
+        router.push(`/relationships/${userId}?t=blocked`);
         break;
       default:
         setSnackbarMessage("I'm gonna touch you");
@@ -417,7 +417,7 @@ const Profile = () => {
                   setVisible(true);
                 }
                 else if (film && film.filmId) {
-                  router.replace(`/film/${film.filmId}`);
+                  router.push(`/film/${film.filmId}`);
                 } else if (!isOwnProfile) {
                   setSnackbarMessage("You can't choose favorites for other people!");
                   setVisible(true);
@@ -477,7 +477,7 @@ const Profile = () => {
               {recent.slice(0, 8).map((film, index) => (
                 <Pressable
                   key={index}
-                  onPress={() => router.replace(`/film/${film.filmId}`)}
+                  onPress={() => router.push(`/film/${film.filmId}`)}
                   style={{ marginRight: spacing }}
                 >
                   <Poster
@@ -496,7 +496,7 @@ const Profile = () => {
               {
                 recent.length < 8 ? null : (
                   <Pressable
-                    onPress={() => {router.replace(`/films/user-watched/${userId}`)}}
+                    onPress={() => {router.push(`/films/user-watched/${userId}`)}}
                     style={{ marginRight: 8 }}
                   >
                     <Poster

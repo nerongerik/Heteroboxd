@@ -335,7 +335,7 @@ const Film = () => {
             return (
               <Pressable
                 key={actor.celebrityId}
-                onPress={() => router.replace(`/celebrity/${actor.celebrityId}`)}
+                onPress={() => router.push(`/celebrity/${actor.celebrityId}`)}
                 style={{ marginRight: index < actors.length - 1 ? 15 : 0 }}
               >
                 <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
@@ -376,7 +376,7 @@ const Film = () => {
             return (
               <Pressable
                 key={director.celebrityId}
-                onPress={() => router.replace(`/celebrity/${director.celebrityId}`)}
+                onPress={() => router.push(`/celebrity/${director.celebrityId}`)}
                 style={{ marginRight: 15 }}
               >
                 <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
@@ -404,7 +404,7 @@ const Film = () => {
             return (
               <Pressable
                 key={crewer.celebrityId}
-                onPress={() => router.replace(`/celebrity/${crewer.celebrityId}`)}
+                onPress={() => router.push(`/celebrity/${crewer.celebrityId}`)}
                 style={{ marginRight: index < crew.length - 1 ? 15 : 0 }}
               >
                 <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
@@ -458,7 +458,7 @@ const Film = () => {
                 {Object.entries(film?.collection).map(([tmdbId, posterLink], index) => (
                   <Pressable
                     key={tmdbId}
-                    onPress={() => router.replace(`/film/${tmdbId}`)}
+                    onPress={() => router.push(`/film/${tmdbId}`)}
                     style={{ marginRight: index < Object.entries(film.collection).length - 1 ? spacing : 0 }}
                   >
                     <Poster

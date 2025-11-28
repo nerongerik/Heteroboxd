@@ -4,15 +4,19 @@ import { useMemo, useState } from 'react';
 import { Colors } from '../../constants/colors';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Poster } from '../../components/poster';
+import { useRouter } from 'expo-router';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const CreateList = () => {
   const { user, isValidSession } = useAuth();
-  const {width} = useWindowDimensions();
+  const {width, height} = useWindowDimensions();
   
   const [listName, setListName] = useState(null);
   const [desc, setDesc] = useState(null);
   const [entries, setEntries] = useState([]);
   const [ranked, setRanked] = useState(false);
+
+  const router = useRouter();
 
   //web on compooper?
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
@@ -21,7 +25,7 @@ const CreateList = () => {
   //determine max usable row width:
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
   //compute poster width:
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
 
   async function openSearchPopup() {
@@ -49,101 +53,88 @@ const CreateList = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[styles.scroll, {minWidth: widescreen ? 1000 : 'auto', maxWidth: widescreen ? 1000 : "100%", width: "100%",}]}
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={[styles.container]}>
+      <View style={{width: widescreen ? 1000 : '95%', alignSelf: 'center', marginBottom: Platform.OS === 'web' ? 10 : 50}}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, {marginBottom: 15}]}
           placeholder="List name*"
           value={listName}
           onChangeText={setListName}
           placeholderTextColor={Colors.text_placeholder}
         />
         <TextInput
-          style={[styles.input, styles.bioInput]}
-          placeholder="List description (optional)"
+          style={[styles.input, styles.bioInput, {marginBottom: 10}]}
+          placeholder="Description (optional)"
           value={desc}
           onChangeText={setDesc}
           multiline
           numberOfLines={3}
           placeholderTextColor={Colors.text_placeholder}
         />
-        <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', padding: 10}}>
-          <FontAwesome5 name="trophy" size={45} color={ranked ? Colors.heteroboxd : Colors.text} />
-          <Text style={{textAlign: 'center', fontSize: 22, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked{!ranked ? "?" : ""}</Text>
+        <Pressable onPress={openSearchPopup} style={{flexDirection: 'row', alignContent: 'center', alignItems: 'center', marginTop: 15, paddingHorizontal: 15}}>
+          <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.heteroboxd}}>Films {' '}</Text>
+          <AntDesign name="plus-circle" size={widescreen ? 24 : 18} color={Colors.heteroboxd} />
         </Pressable>
-        <View style={{padding: 5}}>
-          <Pressable onPress={openSearchPopup}>
-            <Text style={{fontSize: 16, color: Colors.heteroboxd}}>Add entries...</Text>
-          </Pressable>
-          <FlatList
-            data={entries}
-            keyExtractor={(item) => item.filmId.toString()}
-            numColumns={4}
-            renderItem={({ item, index }) => (
-              <Pressable key={index} onPress={() => { setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
-                <Poster
-                  posterUrl={item.posterUrl}
+      </View>
+      <View style={[styles.entryContainer, {minHeight: widescreen ? height/2 : height/3, maxHeight: widescreen ? height/2 : height/3, width: maxRowWidth}]}> 
+        <FlatList
+          data={entries}
+          numColumns={4}
+          renderItem={({ item, index }) => (
+            <Pressable key={index} onPress={() => { setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
+              <Poster
+                posterUrl={item.posterUrl}
+                style={{
+                  width: posterWidth,
+                  height: posterHeight,
+                  borderRadius: 8,
+                  borderWidth: 2,
+                  borderColor: Colors.border_color,
+                  marginBottom: ranked ? 0 : spacing
+                }}
+              />
+              {ranked && (
+                <View
                   style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    borderRadius: 8,
-                    borderWidth: 2,
-                    borderColor: Colors.border_color,
-                    marginBottom: ranked ? 0 : spacing
+                    width: widescreen ? 28 : 20,
+                    height: widescreen ? 28 : 20,
+                    borderRadius: 9999,
+                    backgroundColor: Colors.card,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: spacing / 2,
+                    marginTop: -10,
                   }}
-                />
-                {ranked && (
-                  <View
+                >
+                  <Text
                     style={{
-                      width: widescreen ? 28 : 20,
-                      height: widescreen ? 28 : 20,
-                      borderRadius: 9999,
-                      backgroundColor: Colors.card,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginBottom: spacing / 2,
-                      marginTop: -10,
+                      color: Colors.text_title,
+                      fontSize: widescreen ? 12 : 8,
+                      fontWeight: 'bold',
+                      lineHeight: 18,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: Colors.text_title,
-                        fontSize: widescreen ? 12 : 8,
-                        fontWeight: 'bold',
-                        lineHeight: 18, // slightly less than height for perfect optical centering
-                      }}
-                    >
-                      {index + 1}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            )}
-            contentContainerStyle={{
-              paddingHorizontal: spacing / 2,
-              paddingBottom: 80,
-              marginTop: 50,
-              marginBottom: 50,
-              width: widescreen ? 1000 : '100%',
-              alignSelf: 'center'
-            }}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
-        <View style={{alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-          <View style={{flexDirection: 'row', justifyContent: 'space-around', alignSelf: 'center'}}>
-            <TouchableOpacity style={{backgroundColor: Colors.button_reject, borderRadius: 5, padding: 10, marginRight: 35}} onPress={user?.userId ? router.navigate(`/profile/${user.userId}`) : router.navigate('/')}>
-              <Text style={{color: Colors.text_button, fontSize: 20}}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[{backgroundColor: Colors.button_confirm, borderRadius: 5, padding: 10}, (!listName || entries.length === 0) && {opacity: 0.5}]} disabled={!listName || entries.length === 0} onPress={handleSubmit}>
-              <Text style={{color: Colors.text_button, fontSize: 20}}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+                    {index + 1}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+          )}
+          contentContainerStyle={{
+            padding: spacing,
+            alignItems: 'center'
+          }}
+          columnWrapperStyle={{
+            columnGap: spacing,
+            rowGap: spacing,
+          }}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+      <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
+        <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
+        <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
+      </Pressable>
     </View>
   )
 }
@@ -151,8 +142,7 @@ const CreateList = () => {
 export default CreateList
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 , alignSelf: 'center'},
+  container: {backgroundColor: Colors.background, flex: 1, justifyContent: 'center'},
   input: {
     width: '100%',
     borderWidth: 1.5,
@@ -160,11 +150,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 45,
-    marginBottom: 15,
     color: Colors.text_input,
     outlineStyle: 'none',
     outlineWidth: 0,
     outlineColor: 'transparent',
+    fontSize: 16
   },
   bioInput: { minHeight: 80, textAlignVertical: 'top', padding: 5 },
+  entryContainer: {
+    alignSelf: 'center',
+    borderWidth: 2,
+    borderColor: Colors.border_color,
+    borderRadius: 8,
+    overflow: 'hidden',
+  }
 })

@@ -89,11 +89,11 @@ const UserWatchedFilms = () => {
         <FlatList
           data={entries}
           keyExtractor={(item) => item.filmId}
-          numColumns={4}                           // ← forces 4 items per row
+          numColumns={4}
           renderItem={({ item }) => (
             <Pressable
-              onPress={() => router.replace(`/film/${item.filmId}`)}
-              style={{ margin: spacing / 2 }}       // ← uniform spacing on all sides
+              onPress={() => router.push(`/film/${item.filmId}`)}
+              style={{ margin: spacing / 2 }}
             >
               <Poster
                 posterUrl={item.posterUrl}
@@ -129,7 +129,7 @@ const UserWatchedFilms = () => {
             numColumns={4}
             renderItem={({ item }) => (
               <Pressable
-                onPress={() => router.replace(`/film/${item.filmId}`)}
+                onPress={() => router.push(`/film/${item.filmId}`)}
                 style={{ margin: spacing / 2 }}
               >
                 <Poster
