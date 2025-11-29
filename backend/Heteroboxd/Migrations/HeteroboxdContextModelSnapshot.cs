@@ -228,7 +228,7 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("Position")
+                    b.Property<int>("Position")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("UserListId")

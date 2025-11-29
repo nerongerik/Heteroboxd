@@ -66,7 +66,7 @@
     {
         public string Id { get; set; }
         public string DateAdded { get; set; }
-        public int? Position { get; set; }
+        public int Position { get; set; }
         public string FilmPosterUrl { get; set; }
         public int FilmId { get; set; }
 

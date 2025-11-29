@@ -150,9 +150,9 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchFilms([FromQuery] FilmSearchRequest Search)
+        public async Task<IActionResult> SearchFilms([FromQuery] string Search)
         {
-            //retrieves films closely matching (complex) search criteria from database
+            _logger.LogInformation($"Search Films endpoint hit with Query: {Search}");
             try
             {
                 var SearchResults = await _service.SearchFilms(Search);

@@ -8,7 +8,10 @@ export const Backdrop = ({ backdropUrl }) => {
   const { width } = useWindowDimensions();
 
   useEffect(() => {
-    if (backdropUrl === 'error') {
+    if (!backdropUrl) {
+      setResolvedUrl(null);
+    }
+    else if (backdropUrl === 'error') {
       setResolvedUrl('error');
     } else {
       setResolvedUrl(width > 1000 ? backdropUrl.replace('original', 'w1280') : backdropUrl.replace('original', 'w780'));

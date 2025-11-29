@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Heteroboxd.Controller
 {
@@ -10,10 +10,12 @@ namespace Heteroboxd.Controller
     public class UserListController : ControllerBase
     {
         private readonly IUserListService _service;
+        private readonly ILogger<UserListController> _logger;
 
-        public UserListController(IUserListService service)
+        public UserListController(IUserListService service, ILogger<UserListController> logger)
         {
             _service = service;
+            _logger = logger;
         }
 
         //GET endpoints -> limited public access
@@ -108,12 +110,14 @@ namespace Heteroboxd.Controller
         //POST endpoints -> public access
 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> AddList([FromBody] CreateUserListRequest ListRequest)
         {
-            //adds a new list to the database
+            _logger.LogInformation($"Create List endpoint hit with AuthorId: {ListRequest.AuthorId}");
             try
             {
-                await _service.AddList(ListRequest);
+                Guid ListId = await _service.AddList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, ListRequest.AuthorId);
+                await _service.AddListEntries(ListRequest.AuthorId, ListId, ListRequest.Entries);
                 return Ok();
             }
             catch

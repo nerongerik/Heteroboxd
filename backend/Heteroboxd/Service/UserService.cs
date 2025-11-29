@@ -11,6 +11,7 @@ namespace Heteroboxd.Service
         Task<UserInfoResponse?> GetUser(string UserId);
 
         Task<PagedWatchlistResponse> GetWatchlist(string UserId, int Page, int PageSize); //for viewing
+        Task<bool> IsFilmWatchlisted(string UserId, int FilmId); //for checking if a film is in the watchlist (quick lookup)
 
         Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId);
         Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId); //example: {"following": [User1, User2, User3], "followers": [User2], "blocked": [User4, User5]}
@@ -81,6 +82,12 @@ namespace Heteroboxd.Service
                 PageSize = PageSize,
                 Entries = WatchlistPage.Select(wle => new WatchlistEntryInfoResponse(wle)).ToList()
             };
+        }
+
+        public async Task<bool> IsFilmWatchlisted(string UserId, int FilmId)
+        {
+            var ExistingEntry = await _repo.IsWatchlisted(FilmId, Guid.Parse(UserId));
+            return ExistingEntry != null;
         }
 
         public async Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId)
@@ -227,7 +234,7 @@ namespace Heteroboxd.Service
 
         public async Task<List<UserInfoResponse>> SearchUsers(string SearchName)
         {
-            var Users = await _repo.SearchAsync(SearchName);
+            var Users = await _repo.SearchAsync(SearchName.ToLower());
             return Users.Select(u => new UserInfoResponse(u)).ToList();
         }
 
@@ -408,7 +415,6 @@ namespace Heteroboxd.Service
                     {
                         Existing.TimesWatched++;
                         Existing.DateWatched = DateTime.UtcNow;
-                        _repo.UpdateUserWatchedFilm(Existing);
                     }
                     else
                     {
@@ -421,6 +427,7 @@ namespace Heteroboxd.Service
                     {
                         await _repo.RemoveFromWatchlist(ExistingEntry);
                     }
+                    await _repo.SaveChangesAsync();
                     break;
                 case ("unwatched"):
                     var UserUnWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);

@@ -40,12 +40,18 @@ namespace Heteroboxd.Repository
         public async Task<List<Celebrity>> SearchAsync(string Name)
         {
             var query = _context.Celebrities.AsQueryable();
+
             if (!string.IsNullOrEmpty(Name))
-                query = query
-                    .Where(c => EF.Functions.Like(c.Name, $"%{Name}%"));
+            {
+                query = query.Where(c =>
+                    EF.Functions.Like(c.Name.ToLower() ?? "", $"%{Name}%")
+                );
+            }
+
             return await query
                 .Where(c => !c.Deleted)
                 .ToListAsync();
         }
+
     }
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { Colors } from '../constants/colors';
 import { useRouter, Link } from 'expo-router';
@@ -33,6 +33,8 @@ const ProfileOptionsButton = ({ userId }) => {
   const [blocked, setBlocked] = useState(false);
 
   const router = useRouter();
+
+  const { width } = useWindowDimensions();
 
   useEffect(() => {
     if (!user) setOther(true);
@@ -200,6 +202,8 @@ const ProfileOptionsButton = ({ userId }) => {
     }
   }
 
+  const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
+
   return (
     <View>
       <Pressable onPress={openMenu}>
@@ -211,7 +215,7 @@ const ProfileOptionsButton = ({ userId }) => {
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
         </Pressable>
 
-        <Animated.View style={[styles.menu, { transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
           {other ? (
             <>
               <TouchableOpacity style={styles.option} onPress={() => {setReportConfirm(true)}}>

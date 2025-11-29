@@ -14,7 +14,7 @@ export const Colors = {
     //button
     button: '#ff8a00',
     button_confirm: '#0f5400',
-    button_reject: '#ff4d4d',
+    button_reject: '#450101',
     button_hover: '#ffa733',
     //border
     border_color: '#262a2d',

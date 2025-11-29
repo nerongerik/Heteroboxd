@@ -39,7 +39,6 @@ const Profile = () => {
 
   const [blocked, setBlocked] = useState(false);
   const [following, setFollowing] = useState(false);
-  const [watchlistCount, setWatchlistCount] = useState('0');
 
   //context menu
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
@@ -169,26 +168,26 @@ const Profile = () => {
   function handleButtons(button) {
     switch(button) {
       case 'Watchlist':
-        router.replace(`/watchlist/${userId}`);
+        router.push(`/films/watchlist/${userId}`);
         break;
       case 'Reviews':
-        router.replace(`/reviews/user/${userId}`);
+        router.push(`/reviews/user/${userId}`);
         break;
       case 'Lists':
-        if (data.listsCount === '0') router.replace(`/list/create`)
-        else router.replace(`/lists/user/${userId}`);
+        if (data.listsCount === '0') router.push(`/list/create`)
+        else router.push(`/lists/user/${userId}`);
         break;
       case 'Likes':
         console.log('I am yet to decide on the most practical way to make this happen with tabs and all.');
         break;
       case 'Followers':
-        router.replace(`/relationships/${userId}?t=followers`);
+        router.push(`/relationships/${userId}?t=followers`);
         break;
       case 'Following':
-        router.replace(`/relationships/${userId}?t=following`);
+        router.push(`/relationships/${userId}?t=following`);
         break;
       case 'Blocked':
-        router.replace(`/relationships/${userId}?t=blocked`);
+        router.push(`/relationships/${userId}?t=blocked`);
         break;
       default:
         setSnackbarMessage("I'm gonna touch you");
@@ -242,6 +241,9 @@ const Profile = () => {
   //compute poster width:
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
+  //recents
+  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
+  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth]); //maintain 2:3 aspect
 
 
   if (blocked) {
@@ -298,7 +300,7 @@ const Profile = () => {
             }
             {!isOwnProfile && (
               following ? (
-                  <TouchableOpacity
+                  <Pressable
                     onPress={handleFollow}
                     style={{
                       backgroundColor: 'transparent',
@@ -323,9 +325,9 @@ const Profile = () => {
                     >
                       UNFOLLOW
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 ) : (
-                  <TouchableOpacity
+                  <Pressable
                     onPress={handleFollow}
                     style={{
                       backgroundColor: 'transparent',
@@ -350,7 +352,7 @@ const Profile = () => {
                     >
                       FOLLOW
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 )
               )}
           </View>
@@ -415,15 +417,15 @@ const Profile = () => {
                   setVisible(true);
                 }
                 else if (film && film.filmId) {
-                  router.replace(`/film/${film.filmId}`);
+                  router.push(`/film/${film.filmId}`);
                 } else if (!isOwnProfile) {
-                  setSnackbarMessage("You can't choose favorites for other people, retard!");
+                  setSnackbarMessage("You can't choose favorites for other people!");
                   setVisible(true);
                 } else {
                   console.log(index + 1);
                 }
               }}
-              style={{ alignItems: "center" }}
+              style={{ alignItems: "center", marginRight: 5 }}
             >
               <Poster
                 posterUrl={favoritesResult === 404 ? 'error' : (film?.posterUrl ?? null)}
@@ -451,7 +453,13 @@ const Profile = () => {
         <View style={[styles.divider, {marginVertical: 20}]} />
 
         <Text style={styles.subtitle}>Recents</Text>
-        <View style={styles.movies}>
+        <View 
+          style={{
+            width: colPosterWidth * 4 + spacing * 3,
+            maxWidth: "100%",
+            alignSelf: "center",
+          }}
+        >
           {recentResult === 0 ? (
             <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
               <LoadingResponse visible={true} />
@@ -463,20 +471,20 @@ const Profile = () => {
           ) : (
             <ScrollView
               horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 10 }}
+              showsHorizontalScrollIndicator={widescreen}
+              style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
             >
               {recent.slice(0, 8).map((film, index) => (
                 <Pressable
                   key={index}
-                  onPress={() => router.replace(`/film/${film.filmId}`)}
-                  style={{ marginRight: 8 }}
+                  onPress={() => router.push(`/film/${film.filmId}`)}
+                  style={{ marginRight: spacing }}
                 >
                   <Poster
                     posterUrl={film?.posterUrl ?? null}
                     style={{
-                      width: posterWidth,
-                      height: posterHeight,
+                      width: colPosterWidth,
+                      height: colPosterHeight,
                       borderRadius: 8,
                       borderWidth: 2,
                       borderColor: Colors.border_color,
@@ -488,7 +496,7 @@ const Profile = () => {
               {
                 recent.length < 8 ? null : (
                   <Pressable
-                    onPress={() => {router.replace(`/films/userWatched/${userId}`)}}
+                    onPress={() => {router.push(`/films/user-watched/${userId}`)}}
                     style={{ marginRight: 8 }}
                   >
                     <Poster

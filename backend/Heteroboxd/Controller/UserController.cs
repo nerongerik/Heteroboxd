@@ -72,6 +72,22 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("{UserId}/watchlist/{FilmId}")]
+        [Authorize] //you can only see your own watchlist
+        public async Task<IActionResult> IsFilmWatchlisted(string UserId, int FilmId)
+        {
+            _logger.LogInformation($"Get Watchlist endpoint hit for User: {UserId}");
+            try
+            {
+                var Response = await _service.IsFilmWatchlisted(UserId, FilmId);
+                return Ok(Response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("user-favorites/{UserId}")]
         [AllowAnonymous] //must be open so non-logged in users can see other members' profiles
         public async Task<IActionResult> GetUserFavorites(string UserId)

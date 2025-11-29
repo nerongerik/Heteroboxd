@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
+using Heteroboxd.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
@@ -14,7 +15,7 @@ namespace Heteroboxd.Repository
         Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
-        Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle);
+        Task<List<Film>> SearchAsync(string Title);
         Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta);
     }
     public class FilmRepository : IFilmRepository
@@ -127,19 +128,23 @@ namespace Heteroboxd.Repository
 
         }
 
-        public async Task<List<Film>> SearchAsync(string? Title, string? OriginalTitle)
+        public async Task<List<Film>> SearchAsync(string Search)
         {
-            var query = _context.Films.AsQueryable();
+            var Query = _context.Films.AsQueryable();
 
-            if (!string.IsNullOrEmpty(Title))
-                query = query
-                    .Where(f => EF.Functions.Like(f.Title, $"%{Title}%"));
-            if (!string.IsNullOrEmpty(OriginalTitle))
-                query = query
-                    .Where(f => f.OriginalTitle != null && EF.Functions.Like(f.OriginalTitle, $"%{OriginalTitle}%"));
+            if (!string.IsNullOrEmpty(Search))
+            {
+                Query = Query.Where(f =>
+                    EF.Functions.Like(f.Title.ToLower(), $"%{Search}%") ||
+                    (f.OriginalTitle != null && EF.Functions.Like(f.OriginalTitle.ToLower(), $"%{Search}%"))
+                );
+            }
 
-            return await query
+            return await Query
                 .Where(f => !f.Deleted)
+                .Include(f => f.WatchedBy)
+                .Include(f => f.CastAndCrew.Where(cc => cc.Role == Role.Director))
+                .OrderByDescending(f => f.WatchedBy.Count).ThenByDescending(f => f.FavoriteCount).ThenByDescending(f => f.ReleaseYear)
                 .ToListAsync();
         }
 
