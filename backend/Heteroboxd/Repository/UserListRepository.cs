@@ -53,13 +53,20 @@ namespace Heteroboxd.Repository
         public async Task<List<UserList>> SearchAsync(string Search)
         {
             var query = _context.UserLists.AsQueryable();
+
             if (!string.IsNullOrEmpty(Search))
-                query = query
-                    .Where(ul => EF.Functions.Like(ul.Name, $"%{Search}%"));
+            {
+                query = query.Where(ul =>
+                    EF.Functions.Like(ul.Name.ToLower() ?? "", $"%{Search}%")
+                );
+            }
+
             return await query
                 .Where(ul => !ul.Deleted)
+                .OrderByDescending(ul => ul.LikeCount).ThenBy(ul => ul.DateCreated)
                 .ToListAsync();
         }
+
 
         public void Create(UserList UserList)
         {

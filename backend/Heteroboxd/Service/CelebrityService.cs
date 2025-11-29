@@ -59,7 +59,7 @@ namespace Heteroboxd.Service
 
         public async Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search)
         {
-            var SearchResults = await _repo.SearchAsync(Search);
+            var SearchResults = await _repo.SearchAsync(Search.ToLower());
             return SearchResults.Select(c => new CelebrityInfoResponse(c)).ToList();
         }
     }

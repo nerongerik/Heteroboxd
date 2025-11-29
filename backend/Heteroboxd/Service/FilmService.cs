@@ -12,7 +12,7 @@ namespace Heteroboxd.Service
         Task<PagedFilmInfoResponse> GetFilmsByGenre(string Genre, int Page, int PageSize);
         Task<PagedFilmInfoResponse> GetFilmsByCelebrity(int CelebrityId, int Page, int PageSize);
         Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
-        Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search);
+        Task<List<FilmInfoResponse>> SearchFilms(string Search);
         Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, string FavoriteChange);
     }
 
@@ -130,10 +130,10 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<List<FilmInfoResponse>> SearchFilms(FilmSearchRequest Search)
+        public async Task<List<FilmInfoResponse>> SearchFilms(string Search)
         {
-            var SearchResults = await _repo.SearchAsync(Search.Title, Search.OriginalTitle);
-            return SearchResults.Select(f => new FilmInfoResponse(f, false, false)).ToList();
+            var SearchResults = await _repo.SearchAsync(Search.ToLower());
+            return SearchResults.Select(f => new FilmInfoResponse(f, true, true)).ToList();
         }
 
         public async Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, string FavoriteChange)

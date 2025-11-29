@@ -50,12 +50,6 @@
         }
     }
 
-    public class FilmSearchRequest
-    {
-        public string? Title { get; set; }
-        public string? OriginalTitle { get; set; }
-    }
-
     public class PagedFilmInfoResponse
     {
         public int TotalCount { get; set; }

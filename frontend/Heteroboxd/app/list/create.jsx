@@ -1,4 +1,4 @@
-import { StyleSheet, useWindowDimensions, View, Platform, TextInput, Text, Pressable, FlatList } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, Platform, TextInput, Text, Pressable, FlatList, Modal, Animated } from 'react-native'
 import { useAuth } from '../../hooks/useAuth';
 import { useMemo, useState, useEffect } from 'react';
 import { Colors } from '../../constants/colors';
@@ -12,6 +12,7 @@ import { BaseUrl } from '../../constants/api';
 import LoadingResponse from '../../components/loadingResponse';
 import { Snackbar } from 'react-native-paper';
 import { TouchableOpacity } from 'react-native';
+import SearchBox from '../../components/searchBox';
 
 const CreateList = () => {
   const { user, isValidSession } = useAuth();
@@ -28,6 +29,11 @@ const CreateList = () => {
   const [result, setResult] = useState(-1);
   const [snack, setSnack] = useState(false);
   const [message, setMessage] = useState('');
+
+  const [menuShown, setMenuShown] = useState(false);
+  const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
+
+  const [searchResults, setSearchResults] = useState(null);
 
   useEffect(() => {
     navigation.setOptions({
@@ -49,25 +55,27 @@ const CreateList = () => {
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
 
-  async function openSearchPopup() {
-    /*
-    right now, this simply has to be a placeholder, as we don't have ANY search functionality right now
-    in essence it really should be a simple input field where a user can enter a movie name, call the same
-    search endpoint as the main search component will, display a (in some way) more lightweight matches
-    clicking on any of them simply pushes the selected simplified object {filmId, posterUrl} into entries
-    */
-    console.log("I am too lazy to implement this properly right now. Here's a few cherry-picked entry from our db instead...");
-    setEntries(prev => [...prev, 
-      {filmId: 11, posterUrl: 'https://image.tmdb.org/t/p/original/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg'},
-      {filmId: 769, posterUrl: 'https://image.tmdb.org/t/p/original/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg'},
-      {filmId: 1893, posterUrl: 'https://image.tmdb.org/t/p/original/6wkfovpn7Eq8dYNKaG5PY3q2oq6.jpg'},
-      {filmId: 307182, posterUrl: 'https://image.tmdb.org/t/p/original/m6VFdVSlLY7tGrMU1fGQ0QePuZT.jpg'},
-      {filmId: 307184, posterUrl: 'https://image.tmdb.org/t/p/original/9ROWoiU2FAKRLASHZefchRfoiFG.jpg'},
-      {filmId: 307185, posterUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg'},
-      {filmId: 307186, posterUrl: 'https://image.tmdb.org/t/p/original/vlVzxXdbTu1xQmWsP0JinezA4Fm.jpg'},
-      {filmId: 307187, posterUrl: 'https://image.tmdb.org/t/p/original/sAaxm97MM9ZNXOPtqrJXRvV5pnq.jpg'},
-    ]);
-  }
+  const openMenu = () => {
+    setMenuShown(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown(false));
+  };
+
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0], //slide from bottom
+  });
 
   async function handleSubmit() {
     try {
@@ -118,7 +126,7 @@ const CreateList = () => {
 
   return (
     <View style={[styles.container]}>
-      <View style={{width: widescreen ? 1000 : '95%', alignSelf: 'center', marginBottom: Platform.OS === 'web' ? 10 : 50}}>
+      <View style={{width: widescreen ? 1000 : '95%', alignSelf: 'center', marginBottom: Platform.OS === 'web' ? 10 : 40}}>
         <TextInput
           style={[styles.input, {marginBottom: 15}]}
           placeholder="List name*"
@@ -135,7 +143,7 @@ const CreateList = () => {
           numberOfLines={3}
           placeholderTextColor={Colors.text_placeholder}
         />
-        <Pressable onPress={openSearchPopup} style={{flexDirection: 'row', alignContent: 'center', alignItems: 'center', marginTop: 15, paddingHorizontal: 15}}>
+        <Pressable onPress={openMenu} style={{flexDirection: 'row', alignContent: 'center', alignItems: 'center', marginTop: 15, paddingHorizontal: 15}}>
           <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.heteroboxd}}>Films {' '}</Text>
           <AntDesign name="plus-circle" size={widescreen ? 24 : 18} color={Colors.heteroboxd} />
         </Pressable>
@@ -200,6 +208,60 @@ const CreateList = () => {
         <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
       </Pressable>
 
+      <Modal transparent visible={menuShown} animationType="fade">
+        <Pressable style={styles.overlay} onPress={() => {
+          setSearchResults(null);
+          closeMenu();
+        }}>
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
+        </Pressable>
+
+        <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
+          <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
+          {
+            (searchResults && searchResults.length > 0) ? (
+              <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: '95%'}]}>
+              <FlatList
+                data={searchResults}
+                numColumns={1}
+                renderItem={({item, index}) => (
+                  <Pressable key={index} onPress={() => {
+                    setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }]);
+                    setSearchResults(null);
+                    closeMenu();
+                  }}>
+                    <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
+                      <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
+                      <View style={{flexShrink: 1, maxWidth: '100%'}}>
+                        <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+                          {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
+                        </Text>
+                        <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                          item.castAndCrew?.map((d, i) => (
+                            <Text key={i} style={{}}>
+                              {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                            </Text>
+                          ))
+                        }</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                )}
+                contentContainerStyle={{
+                  padding: 20,
+                  alignItems: 'flex-start',
+                  width: '100%'
+                }}
+                showsVerticalScrollIndicator={false}
+              />
+              </View>
+            ) : (searchResults && searchResults.length === 0) && (
+              <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+            )
+          }
+        </Animated.View>
+      </Modal>
+
       <LoadingResponse visible={result === 0} />
       <Snackbar
         visible={snack}
@@ -248,5 +310,17 @@ const styles = StyleSheet.create({
     borderColor: Colors.border_color,
     borderRadius: 8,
     overflow: 'hidden',
-  }
+  },
+  overlay: {
+    flex: 1,
+  },
+  menu: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    backgroundColor: Colors.card,
+    paddingVertical: 10,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
 })

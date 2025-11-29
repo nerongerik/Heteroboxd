@@ -126,14 +126,21 @@ namespace Heteroboxd.Repository
 
         public async Task<List<User>> SearchAsync(string Name)
         {
-            var query = _context.Users.AsQueryable();
+            var Query = _context.Users.AsQueryable();
+
             if (!string.IsNullOrEmpty(Name))
-                query = query
-                    .Where(u => EF.Functions.Like(u.Name, $"%{Name}%"));
-            return await query
+            {
+                Query = Query.Where(u =>
+                    EF.Functions.Like(u.Name.ToLower() ?? "", $"%{Name}%")
+                );
+            }
+
+            return await Query
                 .Where(u => !u.Deleted)
+                .OrderByDescending(u => u.IsPatron).ThenByDescending(u => u.TierExpiry)
                 .ToListAsync();
         }
+
 
         public void Update(User User) =>
             _context.Users.Update(User);

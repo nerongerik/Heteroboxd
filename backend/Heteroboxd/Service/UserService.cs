@@ -234,7 +234,7 @@ namespace Heteroboxd.Service
 
         public async Task<List<UserInfoResponse>> SearchUsers(string SearchName)
         {
-            var Users = await _repo.SearchAsync(SearchName);
+            var Users = await _repo.SearchAsync(SearchName.ToLower());
             return Users.Select(u => new UserInfoResponse(u)).ToList();
         }
 
