@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable } from 'react-native'
+import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, TouchableOpacity } from 'react-native'
 import { Colors } from '../../../constants/colors'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useState, useEffect, useMemo } from 'react';
@@ -9,11 +9,13 @@ import { BaseUrl } from '../../../constants/api';
 import { Poster } from '../../../components/poster';
 import { UserAvatar } from '../../../components/userAvatar';
 import Fontisto from '@expo/vector-icons/Fontisto';
+import AntDesign from '@expo/vector-icons/AntDesign';
+import { useAuth } from '../../../hooks/useAuth';
 
 const UsersLists = () => {
 
   const { userId } = useLocalSearchParams();
-
+  const { user } = useAuth();
   const [username, setUsername] = useState(null);
   const [avatar, setAvatar] = useState(null);
   
@@ -72,6 +74,18 @@ const UsersLists = () => {
   };
 
   useEffect(() => {
+    if (user && user.userId === userId) {
+      navigation.setOptions({
+        headerRight: () => (
+          <TouchableOpacity onPress={() => router.push('/list/create')}>
+            <AntDesign name="plus" size={24} color={Colors.text} />
+          </TouchableOpacity>
+        )
+      });
+    }
+  }, [userId, user]);
+
+  useEffect(() => {
     setLists([]);
     setIsEnd(false);
     loadListsPage(1, true);
@@ -99,8 +113,6 @@ const UsersLists = () => {
   //compute poster width:
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
-
-  console.log(lists);
 
   return (
     <View style={styles.container}>
