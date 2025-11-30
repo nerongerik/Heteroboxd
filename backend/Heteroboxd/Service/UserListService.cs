@@ -2,14 +2,15 @@
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace Heteroboxd.Service
 {
     public interface IUserListService
     {
-        Task<List<UserListInfoResponse>> GetAllUserLists();
+        //Task<List<UserListInfoResponse>> GetAllUserLists();
         Task<UserListInfoResponse?> GetUserListById(string ListId);
-        Task<List<UserListInfoResponse>> GetUsersUserLists(string UserId);
+        Task<PagedUserListInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize);
         Task<List<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId);
         Task<List<UserListInfoResponse>> SearchUserLists(string Search);
         Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
@@ -33,11 +34,13 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
+        /*
         public async Task<List<UserListInfoResponse>> GetAllUserLists()
         {
             var Lists = await _repo.GetAllAsync();
             return Lists.Select(l => new UserListInfoResponse(l)).ToList();
         }
+        */
 
         public async Task<UserListInfoResponse?> GetUserListById(string ListId)
         {
@@ -48,10 +51,18 @@ namespace Heteroboxd.Service
             return new UserListInfoResponse(List, Author);
         }
 
-        public async Task<List<UserListInfoResponse>> GetUsersUserLists(string UserId)
+        public async Task<PagedUserListInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize)
         {
-            var Lists = await _repo.GetByUserAsync(Guid.Parse(UserId));
-            return Lists.Select(l => new UserListInfoResponse(l)).ToList();
+            var (Lists, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize);
+            var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
+            if (Author == null) throw new KeyNotFoundException();
+            return new PagedUserListInfoResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Lists = Lists.Select(l => new UserListInfoResponse(l, Author, 4)).ToList()
+            };
         }
 
         public async Task<List<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId)

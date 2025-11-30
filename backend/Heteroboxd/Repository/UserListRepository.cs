@@ -1,14 +1,15 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
 {
     public interface IUserListRepository
     {
-        Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default);
+        //Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<UserList?> GetByIdAsync(Guid ListId);
-        Task<List<UserList>> GetByUserAsync(Guid UserId);
+        Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<List<UserList>> GetFeaturingFilmAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
@@ -29,21 +30,35 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
+        /*
         public async Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default) =>
             await _context.UserLists
                 .Where(ul => !ul.Deleted)
                 .ToListAsync(CancellationToken);
+        */
 
         public async Task<UserList?> GetByIdAsync(Guid ListId) =>
             await _context.UserLists
                 .Include(ul => ul.Films)
                 .FirstOrDefaultAsync(ul => ul.Id == ListId && !ul.Deleted);
 
-        public async Task<List<UserList>> GetByUserAsync(Guid UserId) =>
-            await _context.UserLists
+        public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
+        {
+            var UserQuery = _context.UserLists
                 .Include(ul => ul.Films)
                 .Where(ul => ul.AuthorId == UserId && !ul.Deleted)
+                .OrderByDescending(f => f.DateCreated);
+
+            var TotalCount = await UserQuery.CountAsync();
+
+            var Lists = await UserQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
+
+            return (Lists, TotalCount);
+        }
+
 
         public async Task<List<UserList>> GetFeaturingFilmAsync(int FilmId) =>
             await _context.UserLists

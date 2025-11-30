@@ -40,7 +40,7 @@ const RootLayout = () => {
           options={{
             headerTitle: 'Watchlist',
             headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+            headerTitleStyle: {color: Colors.text_title},
           }}
         />
         <Stack.Screen 
@@ -48,7 +48,7 @@ const RootLayout = () => {
           options={{
             headerTitle: 'Recents',
             headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+            headerTitleStyle: {color: Colors.text_title},
           }}
         />
         <Stack.Screen 
@@ -56,7 +56,7 @@ const RootLayout = () => {
           options={{
             headerTitle: 'New List',
             headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+            headerTitleStyle: {color: Colors.text_title},
           }}
         />
       </Stack>

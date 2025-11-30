@@ -11,10 +11,10 @@
         public List<ListEntryInfoResponse> Films { get; set; }
         public int LikeCount { get; set; }
         public string AuthorId { get; set; }
-        public string? AuthorName { get; set; }
-        public string? AuthorProfilePictureUrl { get; set; }
+        public string AuthorName { get; set; }
+        public string AuthorProfilePictureUrl { get; set; }
 
-        public UserListInfoResponse(UserList List, User Author)
+        public UserListInfoResponse(UserList List, User Author, int Take = -1)
         {
             this.Id = List.Id.ToString();
             this.Name = List.Name;
@@ -22,25 +22,21 @@
             this.Ranked = List.Ranked;
             this.DateCreated = List.DateCreated.ToString("dd/MM/yyyy HH:mm");
             this.NotificationsOn = List.NotificationsOn;
-            this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).ToList();
+            if (Take < 0) this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).ToList();
+            else this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).Take(Take).ToList();
             this.LikeCount = List.LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
         }
+    }
 
-        public UserListInfoResponse(UserList List)
-        {
-            this.Id = List.Id.ToString();
-            this.Name = List.Name;
-            this.Description = List.Description;
-            this.Ranked = List.Ranked;
-            this.DateCreated = List.DateCreated.ToString("dd/MM/yyyy HH:mm");
-            this.NotificationsOn = List.NotificationsOn;
-            this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).ToList();
-            this.LikeCount = List.LikeCount;
-            this.AuthorId = List.AuthorId.ToString();
-        }
+    public class PagedUserListInfoResponse
+    {
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public List<UserListInfoResponse> Lists { get; set; }
     }
 
     public class CreateUserListRequest

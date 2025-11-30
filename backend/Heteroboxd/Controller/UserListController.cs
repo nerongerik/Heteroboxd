@@ -20,6 +20,7 @@ namespace Heteroboxd.Controller
 
         //GET endpoints -> limited public access
 
+        /*
         [HttpGet]
         public async Task<IActionResult> GetAllLists()
         {
@@ -34,6 +35,7 @@ namespace Heteroboxd.Controller
                 return StatusCode(500);
             }
         }
+        */
 
         [HttpGet("{UserListId}")]
         public async Task<IActionResult> GetList(string UserListId)
@@ -54,14 +56,19 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-lists/{UserId}")]
-        public async Task<IActionResult> GetListsByAuthor(string UserId)
+        [HttpGet("user/{UserId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20)
         {
-            //retrives all lists by a specific user from database
+            _logger.LogInformation($"Get Lists by Author endpoint hit for User: {UserId}");
             try
             {
-                var UsersLists = await _service.GetUsersUserLists(UserId);
+                var UsersLists = await _service.GetUsersUserLists(UserId, Page, PageSize);
                 return Ok(UsersLists);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch
             {
