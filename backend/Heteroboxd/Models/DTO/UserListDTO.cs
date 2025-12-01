@@ -31,7 +31,15 @@
         }
     }
 
-    public class PagedUserListInfoResponse
+    public class PagedEntriesResponse
+    {
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public List<ListEntryInfoResponse> Entries { get; set; }
+    }
+
+    public class PagedUserListsInfoResponse
     {
         public int TotalCount { get; set; }
         public int Page { get; set; }

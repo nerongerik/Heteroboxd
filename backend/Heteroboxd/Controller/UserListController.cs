@@ -38,13 +38,14 @@ namespace Heteroboxd.Controller
         */
 
         [HttpGet("{UserListId}")]
+        [AllowAnonymous] //anyone can view any list...
         public async Task<IActionResult> GetList(string UserListId)
         {
-            //retrives specific list from database
+            _logger.LogInformation($"Get List endpoint hit with ListId: {UserListId}");
             try
             {
-                var List = await _service.GetUserListById(UserListId);
-                return Ok(List);
+                var Response = await _service.GetUserListById(UserListId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -56,8 +57,24 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("entries/{UserListId}")]
+        [AllowAnonymous] //...and its contents
+        public async Task<IActionResult> GetListEntries(string UserListId, int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation($"Get ListEntries endpoint hit for ListId: {UserListId}");
+            try
+            {
+                var Response = await _service.GetListEntriesById(UserListId, Page, PageSize);
+                return Ok(Response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("user/{UserId}")]
-        [AllowAnonymous]
+        [AllowAnonymous] //anyone can view any user's lists
         public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20)
         {
             _logger.LogInformation($"Get Lists by Author endpoint hit for User: {UserId}");

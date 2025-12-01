@@ -9,8 +9,9 @@ namespace Heteroboxd.Repository
     {
         //Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<UserList?> GetByIdAsync(Guid ListId);
+        Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize);
         Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
-        Task<List<UserList>> GetFeaturingFilmAsync(int FilmId);
+        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
         void CreateEntry(ListEntry ListEntry);
@@ -39,8 +40,22 @@ namespace Heteroboxd.Repository
 
         public async Task<UserList?> GetByIdAsync(Guid ListId) =>
             await _context.UserLists
-                .Include(ul => ul.Films)
                 .FirstOrDefaultAsync(ul => ul.Id == ListId && !ul.Deleted);
+
+        public async Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize)
+        {
+            var EntryQuery = _context.ListEntries
+                .Where(le => le.UserListId == ListId)
+                .OrderBy(le => le.Position);
+
+            var TotalCount = await EntryQuery.CountAsync();
+
+            var Entries = await EntryQuery.Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Entries, TotalCount);
+        }
 
         public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {
@@ -60,10 +75,8 @@ namespace Heteroboxd.Repository
         }
 
 
-        public async Task<List<UserList>> GetFeaturingFilmAsync(int FilmId) =>
-            await _context.UserLists
-                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId) && !ul.Deleted)
-                .ToListAsync();
+        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId) =>
+            throw new NotImplementedException();
 
         public async Task<List<UserList>> SearchAsync(string Search)
         {

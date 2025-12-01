@@ -1,18 +1,17 @@
 ﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 
 namespace Heteroboxd.Service
 {
     public interface IUserListService
     {
         //Task<List<UserListInfoResponse>> GetAllUserLists();
-        Task<UserListInfoResponse?> GetUserListById(string ListId);
-        Task<PagedUserListInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize);
-        Task<List<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId);
-        Task<List<UserListInfoResponse>> SearchUserLists(string Search);
+        Task<UserListInfoResponse> GetUserListById(string ListId);
+        Task<PagedEntriesResponse> GetListEntriesById(string ListId, int Page, int PageSize);
+        Task<PagedUserListsInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize);
+        Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId);
+        Task<PagedUserListsInfoResponse> SearchUserLists(string Search);
         Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
         Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries);
         Task UpdateList(UpdateUserListRequest ListRequest);
@@ -42,21 +41,34 @@ namespace Heteroboxd.Service
         }
         */
 
-        public async Task<UserListInfoResponse?> GetUserListById(string ListId)
+        public async Task<UserListInfoResponse> GetUserListById(string ListId)
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
             if (List == null) throw new KeyNotFoundException();
             var Author = await _userRepo.GetByIdAsync(List.AuthorId);
             if (Author == null) throw new KeyNotFoundException();
-            return new UserListInfoResponse(List, Author);
+
+            return new UserListInfoResponse(List, Author, 0);
         }
 
-        public async Task<PagedUserListInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize)
+        public async Task<PagedEntriesResponse> GetListEntriesById(string ListId, int Page, int PageSize)
+        {
+            var (Entries, TotalCount) = await _repo.GetEntriesByIdAsync(Guid.Parse(ListId), Page, PageSize);
+            return new PagedEntriesResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Entries = Entries.Select(le => new ListEntryInfoResponse(le)).ToList()
+            };
+        }
+
+        public async Task<PagedUserListsInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize)
         {
             var (Lists, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize);
             var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
             if (Author == null) throw new KeyNotFoundException();
-            return new PagedUserListInfoResponse
+            return new PagedUserListsInfoResponse
             {
                 TotalCount = TotalCount,
                 Page = Page,
@@ -65,8 +77,9 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<List<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId)
+        public async Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId)
         {
+            /*
             var FilmsLists = await _repo.GetFeaturingFilmAsync(FilmId);
 
             var ListsTasks = FilmsLists.Select(async ul =>
@@ -78,10 +91,13 @@ namespace Heteroboxd.Service
 
             var Lists = await Task.WhenAll(ListsTasks);
             return Lists.ToList();
+            */
+            throw new NotImplementedException();
         }
 
-        public async Task<List<UserListInfoResponse>> SearchUserLists(string Search)
+        public async Task<PagedUserListsInfoResponse> SearchUserLists(string Search)
         {
+            /*
             var Lists = await _repo.SearchAsync(Search.ToLower());
 
             var ListsTasks = Lists.Select(async ul =>
@@ -93,6 +109,8 @@ namespace Heteroboxd.Service
 
             var Results = await Task.WhenAll(ListsTasks);
             return Results.ToList();
+            */
+            throw new NotImplementedException();
         }
 
         public async Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId)

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, TouchableOpacity, RefreshControl } from 'react-native'
 import { Colors } from '../../../constants/colors'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useState, useEffect, useMemo } from 'react';
@@ -78,7 +78,7 @@ const UsersLists = () => {
       navigation.setOptions({
         headerRight: () => (
           <TouchableOpacity onPress={() => router.push('/list/create')}>
-            <AntDesign name="plus" size={24} color={Colors.text} />
+            <AntDesign name="plus" size={24} color={Colors.text_title} />
           </TouchableOpacity>
         )
       });
@@ -120,15 +120,19 @@ const UsersLists = () => {
         //infinite scroll on narrow touchscreens
         <View style={{width: '95%', maxHeight: height*0.75}}>
         <FlatList
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={() => {
+              setLists([]);
+              loadListsPage(1);
+            }}/>}
           data={lists}
           numColumns={1}
           renderItem={({ item }) => (
-            <Pressable
-              key={item.id}
-              onPress={() => router.push(`/list/${item.id}`)}
-              style={{marginBottom: spacing}}
-            >
-              <View style={{borderBottomWidth: 2, borderTopWidth: 2, borderColor: Colors.border_color, borderRadius: 5, backgroundColor: Colors.card}}>
+            <View style={{borderBottomWidth: 2, borderTopWidth: 2, borderColor: Colors.border_color, borderRadius: 5, backgroundColor: Colors.card, marginBottom: spacing*1.5}}>
+              <Pressable onPress={(e) => {
+                e.stopPropagation();
+                router.push(`/profile/${userId}`)
+              }}>
                 <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignContent: 'center'}}>
                   <UserAvatar
                     pictureUrl={avatar}
@@ -141,8 +145,13 @@ const UsersLists = () => {
                       borderColor: Colors.border_color
                     }}
                   />
-                  <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: 16}}>{username}</Text>
+                  <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: 14}}>{username}</Text>
                 </View>
+              </Pressable>
+              <Pressable
+                key={item.id}
+                onPress={() => router.push(`/list/${item.id}`)}
+              >
                 <Text style={{color: Colors.text_title, padding: 5, paddingTop: 0, fontWeight: '500', fontSize: 18}}>{item.name}</Text>
                 <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
                   {item.films.sort((a, b) => a.position - b.position).map((film, i) => (
@@ -156,14 +165,14 @@ const UsersLists = () => {
                 <Text style={{color: Colors.text, padding: 5, fontWeight: '400', fontSize: 14}}>
                   {item?.description?.slice(0, 150) + '...' ?? null}
                 </Text>
-                <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', justifyContent: 'center'}}>
+                <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: 5}}>
                   <Fontisto name="nav-icon-list-a" size={14} color={Colors._heteroboxd} />
                   <Text style={{color: Colors._heteroboxd, fontSize: 14, fontWeight: 'bold', marginRight: 10, marginLeft: 3}}>{item.films.length}</Text>
                   <Fontisto name="heart" size={14} color={Colors.heteroboxd} />
-                  <Text style={{color: Colors.heteroboxd, fontSize: 14, fontWeight: 'bold', marginLeft: 3, marginBottom: 5}}>{item.likeCount}</Text>
+                  <Text style={{color: Colors.heteroboxd, fontSize: 14, fontWeight: 'bold', marginLeft: 3}}>{item.likeCount}</Text>
                 </View>
-              </View>
-            </Pressable>
+              </Pressable>
+            </View>
           )}
           contentContainerStyle={{
             alignItems: 'left',
@@ -186,47 +195,48 @@ const UsersLists = () => {
             data={lists}
             numColumns={1}
             renderItem={({ item }) => (
-              <Pressable
-                key={item.id}
-                onPress={() => router.push(`/list/${item.id}`)}
-                style={{marginBottom: spacing/2}}
-              >
-                <View style={{borderBottomWidth: 2, borderTopWidth: 2, borderColor: Colors.border_color, borderRadius: 5, backgroundColor: Colors.card}}>
-                <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignContent: 'center'}}>
-                  <UserAvatar
-                    pictureUrl={avatar}
-                    style={{
-                      marginRight: 5,
-                      width: 28,
-                      height: 28,
-                      borderRadius: 14,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color
-                    }}
-                  />
-                  <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: 20}}>{username}</Text>
-                </View>
-                <Text style={{color: Colors.text_title, padding: 5, paddingTop: 0, fontWeight: '500', fontSize: 28}}>{item.name}</Text>
-                  <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
-                    {item.films.sort((a, b) => a.position - b.position).map((film, i) => (
-                      <Poster
-                        key={film.filmId}
-                        posterUrl={film.filmPosterUrl}
-                        style={{width: posterWidth, height: posterHeight, borderWidth: 2, borderColor: Colors.border_color, borderRadius: 7, marginRight: i < item.films.length - 1 ? spacing : 0}}
-                      />
-                    ))}
+              <View style={{borderBottomWidth: 2, borderTopWidth: 2, borderColor: Colors.border_color, borderRadius: 5, backgroundColor: Colors.card, marginBottom: spacing*0.75}}>
+                <Pressable onPress={(e) => {
+                  e.stopPropagation();
+                  router.push(`/profile/${userId}`)
+                }}>
+                  <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignContent: 'center'}}>
+                    <UserAvatar
+                      pictureUrl={avatar}
+                      style={{
+                        marginRight: 5,
+                        width: 26,
+                        height: 26,
+                        borderRadius: 13,
+                        borderWidth: 2,
+                        borderColor: Colors.border_color
+                      }}
+                    />
+                    <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: 16}}>{username}</Text>
                   </View>
-                <Text style={{color: Colors.text, padding: 5, fontWeight: '400', fontSize: 16}}>
-                  {item?.description.slice(0, 500) + '...' ?? null}
-                </Text>
-                <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', justifyContent: 'center'}}>
-                  <Fontisto name="nav-icon-list-a" size={20} color={Colors._heteroboxd} />
-                  <Text style={{color: Colors._heteroboxd, fontSize: 18, fontWeight: 'bold', marginRight: 10, marginLeft: 3}}>{item.films.length}</Text>
-                  <Fontisto name="heart" size={20} color={Colors.heteroboxd} />
-                  <Text style={{color: Colors.heteroboxd, fontSize: 18, fontWeight: 'bold', marginLeft: 3, marginBottom: 5}}>{item.likeCount}</Text>
-                </View>
-                </View>
-              </Pressable>
+                </Pressable>
+                <Pressable key={item.id} onPress={() => router.push(`/list/${item.id}`)}>
+                  <Text style={{color: Colors.text_title, padding: 5, paddingTop: 0, fontWeight: '500', fontSize: 28}}>{item.name}</Text>
+                    <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
+                      {item.films.sort((a, b) => a.position - b.position).map((film, i) => (
+                        <Poster
+                          key={film.filmId}
+                          posterUrl={film.filmPosterUrl}
+                          style={{width: posterWidth, height: posterHeight, borderWidth: 2, borderColor: Colors.border_color, borderRadius: 7, marginRight: i < item.films.length - 1 ? spacing : 0}}
+                        />
+                      ))}
+                    </View>
+                  <Text style={{color: Colors.text, padding: 5, fontWeight: '400', fontSize: 16}}>
+                    {item?.description.slice(0, 500) + '...' ?? null}
+                  </Text>
+                  <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: 5}}>
+                    <Fontisto name="nav-icon-list-a" size={20} color={Colors._heteroboxd} />
+                    <Text style={{color: Colors._heteroboxd, fontSize: 18, fontWeight: 'bold', marginRight: 10, marginLeft: 3}}>{item.films.length}</Text>
+                    <Fontisto name="heart" size={20} color={Colors.heteroboxd} />
+                    <Text style={{color: Colors.heteroboxd, fontSize: 18, fontWeight: 'bold', marginLeft: 3}}>{item.likeCount}</Text>
+                  </View>
+                </Pressable>
+              </View>
             )}
             contentContainerStyle={{
               alignItems: 'left',
