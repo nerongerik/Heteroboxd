@@ -59,6 +59,15 @@ const RootLayout = () => {
             headerTitleStyle: {color: Colors.text_title},
           }}
         />
+        <Stack.Screen 
+          name="list/[listId]"
+          options={{
+            headerTransparent: true,
+            headerBackground: () => null,
+            headerTitle: '',
+            headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
+            }}
+        />
       </Stack>
     </AuthProvider>
   )

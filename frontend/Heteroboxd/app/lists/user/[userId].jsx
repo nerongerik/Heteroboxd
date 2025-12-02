@@ -133,7 +133,7 @@ const UsersLists = () => {
                 e.stopPropagation();
                 router.push(`/profile/${userId}`)
               }}>
-                <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignContent: 'center'}}>
+                <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignItems: 'center'}}>
                   <UserAvatar
                     pictureUrl={avatar}
                     style={{

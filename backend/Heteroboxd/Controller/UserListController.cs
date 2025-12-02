@@ -176,10 +176,11 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("like-count/{UserListId}/{LikeChange}")]
+        [Authorize] //only logged in users can like/dislike lists
         public async Task<IActionResult> UpdateLikeCount(string UserListId, string LikeChange)
         {
-            //updates the like count of a list
             //LikeChange should be +1 or -1 (convert to numeral)
+            _logger.LogInformation($"Update Like Count endpoint hit for ListId: {UserListId} with Change: {LikeChange}");
             try
             {
                 await _service.UpdateLikeCountEfCore7Async(UserListId, LikeChange);

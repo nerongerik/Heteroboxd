@@ -221,6 +221,9 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("DateAdded")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FilmBackdropUrl")
+                        .HasColumnType("text");
+
                     b.Property<int>("FilmId")
                         .HasColumnType("integer");
 

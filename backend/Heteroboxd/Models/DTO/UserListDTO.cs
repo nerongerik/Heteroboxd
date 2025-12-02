@@ -72,6 +72,7 @@
         public string DateAdded { get; set; }
         public int Position { get; set; }
         public string FilmPosterUrl { get; set; }
+        public string? FilmBackdropUrl { get; set; }
         public int FilmId { get; set; }
 
         public ListEntryInfoResponse(ListEntry Entry)
@@ -80,6 +81,7 @@
             this.DateAdded = Entry.DateAdded.ToString("dd/MM/yyyy HH:mm");
             this.Position = Entry.Position;
             this.FilmPosterUrl = Entry.FilmPosterUrl;
+            this.FilmBackdropUrl = Entry.FilmBackdropUrl;
             this.FilmId = Entry.FilmId;
         }
     }

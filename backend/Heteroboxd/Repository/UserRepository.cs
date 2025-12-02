@@ -17,8 +17,11 @@ namespace Heteroboxd.Repository
         Task<User?> GetFollowers(Guid UserId);
         Task<User?> GetBlocked(Guid UserId);
         Task<User?> GetUserLikedReviewsAsync(Guid UserId);
+        Task<Review?> IsReviewLiked(Guid UserId, Guid ReviewId);
         Task<User?> GetUserLikedCommentsAsync(Guid UserId);
+        Task<Comment?> IsCommentLiked(Guid UserId, Guid CommentId);
         Task<User?> GetUserLikedListsAsync(Guid UserId);
+        Task<UserList?> IsListLiked(Guid UserId, Guid ListId);
         Task<List<User>> SearchAsync(string Name);
         void Update(User User);
         Task ReportUserEfCore7Async(Guid UserId);
@@ -114,15 +117,46 @@ namespace Heteroboxd.Repository
                 .Include(u => u.LikedReviews)
                 .FirstOrDefaultAsync(u => u.Id == UserId && !u.Deleted);
 
+        public async Task<Review?> IsReviewLiked(Guid UserId, Guid ReviewId)
+        {
+            var User = await _context.Users
+                .Include(u => u.LikedReviews)
+                .FirstOrDefaultAsync(u => u.Id == UserId && !u.Deleted);
+            if (User == null) return null;
+            var Review = User.LikedReviews.FirstOrDefault(r => r.Id == ReviewId);
+            return Review;
+        }
+
+
         public async Task<User?> GetUserLikedCommentsAsync(Guid UserId) =>
             await _context.Users
                 .Include(u => u.LikedComments)
                 .FirstOrDefaultAsync(u => u.Id == UserId && !u.Deleted);
 
+        public async Task<Comment?> IsCommentLiked(Guid UserId, Guid CommentId)
+        {
+            var User = await _context.Users
+                .Include(u => u.LikedComments)
+                .FirstOrDefaultAsync(u => u.Id == UserId && !u.Deleted);
+            if (User == null) return null;
+            var Comment = User.LikedComments.FirstOrDefault(c => c.Id == CommentId);
+            return Comment;
+        }
+
         public async Task<User?> GetUserLikedListsAsync(Guid UserId) =>
             await _context.Users
                 .Include(u => u.LikedLists)
                 .FirstOrDefaultAsync(u => u.Id == UserId && !u.Deleted);
+
+        public async Task<UserList?> IsListLiked(Guid UserId, Guid ListId)
+        {
+            var User = await _context.Users
+                .Include(u => u.LikedLists)
+                .FirstOrDefaultAsync(u => u.Id == UserId && !u.Deleted);
+            if (User == null) return null;
+            var UserList = User.LikedLists.FirstOrDefault(ul => ul.Id == ListId);
+            return UserList;
+        }
 
         public async Task<List<User>> SearchAsync(string Name)
         {

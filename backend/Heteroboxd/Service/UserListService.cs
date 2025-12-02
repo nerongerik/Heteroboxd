@@ -127,7 +127,7 @@ namespace Heteroboxd.Service
             {
                 var Film = await _filmRepo.LightweightFetcher(Request.FilmId);
                 if (Film == null) continue;
-                _repo.CreateEntry(new ListEntry(Request.Position, Film.PosterUrl, Request.FilmId, Guid.Parse(AuthorId), ListId));
+                _repo.CreateEntry(new ListEntry(Request.Position, Film.PosterUrl, Film.BackdropUrl, Request.FilmId, Guid.Parse(AuthorId), ListId));
             }
             await _repo.SaveChangesAsync();
         }
@@ -158,7 +158,7 @@ namespace Heteroboxd.Service
                     var Film = await _filmRepo.LightweightFetcher(leir.FilmId);
                     if (Film == null) continue;
                     foreach (var f in List.Films.Where(le => le.Position >= leir.Position)) f.Position++;
-                    List.Films.Add(new ListEntry(leir.Position, Film.PosterUrl, Film.Id, List.AuthorId, List.Id));
+                    List.Films.Add(new ListEntry(leir.Position, Film.PosterUrl, Film.BackdropUrl, Film.Id, List.AuthorId, List.Id));
                 }
             }
             await _repo.SaveChangesAsync();

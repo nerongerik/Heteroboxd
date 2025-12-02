@@ -76,7 +76,7 @@ namespace Heteroboxd.Controller
         [Authorize] //you can only see your own watchlist
         public async Task<IActionResult> IsFilmWatchlisted(string UserId, int FilmId)
         {
-            _logger.LogInformation($"Get Watchlist endpoint hit for User: {UserId}");
+            _logger.LogInformation($"Get isWatchlisted endpoint hit for User: {UserId}");
             try
             {
                 var Response = await _service.IsFilmWatchlisted(UserId, FilmId);
@@ -144,6 +144,23 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("{UserId}/liked/{ObjectId}")]
+        [Authorize] //makes no sense for non-users
+        public async Task<IActionResult> IsObjectLiked(string UserId, string ObjectId, [FromQuery] string ObjectType)
+        {
+            //ObjectType: review, comment, list
+            _logger.LogInformation($"Get isLiked endpoint hit for User: {UserId}");
+            try
+            {
+                var Response = await _service.IsObjectLiked(UserId, ObjectId, ObjectType);
+                return Ok(Response);
             }
             catch
             {
@@ -309,9 +326,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("likes")]
+        [Authorize] //need to be logged in to perform CUDs
         public async Task<IActionResult> UpdateUserLikes(UpdateUserLikesRequest Request)
         {
-            //updates the user's likes (reviews, comments, lists)
+            _logger.LogInformation($"Update User's Likes endpoint hit for User: {Request.UserId}");
             try
             {
                 await _service.UpdateLikes(Request);
