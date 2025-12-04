@@ -17,7 +17,7 @@ namespace Heteroboxd.Service
         Task UpdateList(UpdateUserListRequest ListRequest);
         Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange);
         Task ToggleNotificationsEfCore7Async(string ListId);
-        Task LogicalDeleteUserList(string ListId);
+        Task DeleteUserList(string ListId);
     }
 
     public class UserListService : IUserListService
@@ -177,12 +177,11 @@ namespace Heteroboxd.Service
             await _repo.ToggleNotificationsEfCore7Async(Id);
         }
 
-        public async Task LogicalDeleteUserList(string ListId)
+        public async Task DeleteUserList(string ListId)
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
             if (List == null) throw new KeyNotFoundException();
-            List.Deleted = true;
-            _repo.Update(List);
+            _repo.Delete(List);
             await _repo.SaveChangesAsync();
         }
     }

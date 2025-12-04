@@ -563,7 +563,7 @@ const Profile = () => {
         duration={3000}
         style={{
           backgroundColor: Colors.card,
-          width: Platform.OS === 'web' && width > 1000 ? '50%' : '90%',
+          width: Platform.OS === 'web' && width > 1000 ? width*0.5 : width*0.9,
           alignSelf: 'center',
           borderRadius: 8,
         }}

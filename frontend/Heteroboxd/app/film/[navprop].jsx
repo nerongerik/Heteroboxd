@@ -304,21 +304,24 @@ const Film = () => {
         <View style={[styles.divider, {marginVertical: 15}]} />
         
         <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
-        <Text style={[styles.text, { fontSize: widescreen ? 18 : 14, paddingHorizontal: 10, marginBottom: 10 }]}>{film.synopsis}</Text>
+        <Text style={[styles.text, { fontSize: widescreen ? 18 : 14, paddingHorizontal: 10 }]}>{film.synopsis}</Text>
+        
+        <View style={[styles.divider, {marginTop: 15, marginBottom: film?.genres && film?.genres.length > 0 ? 10 : 15}]} />
 
         { film?.genres && film?.genres.length > 0 && (
-          <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center'}}>
-            {
-              film.genres.map((genre, i) => (
-                <Pressable key={i} onPress={() => router.push(`films/explore?type=genre&subtype=${genre}`)} style={[{backgroundColor: Colors.button, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
-                  <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>{genre}</Text>
-                </Pressable>
-              ))
-            }
-          </View>
+          <>
+            <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center'}}>
+              {
+                film.genres.map((genre, i) => (
+                  <Pressable key={i} onPress={() => router.push(`films/explore?type=genre&subtype=${genre}`)} style={[{backgroundColor: Colors.button, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
+                    <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>{genre}</Text>
+                  </Pressable>
+                ))
+              }
+            </View>
+            <View style={[styles.divider, {marginTop: 10, marginBottom: 15}]} />
+          </>
         )}
-
-        <View style={[styles.divider, {marginVertical: 15}]} />
 
         <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[RATINGS GRAPH PLACEHOLDER]</Text>
 

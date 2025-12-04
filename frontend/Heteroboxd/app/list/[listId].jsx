@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl } from 'react-native'
+import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl, ScrollView } from 'react-native'
 import { Colors } from '../../constants/colors';
 import { useEffect, useMemo, useState } from 'react';
 import { BaseUrl } from '../../constants/api';
@@ -19,7 +19,7 @@ const List = () => {
   const { user, isValidSession } = useAuth();
 
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
@@ -34,6 +34,8 @@ const List = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isEnd, setIsEnd] = useState(false);
+
+  const [descCollapsed, setDescCollapsed] = useState(true);
 
   const loadBaseList = async () => {
     try {
@@ -129,6 +131,7 @@ const List = () => {
     loadLiked();
   }, [listId, user])
 
+
   const handleLike = async () => {
     if (!user || !isValidSession) return;
     try {
@@ -162,10 +165,6 @@ const List = () => {
     }
   }
 
-  const openDescMenu = async () => {
-
-  }
-
   //web on compooper?
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
   //minimum spacing between posters
@@ -180,19 +179,18 @@ const List = () => {
 
   return (
     <View style={styles.container}>
-      {MemoBackdrop}
-      <View style={{width: widescreen ? 1000 : '95%'}}>
+      <View style={{width: widescreen ? 1000 : width*0.95}}>
         <Pressable onPress={(e) => {
           e.stopPropagation();
-          router.push(`/profile/${userId}`)
+          router.push(`/profile/${baseList?.authorId}`)
         }}>
           <View style={{flexDirection: 'row', paddingTop: 5, alignItems: 'center'}}>
             <UserAvatar
               pictureUrl={baseList?.authorProfilePictureUrl}
               style={{
                 marginRight: 5,
-                width: widescreen ? 36 : 26,
-                height: widescreen ? 36 : 26,
+                width: widescreen ? 30 : 26,
+                height: widescreen ? 30 : 26,
                 borderRadius: widescreen ? 18 : 13,
                 borderWidth: 2,
                 borderColor: Colors.border_color
@@ -202,10 +200,14 @@ const List = () => {
           </View>
         </Pressable>
         <Text style={{fontSize: widescreen ? 24 : 22, color: Colors.text_title, fontWeight: '600', marginBottom: 3}}>{baseList?.name}</Text>
-        <Pressable onPress={openDescMenu}>
-            { baseList?.description?.length > 300 ? (
+        <Pressable onPress={() => setDescCollapsed(prev => !prev)}>
+            { descCollapsed && baseList?.description?.length > 300 ? (
                 <Text style={{fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400'}}>
                   {widescreen ? baseList.description.slice(0, 300) : baseList.description.slice(0, 150)}<Text style={{color: Colors.text_title}}>...</Text>
+                </Text>
+              ) : !descCollapsed && baseList?.description?.length > 300 ? (
+                <Text style={{fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400'}}>
+                  {baseList?.description}
                 </Text>
               ) : (
                 <Text style={{fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400'}}>
@@ -214,16 +216,19 @@ const List = () => {
               )
             }
         </Pressable>
-        <Pressable onPress={handleLike} style={{flexDirection: 'row', alignItems: 'center', marginTop: 5}}>
-          { iLiked ? (
-            <MaterialCommunityIcons style={{marginRight: 3}} name="cards-heart" size={widescreen ? 24 : 20} color={Colors.heteroboxd} />
-          ) : (
-            <MaterialCommunityIcons name="cards-heart-outline" size={widescreen ? 24 : 20} color={Colors.text} />
-          )}
-          <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold', marginLeft: 3}}>{likeCountLocalCopy} likes</Text>
-        </Pressable>
+        <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 5, justifyContent: 'space-between'}}>
+          <Pressable onPress={handleLike} style={{flexDirection: 'row', alignItems: 'center'}}>
+            { iLiked ? (
+              <MaterialCommunityIcons style={{marginRight: 3}} name="cards-heart" size={widescreen ? 24 : 20} color={Colors.heteroboxd} />
+            ) : (
+              <MaterialCommunityIcons style={{marginRight: 3}} name="cards-heart-outline" size={widescreen ? 24 : 20} color={Colors.text} />
+            )}
+            <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{likeCountLocalCopy} likes</Text>
+          </Pressable>
+          <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{entries?.length} entries</Text>
+        </View>
       </View>
-      {!widescreen ? (
+      {Platform.OS !== 'web' ? (
         //infinite scroll on narrow touchscreens
         <FlatList
           refreshControl={
@@ -292,7 +297,7 @@ const List = () => {
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        //explicit pagination on web widescreens
+        //explicit pagination on web
         <>
           <FlatList
             data={entries}
@@ -317,8 +322,8 @@ const List = () => {
                 {baseList?.ranked && (
                   <View
                     style={{
-                      width: 28,
-                      height: 28,
+                      width: widescreen ? 28 : 20,
+                      height: widescreen ? 28 : 20,
                       borderRadius: 9999,
                       backgroundColor: Colors.card,
                       justifyContent: 'center',
@@ -330,7 +335,7 @@ const List = () => {
                     <Text
                       style={{
                         color: Colors.text_title,
-                        fontSize: 12,
+                        fontSize: widescreen ? 12 : 8,
                         fontWeight: 'bold',
                         lineHeight: 18,
                       }}
@@ -345,8 +350,9 @@ const List = () => {
               paddingHorizontal: spacing / 2,
               paddingTop: 20,
               paddingBottom: 40,
-              width: 1000,
+              width: widescreen ? 1000 : '100%',
               alignSelf: "center",
+              alignItems: 'center'
             }}
             showsVerticalScrollIndicator={false}
           />
@@ -365,6 +371,7 @@ const List = () => {
 
       <LoadingResponse visible={result === 0} />
       <Popup visible={[404, 500].includes(result)} message={message} onClose={() => result === 500 ? router.replace('/contact') : router.replace('/')} />
+
     </View>
   )
 }
@@ -375,7 +382,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    alignItems: "center",
+    justifyContent: "center",
+    alignItems: 'center',
+    paddingBottom: 50
   },
   text: {
     fontWeight: "350",

@@ -201,9 +201,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("toggle-notifications/{UserListId}")]
+        [Authorize]
         public async Task<IActionResult> ToggleNotifications(string UserListId)
         {
-            //toggles the notifications setting for the list
+            _logger.LogInformation($"Toggle Notifications endpoint hit for ListId: {UserListId}");
             try
             {
                 await _service.ToggleNotificationsEfCore7Async(UserListId);
@@ -225,13 +226,13 @@ namespace Heteroboxd.Controller
 
         //DELETE endpoints -> limited public access (only for their own lists), ADMIN privileges for any list
         [HttpDelete("{UserListId}")]
+        [Authorize]
         public async Task<IActionResult> DeleteList(string UserListId)
         {
-            //deletes a list from the database (logical delete)
-            //normal users can only delete their own lists, admins can delete any list
+            _logger.LogInformation($"Delete List endpoint hit for ListId: {UserListId}");
             try
             {
-                await _service.LogicalDeleteUserList(UserListId);
+                await _service.DeleteUserList(UserListId);
                 return Ok();
             }
             catch (KeyNotFoundException)

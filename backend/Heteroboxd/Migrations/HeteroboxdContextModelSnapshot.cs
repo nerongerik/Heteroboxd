@@ -492,9 +492,6 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Description")
                         .HasColumnType("text");
 

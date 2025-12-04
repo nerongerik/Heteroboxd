@@ -40,7 +40,7 @@ namespace Heteroboxd.Repository
 
         public async Task<UserList?> GetByIdAsync(Guid ListId) =>
             await _context.UserLists
-                .FirstOrDefaultAsync(ul => ul.Id == ListId && !ul.Deleted);
+                .FirstOrDefaultAsync(ul => ul.Id == ListId);
 
         public async Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize)
         {
@@ -61,7 +61,7 @@ namespace Heteroboxd.Repository
         {
             var UserQuery = _context.UserLists
                 .Include(ul => ul.Films)
-                .Where(ul => ul.AuthorId == UserId && !ul.Deleted)
+                .Where(ul => ul.AuthorId == UserId)
                 .OrderByDescending(f => f.DateCreated);
 
             var TotalCount = await UserQuery.CountAsync();
@@ -90,7 +90,6 @@ namespace Heteroboxd.Repository
             }
 
             return await query
-                .Where(ul => !ul.Deleted)
                 .OrderByDescending(ul => ul.LikeCount).ThenBy(ul => ul.DateCreated)
                 .ToListAsync();
         }

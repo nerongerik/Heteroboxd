@@ -4,6 +4,7 @@ import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/profileOptionsButton'
 import './browser.css'
+import ListOptionsButton from '../components/listOptionsButton'
 
 const RootLayout = () => {
   return (
@@ -61,12 +62,10 @@ const RootLayout = () => {
         />
         <Stack.Screen 
           name="list/[listId]"
-          options={{
-            headerTransparent: true,
-            headerBackground: () => null,
+          options={({ route }) => ({
+            headerRight: () => <ListOptionsButton listId={route.params?.listId} />,
             headerTitle: '',
-            headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
-            }}
+            })}
         />
       </Stack>
     </AuthProvider>

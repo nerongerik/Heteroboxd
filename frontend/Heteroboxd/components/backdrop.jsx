@@ -22,7 +22,7 @@ export const Backdrop = ({ backdropUrl, narrow }) => {
   const imageHeight = imageWidth / 1.78;
 
   return (
-    <View style={{ width: imageWidth, height: imageHeight, alignSelf: 'center' }}>
+    <View style={{ width: imageWidth, height: imageHeight, alignSelf: 'center' }} pointerEvents='none'>
       <Image
         source={
           resolvedUrl === 'error'

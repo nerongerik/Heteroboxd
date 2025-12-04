@@ -11,7 +11,6 @@ namespace Heteroboxd.Models
         public bool Ranked { get; set; }
         public DateTime DateCreated { get; set; }
         public bool NotificationsOn { get; set; }
-        public bool Deleted { get; set; }
         public ICollection<ListEntry> Films { get; set; }
         public int LikeCount { get; set; }
         public Guid AuthorId { get; set; }
@@ -24,7 +23,6 @@ namespace Heteroboxd.Models
             this.Ranked = Ranked;
             this.DateCreated = DateTime.UtcNow;
             this.NotificationsOn = true;
-            this.Deleted = false;
             this.Films = new List<ListEntry>();
             this.LikeCount = 0;
             this.AuthorId = AuthorId;

@@ -1,4 +1,6 @@
-﻿namespace Heteroboxd.Models.DTO
+﻿using Microsoft.Identity.Client;
+
+namespace Heteroboxd.Models.DTO
 {
     public class UserListInfoResponse
     {
@@ -8,6 +10,7 @@
         public bool Ranked { get; set; }
         public string DateCreated { get; set; }
         public bool NotificationsOn { get; set; }
+        public int ListEntryCount { get; set; }
         public List<ListEntryInfoResponse> Films { get; set; }
         public int LikeCount { get; set; }
         public string AuthorId { get; set; }
@@ -22,6 +25,7 @@
             this.Ranked = List.Ranked;
             this.DateCreated = List.DateCreated.ToString("dd/MM/yyyy HH:mm");
             this.NotificationsOn = List.NotificationsOn;
+            this.ListEntryCount = List.Films.Count;
             if (Take < 0) this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).ToList();
             else this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).Take(Take).ToList();
             this.LikeCount = List.LikeCount;
