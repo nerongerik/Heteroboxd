@@ -38,7 +38,7 @@ const CreateList = () => {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity onPress={handleSubmit} disabled={!listName || entries.length === 0} style={(!listName || entries.length === 0) && {opacity: 0.5}}>
+        <TouchableOpacity onPress={handleSubmit} disabled={!listName || entries.length === 0 || desc?.length > 1000} style={(!listName || entries.length === 0 || desc?.length > 1000) && {opacity: 0.5}}>
           <Ionicons name="checkmark" size={24} color={Colors.text_title} />
         </TouchableOpacity>
       )

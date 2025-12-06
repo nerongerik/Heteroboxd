@@ -79,7 +79,10 @@ const ListOptionsButton = ({ listId }) => {
           'Authorization': `Bearer ${jwt}`
         }
       });
-      if (res.status === 200) router.replace(`profile/${user.userId}`);
+      if (res.status === 200) {
+        closeMenu();
+        router.replace(`profile/${user.userId}`);
+      }
       else {
         setMsg('Delete failed - please make sure your session is valid, and you are viewing the correct list.');
         setSnack(true);
@@ -115,6 +118,16 @@ const ListOptionsButton = ({ listId }) => {
     }
   }
 
+  async function handleEdit() {
+    if (!user || !isValidSession()) router.replace('/login');
+    if (baseList.authorId !== user.userId) {
+      setMsg("You are not supposed to be seeing this - what did you do?");
+      setSnack(true);
+    }
+    closeMenu();
+    router.push(`list/edit/${listId}`);
+  }
+
   return (
     <View>
       <Pressable onPress={openMenu} style={{zIndex: 1}}>
@@ -141,7 +154,7 @@ const ListOptionsButton = ({ listId }) => {
               </TouchableOpacity>
             ) : (
               <>
-                <TouchableOpacity style={styles.option} onPress={() => {}}>
+                <TouchableOpacity style={styles.option} onPress={handleEdit}>
                   <Text style={styles.optionText}>Edit List </Text>
                   <MaterialIcons name="edit" size={20} color={Colors.text} />
                 </TouchableOpacity>

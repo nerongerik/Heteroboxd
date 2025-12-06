@@ -7,9 +7,9 @@ namespace Heteroboxd.Repository
 {
     public interface IUserListRepository
     {
-        //Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<UserList?> GetByIdAsync(Guid ListId);
-        Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize);
+        Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize); //view
+        Task<List<ListEntry>> PowerGetEntries(Guid ListId); //update
         Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
@@ -31,13 +31,6 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        /*
-        public async Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default) =>
-            await _context.UserLists
-                .Where(ul => !ul.Deleted)
-                .ToListAsync(CancellationToken);
-        */
-
         public async Task<UserList?> GetByIdAsync(Guid ListId) =>
             await _context.UserLists
                 .FirstOrDefaultAsync(ul => ul.Id == ListId);
@@ -56,6 +49,12 @@ namespace Heteroboxd.Repository
 
             return (Entries, TotalCount);
         }
+
+        public async Task<List<ListEntry>> PowerGetEntries(Guid ListId) =>
+            await _context.ListEntries
+                .Where(le => le.UserListId == ListId)
+                .OrderBy(le => le.Position)
+                .ToListAsync();
 
         public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {

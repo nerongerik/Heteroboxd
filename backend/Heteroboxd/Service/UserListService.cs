@@ -136,32 +136,26 @@ namespace Heteroboxd.Service
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListRequest.ListId));
             if (List == null) throw new KeyNotFoundException();
-            if (ListRequest.Name != null) List.Name = ListRequest.Name;
-            if (ListRequest.Description != null) List.Description = ListRequest.Description;
-            if (ListRequest.Ranked != null) List.Ranked = (bool) ListRequest.Ranked;
-
-            if (ListRequest.ToRemove.Count > 0)
+            if (ListRequest.Entries == null)
             {
-                foreach (string leid in ListRequest.ToRemove)
-                {
-                    var Entry = List.Films.FirstOrDefault(le => le.Id == Guid.Parse(leid));
-                    if (Entry == null) throw new ArgumentException();
-                    foreach (var f in List.Films.Where(le => le.Position > Entry.Position)) f.Position--;
-                    List.Films.Remove(Entry);
-                }
+                List.Name = ListRequest.Name;
+                List.Description = ListRequest.Description;
+                List.Ranked = ListRequest.Ranked;
+                List.DateCreated = DateTime.UtcNow;
+                await _repo.SaveChangesAsync();
             }
-
-            if (ListRequest.ToAdd.Count > 0)
+            else
             {
-                foreach (ListEntryInfoResponse leir in ListRequest.ToAdd)
-                {
-                    var Film = await _filmRepo.LightweightFetcher(leir.FilmId);
-                    if (Film == null) continue;
-                    foreach (var f in List.Films.Where(le => le.Position >= leir.Position)) f.Position++;
-                    List.Films.Add(new ListEntry(leir.Position, Film.PosterUrl, Film.BackdropUrl, Film.Id, List.AuthorId, List.Id));
-                }
+                string AuthorId = List.AuthorId.ToString();
+                /*
+                honestly I just don't give a shit
+                we'll just delete the whole thing and create a new one lmao
+                can't bother updating every single position of every single entry from scratch
+                */
+                await DeleteUserList(ListRequest.ListId);
+                Guid RecreatedId = await AddList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, AuthorId);
+                await AddListEntries(AuthorId, RecreatedId, ListRequest.Entries);
             }
-            await _repo.SaveChangesAsync();
         }
 
         public async Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange)

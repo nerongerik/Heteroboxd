@@ -20,23 +20,6 @@ namespace Heteroboxd.Controller
 
         //GET endpoints -> limited public access
 
-        /*
-        [HttpGet]
-        public async Task<IActionResult> GetAllLists()
-        {
-            //retrives all lists from database
-            try
-            {
-                var AllLists = await _service.GetAllUserLists();
-                return Ok(AllLists);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-        */
-
         [HttpGet("{UserListId}")]
         [AllowAnonymous] //anyone can view any list...
         public async Task<IActionResult> GetList(string UserListId)

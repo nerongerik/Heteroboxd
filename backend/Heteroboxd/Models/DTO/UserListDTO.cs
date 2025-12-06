@@ -63,11 +63,10 @@ namespace Heteroboxd.Models.DTO
     public class UpdateUserListRequest
     {
         public string ListId { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public bool? Ranked { get; set; }
-        public List<ListEntryInfoResponse> ToAdd { get; set; } //FilmId
-        public List<string> ToRemove { get; set; } //ListEntryId
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public bool Ranked { get; set; }
+        public List<CreateListEntryRequest>? Entries { get; set; } //send full list; we'll check if they should be removed or added, and in what order
     }
 
     public class ListEntryInfoResponse
