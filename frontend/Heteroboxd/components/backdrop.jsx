@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Image, Platform, useWindowDimensions, View } from "react-native";
 import { Colors } from "../constants/colors";
 
-export const Backdrop = ({ backdropUrl }) => {
+export const Backdrop = ({ backdropUrl, narrow }) => {
   const [resolvedUrl, setResolvedUrl] = useState(null);
   const { width } = useWindowDimensions();
 
@@ -18,11 +18,11 @@ export const Backdrop = ({ backdropUrl }) => {
     }
   }, [backdropUrl, width]);
 
-  const imageWidth = Platform.OS === 'web' && width > 1000 ? 1000 : width;
+  const imageWidth = (Platform.OS === 'web' && width > 1000) ? (narrow) ? 500 : 1000 : width;
   const imageHeight = imageWidth / 1.78;
 
   return (
-    <View style={{ width: imageWidth, height: imageHeight, alignSelf: 'center' }}>
+    <View style={{ width: imageWidth, height: imageHeight, alignSelf: 'center' }} pointerEvents='none'>
       <Image
         source={
           resolvedUrl === 'error'

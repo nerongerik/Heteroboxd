@@ -1,15 +1,17 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
 {
     public interface IUserListRepository
     {
-        Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<UserList?> GetByIdAsync(Guid ListId);
-        Task<List<UserList>> GetByUserAsync(Guid UserId);
-        Task<List<UserList>> GetFeaturingFilmAsync(int FilmId);
+        Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize); //view
+        Task<List<ListEntry>> PowerGetEntries(Guid ListId); //update
+        Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
+        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
         void CreateEntry(ListEntry ListEntry);
@@ -17,6 +19,7 @@ namespace Heteroboxd.Repository
         Task UpdateLikeCountEfCore7Async(Guid ListId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid ListId);
         void Delete(UserList UserList);
+        void DeleteEntriesByListId(Guid ListId);
         Task SaveChangesAsync();
     }
 
@@ -29,26 +32,51 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<List<UserList>> GetAllAsync(CancellationToken CancellationToken = default) =>
-            await _context.UserLists
-                .Where(ul => !ul.Deleted)
-                .ToListAsync(CancellationToken);
-
         public async Task<UserList?> GetByIdAsync(Guid ListId) =>
             await _context.UserLists
-                .Include(ul => ul.Films)
-                .FirstOrDefaultAsync(ul => ul.Id == ListId && !ul.Deleted);
+                .FirstOrDefaultAsync(ul => ul.Id == ListId);
 
-        public async Task<List<UserList>> GetByUserAsync(Guid UserId) =>
-            await _context.UserLists
-                .Include(ul => ul.Films)
-                .Where(ul => ul.AuthorId == UserId && !ul.Deleted)
+        public async Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize)
+        {
+            var EntryQuery = _context.ListEntries
+                .Where(le => le.UserListId == ListId)
+                .OrderBy(le => le.Position);
+
+            var TotalCount = await EntryQuery.CountAsync();
+
+            var Entries = await EntryQuery.Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
 
-        public async Task<List<UserList>> GetFeaturingFilmAsync(int FilmId) =>
-            await _context.UserLists
-                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId) && !ul.Deleted)
+            return (Entries, TotalCount);
+        }
+
+        public async Task<List<ListEntry>> PowerGetEntries(Guid ListId) =>
+            await _context.ListEntries
+                .Where(le => le.UserListId == ListId)
+                .OrderBy(le => le.Position)
                 .ToListAsync();
+
+        public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
+        {
+            var UserQuery = _context.UserLists
+                .Include(ul => ul.Films)
+                .Where(ul => ul.AuthorId == UserId)
+                .OrderByDescending(f => f.DateCreated);
+
+            var TotalCount = await UserQuery.CountAsync();
+
+            var Lists = await UserQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Lists, TotalCount);
+        }
+
+
+        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId) =>
+            throw new NotImplementedException();
 
         public async Task<List<UserList>> SearchAsync(string Search)
         {
@@ -62,7 +90,6 @@ namespace Heteroboxd.Repository
             }
 
             return await query
-                .Where(ul => !ul.Deleted)
                 .OrderByDescending(ul => ul.LikeCount).ThenBy(ul => ul.DateCreated)
                 .ToListAsync();
         }
@@ -112,6 +139,14 @@ namespace Heteroboxd.Repository
         {
             _context.UserLists
                 .Remove(UserList);
+        }
+
+        public void DeleteEntriesByListId(Guid ListId)
+        {
+            var Entries = _context.ListEntries
+                .Where(le => le.UserListId == ListId);
+            _context.ListEntries
+                .RemoveRange(Entries);
         }
 
         public async Task SaveChangesAsync() =>

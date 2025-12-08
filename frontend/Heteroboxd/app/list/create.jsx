@@ -19,7 +19,7 @@ const CreateList = () => {
   const {width, height} = useWindowDimensions();
   
   const [listName, setListName] = useState(null);
-  const [desc, setDesc] = useState(null);
+  const [desc, setDesc] = useState('');
   const [entries, setEntries] = useState([]);
   const [ranked, setRanked] = useState(false);
 
@@ -38,7 +38,7 @@ const CreateList = () => {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity onPress={handleSubmit} disabled={!listName || entries.length === 0} style={(!listName || entries.length === 0) && {opacity: 0.5}}>
+        <TouchableOpacity onPress={handleSubmit} disabled={!listName || entries.length === 0 || desc?.length > 1000} style={(!listName || entries.length === 0 || desc?.length > 1000) && {opacity: 0.5}}>
           <Ionicons name="checkmark" size={24} color={Colors.text_title} />
         </TouchableOpacity>
       )
@@ -126,7 +126,7 @@ const CreateList = () => {
 
   return (
     <View style={[styles.container]}>
-      <View style={{width: widescreen ? 1000 : '95%', alignSelf: 'center', marginBottom: Platform.OS === 'web' ? 10 : 40}}>
+      <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
         <TextInput
           style={[styles.input, {marginBottom: 15}]}
           placeholder="List name*"
@@ -134,18 +134,27 @@ const CreateList = () => {
           onChangeText={setListName}
           placeholderTextColor={Colors.text_placeholder}
         />
-        <TextInput
-          style={[styles.input, styles.bioInput, {marginBottom: 10}]}
-          placeholder="Description (optional)"
-          value={desc}
-          onChangeText={setDesc}
-          multiline
-          numberOfLines={3}
-          placeholderTextColor={Colors.text_placeholder}
-        />
-        <Pressable onPress={openMenu} style={{flexDirection: 'row', alignContent: 'center', alignItems: 'center', marginTop: 15, paddingHorizontal: 15}}>
-          <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.heteroboxd}}>Films {' '}</Text>
-          <AntDesign name="plus-circle" size={widescreen ? 24 : 18} color={Colors.heteroboxd} />
+        <View style={styles.descWrapper}>
+          <TextInput
+            style={[styles.input, styles.bioInput]}
+            placeholder="Description (optional)"
+            value={desc}
+            onChangeText={setDesc}
+            multiline
+            placeholderTextColor={Colors.text_placeholder}
+          />
+          <Text style={[
+            styles.counterText,
+            { color: desc.length < 1001 ? Colors.text_title : Colors.password_meager }
+          ]}>
+            {desc.length}/1000
+          </Text>
+        </View>
+      </View>
+      <View style={{width: widescreen ? 990 : width*0.9, alignSelf: 'center'}}>
+        <Pressable onPress={openMenu} style={{flexDirection: 'row', alignItems: 'center', marginBottom: 3}}>
+          <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.heteroboxd}}>Films </Text>
+          <AntDesign name="plus-circle" size={widescreen ? 20 : 16} color={Colors.heteroboxd} />
         </Pressable>
       </View>
       <View style={[styles.entryContainer, {minHeight: widescreen ? height/2 : height/3, maxHeight: widescreen ? height/2 : height/3, width: maxRowWidth}]}> 
@@ -153,7 +162,7 @@ const CreateList = () => {
           data={entries}
           numColumns={4}
           renderItem={({ item, index }) => (
-            <Pressable key={index} onPress={() => { setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
+            <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
               <Poster
                 posterUrl={item.posterUrl}
                 style={{
@@ -220,13 +229,13 @@ const CreateList = () => {
           <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
           {
             (searchResults && searchResults.length > 0) ? (
-              <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: '95%'}]}>
+              <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: width*0.95}]}>
               <FlatList
                 data={searchResults}
                 numColumns={1}
                 renderItem={({item, index}) => (
                   <Pressable key={index} onPress={() => {
-                    setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }]);
+                    if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }]);
                     setSearchResults(null);
                     closeMenu();
                   }}>
@@ -269,7 +278,7 @@ const CreateList = () => {
         duration={3000}
         style={{
           backgroundColor: Colors.card,
-          width: widescreen ? '50%' : '90%',
+          width: widescreen ? width*0.5 : width*0.9,
           alignSelf: 'center',
           borderRadius: 8,
         }}
@@ -286,41 +295,72 @@ const CreateList = () => {
   )
 }
 
-export default CreateList
+export default CreateList;
+
 
 const styles = StyleSheet.create({
-  container: {backgroundColor: Colors.background, flex: 1, justifyContent: 'center'},
+  container: {
+    backgroundColor: Colors.background,
+    flex: 1,
+    justifyContent: 'center'
+  },
+  descWrapper: {
+    marginBottom: 10,
+    maxHeight: 80,
+    minHeight: 80,
+    position: 'relative',
+    width: '100%'
+  },
   input: {
-    width: '100%',
-    borderWidth: 1.5,
+    backgroundColor: 'transparent',
     borderColor: Colors.border_color,
     borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 45,
+    borderWidth: 1.5,
     color: Colors.text_input,
+    fontSize: 16,
+    height: 45,
+    paddingHorizontal: 12,
+    width: '100%',
     outlineStyle: 'none',
     outlineWidth: 0,
     outlineColor: 'transparent',
-    fontSize: 16
   },
-  bioInput: { minHeight: 80, textAlignVertical: 'top', padding: 5 },
+  bioInput: {
+    flex: 1,
+    includeFontPadding: false,
+    maxHeight: 80,
+    minHeight: 80,
+    padding: 10,
+    textAlignVertical: 'top',
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
+  },
+  counterText: {
+    bottom: 6,
+    fontSize: 14,
+    position: 'absolute',
+    right: 8
+  },
   entryContainer: {
     alignSelf: 'center',
-    borderWidth: 2,
+    backgroundColor: Colors.card,
     borderColor: Colors.border_color,
-    borderRadius: 8,
-    overflow: 'hidden',
+    borderRadius: 5,
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+    marginBottom: 8,
+    overflow: 'hidden'
   },
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject
   },
   menu: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
     backgroundColor: Colors.card,
-    paddingVertical: 10,
+    bottom: 0,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
-  },
-})
+    paddingVertical: 8,
+    position: 'absolute'
+  }
+});

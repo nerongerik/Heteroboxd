@@ -221,12 +221,22 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("DateAdded")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FilmBackdropUrl")
+                        .HasColumnType("text");
+
                     b.Property<int>("FilmId")
                         .HasColumnType("integer");
 
                     b.Property<string>("FilmPosterUrl")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("FilmTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("FilmYear")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Position")
                         .HasColumnType("integer");
@@ -488,9 +498,6 @@ namespace Heteroboxd.Migrations
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");

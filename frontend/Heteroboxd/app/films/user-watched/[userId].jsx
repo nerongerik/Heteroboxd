@@ -1,9 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable } from 'react-native'
+import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth';
 import { Colors } from '../../../constants/colors';
 import { useEffect, useMemo, useState } from 'react';
-import * as auth from '../../../helpers/auth';
 import { BaseUrl } from '../../../constants/api';
 import LoadingResponse from '../../../components/loadingResponse';
 import Popup from '../../../components/popup';
@@ -87,6 +86,11 @@ const UserWatchedFilms = () => {
       {!widescreen ? (
         //infinite scroll on narrow touchscreens
         <FlatList
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={() => {
+              setEntries([]);
+              loadUserWatchedPage(1);
+            }}/>}
           data={entries}
           keyExtractor={(item) => item.filmId}
           numColumns={4}

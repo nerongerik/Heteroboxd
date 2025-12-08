@@ -4,6 +4,7 @@ import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/profileOptionsButton'
 import './browser.css'
+import ListOptionsButton from '../components/listOptionsButton'
 
 const RootLayout = () => {
   return (
@@ -40,7 +41,7 @@ const RootLayout = () => {
           options={{
             headerTitle: 'Watchlist',
             headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+            headerTitleStyle: {color: Colors.text_title},
           }}
         />
         <Stack.Screen 
@@ -48,7 +49,7 @@ const RootLayout = () => {
           options={{
             headerTitle: 'Recents',
             headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+            headerTitleStyle: {color: Colors.text_title},
           }}
         />
         <Stack.Screen 
@@ -56,8 +57,15 @@ const RootLayout = () => {
           options={{
             headerTitle: 'New List',
             headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title, fontSize: 24},
+            headerTitleStyle: {color: Colors.text_title},
           }}
+        />
+        <Stack.Screen 
+          name="list/[listId]"
+          options={({ route }) => ({
+            headerRight: () => <ListOptionsButton listId={route.params?.listId} />,
+            headerTitle: '',
+            })}
         />
       </Stack>
     </AuthProvider>

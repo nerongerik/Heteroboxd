@@ -20,29 +20,15 @@ namespace Heteroboxd.Controller
 
         //GET endpoints -> limited public access
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllLists()
-        {
-            //retrives all lists from database
-            try
-            {
-                var AllLists = await _service.GetAllUserLists();
-                return Ok(AllLists);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("{UserListId}")]
+        [AllowAnonymous] //anyone can view any list...
         public async Task<IActionResult> GetList(string UserListId)
         {
-            //retrives specific list from database
+            _logger.LogInformation($"Get List endpoint hit with ListId: {UserListId}");
             try
             {
-                var List = await _service.GetUserListById(UserListId);
-                return Ok(List);
+                var Response = await _service.GetUserListById(UserListId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -54,14 +40,51 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-lists/{UserId}")]
-        public async Task<IActionResult> GetListsByAuthor(string UserId)
+        [HttpGet("entries/{UserListId}")]
+        [AllowAnonymous] //...and its contents
+        public async Task<IActionResult> GetListEntries(string UserListId, int Page = 1, int PageSize = 20)
         {
-            //retrives all lists by a specific user from database
+            _logger.LogInformation($"Get ListEntries endpoint hit for ListId: {UserListId}");
             try
             {
-                var UsersLists = await _service.GetUsersUserLists(UserId);
+                var Response = await _service.GetListEntriesById(UserListId, Page, PageSize);
+                return Ok(Response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("power/{UserListId}")]
+        [Authorize] //to get a full editable list of entries without pagination, must be logged in
+        public async Task<IActionResult> PowerGetEntries(string UserListId)
+        {
+            _logger.LogInformation($"POWERGet ListEntries endpoint hit for ListId: {UserListId}");
+            try
+            {
+                var Response = await _service.PowerGetEntriesByListId(UserListId);
+                return Ok(Response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("user/{UserId}")]
+        [AllowAnonymous] //anyone can view any user's lists
+        public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation($"Get Lists by Author endpoint hit for User: {UserId}");
+            try
+            {
+                var UsersLists = await _service.GetUsersUserLists(UserId, Page, PageSize);
                 return Ok(UsersLists);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch
             {
@@ -152,10 +175,11 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("like-count/{UserListId}/{LikeChange}")]
+        [Authorize] //only logged in users can like/dislike lists
         public async Task<IActionResult> UpdateLikeCount(string UserListId, string LikeChange)
         {
-            //updates the like count of a list
             //LikeChange should be +1 or -1 (convert to numeral)
+            _logger.LogInformation($"Update Like Count endpoint hit for ListId: {UserListId} with Change: {LikeChange}");
             try
             {
                 await _service.UpdateLikeCountEfCore7Async(UserListId, LikeChange);
@@ -176,9 +200,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("toggle-notifications/{UserListId}")]
+        [Authorize]
         public async Task<IActionResult> ToggleNotifications(string UserListId)
         {
-            //toggles the notifications setting for the list
+            _logger.LogInformation($"Toggle Notifications endpoint hit for ListId: {UserListId}");
             try
             {
                 await _service.ToggleNotificationsEfCore7Async(UserListId);
@@ -200,13 +225,13 @@ namespace Heteroboxd.Controller
 
         //DELETE endpoints -> limited public access (only for their own lists), ADMIN privileges for any list
         [HttpDelete("{UserListId}")]
+        [Authorize]
         public async Task<IActionResult> DeleteList(string UserListId)
         {
-            //deletes a list from the database (logical delete)
-            //normal users can only delete their own lists, admins can delete any list
+            _logger.LogInformation($"Delete List endpoint hit for ListId: {UserListId}");
             try
             {
-                await _service.LogicalDeleteUserList(UserListId);
+                await _service.DeleteUserList(UserListId);
                 return Ok();
             }
             catch (KeyNotFoundException)

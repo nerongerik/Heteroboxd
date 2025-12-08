@@ -1,4 +1,4 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
@@ -404,7 +404,7 @@ const Profile = () => {
         <Text style={styles.subtitle}>Favorites</Text>
         {favoritesResult === 0 ? (
           <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-            <LoadingResponse visible={true} />
+            <ActivityIndicator size="large" color={Colors.text_link} />
           </View>
         ) : (
         <View style={[styles.movies, { width: "100%", justifyContent: "space-between", paddingHorizontal: 10 }]}>
@@ -462,7 +462,7 @@ const Profile = () => {
         >
           {recentResult === 0 ? (
             <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-              <LoadingResponse visible={true} />
+              <ActivityIndicator size="large" color={Colors.text_link} />
             </View>
           ) : recent.length === 0 ? (
             <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
@@ -563,7 +563,7 @@ const Profile = () => {
         duration={3000}
         style={{
           backgroundColor: Colors.card,
-          width: Platform.OS === 'web' && width > 1000 ? '50%' : '90%',
+          width: Platform.OS === 'web' && width > 1000 ? width*0.5 : width*0.9,
           alignSelf: 'center',
           borderRadius: 8,
         }}

@@ -16,6 +16,7 @@ namespace Heteroboxd.Service
         Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId);
         Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId); //example: {"following": [User1, User2, User3], "followers": [User2], "blocked": [User4, User5]}
         Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
+        Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType); //ObjectType: "review", "comment", "list"
         Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUserEfCore7Async(string UserId);
@@ -224,6 +225,25 @@ namespace Heteroboxd.Service
                 { "liked_comments", LikedComments },
                 { "liked_lists", LikedLists }
             };
+        }
+
+        public async Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType)
+        {
+            switch (ObjectType)
+            {
+                case ("review"):
+                    var LikedReview = await _repo.IsReviewLiked(Guid.Parse(UserId), Guid.Parse(ObjectId));
+                    return LikedReview != null;
+                case ("comment"):
+                    var LikedComment = await _repo.IsCommentLiked(Guid.Parse(UserId), Guid.Parse(ObjectId));
+                    return LikedComment != null;
+                case ("list"):
+                    var LikedList = await _repo.IsListLiked(Guid.Parse(UserId), Guid.Parse(ObjectId));
+                    return LikedList != null;
+                default:
+                    _logger.LogError($"Unknown ObjectType: {ObjectType}");
+                    throw new ArgumentException();
+            }
         }
 
         public async Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId)

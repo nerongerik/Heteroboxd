@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable } from 'react-native'
+import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth';
 import { Colors } from '../../../constants/colors';
 import { useEffect, useMemo, useState } from 'react';
@@ -90,6 +90,11 @@ const Watchlist = () => {
       {!widescreen ? (
         //infinite scroll on narrow touchscreens
         <FlatList
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={() => {
+              setEntries([]);
+              loadWatchlistPage(1);
+            }}/>}
           data={entries}
           keyExtractor={(item) => item.filmId}
           numColumns={4}
