@@ -26,8 +26,9 @@ namespace Heteroboxd.Models.DTO
             this.DateCreated = List.DateCreated.ToString("dd/MM/yyyy HH:mm");
             this.NotificationsOn = List.NotificationsOn;
             this.ListEntryCount = List.Films.Count;
-            if (Take < 0) this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).ToList();
-            else this.Films = List.Films.Select(le => new ListEntryInfoResponse(le)).Take(Take).ToList();
+            if (Take < 0) this.Films = List.Films.OrderBy(le => le.Position).Select(le => new ListEntryInfoResponse(le)).ToList();
+            else this.Films = List.Films.OrderBy(le => le.Position).Select(le => new ListEntryInfoResponse(le)).Take(Take).ToList();
+
             this.LikeCount = List.LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
@@ -66,7 +67,7 @@ namespace Heteroboxd.Models.DTO
         public string Name { get; set; }
         public string Description { get; set; }
         public bool Ranked { get; set; }
-        public List<CreateListEntryRequest>? Entries { get; set; } //send full list; we'll check if they should be removed or added, and in what order
+        public List<CreateListEntryRequest> Entries { get; set; } //send full list; we'll check if they should be removed or added, and in what order
     }
 
     public class ListEntryInfoResponse
@@ -74,6 +75,8 @@ namespace Heteroboxd.Models.DTO
         public string Id { get; set; }
         public string DateAdded { get; set; }
         public int Position { get; set; }
+        public string FilmTitle { get; set; }
+        public int FilmYear { get; set; }
         public string FilmPosterUrl { get; set; }
         public string? FilmBackdropUrl { get; set; }
         public int FilmId { get; set; }
@@ -83,6 +86,8 @@ namespace Heteroboxd.Models.DTO
             this.Id = Entry.Id.ToString();
             this.DateAdded = Entry.DateAdded.ToString("dd/MM/yyyy HH:mm");
             this.Position = Entry.Position;
+            this.FilmTitle = Entry.FilmTitle;
+            this.FilmYear = Entry.FilmYear;
             this.FilmPosterUrl = Entry.FilmPosterUrl;
             this.FilmBackdropUrl = Entry.FilmBackdropUrl;
             this.FilmId = Entry.FilmId;

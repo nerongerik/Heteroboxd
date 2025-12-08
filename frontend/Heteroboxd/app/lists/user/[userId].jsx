@@ -231,7 +231,7 @@ const UsersLists = () => {
                   </Text>
                   <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: 5}}>
                     <Fontisto name="nav-icon-list-a" size={20} color={Colors._heteroboxd} />
-                    <Text style={{color: Colors._heteroboxd, fontSize: 18, fontWeight: 'bold', marginRight: 10, marginLeft: 3}}>{item.films.length}</Text>
+                    <Text style={{color: Colors._heteroboxd, fontSize: 18, fontWeight: 'bold', marginRight: 10, marginLeft: 3}}>{item.listEntryCount}</Text>
                     <Fontisto name="heart" size={20} color={Colors.heteroboxd} />
                     <Text style={{color: Colors.heteroboxd, fontSize: 18, fontWeight: 'bold', marginLeft: 3}}>{item.likeCount}</Text>
                   </View>

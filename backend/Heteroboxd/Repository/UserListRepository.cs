@@ -19,6 +19,7 @@ namespace Heteroboxd.Repository
         Task UpdateLikeCountEfCore7Async(Guid ListId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid ListId);
         void Delete(UserList UserList);
+        void DeleteEntriesByListId(Guid ListId);
         Task SaveChangesAsync();
     }
 
@@ -138,6 +139,14 @@ namespace Heteroboxd.Repository
         {
             _context.UserLists
                 .Remove(UserList);
+        }
+
+        public void DeleteEntriesByListId(Guid ListId)
+        {
+            var Entries = _context.ListEntries
+                .Where(le => le.UserListId == ListId);
+            _context.ListEntries
+                .RemoveRange(Entries);
         }
 
         public async Task SaveChangesAsync() =>

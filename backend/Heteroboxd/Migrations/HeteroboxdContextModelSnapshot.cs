@@ -231,6 +231,13 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("FilmTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("FilmYear")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 

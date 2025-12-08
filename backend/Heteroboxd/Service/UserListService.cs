@@ -6,9 +6,9 @@ namespace Heteroboxd.Service
 {
     public interface IUserListService
     {
-        //Task<List<UserListInfoResponse>> GetAllUserLists();
         Task<UserListInfoResponse> GetUserListById(string ListId);
         Task<PagedEntriesResponse> GetListEntriesById(string ListId, int Page, int PageSize);
+        Task<List<ListEntryInfoResponse>> PowerGetEntriesByListId(string ListId);
         Task<PagedUserListsInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize);
         Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId);
         Task<PagedUserListsInfoResponse> SearchUserLists(string Search);
@@ -33,14 +33,6 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
-        /*
-        public async Task<List<UserListInfoResponse>> GetAllUserLists()
-        {
-            var Lists = await _repo.GetAllAsync();
-            return Lists.Select(l => new UserListInfoResponse(l)).ToList();
-        }
-        */
-
         public async Task<UserListInfoResponse> GetUserListById(string ListId)
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
@@ -61,6 +53,12 @@ namespace Heteroboxd.Service
                 PageSize = PageSize,
                 Entries = Entries.Select(le => new ListEntryInfoResponse(le)).ToList()
             };
+        }
+
+        public async Task<List<ListEntryInfoResponse>> PowerGetEntriesByListId(string ListId)
+        {
+            var Entries = await _repo.PowerGetEntries(Guid.Parse(ListId));
+            return Entries.Select(le => new ListEntryInfoResponse(le)).ToList();
         }
 
         public async Task<PagedUserListsInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize)
@@ -127,7 +125,7 @@ namespace Heteroboxd.Service
             {
                 var Film = await _filmRepo.LightweightFetcher(Request.FilmId);
                 if (Film == null) continue;
-                _repo.CreateEntry(new ListEntry(Request.Position, Film.PosterUrl, Film.BackdropUrl, Request.FilmId, Guid.Parse(AuthorId), ListId));
+                _repo.CreateEntry(new ListEntry(Request.Position, Film.Title, Film.ReleaseYear, Film.PosterUrl, Film.BackdropUrl, Request.FilmId, Guid.Parse(AuthorId), ListId));
             }
             await _repo.SaveChangesAsync();
         }
@@ -136,26 +134,13 @@ namespace Heteroboxd.Service
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListRequest.ListId));
             if (List == null) throw new KeyNotFoundException();
-            if (ListRequest.Entries == null)
-            {
-                List.Name = ListRequest.Name;
-                List.Description = ListRequest.Description;
-                List.Ranked = ListRequest.Ranked;
-                List.DateCreated = DateTime.UtcNow;
-                await _repo.SaveChangesAsync();
-            }
-            else
-            {
-                string AuthorId = List.AuthorId.ToString();
-                /*
-                honestly I just don't give a shit
-                we'll just delete the whole thing and create a new one lmao
-                can't bother updating every single position of every single entry from scratch
-                */
-                await DeleteUserList(ListRequest.ListId);
-                Guid RecreatedId = await AddList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, AuthorId);
-                await AddListEntries(AuthorId, RecreatedId, ListRequest.Entries);
-            }
+            List.Name = ListRequest.Name;
+            List.Description = ListRequest.Description;
+            List.Ranked = ListRequest.Ranked;
+            List.DateCreated = DateTime.UtcNow;
+            _repo.DeleteEntriesByListId(List.Id);
+            await _repo.SaveChangesAsync();
+            await AddListEntries(List.AuthorId.ToString(), List.Id, ListRequest.Entries);
         }
 
         public async Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange)

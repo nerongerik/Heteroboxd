@@ -8,17 +8,21 @@ namespace Heteroboxd.Models
         public Guid Id { get; set; }
         public DateTime DateAdded { get; set; }
         public int Position { get; set; } //keep nullable for now but may constrain later
+        public string FilmTitle { get; set; } //simplifies display
+        public int FilmYear { get; set; } //simplifies display
         public string FilmPosterUrl { get; set; } //simplifies display
         public string? FilmBackdropUrl { get; set; } //simplifies display
         public int FilmId { get; set; }
         public Guid AuthorId { get; set; } //for easier querying, it may be useful to include who added entry into their list
         public Guid UserListId { get; set; } //foreign key
 
-        public ListEntry(int Position, string FilmPosterUrl, string? FilmBackdropUrl, int FilmId, Guid AuthorId, Guid UserListId)
+        public ListEntry(int Position, string FilmTitle, int FilmYear, string FilmPosterUrl, string? FilmBackdropUrl, int FilmId, Guid AuthorId, Guid UserListId)
         {
             this.Id = Guid.NewGuid();
             this.DateAdded = DateTime.UtcNow;
             this.Position = Position;
+            this.FilmTitle = FilmTitle;
+            this.FilmYear = FilmYear;
             this.FilmPosterUrl = FilmPosterUrl;
             this.FilmBackdropUrl = FilmBackdropUrl;
             this.FilmId = FilmId;

@@ -56,6 +56,22 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("power/{UserListId}")]
+        [Authorize] //to get a full editable list of entries without pagination, must be logged in
+        public async Task<IActionResult> PowerGetEntries(string UserListId)
+        {
+            _logger.LogInformation($"POWERGet ListEntries endpoint hit for ListId: {UserListId}");
+            try
+            {
+                var Response = await _service.PowerGetEntriesByListId(UserListId);
+                return Ok(Response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("user/{UserId}")]
         [AllowAnonymous] //anyone can view any user's lists
         public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20)
