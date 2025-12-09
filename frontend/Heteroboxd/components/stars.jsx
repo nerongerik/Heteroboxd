@@ -54,9 +54,9 @@ const Stars = ({ size, rating = 0, onRatingChange, readonly = false }) => {
   };
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: readonly ? 0 : 20, paddingVertical: readonly ? 0 : 10 }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'center', paddingHorizontal: readonly ? 0 : 20, paddingVertical: readonly ? 0 : 10 }}>
       {stars.map((starValue, index) => (
-        <Pressable key={index} onPress={readonly ? null : () => handlePress(index)}>
+        <Pressable key={index} onPress={readonly ? null : () => handlePress(index)} style={{marginRight: index === 4 ? 0 : 2}}>
           {starValue === 2 && (
             <MaterialCommunityIcons
               name="star"

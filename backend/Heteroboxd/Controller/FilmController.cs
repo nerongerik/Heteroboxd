@@ -18,24 +18,6 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        //GET endpoints -> public access
-
-        [HttpGet]
-        [Authorize(Policy = "RequireAdminTier")]
-        public async Task<IActionResult> GetAllFilms()
-        {
-            //retrives all films from database
-            try
-            {
-                var AllFilms = await _service.GetAllFilms();
-                return Ok(AllFilms);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("trending")]
         public IActionResult GetTrendingFilms()
         {

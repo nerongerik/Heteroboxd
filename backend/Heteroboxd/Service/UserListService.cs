@@ -10,11 +10,14 @@ namespace Heteroboxd.Service
         Task<PagedEntriesResponse> GetListEntriesById(string ListId, int Page, int PageSize);
         Task<List<ListEntryInfoResponse>> PowerGetEntriesByListId(string ListId);
         Task<PagedUserListsInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize);
-        Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId);
+        Task<List<DelimitedListInfoResponse>> GetDelimitedLists(string UserId, int FilmId);
+        Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId, int Page, int PageSize);
+        Task<int> GetListsFeaturingFilmCount(int FilmId);
         Task<PagedUserListsInfoResponse> SearchUserLists(string Search);
         Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
         Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries);
         Task UpdateList(UpdateUserListRequest ListRequest);
+        Task UpdateListsBulk(BulkUpdateRequest Request);
         Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange);
         Task ToggleNotificationsEfCore7Async(string ListId);
         Task DeleteUserList(string ListId);
@@ -75,7 +78,27 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId)
+        public async Task<List<DelimitedListInfoResponse>> GetDelimitedLists(string UserId, int FilmId)
+        {
+            var User = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
+            if (User == null) throw new KeyNotFoundException();
+            var Lists = await _repo.GetUsersListsLightweight(User.Id);
+            List<DelimitedListInfoResponse> Response = new List<DelimitedListInfoResponse>();
+            foreach (UserList ul in Lists)
+            {
+                var ListEntries = await _repo.PowerGetEntries(ul.Id);
+                Response.Add(new DelimitedListInfoResponse
+                {
+                    ListId = ul.Id.ToString(),
+                    ListName = ul.Name,
+                    ContainsFilm = ListEntries.Any(le => le.FilmId == FilmId),
+                    Size = ListEntries.Count()
+                });
+            }
+            return Response;
+        }
+        
+        public async Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId, int Page, int PageSize)
         {
             /*
             var FilmsLists = await _repo.GetFeaturingFilmAsync(FilmId);
@@ -91,6 +114,12 @@ namespace Heteroboxd.Service
             return Lists.ToList();
             */
             throw new NotImplementedException();
+        }
+
+        public async Task<int> GetListsFeaturingFilmCount(int FilmId)
+        {
+            var Count = await _repo.GetFeaturingFilmCount(FilmId);
+            return Count;
         }
 
         public async Task<PagedUserListsInfoResponse> SearchUserLists(string Search)
@@ -141,6 +170,17 @@ namespace Heteroboxd.Service
             _repo.DeleteEntriesByListId(List.Id);
             await _repo.SaveChangesAsync();
             await AddListEntries(List.AuthorId.ToString(), List.Id, ListRequest.Entries);
+        }
+        
+        public async Task UpdateListsBulk(BulkUpdateRequest Request)
+        {
+            var Film = await _filmRepo.LightweightFetcher(Request.FilmId);
+            if (Film == null) throw new KeyNotFoundException();
+            foreach (var kvp in Request.Lists)
+            {
+                _repo.CreateEntry(new ListEntry(kvp.Value + 1, Film.Title, Film.ReleaseYear, Film.PosterUrl, Film.BackdropUrl, Film.Id, Guid.Parse(Request.AuthorId), Guid.Parse(kvp.Key)));
+            }
+            await _repo.SaveChangesAsync();
         }
 
         public async Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange)

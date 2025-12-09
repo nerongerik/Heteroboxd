@@ -11,7 +11,9 @@ namespace Heteroboxd.Repository
         Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize); //view
         Task<List<ListEntry>> PowerGetEntries(Guid ListId); //update
         Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
-        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId);
+        Task<List<UserList>> GetUsersListsLightweight(Guid UserId);
+        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize);
+        Task<int> GetFeaturingFilmCount(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
         void CreateEntry(ListEntry ListEntry);
@@ -74,9 +76,19 @@ namespace Heteroboxd.Repository
             return (Lists, TotalCount);
         }
 
+        public async Task<List<UserList>> GetUsersListsLightweight(Guid UserId) =>
+            await _context.UserLists
+                .Where(ul => ul.AuthorId == UserId)
+                .ToListAsync();
 
-        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId) =>
+        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize) =>
             throw new NotImplementedException();
+
+        public async Task<int> GetFeaturingFilmCount(int FilmId) =>
+            await _context.UserLists
+                .Include(ul => ul.Films)
+                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
+                .CountAsync();
 
         public async Task<List<UserList>> SearchAsync(string Search)
         {

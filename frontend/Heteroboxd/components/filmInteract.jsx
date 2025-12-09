@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View, Pressable, Modal } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View, Pressable, Modal, ScrollView } from 'react-native'
 import { UserAvatar } from './userAvatar'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
@@ -11,11 +11,11 @@ import * as auth from '../helpers/auth'
 import { useAuth } from '../hooks/useAuth';
 import { Snackbar } from 'react-native-paper';
 import Stars from './stars';
+import Entypo from '@expo/vector-icons/Entypo';
+import Checkbox from 'expo-checkbox';
+import { Link } from 'expo-router';
 
 const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
-
-  console.log(seen);
-
   const [menuShown, setMenuShown] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
 
@@ -28,6 +28,9 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
 
   const [snackVisible, setSnackVisible] = useState(false);
   const [snackMessage, setSnackMessage] = useState("");
+
+  const [listsClicked, setListsClicked] = useState(false);
+  const [usersLists, setUsersLists] = useState([]);
 
   useEffect(() => {
     setSeenLocalCopy(seen);
@@ -49,7 +52,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
-    }).start(() => setMenuShown(false));
+    }).start(() => {setListsClicked(false); setMenuShown(false)});
   };
 
   const translateY = slideAnim.interpolate({
@@ -58,7 +61,6 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
   });
 
   //extracted components
-
   const button = 
     <View style={[styles.card, {width: widescreen ? '50%' : '90%', borderWidth: widescreen ? 0 : 2, borderColor: widescreen ? 'transparent' : Colors._heteroboxd}]}>
       <Pressable onPress={openMenu}>
@@ -127,6 +129,52 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
       </TouchableOpacity>
       <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Watchlist</Text>
     </View>
+
+  const selectLists = //these are the lists to which the selected film will be added
+    <>        
+      {
+        usersLists?.length > 0 ? (
+          <ScrollView
+            style={{ maxHeight: widescreen ? 500 : 250 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {usersLists.map((item) => (
+              <View key={item.listId} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, paddingHorizontal: 20 }}>
+                <Checkbox
+                  color={Colors.heteroboxd}
+                  style={{width: widescreen ? 24 : 20, height: widescreen ? 24 : 20}}
+                  disabled={item.containsFilm}
+                  value={item.containsFilm || item.selected || false}
+                  onValueChange={(checked) => {
+                    setUsersLists(prev =>
+                      prev.map(l =>
+                        l.listId === item.listId ? { ...l, selected: checked } : l
+                      )
+                    );
+                  }}
+                />
+                <Text style={{ marginLeft: 8, marginRight: 8, color: Colors.text, fontSize: widescreen ? 24 : 20 }}>{item.listName}</Text>
+              </View>
+            ))}
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15}}>
+              <Pressable style={{marginRight: 20, backgroundColor: Colors.button_reject, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4}} onPress={() => listsClicked(false)}>
+                <Text style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Cancel</Text>
+              </Pressable>
+              <Pressable style={{backgroundColor: Colors.button_confirm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 2}} onPress={addToLists}>
+                <Text style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Add</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        ) : (
+          <View>
+            <Text>
+              You have not created any lists. 
+              <Link href="/list/create">Create one now?</Link>
+            </Text>
+          </View>
+        )
+      }
+    </>
 
   //handlers
   async function handleWatch() {
@@ -234,6 +282,76 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
     }
   }
 
+  async function fetchLists() {
+    const vS = await isValidSession();
+    if (!user || !vS) {
+      setSnackMessage('Session expired! Try logging in again.');
+      setSnackVisible(true);
+    }
+    try {
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/lists/film-interact/${user.userId}/${filmId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        }
+      });
+      if (res.status === 200) {
+        const json = await res.json();
+        setUsersLists(json);
+      } else {
+        setSnackMessage(`${res.status}: Failed to fetch your lists! Try reloading Heteroboxd.`);
+        setSnackVisible(true);
+      }
+    } catch {
+      setSnackMessage('Network error - check your internet connection.');
+      setSnackVisible(true);
+    }
+  }
+
+  async function addToLists() {
+    const vS = await isValidSession();
+    if (!user || !vS) {
+      setListsClicked(false);
+      setSnackMessage('Session expired! Try logging in again.');
+      setSnackVisible(true);  
+    }
+    try {
+      const lists = usersLists
+        .filter(item => item.selected)
+        .map(item => ({
+          key: item.listId,
+          value: item.size
+        }));
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/lists/update-bulk`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          AuthorId: user.userId,
+          FilmId: filmId,
+          Lists: lists
+        })
+      });
+      if (res.status !== 200) {
+        setListsClicked(false);
+        setSnackMessage(`${res.status}: Updating lists failed! Try reloading Heteroboxd.`);
+        setSnackVisible(true);
+      }
+      setListsClicked(false);
+      setSnackMessage(`Film added.`);
+      setSnackVisible(true);
+    } catch {
+      setListsClicked(false);
+      setSnackMessage('Network error - check your internet connection.');
+      setSnackVisible(true);
+    }
+  }
+
   return (
     <>
       { widescreen
@@ -251,9 +369,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
         </Pressable>
 
-        <Animated.View style={[styles.menu, {width: widescreen ? '50%' : '100%', alignSelf: 'center'}, { transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.menu, {width: widescreen ? 750 : '100%', alignSelf: 'center'}, { transform: [{ translateY }] }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-
             {seenLocalCopy ? (
               seenPressed ? (
                 <>
@@ -267,10 +384,31 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
               watch
             )}
             {watchlistedLocalCopy ? unwatchlist : watchlist}
-
           </View>
+
           <View style={styles.divider} />
-          <Stars size={60} rating={ratingLocalCopy} onRatingChange={(newRating) => setRatingLocalCopy(newRating)} />
+
+          <Stars size={widescreen ? 60 : 50} rating={ratingLocalCopy} onRatingChange={(newRating) => setRatingLocalCopy(newRating)} />
+          <Text style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</Text>
+
+          <View style={styles.divider} />
+          
+          {
+            listsClicked ? (
+                selectLists
+            ) : (
+              <TouchableOpacity onPress={async () => {
+                await fetchLists();
+                setListsClicked(true);
+              }}>
+                <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
+                  <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</Text>
+                  <Entypo name="add-to-list" size={24} color={Colors.text} />
+                </View>
+              </TouchableOpacity>
+            )
+          }
+
           <Snackbar
             visible={snackVisible}
             onDismiss={() => setSnackVisible(false)}
@@ -282,7 +420,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
               borderRadius: 8,
             }}
             action={{
-              label: ':(',
+              label: 'OK',
               onPress: () => setSnackVisible(false),
               textColor: Colors.text_link
             }}

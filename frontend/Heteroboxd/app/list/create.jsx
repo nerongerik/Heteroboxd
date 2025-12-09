@@ -229,7 +229,7 @@ const CreateList = () => {
           <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
           {
             (searchResults && searchResults.length > 0) ? (
-              <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: width*0.95}]}>
+              <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: widescreen ? width*0.5 : width*0.95}]}>
               <FlatList
                 data={searchResults}
                 numColumns={1}

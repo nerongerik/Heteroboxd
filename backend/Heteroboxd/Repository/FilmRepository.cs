@@ -7,7 +7,6 @@ namespace Heteroboxd.Repository
 {
     public interface IFilmRepository
     {
-        Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Film?> LightweightFetcher(int FilmId);
         Task<Film?> GetByIdAsync(int Id);
         Task<List<Film>> GetBySlugAsync(string Slug);
@@ -26,11 +25,6 @@ namespace Heteroboxd.Repository
         {
             _context = context;
         }
-
-        public async Task<List<Film>> GetAllAsync(CancellationToken CancellationToken = default) =>
-            await _context.Films
-            .Where(f => !f.Deleted)
-            .ToListAsync(CancellationToken);
 
         public async Task<Film?> LightweightFetcher(int FilmId) =>
             await _context.Films

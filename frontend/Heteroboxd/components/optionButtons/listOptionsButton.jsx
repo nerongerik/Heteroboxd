@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
-import { Colors } from '../constants/colors';
+import { useAuth } from '../../hooks/useAuth';
+import { Colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { BaseUrl } from '../constants/api';
-import * as auth from '../helpers/auth';
+import { BaseUrl } from '../../constants/api';
+import * as auth from '../../helpers/auth';
 import { Snackbar } from 'react-native-paper';
 
 const ListOptionsButton = ({ listId }) => {

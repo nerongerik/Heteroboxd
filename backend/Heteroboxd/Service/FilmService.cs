@@ -5,7 +5,6 @@ namespace Heteroboxd.Service
 {
     public interface  IFilmService
     {
-        Task<List<FilmInfoResponse>> GetAllFilms();
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<FilmInfoResponse?> GetFilmBySlug(string Slug, int? FilmId);
         Task<PagedFilmInfoResponse> GetFilmsByYear(int Year, int Page, int PageSize);
@@ -25,12 +24,6 @@ namespace Heteroboxd.Service
         {
             _repo = repo;
             _logger = logger;
-        }
-
-        public async Task<List<FilmInfoResponse>> GetAllFilms()
-        {
-            var AllFilms = await _repo.GetAllAsync();
-            return AllFilms.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
         public Task<List<FilmInfoResponse>> GetTrendingFilms()

@@ -52,6 +52,14 @@ namespace Heteroboxd.Models.DTO
         public List<UserListInfoResponse> Lists { get; set; }
     }
 
+    public class DelimitedListInfoResponse
+    {
+        public string ListId { get; set; }
+        public string ListName { get; set; }
+        public bool ContainsFilm { get; set; }
+        public int Size { get; set; }
+    }
+
     public class CreateUserListRequest
     {
         public string Name { get; set; }
@@ -68,6 +76,13 @@ namespace Heteroboxd.Models.DTO
         public string Description { get; set; }
         public bool Ranked { get; set; }
         public List<CreateListEntryRequest> Entries { get; set; } //send full list; we'll check if they should be removed or added, and in what order
+    }
+
+    public class BulkUpdateRequest
+    {
+        public string AuthorId { get; set; }
+        public int FilmId { get; set; }
+        public List<KeyValuePair<string, int>> Lists { get; set; }
     }
 
     public class ListEntryInfoResponse

@@ -92,18 +92,55 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("featuring-film/{FilmId}")]
-        public async Task<IActionResult> GetListsFeaturingFilm(int FilmId)
+        [HttpGet("film-interact/{UserId}/{FilmId}")]
+        [Authorize] //only logged in users can view their own lists (where a film can be added)
+        public async Task<IActionResult> GetAuthorsListsDelimitedFilm(string UserId, int FilmId)
         {
-            //retrives all lists featuring a specific film from database
+            _logger.LogInformation($"Get Lists of User: {UserId} delimited by Film: {FilmId}");
             try
             {
-                var FilmsLists = await _service.GetListsFeaturingFilm(FilmId);
+                var Result = await _service.GetDelimitedLists(UserId, FilmId);
+                return Ok(Result);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("featuring-film/{FilmId}")]
+        [AllowAnonymous] //anyone can view lists featuring a specific film
+        public async Task<IActionResult> GetListsFeaturingFilm(int FilmId, int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation($"Get Lists featuring Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
+            try
+            {
+                var FilmsLists = await _service.GetListsFeaturingFilm(FilmId, Page, PageSize);
                 return Ok(FilmsLists);
             }
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("featuring-film/{FilmId}/count")]
+        [AllowAnonymous] //anyone can view how many lists feature a specific film
+        public async Task<IActionResult> GetListsFeaturingFilmCount(int FilmId)
+        {
+            _logger.LogInformation($"Get Lists featuring Film COUNT endpoint hit for FilmId: {FilmId}");
+            try
+            {
+                var Count = await _service.GetListsFeaturingFilmCount(FilmId);
+                return Ok(Count);
             }
             catch
             {
@@ -152,9 +189,10 @@ namespace Heteroboxd.Controller
         //PUT endpoints -> limited public access (only for their own lists)
 
         [HttpPut]
+        [Authorize]
         public async Task<IActionResult> UpdateList([FromBody] UpdateUserListRequest ListRequest)
         {
-            //updates an existing list in the database
+            _logger.LogInformation($"Update List endpoint hit for ListId: {ListRequest.ListId}");
             try
             {
                 await _service.UpdateList(ListRequest);
@@ -167,6 +205,26 @@ namespace Heteroboxd.Controller
             catch (ArgumentException)
             {
                 return BadRequest();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPut("update-bulk")]
+        [Authorize]
+        public async Task<IActionResult> UpdateListsBulk([FromBody] BulkUpdateRequest Request)
+        {
+            _logger.LogInformation($"Bulk Update Lists endpoint hit for FilmId: {Request.FilmId}");
+            try
+            {
+                await _service.UpdateListsBulk(Request);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch
             {

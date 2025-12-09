@@ -2,9 +2,9 @@ import { Platform, StyleSheet } from 'react-native'
 import { Stack } from 'expo-router'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
-import ProfileOptionsButton from '../components/profileOptionsButton'
+import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
 import './browser.css'
-import ListOptionsButton from '../components/listOptionsButton'
+import ListOptionsButton from '../components/optionButtons/listOptionsButton'
 
 const RootLayout = () => {
   return (

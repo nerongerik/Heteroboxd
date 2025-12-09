@@ -12,6 +12,7 @@ import { Backdrop } from '../../components/backdrop';
 import React from 'react';
 import { Headshot } from '../../components/headshot';
 import FilmInteract from '../../components/filmInteract';
+import FilmDataLoaders from '../../components/filmDataLoaders';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -19,6 +20,8 @@ const Film = () => {
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
 
   const [watchlisted, setWatchlisted] = useState(null);
+
+  const [listsCount, setListsCount] = useState(0);
 
   const { navprop } = useLocalSearchParams(); //navigational property
   const router = useRouter();
@@ -44,7 +47,7 @@ const Film = () => {
             id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
             tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
             releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-            collection: json.collection, castAndCrew: json.castAndCrew
+            collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
           });
           setResult(200);
         } else if (fRes.status === 404) {
@@ -102,7 +105,7 @@ const Film = () => {
             id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
             tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
             releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-            collection: json.collection, castAndCrew: json.castAndCrew
+            collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
           });
           setResult(200);
         } else if (fRes.status === 404) {
@@ -175,6 +178,27 @@ const Film = () => {
       }
     })();
   }, [film, user]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${BaseUrl.api}/lists/featuring-film/${film?.id}/count`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (res.status === 200) {
+          const json = await res.json();
+          setListsCount(json);
+        } else {
+          console.log(`${res.status}: Failed to fetch featuring lists count.`);
+        }
+      } catch {
+        console.log(`${res.status}: Possible network error; probably failed earlier.`);
+      }
+    })();
+  }, [film]);
 
   useEffect(() => {
     (async () => {
@@ -335,6 +359,10 @@ const Film = () => {
 
         <View style={styles.divider}></View>
 
+        <FilmDataLoaders filmId={film?.id} watchCount={film?.watchCount ?? 0} reviewCount={film?.reviewCount} listsIncluded={listsCount} widescreen={widescreen} />
+
+        <View style={styles.divider}></View>
+
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Cast</Text>
         <ScrollView
           horizontal
@@ -451,7 +479,7 @@ const Film = () => {
 
         <View style={styles.divider}></View>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[REVIEWS]</Text>
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[TOP 3 REVIEWS PLACEHOLDER]</Text>
 
         <View style={styles.divider}></View>
         
