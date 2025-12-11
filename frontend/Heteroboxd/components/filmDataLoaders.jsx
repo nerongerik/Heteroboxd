@@ -15,7 +15,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
   return (
     <View style={{flexDirection: 'row', padding: 15, alignItems: 'center', justifyContent: 'center'}}>
       <TouchableOpacity
-        style={[styles.button, {marginRight: widescreen ? 35 : 10, backgroundColor: '#01b020', width: widescreen ? 125 : 100}, (watchCount === 0) && {opacity: 0.5}]}
+        style={[styles.button, {paddingHorizontal: widescreen ? 10 : null, marginRight: widescreen ? 35 : 10, backgroundColor: '#01b020', width: widescreen ? 125 : 100}, (watchCount === 0) && {opacity: 0.5}]}
         onPress={() => router.push(`/gotcha`)}
         disabled={watchCount === 0}
       >
@@ -24,7 +24,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         <Text style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{formatCount(watchCount)}</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.button, {marginRight: widescreen ? 35 : 10, backgroundColor: Colors.text, width: widescreen ? 125 : 100}, (reviewCount === 0) && {opacity: 0.5}]}
+        style={[styles.button, {paddingHorizontal: widescreen ? 10 : null, marginRight: widescreen ? 35 : 10, backgroundColor: Colors.text, width: widescreen ? 125 : 100}, (reviewCount === 0) && {opacity: 0.5}]}
         onPress={() => router.push(`/reviews/film/${filmId}`)}
         disabled={reviewCount === 0}
       >
@@ -33,7 +33,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         <Text style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{formatCount(reviewCount)}</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.button, {backgroundColor: Colors._heteroboxd, marginRight: 0, width: widescreen ? 125 : 100}, (listsIncluded === 0) && {opacity: 0.5}]}
+        style={[styles.button, {paddingHorizontal: widescreen ? 10 : null, backgroundColor: Colors._heteroboxd, marginRight: 0, width: widescreen ? 125 : 100}, (listsIncluded === 0) && {opacity: 0.5}]}
         onPress={() => router.push(`/lists/film/${filmId}`)}
         disabled={listsIncluded === 0}
       >

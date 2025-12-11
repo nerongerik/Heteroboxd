@@ -6,15 +6,13 @@ namespace Heteroboxd.Repository
 {
     public interface ICommentRepository
     {
-        Task<List<Comment>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Comment?> GetByIdAsync(Guid Id);
         Task<List<Comment>> GetByReviewAsync(Guid ReviewId);
-        Task<List<Comment>> GetByAuthorAsync(Guid UserId);
-        void Create(Comment Comment);
-        void Update(Comment Comment);
         Task UpdateLikeCountEfCore7Async(Guid CommentId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid CommentId);
         Task ReportEfCore7Async(Guid CommentId);
+        void Create(Comment Comment);
+        void Update(Comment Comment);
         void Delete(Comment Comment);
         Task SaveChangesAsync();
     }
@@ -28,36 +26,14 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<List<Comment>> GetAllAsync(CancellationToken CancellationToken = default) =>
-            await _context.Comments
-                .Where(c => !c.Deleted)
-                .ToListAsync(CancellationToken);
-
         public async Task<Comment?> GetByIdAsync(Guid Id) =>
             await _context.Comments
-                .FirstOrDefaultAsync(c => c.Id == Id && !c.Deleted);
+                .FirstOrDefaultAsync(c => c.Id == Id);
 
         public async Task<List<Comment>> GetByReviewAsync(Guid ReviewId) =>
             await _context.Comments
-                .Where(c => c.ReviewId == ReviewId && !c.Deleted)
+                .Where(c => c.ReviewId == ReviewId)
                 .ToListAsync();
-
-        public async Task<List<Comment>> GetByAuthorAsync(Guid UserId) =>
-            await _context.Comments
-                .Where(c => c.AuthorId == UserId && !c.Deleted)
-                .ToListAsync();
-
-        public void Create(Comment Comment)
-        {
-            _context.Comments
-                .Add(Comment);
-        }
-
-        public void Update(Comment Comment)
-        {
-            _context.Comments
-                .Update(Comment);
-        }
 
         public async Task UpdateLikeCountEfCore7Async(Guid CommentId, int Delta) //increments/decrements like count
         {
@@ -92,11 +68,17 @@ namespace Heteroboxd.Repository
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public void Delete(Comment Comment)
-        {
+        public void Create(Comment Comment) =>
+             _context.Comments
+                .Add(Comment);
+
+        public void Update(Comment Comment) =>
+            _context.Comments
+                .Update(Comment);
+
+        public void Delete(Comment Comment) =>
             _context.Comments
                 .Remove(Comment);
-        }
 
         public async Task SaveChangesAsync() =>
             await _context.SaveChangesAsync();

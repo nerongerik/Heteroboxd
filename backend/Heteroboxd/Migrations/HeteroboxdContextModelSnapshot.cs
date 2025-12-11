@@ -45,9 +45,6 @@ namespace Heteroboxd.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
@@ -115,9 +112,6 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("Flags")
                         .HasColumnType("integer");
 
@@ -159,9 +153,6 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasColumnType("jsonb");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
 
                     b.Property<int>("FavoriteCount")
                         .HasColumnType("integer");
@@ -260,9 +251,6 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("Read")
                         .HasColumnType("boolean");
 
@@ -323,9 +311,6 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("FilmId")
                         .HasColumnType("integer");
 
@@ -374,9 +359,6 @@ namespace Heteroboxd.Migrations
 
                     b.Property<DateTime>("DateJoined")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)

@@ -90,11 +90,12 @@
         }
     }
 
+    public class PagedReviewResponse { }
+
     public class CreateReviewRequest
     {
         public double Rating { get; set; }
         public string? Text { get; set; }
-        public int Flags { get; set; }
         public bool Spoiler { get; set; }
         public string AuthorId { get; set; }
         public int FilmId { get; set; }

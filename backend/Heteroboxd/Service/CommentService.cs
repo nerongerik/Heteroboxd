@@ -6,16 +6,14 @@ namespace Heteroboxd.Service
 {
     public interface ICommentService
     {
-        Task<List<CommentInfoResponse>> GetAllComments();
         Task<CommentInfoResponse?> GetComment(string CommentId);
         Task<List<CommentInfoResponse>> GetCommentsByReview(string ReviewId);
-        Task<List<CommentInfoResponse>> GetCommentsByAuthor(string UserId);
+        Task UpdateCommentLikeCountEfCore7(string CommentId, string LikeChange);
+        Task ToggleNotificationsEfCore7(string CommentId);
+        Task ReportCommentEfCore7(string CommentId);
         Task CreateComment(CreateCommentRequest CommentRequest);
         Task UpdateComment(UpdateCommentRequest CommentRequest);
-        Task UpdateCommentLikeCountEfCore7Async(string CommentId, string LikeChange);
-        Task ToggleNotificationsEfCore7Async(string CommentId);
-        Task ReportCommentEfCore7Async(string CommentId);
-        Task LogicalDeleteComment(string CommentId);
+        Task DeleteComment(string CommentId);
     }
 
     public class CommentService : ICommentService
@@ -29,12 +27,6 @@ namespace Heteroboxd.Service
             _repo = repo;
             _userRepo = userRepo;
             _reviewRepo = reviewRepo;
-        }
-
-        public async Task<List<CommentInfoResponse>> GetAllComments()
-        {
-            var AllComments = await _repo.GetAllAsync();
-            return AllComments.Select(c => new CommentInfoResponse(c)).ToList();
         }
 
         public async Task<CommentInfoResponse?> GetComment(string CommentId)
@@ -61,10 +53,23 @@ namespace Heteroboxd.Service
             return Comments.ToList();
         }
 
-        public async Task<List<CommentInfoResponse>> GetCommentsByAuthor(string UserId)
+        public async Task UpdateCommentLikeCountEfCore7(string CommentId, string LikeChange)
         {
-            var UsersComments = await _repo.GetByAuthorAsync(Guid.Parse(UserId));
-            return UsersComments.Select(c => new CommentInfoResponse(c)).ToList();
+            if (!Guid.TryParse(CommentId, out var Id)) throw new ArgumentException();
+            if (!int.TryParse(LikeChange, out var Delta)) throw new ArgumentException();
+            await _repo.UpdateLikeCountEfCore7Async(Id, Delta);
+        }
+
+        public async Task ToggleNotificationsEfCore7(string CommentId)
+        {
+            if (!Guid.TryParse(CommentId, out var Id)) throw new ArgumentException();
+            await _repo.ToggleNotificationsEfCore7Async(Id);
+        }
+
+        public async Task ReportCommentEfCore7(string CommentId)
+        {
+            if (!Guid.TryParse(CommentId, out var Id)) throw new ArgumentException();
+            await _repo.ReportEfCore7Async(Id);
         }
 
         public async Task CreateComment(CreateCommentRequest CommentRequest)
@@ -83,31 +88,11 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateCommentLikeCountEfCore7Async(string CommentId, string LikeChange)
-        {
-            if (!Guid.TryParse(CommentId, out var Id)) throw new ArgumentException();
-            if (!int.TryParse(LikeChange, out var Delta)) throw new ArgumentException();
-            await _repo.UpdateLikeCountEfCore7Async(Id, Delta);
-        }
-
-        public async Task ToggleNotificationsEfCore7Async(string CommentId)
-        {
-            if (!Guid.TryParse(CommentId, out var Id)) throw new ArgumentException();
-            await _repo.ToggleNotificationsEfCore7Async(Id);
-        }
-
-        public async Task ReportCommentEfCore7Async(string CommentId)
-        {
-            if (!Guid.TryParse(CommentId, out var Id)) throw new ArgumentException();
-            await _repo.ReportEfCore7Async(Id);
-        }
-
-        public async Task LogicalDeleteComment(string CommentId)
+        public async Task DeleteComment(string CommentId)
         {
             var Comment = await _repo.GetByIdAsync(Guid.Parse(CommentId));
             if (Comment == null) throw new KeyNotFoundException();
-            Comment.Deleted = true;
-            _repo.Update(Comment);
+            _repo.Delete(Comment);
             await _repo.SaveChangesAsync();
         }
     }

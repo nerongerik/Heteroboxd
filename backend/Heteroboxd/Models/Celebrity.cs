@@ -11,7 +11,6 @@ namespace Heteroboxd.Models
         public string? Description { get; set; }
         public string? PictureUrl { get; set; }
         public DateTime? LastSync { get; set; }
-        public bool Deleted { get; set; }
 
         [JsonIgnore]
         public ICollection<CelebrityCredit> Credits { get; set; }
@@ -23,7 +22,6 @@ namespace Heteroboxd.Models
             this.Description = Description;
             this.PictureUrl = PictureUrl;
             this.LastSync = DateTime.UtcNow;
-            this.Deleted = false;
             this.Credits = new List<CelebrityCredit>();
         }
     }

@@ -7,8 +7,7 @@ namespace Heteroboxd.Service
 {
     public interface ICelebrityService
     {
-        Task<List<CelebrityInfoResponse>> GetAllCelebrities();
-        Task<CelebrityInfoResponse?> GetCelebrityById(int CelebrityId);
+        Task<CelebrityInfoResponse?> GetCelebrity(int CelebrityId);
         Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(int FilmId);
         Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search);
     }
@@ -24,15 +23,9 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
-        public async Task<List<CelebrityInfoResponse>> GetAllCelebrities()
+        public async Task<CelebrityInfoResponse?> GetCelebrity(int CelebrityId)
         {
-            var AllCelebrities = await _repo.GetAllAsync();
-            return AllCelebrities.Select(c => new CelebrityInfoResponse(c)).ToList();
-        }
-
-        public async Task<CelebrityInfoResponse?> GetCelebrityById(int CelebrityId)
-        {
-            var Celebrity = await _repo.GetById(CelebrityId);
+            var Celebrity = await _repo.GetByIdAsync(CelebrityId);
             if (Celebrity == null) throw new KeyNotFoundException();
 
             //distill film IDs
@@ -53,7 +46,7 @@ namespace Heteroboxd.Service
 
         public async Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(int FilmId)
         {
-            var Celebrities = await _repo.GetByFilm(FilmId);
+            var Celebrities = await _repo.GetByFilmAsync(FilmId);
             return Celebrities.Select(c => new CelebrityInfoResponse(c)).ToList();
         }
 

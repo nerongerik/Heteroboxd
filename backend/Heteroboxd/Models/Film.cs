@@ -23,7 +23,6 @@ namespace Heteroboxd.Models
 
         [JsonIgnore]
         public ICollection<CelebrityCredit> CastAndCrew { get; set; }
-        public bool Deleted { get; set; }
 
         [JsonIgnore]
         public ICollection<Review> Reviews { get; set; }
@@ -49,7 +48,6 @@ namespace Heteroboxd.Models
             this.Collection = new Dictionary<int, string>();
             this.LastSync = DateTime.UtcNow;
             this.CastAndCrew = new List<CelebrityCredit>();
-            this.Deleted = false;
             this.Reviews = new List<Review>();
             this.FavoriteCount = 0;
             this.WatchedBy = new List<UserWatchedFilm>();

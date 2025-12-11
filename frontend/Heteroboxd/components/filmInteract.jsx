@@ -11,17 +11,16 @@ import * as auth from '../helpers/auth'
 import { useAuth } from '../hooks/useAuth';
 import { Snackbar } from 'react-native-paper';
 import Stars from './stars';
-import Entypo from '@expo/vector-icons/Entypo';
 import Checkbox from 'expo-checkbox';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
-const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
+const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const [menuShown, setMenuShown] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
 
   const [seenLocalCopy, setSeenLocalCopy] = useState(null);
   const [watchlistedLocalCopy, setWatchlistedLocalCopy] = useState(null);
-  const [ratingLocalCopy, setRatingLocalCopy] = useState(null);
+  const [reviewLocalCopy, setReviewLocalCopy] = useState(null);
   const [seenPressed, setSeenPressed] = useState(false);
 
   const {user, isValidSession} = useAuth();
@@ -32,11 +31,19 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
   const [listsClicked, setListsClicked] = useState(false);
   const [usersLists, setUsersLists] = useState([]);
 
+  const router = useRouter();
+
   useEffect(() => {
     setSeenLocalCopy(seen);
     setWatchlistedLocalCopy(watchlisted);
-    setRatingLocalCopy(rating);
-  }, [seen, watchlisted, rating]);
+    setReviewLocalCopy({id: review?.id ?? null, rating: review?.rating ?? null, text: review?.text ?? null, spoiler: review?.spoiler ?? null});
+  }, [seen, watchlisted, review]);
+
+  useEffect(() => {
+    if (reviewLocalCopy?.rating != null) {
+      rate();
+    }
+  }, [reviewLocalCopy?.rating]);
 
   const openMenu = () => {
     setMenuShown(true);
@@ -52,7 +59,10 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
-    }).start(() => {setListsClicked(false); setMenuShown(false)});
+    }).start(async () => {
+      setMenuShown(false);
+      setListsClicked(false);
+    });
   };
 
   const translateY = slideAnim.interpolate({
@@ -69,8 +79,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
           <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 13}}>
             {
               seenLocalCopy
-                ? (ratingLocalCopy && ratingLocalCopy > 0)
-                  ? <Stars size={widescreen ? 16 : 13} rating={ratingLocalCopy} readonly={true} />
+                ? reviewLocalCopy?.id
+                  ? <Stars size={widescreen ? 16 : 13} rating={reviewLocalCopy.rating} readonly={true} />
                   : "You have watched this film."
                 : watchlistedLocalCopy
                   ? "This film is in your watchlist."
@@ -178,7 +188,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
 
   //handlers
   async function handleWatch() {
-    if (isValidSession()) {
+    const vS = await isValidSession();
+    if (vS) {
       try {
         const jwt = await auth.getJwt();
         const res = await fetch(`${BaseUrl.api}/users/track-film/${user.userId}/${filmId}?Action=watched`, {
@@ -215,7 +226,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
   }
 
   async function handleUnwatch() {
-    if (isValidSession()) {
+    const vS = await isValidSession();
+    if (vS) {
       try {
         const jwt = await auth.getJwt();
         const res = await fetch(`${BaseUrl.api}/users/track-film/${user.userId}/${filmId}?Action=unwatched`, {
@@ -227,6 +239,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
         if (res.status === 200) {
           setSeenPressed(false); //reset state
           setSeenLocalCopy(false);
+          setReviewLocalCopy(null);
         } else if (res.status === 404) {
           setSnackMessage("We failed to find your earlier records.");
           setSnackVisible(true);
@@ -251,7 +264,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
   }
 
   async function handleWatchlist() {
-    if (!isValidSession()) {
+    const vS = await isValidSession();
+    if (!vS) {
       setSnackMessage("Session expired - try logging in again.");
       setSnackVisible(true);
       return;
@@ -352,6 +366,61 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
     }
   }
 
+  async function rate() {
+    const vS = await isValidSession();
+    if (!user || !vS) {
+      closeMenu();
+      router.replace(`/login`);
+      return;
+    }
+    try {
+      const jwt = await auth.getJwt();
+      let res;
+      if (reviewLocalCopy?.id) {
+        res = await fetch(`${BaseUrl.api}/reviews`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            ReviewId: reviewLocalCopy?.id,
+            Rating: reviewLocalCopy.rating,
+            Text: reviewLocalCopy?.text ?? null,
+            Spoiler: reviewLocalCopy?.spoiler ?? false
+          })
+        });
+      } else {
+        res = await fetch(`${BaseUrl.api}/reviews`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            Rating: reviewLocalCopy.rating,
+            Text: null,
+            Spoiler: false,
+            AuthorId: user?.userId,
+            FilmId: filmId
+          })
+        });
+      }
+      if (res.status === 200) {
+        const json = await res.json();
+        setReviewLocalCopy({id: json.id, rating: json.rating, text: json.text, spoiler: json.spoiler});
+      } else {
+        setSnackMessage(`${res.status}: Failed to alter your review! Try reloading Heteroboxd.`);
+        setSnackVisible(true);
+      }
+    } catch {
+      setSnackMessage(`Network error! Please check your internet connection.`);
+      setSnackVisible(true);
+    }
+  }
+
   return (
     <>
       { widescreen
@@ -388,8 +457,32 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
 
           <View style={styles.divider} />
 
-          <Stars size={widescreen ? 60 : 50} rating={ratingLocalCopy} onRatingChange={(newRating) => setRatingLocalCopy(newRating)} />
+          <Stars
+            size={widescreen ? 60 : 50}
+            rating={reviewLocalCopy?.rating ?? 0}
+            onRatingChange={(newRating) => {
+              setSeenLocalCopy(true);
+              setWatchlistedLocalCopy(false);
+              if (!reviewLocalCopy?.id) {
+                setReviewLocalCopy({rating: newRating});
+              } else {
+                setReviewLocalCopy({id: reviewLocalCopy.id, rating: newRating, text: reviewLocalCopy.text, spoiler: reviewLocalCopy.spoiler});
+              }
+            }}
+          />
           <Text style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</Text>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity onPress={async () => {
+            closeMenu();
+            reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/create?r=${reviewLocalCopy?.rating ?? 0}`);
+          }}>
+            <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
+              <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</Text>
+              <MaterialCommunityIcons name="typewriter" size={24} color={Colors.text} />
+            </View>
+          </TouchableOpacity>
 
           <View style={styles.divider} />
           
@@ -403,7 +496,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, rating }) => {
               }}>
                 <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
                   <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</Text>
-                  <Entypo name="add-to-list" size={24} color={Colors.text} />
+                  <MaterialCommunityIcons name="playlist-plus" size={24} color={Colors.text} />
                 </View>
               </TouchableOpacity>
             )

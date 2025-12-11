@@ -14,7 +14,6 @@ namespace Heteroboxd.Models
         public bool IsPatron { get; set; } //indicates if user ever donated >$50 at once
         public DateTime DateJoined { get; set; }
         public int Flags { get; set; }
-        public bool Deleted { get; set; }
         public Watchlist? Watchlist { get; set; }
         public UserFavorites? Favorites { get; set; }
         public ICollection<UserList> Lists { get; set; }
@@ -35,7 +34,6 @@ namespace Heteroboxd.Models
             IsPatron = false;
             DateJoined = DateTime.UtcNow;
             Flags = 0;
-            Deleted = false;
             Watchlist = null; //to be set after user creation
             Favorites = null; //to be set after user creation
             Lists = new List<UserList>();
@@ -55,7 +53,7 @@ namespace Heteroboxd.Models
             this.UserName = Email;
             this.Email = Email;
             this.Name = Name;
-            this.PictureUrl = PictureUrl ?? "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/681px-Placeholder_view_vector.svg.png?20220519031949";
+            this.PictureUrl = PictureUrl ?? "";
             this.Bio = Bio;
             this.Gender = Gender == "male" ? Enums.Gender.Male : Enums.Gender.Female;
         }

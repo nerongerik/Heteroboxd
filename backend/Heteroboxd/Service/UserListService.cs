@@ -6,21 +6,21 @@ namespace Heteroboxd.Service
 {
     public interface IUserListService
     {
-        Task<UserListInfoResponse> GetUserListById(string ListId);
-        Task<PagedEntriesResponse> GetListEntriesById(string ListId, int Page, int PageSize);
-        Task<List<ListEntryInfoResponse>> PowerGetEntriesByListId(string ListId);
-        Task<PagedUserListsInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize);
+        Task<UserListInfoResponse> GetList(string ListId);
+        Task<PagedEntriesResponse> GetListEntries(string ListId, int Page, int PageSize);
+        Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId);
+        Task<PagedUserListsInfoResponse> GetListsByUser(string UserId, int Page, int PageSize);
         Task<List<DelimitedListInfoResponse>> GetDelimitedLists(string UserId, int FilmId);
         Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId, int Page, int PageSize);
         Task<int> GetListsFeaturingFilmCount(int FilmId);
-        Task<PagedUserListsInfoResponse> SearchUserLists(string Search);
+        Task<PagedUserListsInfoResponse> SearchLists(string Search);
         Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
         Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries);
         Task UpdateList(UpdateUserListRequest ListRequest);
         Task UpdateListsBulk(BulkUpdateRequest Request);
-        Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange);
-        Task ToggleNotificationsEfCore7Async(string ListId);
-        Task DeleteUserList(string ListId);
+        Task UpdateLikeCountEfCore7(string ListId, string LikeChange);
+        Task ToggleNotificationsEfCore7(string ListId);
+        Task DeleteList(string ListId);
     }
 
     public class UserListService : IUserListService
@@ -36,7 +36,7 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
-        public async Task<UserListInfoResponse> GetUserListById(string ListId)
+        public async Task<UserListInfoResponse> GetList(string ListId)
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
             if (List == null) throw new KeyNotFoundException();
@@ -46,7 +46,7 @@ namespace Heteroboxd.Service
             return new UserListInfoResponse(List, Author, 0);
         }
 
-        public async Task<PagedEntriesResponse> GetListEntriesById(string ListId, int Page, int PageSize)
+        public async Task<PagedEntriesResponse> GetListEntries(string ListId, int Page, int PageSize)
         {
             var (Entries, TotalCount) = await _repo.GetEntriesByIdAsync(Guid.Parse(ListId), Page, PageSize);
             return new PagedEntriesResponse
@@ -58,13 +58,13 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<List<ListEntryInfoResponse>> PowerGetEntriesByListId(string ListId)
+        public async Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId)
         {
-            var Entries = await _repo.PowerGetEntries(Guid.Parse(ListId));
+            var Entries = await _repo.PowerGetEntriesAsync(Guid.Parse(ListId));
             return Entries.Select(le => new ListEntryInfoResponse(le)).ToList();
         }
 
-        public async Task<PagedUserListsInfoResponse> GetUsersUserLists(string UserId, int Page, int PageSize)
+        public async Task<PagedUserListsInfoResponse> GetListsByUser(string UserId, int Page, int PageSize)
         {
             var (Lists, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize);
             var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
@@ -82,11 +82,11 @@ namespace Heteroboxd.Service
         {
             var User = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
-            var Lists = await _repo.GetUsersListsLightweight(User.Id);
+            var Lists = await _repo.GetLightweightAsync(User.Id);
             List<DelimitedListInfoResponse> Response = new List<DelimitedListInfoResponse>();
             foreach (UserList ul in Lists)
             {
-                var ListEntries = await _repo.PowerGetEntries(ul.Id);
+                var ListEntries = await _repo.PowerGetEntriesAsync(ul.Id);
                 Response.Add(new DelimitedListInfoResponse
                 {
                     ListId = ul.Id.ToString(),
@@ -118,11 +118,11 @@ namespace Heteroboxd.Service
 
         public async Task<int> GetListsFeaturingFilmCount(int FilmId)
         {
-            var Count = await _repo.GetFeaturingFilmCount(FilmId);
+            var Count = await _repo.GetFeaturingFilmCountAsync(FilmId);
             return Count;
         }
 
-        public async Task<PagedUserListsInfoResponse> SearchUserLists(string Search)
+        public async Task<PagedUserListsInfoResponse> SearchLists(string Search)
         {
             /*
             var Lists = await _repo.SearchAsync(Search.ToLower());
@@ -183,20 +183,20 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateLikeCountEfCore7Async(string ListId, string LikeChange)
+        public async Task UpdateLikeCountEfCore7(string ListId, string LikeChange)
         {
             if (!Guid.TryParse(ListId, out var Id)) throw new ArgumentException();
             if (!int.TryParse(LikeChange, out var Delta)) throw new ArgumentException();
             await _repo.UpdateLikeCountEfCore7Async(Id, Delta);
         }
 
-        public async Task ToggleNotificationsEfCore7Async(string ListId)
+        public async Task ToggleNotificationsEfCore7(string ListId)
         {
             if (!Guid.TryParse(ListId, out var Id)) throw new ArgumentException();
             await _repo.ToggleNotificationsEfCore7Async(Id);
         }
 
-        public async Task DeleteUserList(string ListId)
+        public async Task DeleteList(string ListId)
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
             if (List == null) throw new KeyNotFoundException();

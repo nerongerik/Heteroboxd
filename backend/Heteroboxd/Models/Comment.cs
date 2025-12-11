@@ -10,7 +10,6 @@ namespace Heteroboxd.Models
         public DateTime Date { get; set; }
         public int Flags { get; set; }
         public bool NotificationsOn { get; set; }
-        public bool Deleted { get; set; }
         public int LikeCount { get; set; }
         public Guid AuthorId { get; set; }
         public Guid ReviewId { get; set; }
@@ -22,7 +21,6 @@ namespace Heteroboxd.Models
             this.Date = DateTime.UtcNow;
             this.Flags = Flags;
             this.NotificationsOn = true;
-            this.Deleted = false;
             this.LikeCount = 0;
             this.AuthorId = AuthorId;
             this.ReviewId = ReviewId;

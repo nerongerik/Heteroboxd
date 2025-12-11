@@ -6,9 +6,8 @@ namespace Heteroboxd.Repository
 {
     public interface ICelebrityRepository
     {
-        Task<List<Celebrity>> GetAllAsync(CancellationToken CancellationToken = default);
-        Task<Celebrity?> GetById(int Id);
-        Task<List<Celebrity>> GetByFilm(int FilmId);
+        Task<Celebrity?> GetByIdAsync(int Id);
+        Task<List<Celebrity>> GetByFilmAsync(int FilmId);
         Task<List<Celebrity>> SearchAsync(string Name);
     }
 
@@ -21,20 +20,15 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<List<Celebrity>> GetAllAsync(CancellationToken CancellationToken = default) =>
-            await _context.Celebrities
-                .Where(c => !c.Deleted)
-                .ToListAsync(CancellationToken);
-
-        public async Task<Celebrity?> GetById(int Id) =>
+        public async Task<Celebrity?> GetByIdAsync(int Id) =>
             await _context.Celebrities
                 .Include(c => c.Credits)
-                .FirstOrDefaultAsync(c => c.Id == Id && !c.Deleted);
+                .FirstOrDefaultAsync(c => c.Id == Id);
 
-        public async Task<List<Celebrity>> GetByFilm(int FilmId) =>
+        public async Task<List<Celebrity>> GetByFilmAsync(int FilmId) =>
             await _context.Celebrities
                 .Include(c => c.Credits)
-                .Where(c => !c.Deleted && c.Credits.Any(cc => cc.FilmId == FilmId))
+                .Where(c => c.Credits.Any(cc => cc.FilmId == FilmId))
                 .ToListAsync();
 
         public async Task<List<Celebrity>> SearchAsync(string Name)
@@ -49,7 +43,6 @@ namespace Heteroboxd.Repository
             }
 
             return await query
-                .Where(c => !c.Deleted)
                 .ToListAsync();
         }
 

@@ -7,12 +7,9 @@ namespace Heteroboxd.Service
 {
     public interface IUserService
     {
-        Task<List<UserInfoResponse>> GetAllUsers();
         Task<UserInfoResponse?> GetUser(string UserId);
-
         Task<PagedWatchlistResponse> GetWatchlist(string UserId, int Page, int PageSize); //for viewing
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId); //for checking if a film is in the watchlist (quick lookup)
-
         Task<Dictionary<string, FilmInfoResponse?>> GetFavorites(string UserId);
         Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId); //example: {"following": [User1, User2, User3], "followers": [User2], "blocked": [User4, User5]}
         Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
@@ -22,14 +19,12 @@ namespace Heteroboxd.Service
         Task ReportUserEfCore7Async(string UserId);
         Task UpdateUser(UpdateUserRequest UserUpdate);
         Task VerifyUser(string UserId, string Token);
-
         Task UpdateWatchlist(string UserId, int FilmId);
-
         Task UpdateFavorites(string UserId, List<int?> FilmIds);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
         Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
         Task TrackFilm(string UserId, int FilmId, string Action);
-        Task LogicalDeleteUser(string UserId);
+        Task DeleteUser(string UserId);
     }
 
     public class UserService : IUserService
@@ -49,12 +44,6 @@ namespace Heteroboxd.Service
             _authService = authService;
             _userManager = userManager;
             _logger = logger;
-        }
-
-        public async Task<List<UserInfoResponse>> GetAllUsers()
-        {
-            var AllUsers = await _repo.GetAllAsync();
-            return AllUsers.Select(u => new UserInfoResponse(u)).ToList();
         }
 
         public async Task<UserInfoResponse?> GetUser(string UserId)
@@ -87,7 +76,7 @@ namespace Heteroboxd.Service
 
         public async Task<bool> IsFilmWatchlisted(string UserId, int FilmId)
         {
-            var ExistingEntry = await _repo.IsWatchlisted(FilmId, Guid.Parse(UserId));
+            var ExistingEntry = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
             return ExistingEntry != null;
         }
 
@@ -167,9 +156,9 @@ namespace Heteroboxd.Service
         public async Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId)
         {
             //non-critical infrastructure, no need for rigorous id-checking
-            var _following = await _repo.GetFollowing(Guid.Parse(UserId));
-            var _followers = await _repo.GetFollowers(Guid.Parse(UserId));
-            var _blocked = await _repo.GetBlocked(Guid.Parse(UserId));
+            var _following = await _repo.GetUserFollowingAsync(Guid.Parse(UserId));
+            var _followers = await _repo.GetUserFollowersAsync(Guid.Parse(UserId));
+            var _blocked = await _repo.GetUserBlockedAsync(Guid.Parse(UserId));
 
             if (_following == null || _followers == null || _blocked == null)
             {
@@ -232,13 +221,13 @@ namespace Heteroboxd.Service
             switch (ObjectType)
             {
                 case ("review"):
-                    var LikedReview = await _repo.IsReviewLiked(Guid.Parse(UserId), Guid.Parse(ObjectId));
+                    var LikedReview = await _repo.IsReviewLikedAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
                     return LikedReview != null;
                 case ("comment"):
-                    var LikedComment = await _repo.IsCommentLiked(Guid.Parse(UserId), Guid.Parse(ObjectId));
+                    var LikedComment = await _repo.IsCommentLikedAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
                     return LikedComment != null;
                 case ("list"):
-                    var LikedList = await _repo.IsListLiked(Guid.Parse(UserId), Guid.Parse(ObjectId));
+                    var LikedList = await _repo.IsListLikedAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
                     return LikedList != null;
                 default:
                     _logger.LogError($"Unknown ObjectType: {ObjectType}");
@@ -314,7 +303,7 @@ namespace Heteroboxd.Service
             var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
             var Film = await _filmRepo.GetByIdAsync(FilmId);
             if (User == null || Film == null) throw new KeyNotFoundException();
-            var ExistingEntry = await _repo.IsWatchlisted(FilmId, Guid.Parse(UserId));
+            var ExistingEntry = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
             if (ExistingEntry != null)
             {
                 await _repo.RemoveFromWatchlist(ExistingEntry);
@@ -442,7 +431,7 @@ namespace Heteroboxd.Service
                         _repo.CreateUserWatchedFilm(UserWatchedFilm);
                     }
                     //remove film from watchlist
-                    var ExistingEntry = await _repo.IsWatchlisted(Film.Id, User.Id);
+                    var ExistingEntry = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
                     if (ExistingEntry != null)
                     {
                         await _repo.RemoveFromWatchlist(ExistingEntry);
@@ -460,9 +449,13 @@ namespace Heteroboxd.Service
                     UserUnWatchedFilm.TimesWatched = 0;
                     _repo.UpdateUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();
-                    //mark associated reviews for deletion
-                    _reviewRepo.DeleteByUserFilm(UserUnWatchedFilm);
-                    await _reviewRepo.SaveChangesAsync(); //true save, ensuring all reviews are deleted
+                    //delete associated review if any
+                    var Review = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, UserUnWatchedFilm.FilmId);
+                    if (Review != null)
+                    {
+                        _reviewRepo.Delete(Review);
+                        await _reviewRepo.SaveChangesAsync();
+                    }
                     break;
                 default:
                     _logger.LogError($"Unknown action: {Action}");
@@ -470,7 +463,7 @@ namespace Heteroboxd.Service
             }
         }
 
-        public async Task LogicalDeleteUser(string UserId)
+        public async Task DeleteUser(string UserId)
         {
             if (!Guid.TryParse(UserId, out var Id))
             {
@@ -483,8 +476,7 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Failed to find User with Id: {UserId}");
                 throw new KeyNotFoundException();
             }
-            User.Deleted = true;
-            _repo.Update(User);
+            _repo.Delete(User);
             await _repo.SaveChangesAsync();
             await _authService.RevokeAllUserTokens(User.Id);
         }

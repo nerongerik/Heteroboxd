@@ -10,7 +10,6 @@ namespace Heteroboxd.Models
         public string Text { get; set; }
         public DateTime Date { get; set; }
         public bool Read { get; set; }
-        public bool Deleted { get; set; }
         public Guid UserId { get; set; }
 
         public Notification(string Title, string Text, Guid UserId)
@@ -20,7 +19,6 @@ namespace Heteroboxd.Models
             this.Text = Text;
             this.Date = DateTime.UtcNow;
             this.Read = false;
-            this.Deleted = false;
             this.UserId = UserId;
         }
     }

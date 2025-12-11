@@ -37,7 +37,7 @@
             this.ReleaseYear = Film.ReleaseYear;
             this.Slug = Film.Slug;
             this.FavoriteCount = Film.FavoriteCount;
-            if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Count();
+            if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Where(uwf => uwf.TimesWatched != 0).Count();
             else this.WatchCount = null;
             this.Collection = Film.Collection;
             this.ReviewCount = Film.Reviews.Count();

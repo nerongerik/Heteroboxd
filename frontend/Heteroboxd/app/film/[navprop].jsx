@@ -18,6 +18,7 @@ const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
   const [film, setFilm] = useState(null); //basic film data
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
+  const [usersReview, setUsersReview] = useState(null);
 
   const [watchlisted, setWatchlisted] = useState(null);
 
@@ -35,6 +36,7 @@ const Film = () => {
   const loadFilmPage = async () => {
     setRefreshing(true);
     try {
+      const vS = await isValidSession();
       if (/^\d+$/.test(navprop)) {
         //fetch film
         const fRes = await fetch(`${BaseUrl.api}/films/${Number(navprop)}`, {
@@ -64,7 +66,7 @@ const Film = () => {
           return;
         }
         //fetch uwf
-        if (user && isValidSession()) {
+        if (user && vS) {
           const jwt = await auth.getJwt();
           const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(navprop)}`, {
             method: 'GET',
@@ -75,10 +77,23 @@ const Film = () => {
           });
           if (uwfRes.status === 200) { //user HAS watched film before
             const json2 = await uwfRes.json();
-            console.log(json2);
             setUwf({
               dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
             });
+            //fetch users review if it exists
+            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(navprop)}`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${jwt}`
+              }
+            });
+            if (rewRes.status === 200) {
+              const json3 = await rewRes.json();
+              setUsersReview(json3);
+            } else {
+              console.log('User never reviewed this film before.');
+            }
           } else if (uwfRes.status === 404) {
             console.log("User has never seen this film before.");
             setUwf(null);
@@ -122,7 +137,7 @@ const Film = () => {
           return;
         }
         //fetch uwf
-        if (user && isValidSession()) {
+        if (user && vS) {
           const jwt = await auth.getJwt();
           const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(json.filmId)}`, {
             method: 'GET',
@@ -136,6 +151,20 @@ const Film = () => {
             setUwf({
               dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
             });
+            //fetch users review if it exists
+            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(navprop)}`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${jwt}`
+              }
+            });
+            if (rewRes.status === 200) {
+              const json3 = await rewRes.json();
+              setUsersReview(json3);
+            } else {
+              console.log('User never reviewed this film before.');
+            }
           } else if (uwfRes.status === 404) {
             console.log("User has never seen this film before.");
             setUwf(null);
@@ -161,7 +190,8 @@ const Film = () => {
 
   useEffect(() => { //checks if user previously watchlisted this film
     (async () => {
-      if (user && film && isValidSession()) {
+      const vS = await isValidSession();
+      if (user && film && vS) {
         const jwt = await auth.getJwt();
         const wlRes = await fetch(`${BaseUrl.api}/users/${user.userId}/watchlist/${film.id}`, {
           method: 'GET',
@@ -180,6 +210,7 @@ const Film = () => {
   }, [film, user]);
 
   useEffect(() => {
+    if (!film) return;
     (async () => {
       try {
         const res = await fetch(`${BaseUrl.api}/lists/featuring-film/${film?.id}/count`, {
@@ -352,8 +383,8 @@ const Film = () => {
         <View style={styles.divider}></View>
         
         {
-          isValidSession() && (
-            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched > 0} watchlisted={watchlisted} rating={null}/>
+          user && (
+            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched > 0} watchlisted={watchlisted} review={usersReview}/>
           )
         }
 
