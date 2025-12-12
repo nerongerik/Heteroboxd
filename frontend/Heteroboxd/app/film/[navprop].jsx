@@ -152,7 +152,7 @@ const Film = () => {
               dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
             });
             //fetch users review if it exists
-            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(navprop)}`, {
+            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(json.filmId)}`, {
               method: 'GET',
               headers: {
                 'Accept': 'application/json',

@@ -476,7 +476,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
 
           <TouchableOpacity onPress={async () => {
             closeMenu();
-            reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/create?r=${reviewLocalCopy?.rating ?? 0}`);
+            reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/alter/${filmId}`);
           }}>
             <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
               <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</Text>
@@ -496,7 +496,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
               }}>
                 <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
                   <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</Text>
-                  <MaterialCommunityIcons name="playlist-plus" size={24} color={Colors.text} />
+                  <MaterialCommunityIcons name="playlist-plus" size={28} color={Colors.text} />
                 </View>
               </TouchableOpacity>
             )
