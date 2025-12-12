@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import { Colors } from '../constants/colors';
 
-const Stars = ({ size, rating = 0, onRatingChange, readonly = false }) => {
+const Stars = ({ size, rating = 0, onRatingChange, readonly = false, padding = false }) => {
   //local state: array of star values (0 = empty, 1 = half, 2 = full)
   const [stars, setStars] = useState([0, 0, 0, 0, 0]);
 
@@ -54,9 +54,9 @@ const Stars = ({ size, rating = 0, onRatingChange, readonly = false }) => {
   };
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'center', paddingHorizontal: readonly ? 0 : 20, paddingVertical: readonly ? 0 : 10 }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'center', paddingHorizontal: padding ? 20 : 0, paddingVertical: padding ? 10 : 0 }}>
       {stars.map((starValue, index) => (
-        <Pressable key={index} onPress={readonly ? null : () => handlePress(index)} style={{marginRight: index === 4 ? 0 : 2}}>
+        <Pressable key={index} onPress={readonly ? null : () => handlePress(index)}>
           {starValue === 2 && (
             <MaterialCommunityIcons
               name="star"

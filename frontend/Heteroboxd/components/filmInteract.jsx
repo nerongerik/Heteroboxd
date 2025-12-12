@@ -80,7 +80,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
             {
               seenLocalCopy
                 ? reviewLocalCopy?.id
-                  ? <Stars size={widescreen ? 16 : 13} rating={reviewLocalCopy.rating} readonly={true} />
+                  ? <Stars size={widescreen ? 16 : 13} rating={reviewLocalCopy.rating} readonly={true} padding={false} />
                   : "You have watched this film."
                 : watchlistedLocalCopy
                   ? "This film is in your watchlist."
@@ -469,6 +469,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
                 setReviewLocalCopy({id: reviewLocalCopy.id, rating: newRating, text: reviewLocalCopy.text, spoiler: reviewLocalCopy.spoiler});
               }
             }}
+            padding={true}
           />
           <Text style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</Text>
 

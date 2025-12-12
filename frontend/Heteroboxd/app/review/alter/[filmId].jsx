@@ -1,4 +1,4 @@
-import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View, TouchableOpacity } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View, TouchableOpacity, Pressable } from 'react-native';
 import { useAuth } from '../../../hooks/useAuth';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -8,6 +8,8 @@ import LoadingResponse from '../../../components/loadingResponse';
 import Popup from '../../../components/popup';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/colors';
+import {Poster} from '../../../components/poster';
+import Stars from '../../../components/stars';
 
 const AlterReview = () => {
   const { filmId } = useLocalSearchParams();
@@ -177,14 +179,60 @@ const AlterReview = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={{flexGrow: 1, width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text>{reviewId}</Text>
-        <Text>{rating}</Text>
-        <Text>{text}</Text>
-      </ScrollView>
+      <View style={{ alignSelf: 'center', alignItems: 'center', width: widescreen ? 1000 : width*0.95 }}>
+
+          <Text style={{marginBottom: 20, color: Colors.text_title, fontWeight: '600', fontSize: 24}}>Rate and review</Text>
+          <View style={{flexDirection: 'row', alignItems: 'center', width: '95%', justifyContent: 'flex-start'}}>
+            <Poster
+              posterUrl={film?.posterUrl}
+              style={{
+                width: widescreen ? 100 : 80,
+                height: widescreen ? 100*3/2 : 80*3/2,
+                borderWidth: 2,
+                borderRadius: 4,
+                marginRight: 5,
+                borderColor: Colors.border_color
+              }}
+            />
+            <Text style={{color: Colors.text_title, fontWeight: '400', fontSize: widescreen ? 20 : 16, textAlign: 'left', flexShrink: 1}}>
+              {film?.title} <Text style={{color: Colors.text, fontWeight: '300', fontSize: widescreen ? 18 : 14}}>{film?.year}</Text>
+            </Text>
+          </View>
+
+        <View style={styles.divider} />
+
+        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', alignSelf: 'center', width: '100%'}}>
+          <Stars
+            size={widescreen ? 50 : 40}
+            rating={rating}
+            onRatingChange={(newRating) => setRating(newRating)}
+            padding={false}
+          />
+          <Pressable onPress={() => setSpoiler(prev => !prev)} style={{alignItems: 'center'}}>
+            {
+              !spoiler ? (
+                <>
+                  <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
+                  <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="warning" size={widescreen ? 30 : 24} color={Colors.heteroboxd} />
+                  <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
+                </>
+              )
+            }
+          </Pressable>
+        </View>
+
+        <View style={styles.divider} />
+
+        <>
+        {/*imported component for writing a review that supports text styling (italis, bold, hyperlinks) (probably html parsing but idk)}*/}
+        </>
+
+      </View>
+
 
       <LoadingResponse visible={result === 0} />
       <Popup visible={result === 500} message={message} onClose={() => router.replace('/contact')} />
@@ -201,7 +249,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 50,
-    overflow: 'hidden',
+  },
+  divider: {
+    width: "75%",
+    alignSelf: "center",
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border_color,
+    opacity: 0.5,
+    marginVertical: 15,
   },
 })
