@@ -332,7 +332,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> TrackUserFilm(string UserId, int FilmId, [FromQuery] string Action)
         {
-            //?action=watched/rewatched/unwatched
+            //?action=watched/unwatched
             _logger.LogInformation($"PUT Track Film endpoint hint for User: {UserId}, Film: {FilmId}; action: {Action}");
             try
             {

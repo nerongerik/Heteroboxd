@@ -445,9 +445,8 @@ namespace Heteroboxd.Service
                         _logger.LogError($"Failed to unwatch UserWatchedFilm for {UserId} -> {FilmId}; UWF not found;");
                         throw new KeyNotFoundException();
                     }
-                    //update uwf
-                    UserUnWatchedFilm.TimesWatched = 0;
-                    _repo.UpdateUserWatchedFilm(UserUnWatchedFilm);
+                    //delete uwf
+                    _repo.DeleteUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();
                     //delete associated review if any
                     var Review = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, UserUnWatchedFilm.FilmId);

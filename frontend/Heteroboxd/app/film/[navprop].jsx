@@ -383,8 +383,10 @@ const Film = () => {
         <View style={styles.divider}></View>
         
         {
-          user && (
-            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched > 0} watchlisted={watchlisted} review={usersReview}/>
+          user ? (
+            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf} watchlisted={watchlisted} review={usersReview}/>
+          ) : (
+            <Link style={{color: Colors.text_link, fontSize: 16}}>Create a Heteroboxd account or log in to interact with this film.</Link>
           )
         }
 

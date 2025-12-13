@@ -37,6 +37,7 @@ namespace Heteroboxd.Repository
         void CreateUserWatchedFilm(UserWatchedFilm WatchedFilm);
         void UpdateUserWatchedFilm(UserWatchedFilm WatchedFilm);
         void Delete(User User);
+        void DeleteUserWatchedFilm(UserWatchedFilm WatchedFilm);
         Task SaveChangesAsync();
     }
 
@@ -290,6 +291,9 @@ namespace Heteroboxd.Repository
 
         public void Delete(User User) =>
             _context.Users.Remove(User);
+
+        public void DeleteUserWatchedFilm(UserWatchedFilm WatchedFilm) =>
+            _context.UserWatchedFilms.Remove(WatchedFilm);
 
         public async Task SaveChangesAsync() =>
             await _context.SaveChangesAsync();

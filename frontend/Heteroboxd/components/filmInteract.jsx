@@ -36,7 +36,15 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   useEffect(() => {
     setSeenLocalCopy(seen);
     setWatchlistedLocalCopy(watchlisted);
-    setReviewLocalCopy({id: review?.id ?? null, rating: review?.rating ?? null, text: review?.text ?? null, spoiler: review?.spoiler ?? null});
+    if (review) {
+      setSeenLocalCopy(true);
+    }
+    setReviewLocalCopy({
+      id: review?.id ?? null, 
+      rating: review?.rating ?? null, 
+      text: review?.text ?? null, 
+      spoiler: review?.spoiler ?? null
+    });
   }, [seen, watchlisted, review]);
 
   useEffect(() => {
@@ -79,7 +87,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
           <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 13}}>
             {
               seenLocalCopy
-                ? reviewLocalCopy?.id
+                ? (reviewLocalCopy?.rating != null)
                   ? <Stars size={widescreen ? 16 : 13} rating={reviewLocalCopy.rating} readonly={true} padding={false} />
                   : "You have watched this film."
                 : watchlistedLocalCopy

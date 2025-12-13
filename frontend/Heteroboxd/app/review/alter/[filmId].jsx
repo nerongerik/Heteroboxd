@@ -1,4 +1,4 @@
-import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View, TouchableOpacity, Pressable } from 'react-native';
+import { ScrollView, Platform, KeyboardAvoidingView, StyleSheet, Text, useWindowDimensions, View, TouchableOpacity, Pressable } from 'react-native';
 import { useAuth } from '../../../hooks/useAuth';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/colors';
 import {Poster} from '../../../components/poster';
 import Stars from '../../../components/stars';
+import ParsedInput from '../../../components/parsedInput';
 
 const AlterReview = () => {
   const { filmId } = useLocalSearchParams();
@@ -17,6 +18,7 @@ const AlterReview = () => {
 
   const [ reviewId, setReviewId ] = useState(null);
   const [ rating, setRating ] = useState(0);
+  const [ initial, setInitial ] = useState(null);
   const [ text, setText ] = useState(null);
   const [ spoiler, setSpoiler ] = useState(false);
 
@@ -72,6 +74,7 @@ const AlterReview = () => {
           const json = await res.json();
           setReviewId(json.id);
           setRating(json.rating);
+          if (json.text) setInitial(json.text);
           setText(json.text);
           setSpoiler(json.spoiler);
           setResult(200);
@@ -179,8 +182,16 @@ const AlterReview = () => {
 
   return (
     <View style={styles.container}>
-      <View style={{ alignSelf: 'center', alignItems: 'center', width: widescreen ? 1000 : width*0.95 }}>
-
+      <KeyboardAvoidingView behavior='padding' style={{ alignSelf: 'center', alignItems: 'center', width: widescreen ? 1000 : width*0.95 }}>
+        <ScrollView
+          contentContainerStyle={{
+            alignItems: 'center',
+            paddingBottom: 100,
+            flexGrow: 1
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={{marginBottom: 20, color: Colors.text_title, fontWeight: '600', fontSize: 24}}>Rate and review</Text>
           <View style={{flexDirection: 'row', alignItems: 'center', width: '95%', justifyContent: 'flex-start'}}>
             <Poster
@@ -199,40 +210,35 @@ const AlterReview = () => {
             </Text>
           </View>
 
-        <View style={styles.divider} />
+          <View style={styles.divider} />
 
-        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', alignSelf: 'center', width: '100%'}}>
-          <Stars
-            size={widescreen ? 50 : 40}
-            rating={rating}
-            onRatingChange={(newRating) => setRating(newRating)}
-            padding={false}
-          />
-          <Pressable onPress={() => setSpoiler(prev => !prev)} style={{alignItems: 'center'}}>
-            {
-              !spoiler ? (
-                <>
-                  <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
-                  <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="warning" size={widescreen ? 30 : 24} color={Colors.heteroboxd} />
-                  <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
-                </>
-              )
-            }
-          </Pressable>
-        </View>
+          <View style={{marginBottom: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: '100%'}}>
+            <Stars
+              size={widescreen ? 50 : 40}
+              rating={rating}
+              onRatingChange={(newRating) => setRating(newRating)}
+              padding={false}
+            />
+            <Pressable onPress={() => setSpoiler(prev => !prev)} style={{alignItems: 'center'}}>
+              {
+                !spoiler ? (
+                  <>
+                    <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
+                    <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="warning" size={widescreen ? 30 : 24} color={Colors.heteroboxd} />
+                    <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
+                  </>
+                )
+              }
+            </Pressable>
+          </View>
 
-        <View style={styles.divider} />
-
-        <>
-        {/*imported component for writing a review that supports text styling (italis, bold, hyperlinks) (probably html parsing but idk)}*/}
-        </>
-
-      </View>
-
+          <ParsedInput initial={initial} width={width} height={height} onValueChange={(r) => setText(r)} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <LoadingResponse visible={result === 0} />
       <Popup visible={result === 500} message={message} onClose={() => router.replace('/contact')} />
@@ -248,7 +254,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     alignItems: "center",
-    justifyContent: "center",
   },
   divider: {
     width: "75%",
