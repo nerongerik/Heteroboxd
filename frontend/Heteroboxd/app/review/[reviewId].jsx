@@ -210,7 +210,7 @@ const Review = () => {
             <ParsedRead html={review.text} />
           ) : (
             <View>
-              <Text>{review?.authorName} wrote no review regarding this film.</Text>
+              <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'left'}}>{review?.authorName} wrote no review regarding this film.</Text>
             </View>
           )
         }
@@ -239,8 +239,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    justifyContent: "center",
-    alignItems: 'center',
+    //justifyContent: "center",
+    //alignItems: 'center',
     paddingBottom: 50
   },
 })

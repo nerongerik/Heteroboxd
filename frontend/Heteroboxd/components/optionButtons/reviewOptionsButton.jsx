@@ -96,7 +96,7 @@ const ReviewOptionsButton = ({ reviewId }) => {
 
   async function handleNotifications() {
     const vS = await isValidSession();
-    if (!user || vS) router.replace('/login');
+    if (!user || !vS) router.replace('/login');
     try {
       const jwt = await auth.getJwt();
       const res = await fetch(`${BaseUrl.api}/reviews/toggle-notifications/${reviewId}`, {
