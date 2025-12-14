@@ -205,8 +205,8 @@ const AlterReview = () => {
                 borderColor: Colors.border_color
               }}
             />
-            <Text style={{color: Colors.text_title, fontWeight: '400', fontSize: widescreen ? 20 : 16, textAlign: 'left', flexShrink: 1}}>
-              {film?.title} <Text style={{color: Colors.text, fontWeight: '300', fontSize: widescreen ? 18 : 14}}>{film?.year}</Text>
+            <Text style={{color: Colors.text_title, fontWeight: '400', fontSize: widescreen ? 20 : 16, textAlign: 'left', flex: 1, flexWrap: 'wrap'}}>
+              {film?.title}
             </Text>
           </View>
 

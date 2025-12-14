@@ -8,7 +8,7 @@ import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
 import { Snackbar } from 'react-native-paper';
 
-const ListOptionsButton = ({ listId }) => {
+const ReviewOptionsButton = ({ reviewId }) => {
   const { user, isValidSession } = useAuth();
 
   const [menuShown, setMenuShown] = useState(false);
@@ -18,7 +18,7 @@ const ListOptionsButton = ({ listId }) => {
 
   const { width } = useWindowDimensions();
 
-  const [baseList, setBaseList] = useState(null);
+  const [review, setReview] = useState(null);
   const [notifsOnLocal, setNotifsOnLocal] = useState(true);
 
   const [snack, setSnack] = useState(false);
@@ -28,22 +28,22 @@ const ListOptionsButton = ({ listId }) => {
     if (!user) return;
     (async () => {
       try {
-         const res = await fetch(`${BaseUrl.api}/lists/${listId}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-         });
-         if (res.status === 200) {
-          const json = await res.json();
-          setBaseList(json);
-          setNotifsOnLocal(json.notificationsOn);
+        const res = await fetch(`${BaseUrl.api}/reviews/${reviewId}`, {
+         method: 'GET',
+         headers: {
+           'Accept': 'application/json'
          }
+        });
+        if (res.status === 200) {
+         const json = await res.json();
+         setReview(json);
+         setNotifsOnLocal(json.notificationsOn);
+        }
       } catch {
         console.log('Network error!');
       }
     })();
-  }, [user, listId]);
+  }, [user, reviewId]);
 
   const openMenu = () => {
     setMenuShown(true);
@@ -74,7 +74,7 @@ const ListOptionsButton = ({ listId }) => {
     if (!user || !vS) router.replace('/login');
     try {
       const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/lists/${baseList?.id}`, {
+      const res = await fetch(`${BaseUrl.api}/reviews/${reviewId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${jwt}`
@@ -85,7 +85,7 @@ const ListOptionsButton = ({ listId }) => {
         router.replace(`profile/${user.userId}`);
       }
       else {
-        setMsg('Delete failed - please make sure your session is valid, and you are viewing the correct list.');
+        setMsg('Delete failed - please make sure your session is valid, and you are viewing the correct review.');
         setSnack(true);
       }
     } catch {
@@ -96,18 +96,18 @@ const ListOptionsButton = ({ listId }) => {
 
   async function handleNotifications() {
     const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
+    if (!user || vS) router.replace('/login');
     try {
       const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/lists/toggle-notifications/${baseList?.id}`, {
+      const res = await fetch(`${BaseUrl.api}/reviews/toggle-notifications/${reviewId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${jwt}`
         }
       });
       if (res.status === 200) {
-        if (notifsOnLocal) setMsg('You will no longer recieve notifications for this list.');
-        else setMsg('You will now recieve notifications for this list.')
+        if (notifsOnLocal) setMsg('You will no longer recieve notifications for this review.');
+        else setMsg('You will now recieve notifications for this review.')
         setSnack(true);
         setNotifsOnLocal(prev => !prev);
       } else {
@@ -123,13 +123,17 @@ const ListOptionsButton = ({ listId }) => {
   async function handleEdit() {
     const vS = await isValidSession();
     if (!user || !vS) router.replace('/login');
-    if (baseList.authorId !== user.userId) {
+    if (review?.authorId !== user.userId) {
       setMsg("You are not supposed to be seeing this - what did you do?");
       setSnack(true);
       return;
     }
     closeMenu();
-    router.push(`list/edit/${listId}`);
+    router.push(`review/alter/${review?.filmId}`);
+  }
+
+  async function handleShare() {
+    //todo
   }
 
   return (
@@ -159,7 +163,7 @@ const ListOptionsButton = ({ listId }) => {
             ) : (
               <>
                 <TouchableOpacity style={styles.option} onPress={handleEdit}>
-                  <Text style={styles.optionText}>Edit List </Text>
+                  <Text style={styles.optionText}>Edit Review </Text>
                   <MaterialIcons name="edit" size={20} color={Colors.text} />
                 </TouchableOpacity>
                   {
@@ -176,7 +180,7 @@ const ListOptionsButton = ({ listId }) => {
                     )
                   }
                 <TouchableOpacity style={styles.option} onPress={handleDelete}>
-                  <Text style={styles.optionText}>Delete List </Text>
+                  <Text style={styles.optionText}>Delete Review </Text>
                   <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
                 </TouchableOpacity>
               </>
@@ -206,7 +210,7 @@ const ListOptionsButton = ({ listId }) => {
   );
 };
 
-export default ListOptionsButton;
+export default ReviewOptionsButton;
 
 const styles = StyleSheet.create({
   overlay: {

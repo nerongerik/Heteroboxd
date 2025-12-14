@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 
-const Stars = ({ size, rating = 0, onRatingChange, readonly = false, padding = false }) => {
+const Stars = ({ size, rating = 0, onRatingChange, readonly = false, padding = false, align }) => {
   const ratingToStars = (rating) => {
     const stars = [];
     let remaining = rating;
@@ -53,7 +53,7 @@ const Stars = ({ size, rating = 0, onRatingChange, readonly = false, padding = f
     <View
       style={{
         flexDirection: 'row',
-        justifyContent: 'center',
+        justifyContent: align ? align : 'center',
         paddingHorizontal: padding ? 20 : 0,
         paddingVertical: padding ? 10 : 0,
       }}

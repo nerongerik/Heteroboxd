@@ -174,8 +174,6 @@ const List = () => {
   //compute poster width:
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
-  //cache backdrop
-  const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={entries[0]?.filmBackdropUrl} narrow={true} />, [widescreen, entries])
 
   return (
     <View style={styles.container}>
@@ -387,7 +385,7 @@ const styles = StyleSheet.create({
     paddingBottom: 50
   },
   text: {
-    fontWeight: "350",
+    fontWeight: "400",
     marginTop: 5,
     marginBottom: 0,
     fontSize: 16,
