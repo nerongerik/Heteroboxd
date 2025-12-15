@@ -13,6 +13,8 @@
         public string AuthorId { get; set; } //necessary navigation quality
         public string? AuthorName { get; set; } //optional decorative
         public string? AuthorProfilePictureUrl { get; set; } //optional decorative
+        public string? AuthorTier { get; set; }
+        public bool? AuthorPatron { get; set; }
         public int FilmId { get; set; } //necessary navigation quality
         public string? FilmTitle { get; set; } //optional decorative
         public string? FilmPosterUrl { get; set; } //optional decorative
@@ -31,6 +33,8 @@
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
+            this.AuthorPatron = Author.IsPatron;
+            this.AuthorTier = Author.Tier.ToString().ToLower();
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
@@ -51,6 +55,8 @@
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
+            this.AuthorPatron = Author.IsPatron;
+            this.AuthorTier = Author.Tier.ToString().ToLower();
 
             this.FilmId = Review.FilmId;
         }

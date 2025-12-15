@@ -363,22 +363,20 @@ const Profile = () => {
                 onPress={handlePress}
                 style={{marginBottom: -5}}
               >
-              <GlowingText color={Colors.heteroboxd}>
-                <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd}/>
-              </GlowingText>
+              <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd}/>
               </Pressable>
             )}
             {isDonor ? (
               <Pressable
                 onPress={handlePress}
               >
-                <GlowingText color={Colors.heteroboxd}>{data.name}</GlowingText>
+                <GlowingText color={Colors.heteroboxd} size={widescreen ? 28 : 25}>{data.name}</GlowingText>
               </Pressable>
             ) : isAdmin ? (
               <Pressable
                 onPress={handlePress}
               >
-                <GlowingText color={Colors._heteroboxd}>{data.name}</GlowingText>
+                <GlowingText color={Colors._heteroboxd} size={widescreen ? 28 : 25}>{data.name}</GlowingText>
               </Pressable>
             ) : (
               <Text style={styles.username}>{data.name}</Text>

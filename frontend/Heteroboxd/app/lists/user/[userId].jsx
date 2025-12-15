@@ -11,6 +11,8 @@ import { UserAvatar } from '../../../components/userAvatar';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useAuth } from '../../../hooks/useAuth';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import GlowingText from '../../../components/glowingText';
 
 const UsersLists = () => {
 
@@ -18,6 +20,8 @@ const UsersLists = () => {
   const { user } = useAuth();
   const [username, setUsername] = useState(null);
   const [avatar, setAvatar] = useState(null);
+  const [userTier, setUserTier] = useState('free');
+  const [userPatron, setUserPatron] = useState(false);
   
   const { width, height } = useWindowDimensions();
   const router = useRouter();
@@ -92,9 +96,14 @@ const UsersLists = () => {
   }, [userId]);
 
   useEffect(() => {
-    setUsername(lists[0]?.authorName);
-    setAvatar(lists[0]?.authorProfilePictureUrl ?? null)
-  }, [lists])
+    const first = lists[0];
+    if (!first) return;
+  
+    setUsername(first.authorName);
+    setAvatar(first.authorProfilePictureUrl);
+    setUserPatron(first.authorPatron);
+    setUserTier(first.authorTier);
+  }, [lists]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -113,6 +122,48 @@ const UsersLists = () => {
   //compute poster width:
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
+  //simple on this page since its all the same user, might be a bit more complicated when viewing film's featuring lists
+  const AuthorSection = useMemo(() =>
+    <Pressable onPress={(e) => {
+      e.stopPropagation();
+      router.push(`/profile/${userId}`)
+    }}>
+      <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignItems: 'center'}}>
+        <UserAvatar
+          pictureUrl={avatar}
+          style={{
+            marginRight: 5,
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            borderWidth: 2,
+            borderColor: Colors.border_color
+          }}
+        />
+        {
+          userTier === 'free' ? (
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>
+                {username}
+              </Text>
+              {(userPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>)}
+            </View>
+          ) : userTier === 'admin' ? (
+            <GlowingText color={Colors._heteroboxd} size={widescreen ? 20 : 16}>
+              {username}
+            </GlowingText>
+          ) : (
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <GlowingText color={Colors.heteroboxd} size={widescreen ? 20 : 16}>
+                {username}
+              </GlowingText>
+              {userPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
+            </View>
+          )
+        }
+      </View>
+    </Pressable>,
+  [userId, avatar, username, userTier, userPatron, widescreen, router]);
 
   return (
     <View style={styles.container}>
@@ -129,25 +180,7 @@ const UsersLists = () => {
           numColumns={1}
           renderItem={({ item }) => (
             <View style={{borderBottomWidth: 2, borderTopWidth: 2, borderColor: Colors.border_color, borderRadius: 5, backgroundColor: Colors.card, marginBottom: spacing*1.5}}>
-              <Pressable onPress={(e) => {
-                e.stopPropagation();
-                router.push(`/profile/${userId}`)
-              }}>
-                <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignItems: 'center'}}>
-                  <UserAvatar
-                    pictureUrl={avatar}
-                    style={{
-                      marginRight: 5,
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color
-                    }}
-                  />
-                  <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: 14}}>{username}</Text>
-                </View>
-              </Pressable>
+              {AuthorSection}
               <Pressable
                 key={item.id}
                 onPress={() => router.push(`/list/${item.id}`)}
@@ -196,25 +229,7 @@ const UsersLists = () => {
             numColumns={1}
             renderItem={({ item }) => (
               <View style={{borderBottomWidth: 2, borderTopWidth: 2, borderColor: Colors.border_color, borderRadius: 5, backgroundColor: Colors.card, marginBottom: spacing*0.75}}>
-                <Pressable onPress={(e) => {
-                  e.stopPropagation();
-                  router.push(`/profile/${userId}`)
-                }}>
-                  <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignContent: 'center'}}>
-                    <UserAvatar
-                      pictureUrl={avatar}
-                      style={{
-                        marginRight: 5,
-                        width: 26,
-                        height: 26,
-                        borderRadius: 13,
-                        borderWidth: 2,
-                        borderColor: Colors.border_color
-                      }}
-                    />
-                    <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: 16}}>{username}</Text>
-                  </View>
-                </Pressable>
+                {AuthorSection}
                 <Pressable key={item.id} onPress={() => router.push(`/list/${item.id}`)}>
                   <Text style={{color: Colors.text_title, padding: 5, paddingTop: 0, fontWeight: '500', fontSize: 28}}>{item.name}</Text>
                     <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
