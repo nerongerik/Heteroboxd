@@ -257,7 +257,7 @@ const ProfileOptionsButton = ({ userId }) => {
         }}
       />
 
-      <Popup visible={deleteConfirm} message={"This action cannot be undone, and you may be unable to make a new account with the same e-mail until the next database purge. Are you sure you want to delete your account?"}
+      <Popup visible={deleteConfirm} message={"This action cannot be undone, and you may be unable to make a new account with the same e-mail until we finish processing the removal request. Are you sure you want to delete your account?"}
         onClose={() => {setDeleteConfirm(false)}} confirm={true} onConfirm={() => {handleDelete()}}
       />
 

@@ -100,20 +100,21 @@ namespace Heteroboxd.Service
         
         public async Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId, int Page, int PageSize)
         {
-            /*
-            var FilmsLists = await _repo.GetFeaturingFilmAsync(FilmId);
-
-            var ListsTasks = FilmsLists.Select(async ul =>
+            var (Lists, TotalCount) = await _repo.GetFeaturingFilmAsync(FilmId, Page, PageSize);
+            List<UserListInfoResponse> ListResponses = new List<UserListInfoResponse>();
+            foreach (UserList ul in Lists)
             {
                 var Author = await _userRepo.GetByIdAsync(ul.AuthorId);
-                if (Author == null) throw new KeyNotFoundException();
-                return new UserListInfoResponse(ul, Author);
-            });
-
-            var Lists = await Task.WhenAll(ListsTasks);
-            return Lists.ToList();
-            */
-            throw new NotImplementedException();
+                if (Author == null) continue;
+                ListResponses.Add(new UserListInfoResponse(ul, Author, 4));
+            }
+            return new PagedUserListsInfoResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Lists = ListResponses
+            };
         }
 
         public async Task<int> GetListsFeaturingFilmCount(int FilmId)

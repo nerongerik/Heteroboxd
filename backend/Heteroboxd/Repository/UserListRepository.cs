@@ -81,8 +81,22 @@ namespace Heteroboxd.Repository
                 .Where(ul => ul.AuthorId == UserId)
                 .ToListAsync();
 
-        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize) =>
-            throw new NotImplementedException();
+        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize)
+        {
+            var FilmQuery = _context.UserLists
+                .Include(ul => ul.Films)
+                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
+                .OrderByDescending(f => f.DateCreated);
+
+            var TotalCount = await FilmQuery.CountAsync();
+
+            var Lists = await FilmQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Lists, TotalCount);
+        }
 
         public async Task<int> GetFeaturingFilmCountAsync(int FilmId) =>
             await _context.UserLists

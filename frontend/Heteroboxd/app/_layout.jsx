@@ -74,6 +74,14 @@ const RootLayout = () => {
             headerRight: () => <ReviewOptionsButton reviewId={route.params?.reviewId} />
           })}
         />
+        <Stack.Screen 
+          name="lists/film/[filmId]" 
+          options={{
+            headerTitle: 'Featuring lists',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title},
+          }}
+        />
       </Stack>
     </AuthProvider>
   )
