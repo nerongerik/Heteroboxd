@@ -23,7 +23,6 @@ namespace Heteroboxd.Models
         public ICollection<Notification> Notifications { get; set; }
         public ICollection<Review> Reviews { get; set; }
         public ICollection<Review> LikedReviews { get; set; }
-        public ICollection<Comment> LikedComments { get; set; }
         public ICollection<UserList> LikedLists { get; set; }
         public ICollection<UserWatchedFilm> WatchedFilms { get; set; }
 
@@ -43,7 +42,6 @@ namespace Heteroboxd.Models
             Notifications = new List<Notification>();
             Reviews = new List<Review>();
             LikedReviews = new List<Review>();
-            LikedComments = new List<Comment>();
             LikedLists = new List<UserList>();
             WatchedFilms = new List<UserWatchedFilm>();
         }

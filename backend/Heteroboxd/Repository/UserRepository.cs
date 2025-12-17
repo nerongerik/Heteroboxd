@@ -16,19 +16,16 @@ namespace Heteroboxd.Repository
         Task<User?> GetUserFollowersAsync(Guid UserId);
         Task<User?> GetUserBlockedAsync(Guid UserId);
         Task<User?> GetUserLikedReviewsAsync(Guid UserId);
-        Task<User?> GetUserLikedCommentsAsync(Guid UserId);
         Task<User?> GetUserLikedListsAsync(Guid UserId);
         Task ReportUserEfCore7Async(Guid UserId);
         Task AddToWatchlist(WatchlistEntry Entry);
         Task RemoveFromWatchlist(WatchlistEntry Entry);
         Task UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId);
-        Task UpdateLikedCommentsAsync(Guid UserId, Guid CommentId);
         Task UpdateLikedListsAsync(Guid UserId, Guid ListId);
         Task FollowUnfollowAsync(Guid UserId, Guid TargetId);
         Task BlockUnblockAsync(Guid UserId, Guid TargetId);
 
         Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId);
-        Task<Comment?> IsCommentLikedAsync(Guid UserId, Guid CommentId);
         Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId);
         Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId);
 
@@ -58,7 +55,6 @@ namespace Heteroboxd.Repository
                 .Include(u => u.Blocked)
                 .Include(u => u.Lists)
                 .Include(u => u.Reviews)
-                .Include(u => u.LikedComments)
                 .Include(u => u.LikedLists)
                 .Include(u => u.LikedReviews)
                 .Include(u => u.WatchedFilms)
@@ -126,12 +122,6 @@ namespace Heteroboxd.Repository
                 .Include(u => u.LikedReviews)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
 
-
-        public async Task<User?> GetUserLikedCommentsAsync(Guid UserId) =>
-            await _context.Users
-                .Include(u => u.LikedComments)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-
         public async Task<User?> GetUserLikedListsAsync(Guid UserId) =>
             await _context.Users
                 .Include(u => u.LikedLists)
@@ -170,18 +160,6 @@ namespace Heteroboxd.Repository
             if (User == null || Review == null) throw new KeyNotFoundException();
             if (User.LikedReviews.Any(r => r.Id == ReviewId)) User.LikedReviews.Remove(Review);
             else User.LikedReviews.Add(Review);
-        }
-
-        public async Task UpdateLikedCommentsAsync(Guid UserId, Guid CommentId)
-        {
-            var User = await _context.Users
-                .Include(u => u.LikedComments)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            var Comment = await _context.Comments
-                .FirstOrDefaultAsync(c => c.Id == CommentId);
-            if (User == null || Comment == null) throw new KeyNotFoundException();
-            if (User.LikedComments.Any(c => c.Id == CommentId)) User.LikedComments.Remove(Comment);
-            else User.LikedComments.Add(Comment);
         }
 
         public async Task UpdateLikedListsAsync(Guid UserId, Guid ListId)
@@ -251,16 +229,6 @@ namespace Heteroboxd.Repository
             if (User == null) return null;
             var Review = User.LikedReviews.FirstOrDefault(r => r.Id == ReviewId);
             return Review;
-        }
-
-        public async Task<Comment?> IsCommentLikedAsync(Guid UserId, Guid CommentId)
-        {
-            var User = await _context.Users
-                .Include(u => u.LikedComments)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) return null;
-            var Comment = User.LikedComments.FirstOrDefault(c => c.Id == CommentId);
-            return Comment;
         }
 
         public async Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId)

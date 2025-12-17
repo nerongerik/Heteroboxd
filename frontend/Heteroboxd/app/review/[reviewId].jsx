@@ -127,7 +127,6 @@ const Review = () => {
         body: JSON.stringify({
           UserId: user.userId,
           ReviewId: reviewId,
-          CommentId: null,
           ListId: null
         })
       });

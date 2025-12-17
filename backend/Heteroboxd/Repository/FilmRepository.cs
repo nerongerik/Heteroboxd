@@ -101,7 +101,7 @@ namespace Heteroboxd.Repository
         public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {
             var UwQuery = _context.UserWatchedFilms
-                .Where(uw => uw.UserId == UserId && uw.TimesWatched != 0)
+                .Where(uw => uw.UserId == UserId)
                 .OrderByDescending(uw => uw.DateWatched);
 
             var TotalCount = await UwQuery.CountAsync();

@@ -95,31 +95,6 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("like-count/{CommentId}/{LikeChange}")]
-        [Authorize]
-        public async Task<IActionResult> UpdateLikeCount(string CommentId, string LikeChange)
-        {
-            //LikeChange is +1 or -1
-            _logger.LogInformation($"PUT Update Like Count endpoint hit for {CommentId} with change {LikeChange}");
-            try
-            {
-                await _service.UpdateCommentLikeCountEfCore7(CommentId, LikeChange);
-                return Ok();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpPut("toggle-notifications/{CommentId}")]
         [Authorize]
         public async Task<IActionResult> ToggleNotifications(string CommentId)

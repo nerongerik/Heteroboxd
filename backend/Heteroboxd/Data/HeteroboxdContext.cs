@@ -94,11 +94,6 @@ namespace Heteroboxd.Data
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserLikedReviews"));
 
-                // LikedComments (M:M)
-                entity.HasMany(u => u.LikedComments)
-                      .WithMany()
-                      .UsingEntity(j => j.ToTable("UserLikedComments"));
-
                 // LikedLists (M:M)
                 entity.HasMany(u => u.LikedLists)
                       .WithMany()

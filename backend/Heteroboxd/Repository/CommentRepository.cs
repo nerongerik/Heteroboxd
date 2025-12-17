@@ -8,7 +8,6 @@ namespace Heteroboxd.Repository
     {
         Task<Comment?> GetByIdAsync(Guid Id);
         Task<List<Comment>> GetByReviewAsync(Guid ReviewId);
-        Task UpdateLikeCountEfCore7Async(Guid CommentId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid CommentId);
         Task ReportEfCore7Async(Guid CommentId);
         void Create(Comment Comment);
@@ -34,17 +33,6 @@ namespace Heteroboxd.Repository
             await _context.Comments
                 .Where(c => c.ReviewId == ReviewId)
                 .ToListAsync();
-
-        public async Task UpdateLikeCountEfCore7Async(Guid CommentId, int Delta) //increments/decrements like count
-        {
-            var Rows = await _context.Comments
-                .Where(c => c.Id == CommentId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    c => c.LikeCount,
-                    c => c.LikeCount + Delta
-                ));
-            if (Rows == 0) throw new KeyNotFoundException();
-        }
 
         public async Task ToggleNotificationsEfCore7Async(Guid CommentId) //flips the boolean value of notifications on a review
         {

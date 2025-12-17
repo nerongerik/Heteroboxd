@@ -358,7 +358,9 @@ const Film = () => {
 
         <View style={[styles.divider, {marginVertical: 15}]} />
         
-        <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
+        {
+          film.tagline && <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
+        }
         <Text style={[styles.text, { fontSize: widescreen ? 18 : 14, paddingHorizontal: 10 }]}>{film.synopsis}</Text>
         
         <View style={[styles.divider, {marginTop: 15, marginBottom: film?.genres && film?.genres.length > 0 ? 10 : 15}]} />
@@ -386,7 +388,7 @@ const Film = () => {
           user ? (
             <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf} watchlisted={watchlisted} review={usersReview}/>
           ) : (
-            <Link style={{color: Colors.text_link, fontSize: 16}}>Create a Heteroboxd account or log in to interact with this film.</Link>
+            <Link style={{color: Colors.text_link, fontSize: 16, textAlign: 'center'}} href="/login">Create a Heteroboxd account or log in to interact with this film.</Link>
           )
         }
 
@@ -400,7 +402,11 @@ const Film = () => {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
-          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          contentContainerStyle={{
+            alignItems: "flex-start",
+            justifyContent: "flex-start"
+          }}
         >
           {actors.length === 0 && (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
@@ -440,8 +446,12 @@ const Film = () => {
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Crew</Text>
         <ScrollView
           horizontal
-          showsHorizontalScrollIndicator={widescreen}
-          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
+          style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          contentContainerStyle={{
+            alignItems: "flex-start",
+            justifyContent: "flex-start"
+          }}
         >
           {(directors.length === 0 && crew.length === 0) && (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>

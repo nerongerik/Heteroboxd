@@ -1,13 +1,7 @@
-﻿using Heteroboxd.Models.Enums;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Primitives;
-using System.Security.Claims;
-
-namespace Heteroboxd.Models.DTO
+﻿namespace Heteroboxd.Models.DTO
 {
     public class UserInfoResponse
     {
-        //carries the same information about the user as jwt, different usecase
         public string Id { get; set; }
         public string Name { get; set; }
         public string PictureUrl { get; set; }
@@ -15,17 +9,17 @@ namespace Heteroboxd.Models.DTO
         public string? Gender { get; set; }
         public string Tier { get; set; }
         public string? Expiry { get; set; }
-        public string Patron { get; set; }
+        public bool Patron { get; set; }
         public string Joined { get; set; }
         public int Flags { get; set; }
-        public string WatchlistCount { get; set; }
-        public string ListsCount { get; set; }
-        public string FollowersCount { get; set; }
-        public string FollowingCount { get; set; }
-        public string BlockedCount { get; set; }
-        public string ReviewsCount { get; set; }
-        public string Likes { get; set; }
-        public string Watched { get; set; }
+        public int WatchlistCount { get; set; }
+        public int ListsCount { get; set; }
+        public int FollowersCount { get; set; }
+        public int FollowingCount { get; set; }
+        public int BlockedCount { get; set; }
+        public int ReviewsCount { get; set; }
+        public int Likes { get; set; }
+        public int Watched { get; set; }
 
         public UserInfoResponse(User User)
         {
@@ -34,19 +28,19 @@ namespace Heteroboxd.Models.DTO
             this.PictureUrl = User.PictureUrl;
             this.Bio = User.Bio;
             this.Gender = User.Gender.ToString();
-            this.Tier = User.Tier.ToString();
+            this.Tier = User.Tier.ToString().ToLower();
             this.Expiry = User.TierExpiry != null ? User.TierExpiry?.ToString("dd/MM/yyyy HH:mm")! : null;
-            this.Patron = User.IsPatron.ToString();
+            this.Patron = User.IsPatron;
             this.Joined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
             this.Flags = User.Flags;
-            this.WatchlistCount = User.Watchlist!.Films.Count.ToString();
-            this.ListsCount = User.Lists.Count.ToString();
-            this.FollowersCount = User.Followers.Count.ToString();
-            this.FollowingCount = User.Following.Count.ToString();
-            this.BlockedCount = User.Blocked.Count.ToString();
-            this.ReviewsCount = User.Reviews.Count.ToString();
-            this.Likes = (User.LikedComments.Count + User.LikedLists.Count + User.LikedReviews.Count).ToString();
-            this.Watched = User.WatchedFilms.Count.ToString();
+            this.WatchlistCount = User.Watchlist != null ? User.Watchlist.Films.Count : 0;
+            this.ListsCount = User.Lists != null ? User.Lists.Count : 0;
+            this.FollowersCount = User.Followers != null ? User.Followers.Count : 0;
+            this.FollowingCount = User.Following != null ?  User.Following.Count : 0;
+            this.BlockedCount = User.Blocked != null ? User.Blocked.Count : 0;
+            this.ReviewsCount = User.Reviews != null ? User.Reviews.Count : 0;
+            this.Likes = (User.LikedLists != null && User.LikedReviews != null) ? (User.LikedLists.Count + User.LikedReviews.Count) : 0;
+            this.Watched = User.WatchedFilms != null ? User.WatchedFilms.Count : 0;
         }
     }
 
@@ -62,7 +56,6 @@ namespace Heteroboxd.Models.DTO
     {
         public string UserId { get; set; }
         public string? ReviewId { get; set; }
-        public string? CommentId { get; set; }
         public string? ListId { get; set; }
     }
 

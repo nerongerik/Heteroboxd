@@ -55,6 +55,21 @@ const CreateList = () => {
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
 
+  //padded entries
+  const paddedEntries = useMemo(() => {
+    const padded = [...entries];
+    const remainder = padded.length % 4;
+
+    if (remainder !== 0) {
+      const placeholdersToAdd = 4 - remainder;
+      for (let i = 0; i < placeholdersToAdd; i++) {
+        padded.push(null);
+      }
+    }
+
+    return padded;
+  }, [entries]);
+
   const openMenu = () => {
     setMenuShown(true);
     Animated.timing(slideAnim, {
@@ -79,8 +94,10 @@ const CreateList = () => {
 
   async function handleSubmit() {
     try {
-      if (!user || !isValidSession()) {
-        //snackbar
+      const vS = await isValidSession();
+      if (!user || !vS) {
+        setMessage("Session expired - try logging in again!");
+        setSnack(true);
         return;
       }
       setResult(0);
@@ -159,48 +176,61 @@ const CreateList = () => {
       </View>
       <View style={[styles.entryContainer, {minHeight: widescreen ? height/2 : height/3, maxHeight: widescreen ? height/2 : height/3, width: maxRowWidth}]}> 
         <FlatList
-          data={entries}
+          data={paddedEntries}
           numColumns={4}
-          renderItem={({ item, index }) => (
-            <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
-              <Poster
-                posterUrl={item.posterUrl}
-                style={{
-                  width: posterWidth,
-                  height: posterHeight,
-                  borderRadius: 8,
-                  borderWidth: 2,
-                  borderColor: Colors.border_color,
-                  marginBottom: ranked ? 0 : spacing
-                }}
-              />
-              {ranked && (
+          renderItem={({ item, index }) => {
+            if (!item) {
+              return (
                 <View
                   style={{
-                    width: widescreen ? 28 : 20,
-                    height: widescreen ? 28 : 20,
-                    borderRadius: 9999,
-                    backgroundColor: Colors.card,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginBottom: spacing / 2,
-                    marginTop: -10,
+                    width: posterWidth,
+                    height: posterHeight,
+                    //margin: spacing / 2,
                   }}
-                >
-                  <Text
+                />
+              );
+            }
+            return (
+              <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
+                <Poster
+                  posterUrl={item.posterUrl}
+                  style={{
+                    width: posterWidth,
+                    height: posterHeight,
+                    borderRadius: 6,
+                    borderWidth: 2,
+                    borderColor: Colors.border_color,
+                    marginBottom: ranked ? 0 : spacing
+                  }}
+                />
+                {ranked && (
+                  <View
                     style={{
-                      color: Colors.text_title,
-                      fontSize: widescreen ? 12 : 8,
-                      fontWeight: 'bold',
-                      lineHeight: 18,
+                      width: widescreen ? 28 : 20,
+                      height: widescreen ? 28 : 20,
+                      borderRadius: 9999,
+                      backgroundColor: Colors.background,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginBottom: spacing / 2,
+                      marginTop: -10,
                     }}
                   >
-                    {index + 1}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          )}
+                    <Text
+                      style={{
+                        color: Colors.text_title,
+                        fontSize: widescreen ? 12 : 8,
+                        fontWeight: 'bold',
+                        lineHeight: 18,
+                      }}
+                    >
+                      {index + 1}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            )
+          }}
           contentContainerStyle={{
             padding: spacing,
             alignItems: 'center'

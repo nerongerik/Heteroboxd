@@ -78,7 +78,8 @@ const ProfileEdit = () => {
   }
 
   const handleEdit = async () => {
-    if (!isValidSession()) {
+    const vS = await isValidSession();
+    if (!vS) {
       setMessage("We failed to validate your session, and thus cannot procede in committing your changes.");
       setResponse(401);
       return;
@@ -194,7 +195,7 @@ export default ProfileEdit
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  scroll: { flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50 },
   form: { width: '100%', alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '700', marginBottom: 30, color: Colors.text_title, textAlign: 'center' },
   profileWrapper: { alignItems: 'center', marginBottom: 16 },

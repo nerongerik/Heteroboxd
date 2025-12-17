@@ -60,19 +60,20 @@ export async function refreshToken() {
 export async function logout(userId) {
     try {
         const refresh = Platform.OS === "web" ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
-        await fetch(`${BaseUrl.api}/auth/logout`, {
+        const res = await fetch(`${BaseUrl.api}/auth/logout`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ Token: refresh, UserId: userId })
-        }).then(async (res) => {
-            //log user out on the frontend regardless of backend's success
-            if (Platform.OS === "web") localStorage.clear();
-            else {
-                await SecureStore.deleteItemAsync("token");
-                await SecureStore.deleteItemAsync("refresh");
-            }
-            return res.status === 200;
         });
+        if (res.status !== 200) {
+            console.log('logout failed');
+        }
+        if (Platform.OS === "web") localStorage.clear();
+        else {
+            await SecureStore.deleteItemAsync("token");
+            await SecureStore.deleteItemAsync("refresh");
+        }
+        return res.status === 200;
     } catch {
         return false;
     }

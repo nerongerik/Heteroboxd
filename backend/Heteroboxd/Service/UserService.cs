@@ -155,7 +155,6 @@ namespace Heteroboxd.Service
 
         public async Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId)
         {
-            //non-critical infrastructure, no need for rigorous id-checking
             var _following = await _repo.GetUserFollowingAsync(Guid.Parse(UserId));
             var _followers = await _repo.GetUserFollowersAsync(Guid.Parse(UserId));
             var _blocked = await _repo.GetUserBlockedAsync(Guid.Parse(UserId));
@@ -177,10 +176,9 @@ namespace Heteroboxd.Service
         public async Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId)
         {
             var _likedReviews = await _repo.GetUserLikedReviewsAsync(Guid.Parse(UserId));
-            var _likedComments = await _repo.GetUserLikedCommentsAsync(Guid.Parse(UserId));
             var _likedLists = await _repo.GetUserLikedListsAsync(Guid.Parse(UserId));
 
-            if (_likedComments == null || _likedLists == null || _likedReviews == null) throw new KeyNotFoundException();
+            if (_likedLists == null || _likedReviews == null) throw new KeyNotFoundException();
 
             var TaskedReviews = _likedReviews.LikedReviews.Select(async r =>
             {
@@ -188,13 +186,6 @@ namespace Heteroboxd.Service
                 var Film = await _filmRepo.GetByIdAsync(r.FilmId);
                 if (Author == null || Film == null) throw new KeyNotFoundException();
                 return new ReviewInfoResponse(r, Author, Film);
-            });
-
-            var TaskedComments = _likedComments.LikedComments.Select(async c =>
-            {
-                var Author = await _repo.GetByIdAsync(c.AuthorId);
-                if (Author == null) throw new KeyNotFoundException();
-                return new CommentInfoResponse(c, Author);
             });
 
             var TaskedLists = _likedLists.LikedLists.Select(async ul =>
@@ -205,13 +196,11 @@ namespace Heteroboxd.Service
             });
 
             var LikedReviews = await Task.WhenAll(TaskedReviews);
-            var LikedComments = await Task.WhenAll(TaskedComments);
             var LikedLists = await Task.WhenAll(TaskedLists);
 
             return new Dictionary<string, IEnumerable<object>>
             {
                 { "liked_reviews", LikedReviews },
-                { "liked_comments", LikedComments },
                 { "liked_lists", LikedLists }
             };
         }
@@ -223,9 +212,6 @@ namespace Heteroboxd.Service
                 case ("review"):
                     var LikedReview = await _repo.IsReviewLikedAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
                     return LikedReview != null;
-                case ("comment"):
-                    var LikedComment = await _repo.IsCommentLikedAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
-                    return LikedComment != null;
                 case ("list"):
                     var LikedList = await _repo.IsListLikedAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
                     return LikedList != null;
@@ -395,11 +381,6 @@ namespace Heteroboxd.Service
             if (LikeRequest.ReviewId != null)
             {
                 await _repo.UpdateLikedReviewsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ReviewId));
-                await _repo.SaveChangesAsync();
-            }
-            else if (LikeRequest.CommentId != null)
-            {
-                await _repo.UpdateLikedCommentsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.CommentId));
                 await _repo.SaveChangesAsync();
             }
             else if (LikeRequest.ListId != null)

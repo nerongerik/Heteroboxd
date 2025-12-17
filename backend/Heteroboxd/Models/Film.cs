@@ -40,7 +40,7 @@ namespace Heteroboxd.Models
             this.Tagline = Tagline;
             this.Synopsis = Synopsis;
             this.Genres = new List<string>(); //to be filled during sync
-            this.PosterUrl = string.IsNullOrEmpty(PosterUrl) ? "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" : PosterUrl;
+            this.PosterUrl = string.IsNullOrEmpty(PosterUrl) ? "noposter" : PosterUrl;
             this.BackdropUrl = string.IsNullOrEmpty(BackdropUrl) ? null : BackdropUrl;
             this.Length = Length;
             this.ReleaseYear = ReleaseYear;

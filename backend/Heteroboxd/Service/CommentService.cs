@@ -8,7 +8,6 @@ namespace Heteroboxd.Service
     {
         Task<CommentInfoResponse?> GetComment(string CommentId);
         Task<List<CommentInfoResponse>> GetCommentsByReview(string ReviewId);
-        Task UpdateCommentLikeCountEfCore7(string CommentId, string LikeChange);
         Task ToggleNotificationsEfCore7(string CommentId);
         Task ReportCommentEfCore7(string CommentId);
         Task CreateComment(CreateCommentRequest CommentRequest);
@@ -51,13 +50,6 @@ namespace Heteroboxd.Service
 
             var Comments = await Task.WhenAll(CommentTasks);
             return Comments.ToList();
-        }
-
-        public async Task UpdateCommentLikeCountEfCore7(string CommentId, string LikeChange)
-        {
-            if (!Guid.TryParse(CommentId, out var Id)) throw new ArgumentException();
-            if (!int.TryParse(LikeChange, out var Delta)) throw new ArgumentException();
-            await _repo.UpdateLikeCountEfCore7Async(Id, Delta);
         }
 
         public async Task ToggleNotificationsEfCore7(string CommentId)

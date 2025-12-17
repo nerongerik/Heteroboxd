@@ -1,6 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl } from 'react-native'
-import { useAuth } from '../../../hooks/useAuth';
 import { Colors } from '../../../constants/colors';
 import { useEffect, useMemo, useState } from 'react';
 import { BaseUrl } from '../../../constants/api';
@@ -11,7 +10,6 @@ import { Poster } from '../../../components/poster';
 
 const UserWatchedFilms = () => {
   const { userId } = useLocalSearchParams();
-  const { user, isValidSession } = useAuth();
 
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -19,42 +17,30 @@ const UserWatchedFilms = () => {
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
 
-  const [entries, setEntries] = useState([]);
+  const pageSize = 48;
+
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [entries, setEntries] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEnd, setIsEnd] = useState(false);
 
-  const loadUserWatchedPage = async (page, replace = false) => {
+  const [showPagination, setShowPagination] = useState(false);
+
+  const loadUserWatchedPage = async (pageNumber) => {
     try {
-      if (await isValidSession() && user && user.userId === userId) {
-        setIsLoading(true);
-
-        const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=${page}&PageSize=${pageSize}`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-          }
-        });
-
-        if (res.status === 200) {
-          const json = await res.json();
-          setPage(json.page);
-          setTotalCount(json.totalCount);
-          setPageSize(json.pageSize);
-          setEntries(prev =>
-            replace ? json.films : [...prev, ...json.films]
-          );
-          if (json.films.length < json.pageSize)
-            setIsEnd(true);
-        } else {
-          setResult(500);
-          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-        }
+      setIsLoading(true);
+      const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=${pageNumber}&PageSize=${pageSize}`, {
+        method: 'GET',
+        headers: {'Accept': 'application/json'}
+      });
+      if (res.status === 200) {
+        const json = await res.json();
+        setPage(json.page);
+        setTotalCount(json.totalCount);
+        setEntries(json.films);
       } else {
-        setResult(401);
-        setMessage("Wrong credentials! Try logging in again...");
+        setResult(500);
+        setMessage("Something went wrong! Contact Heteroboxd support for more information!");
       }
     } catch {
       setResult(500);
@@ -65,11 +51,12 @@ const UserWatchedFilms = () => {
   };
 
   useEffect(() => {
-    setEntries([]);
-    setIsEnd(false);
-    loadUserWatchedPage(1, true);
+    setPage(1);
+    loadUserWatchedPage(1);
   }, [userId]);
 
+  //page count
+  const totalPages = Math.ceil(totalCount/pageSize);
   //web on compooper?
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
   //minimum spacing between posters
@@ -80,21 +67,40 @@ const UserWatchedFilms = () => {
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
 
+  //padded entries
+  const paddedEntries = useMemo(() => {
+    const padded = [...entries];
+    const remainder = padded.length % 4;
+
+    if (remainder !== 0) {
+      const placeholdersToAdd = 4 - remainder;
+      for (let i = 0; i < placeholdersToAdd; i++) {
+        padded.push(null);
+      }
+    }
+
+    return padded;
+  }, [entries]);
+
   return (
     <View style={styles.container}>
-
-      {!widescreen ? (
-        //infinite scroll on narrow touchscreens
-        <FlatList
-          refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={() => {
-              setEntries([]);
-              loadUserWatchedPage(1);
-            }}/>}
-          data={entries}
-          keyExtractor={(item) => item.filmId}
-          numColumns={4}
-          renderItem={({ item }) => (
+      <FlatList
+        data={paddedEntries}
+        keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
+        numColumns={4}
+        renderItem={({ item }) => {
+          if (!item) {
+            return (
+              <View
+                style={{
+                  width: posterWidth,
+                  height: posterHeight,
+                  margin: spacing / 2,
+                }}
+              />
+            );
+          }
+          return (
             <Pressable
               onPress={() => router.push(`/film/${item.filmId}`)}
               style={{ margin: spacing / 2 }}
@@ -104,72 +110,41 @@ const UserWatchedFilms = () => {
                 style={{
                   width: posterWidth,
                   height: posterHeight,
-                  borderRadius: 8,
+                  borderRadius: 6,
                   borderWidth: 2,
                   borderColor: Colors.border_color,
                 }}
               />
             </Pressable>
-          )}
-          contentContainerStyle={{
-            paddingHorizontal: spacing / 2,
-            paddingBottom: 80,
-            marginTop: 50,
-            marginBottom: 50
-          }}
-          onEndReached={() => {
-            if (!isLoading && !isEnd) {
-              loadUserWatchedPage(page + 1, false);
-            }
-          }}
-          onEndReachedThreshold={0.8}
-        />
-      ) : (
-        //explicit pagination on web widescreens
-        <>
-          <FlatList
-            data={entries}
-            keyExtractor={(item) => item.filmId}
-            numColumns={4}
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => router.push(`/film/${item.filmId}`)}
-                style={{ margin: spacing / 2 }}
-              >
-                <Poster
-                  posterUrl={item.posterUrl}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    borderRadius: 8,
-                    borderWidth: 2,
-                    borderColor: Colors.border_color,
-                  }}
-                />
-              </Pressable>
-            )}
-            contentContainerStyle={{
-              paddingHorizontal: spacing / 2,
-              paddingTop: 20,
-              paddingBottom: 40,
-              width: 1000,
-              alignSelf: "center",
-            }}
-            showsVerticalScrollIndicator={false}
+          );
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => loadUserWatchedPage(page)}
           />
-
-          <PaginationBar
-            numbers={Array.from({ length: Math.ceil(totalCount / pageSize) }, (_, i) => i + 1)}
-            page={page}
-            onPagePress={(num) => {
-              setEntries([]);
-              setIsEnd(false);
-              loadUserWatchedPage(num, true);
-            }}
-          />
-        </>
-      )}
-
+        }
+        style={{
+          alignSelf: 'center'
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing / 2,
+          paddingBottom: 80,
+          marginTop: 50,
+        }}
+        showsVerticalScrollIndicator={false}
+        onEndReached={() => setShowPagination(true)}
+        onEndReachedThreshold={0.2}
+      />
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        visible={showPagination}
+        onPagePress={(num) => {
+          setPage(num);
+          loadUserWatchedPage(num);
+        }}
+      />
       <LoadingResponse visible={isLoading} />
       <Popup visible={[401, 500].includes(result)} message={message} onClose={() => result === 500 ? router.replace('/contact') : router.replace('/')} />
     </View>
@@ -182,16 +157,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
     paddingBottom: 50,
-  },
-  text: {
-    fontWeight: "350",
-    marginTop: 5,
-    marginBottom: 0,
-    fontSize: 16,
-    color: Colors.text,
-    textAlign: "center",
-  },
+  }
 })
