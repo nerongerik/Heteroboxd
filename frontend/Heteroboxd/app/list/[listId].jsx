@@ -1,151 +1,183 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl, ScrollView } from 'react-native'
-import { Colors } from '../../constants/colors';
-import { useEffect, useMemo, useState } from 'react';
-import { BaseUrl } from '../../constants/api';
-import LoadingResponse from '../../components/loadingResponse';
-import Popup from '../../components/popup';
-import PaginationBar from '../../components/paginationBar';
-import { Backdrop } from '../../components/backdrop';
-import { Poster } from '../../components/poster';
-import {UserAvatar} from '../../components/userAvatar';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import * as auth from '../../helpers/auth';
-import { useAuth } from '../../hooks/useAuth';
+import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl } from 'react-native'
+import { Colors } from '../../constants/colors'
+import { useEffect, useMemo, useState } from 'react'
+import { BaseUrl } from '../../constants/api'
+import LoadingResponse from '../../components/loadingResponse'
+import Popup from '../../components/popup'
+import PaginationBar from '../../components/paginationBar'
+import { Poster } from '../../components/poster'
+import { UserAvatar } from '../../components/userAvatar'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import * as auth from '../../helpers/auth'
+import { useAuth } from '../../hooks/useAuth'
+import GlowingText from '../../components/glowingText'
+
+const PAGE_SIZE = 48
 
 const List = () => {
-  const { listId } = useLocalSearchParams();
+  const { listId } = useLocalSearchParams()
+  const router = useRouter()
+  const { width } = useWindowDimensions()
+  const { user, isValidSession } = useAuth()
 
-  const { user, isValidSession } = useAuth();
+  const [result, setResult] = useState(-1)
+  const [message, setMessage] = useState('')
 
-  const router = useRouter();
-  const { width, height } = useWindowDimensions();
+  const [baseList, setBaseList] = useState(null)
+  const [entries, setEntries] = useState([])
 
-  const [result, setResult] = useState(-1);
-  const [message, setMessage] = useState('');
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [showPagination, setShowPagination] = useState(false)
 
-  const [baseList, setBaseList] = useState(null); //"header," basically just the list metadata without films
-  const [likeCountLocalCopy, setLikeCountLocalCopy] = useState(0);
-  const [iLiked, setILiked] = useState(false);
-
-  const [entries, setEntries] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50); //unlikely that lists will be too big, make it easier for network
-  const [totalCount, setTotalCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isEnd, setIsEnd] = useState(false);
-
-  const [descCollapsed, setDescCollapsed] = useState(true);
+  const [likeCount, setLikeCount] = useState(0)
+  const [iLiked, setILiked] = useState(false)
+  const [descCollapsed, setDescCollapsed] = useState(true)
 
   const loadBaseList = async () => {
     try {
-      setResult(0);
-      const res = await fetch(`${BaseUrl.api}/lists/${listId}`, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json"
-        }
-      });
+      const res = await fetch(`${BaseUrl.api}/lists/${listId}`)
       if (res.status === 200) {
-        const json = await res.json();
-        setBaseList(json);
-        setLikeCountLocalCopy(Number(json.likeCount));
-        setResult(200);
+        const json = await res.json()
+        setBaseList(json)
+        setLikeCount(Number(json.likeCount))
       } else if (res.status === 404) {
-        setResult(404);
-        setMessage("This list no longer exists!");
+        setResult(404)
+        setMessage('This list no longer exists!')
       } else {
-        setResult(500);
-        setMessage("Something went wrong! Contact Heteroboxd support for more information!");
+        throw new Error()
       }
     } catch {
-      setResult(500);
-      setMessage("Network error! Please check your internet connection.")
+      setResult(500)
+      setMessage('Something went wrong! Contact support.')
     }
   }
 
-  const loadListPage = async (page, replace = false) => {
-    if (!baseList) return;
+  const loadListPage = async (pageNumber) => {
+    if (!baseList) return
     try {
-      setIsLoading(true);
-      const res = await fetch(`${BaseUrl.api}/lists/entries/${baseList.id}?Page=${page}&PageSize=${pageSize}`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        }
-      });
+      setIsLoading(true)
+      const res = await fetch(
+        `${BaseUrl.api}/lists/entries/${baseList.id}?Page=${pageNumber}&PageSize=${PAGE_SIZE}`
+      )
       if (res.status === 200) {
-        const json = await res.json();
-        setPage(json.page);
-        setTotalCount(json.totalCount);
-        setPageSize(json.pageSize);
-        setEntries(prev =>
-          replace ? json.entries : [...prev, ...json.entries]
-        );
-        if (json.entries.length < json.pageSize)
-          setIsEnd(true);
+        const json = await res.json()
+        setPage(json.page)
+        setTotalCount(json.totalCount)
+        setEntries(json.entries)
       } else {
-        setResult(500);
-        setMessage("Something went wrong! Contact Heteroboxd support for more information!");
+        throw new Error()
       }
     } catch {
-      setResult(500);
-      setMessage("Network error! Check your internet connection...");
+      setResult(500)
+      setMessage('Network error! Check your connection.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const loadLiked = async () => {
-    if (!user || !isValidSession) return;
+    const vS = await isValidSession();
+    if (!user || !vS) return
     try {
-      const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/users/${user.userId}/liked/${listId}?ObjectType=list`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      });
-      if (res.status === 200) {
-        const json = await res.json();
-        setILiked(json);
-      } else {
-        console.log('Is List Liked FAILED: ' + res.status);
-      }
-    } catch {
-      console.log('Network error');
-    }
+      const jwt = await auth.getJwt()
+      const res = await fetch(
+        `${BaseUrl.api}/users/${user.userId}/liked/${listId}?ObjectType=list`,
+        { headers: { Authorization: `Bearer ${jwt}` } }
+      )
+      if (res.status === 200) setILiked(await res.json())
+    } catch {}
   }
-  
-  useEffect(() => {
-    loadBaseList();
-  }, [listId]);
 
   useEffect(() => {
-    setEntries([]);
-    setIsEnd(false);
-    loadListPage(1, true);
-  }, [baseList]);
+    loadBaseList()
+  }, [listId])
 
   useEffect(() => {
-    loadLiked();
-  }, [listId, user])
+    setPage(1)
+    loadListPage(1)
+  }, [baseList])
 
+  useEffect(() => {
+    loadLiked()
+  }, [user, listId])
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+  const widescreen = useMemo(() => width > 1000, [width])
+  const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
+  const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
+
+  const paddedEntries = useMemo(() => {
+    const padded = [...entries];
+    const remainder = padded.length % 4;
+    if (remainder !== 0) {
+      const placeholdersToAdd = 4 - remainder;
+      for (let i = 0; i < placeholdersToAdd; i++) {
+        padded.push(null);
+      }
+    }
+    return padded;
+  }, [entries]);
+
+  const AuthorSection = useMemo(() =>
+    <Pressable onPress={(e) => {
+      e.stopPropagation();
+      router.push(`/profile/${baseList?.authorId}`)
+    }}>
+      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <UserAvatar
+          pictureUrl={baseList?.authorProfilePictureUrl}
+          style={{
+            marginRight: 5,
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            borderWidth: 2,
+            borderColor: Colors.border_color
+          }}
+        />
+        {
+          baseList?.authorTier === 'free' ? (
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>
+                {baseList?.authorName}
+              </Text>
+              {(baseList?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>)}
+            </View>
+          ) : baseList?.authorTier === 'admin' ? (
+            <GlowingText color={Colors._heteroboxd} size={widescreen ? 20 : 16}>
+              {baseList?.authorName}
+            </GlowingText>
+          ) : (
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <GlowingText color={Colors.heteroboxd} size={widescreen ? 20 : 16}>
+                {baseList?.authorName}
+              </GlowingText>
+              {baseList?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
+            </View>
+          )
+        }
+      </View>
+    </Pressable>,
+  [baseList, widescreen, router]);
 
   const handleLike = async () => {
-    if (!user || !isValidSession) return;
+    const vS = await isValidSession();
+    if (!user || !vS) return
+    const delta = iLiked ? -1 : 1
+    setILiked(!iLiked)
+    setLikeCount((c) => c + delta)
     try {
-      const likeChange = iLiked ? -1 : 1
-      setLikeCountLocalCopy(prev => prev + likeChange);
-      setILiked(prev => !prev);
-      const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/lists/like-count/${listId}/${likeChange}`, {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/lists/like-count/${listId}/${delta}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
+        headers: { Authorization: `Bearer ${jwt}` }
       });
-      if (res.status !== 200) console.log("Update List FAILED w/" + res.status);
+      if (res.status !== 200) console.log("Update List Likes FAILED w/" + res.status);
       const uRes = await fetch(`${BaseUrl.api}/users/likes`, {
         method: 'PUT',
         headers: {
@@ -155,223 +187,108 @@ const List = () => {
         body: JSON.stringify({
           UserId: user.userId,
           ReviewId: null,
-          CommentId: null,
           ListId: listId
         })
       });
       if (uRes.status !== 200) console.log("Update User FAILED w/" + uRes.status);
-    } catch {
-      console.log("Network error.")
-    }
+    } catch { console.log('failed to like/unlike list.') }
   }
-
-  //web on compooper?
-  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  //minimum spacing between posters
-  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
-  //determine max usable row width:
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
-  //compute poster width:
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
-  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
-  //cache backdrop
-  const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={entries[0]?.filmBackdropUrl} narrow={true} />, [widescreen, entries])
 
   return (
     <View style={styles.container}>
-      <View style={{width: widescreen ? 1000 : width*0.95}}>
-        <Pressable onPress={(e) => {
-          e.stopPropagation();
-          router.push(`/profile/${baseList?.authorId}`)
-        }}>
-          <View style={{flexDirection: 'row', paddingTop: 5, alignItems: 'center'}}>
-            <UserAvatar
-              pictureUrl={baseList?.authorProfilePictureUrl}
-              style={{
-                marginRight: 5,
-                width: widescreen ? 30 : 26,
-                height: widescreen ? 30 : 26,
-                borderRadius: widescreen ? 18 : 13,
-                borderWidth: 2,
-                borderColor: Colors.border_color
-              }}
+      <View style={{ width: maxRowWidth }}>
+        {AuthorSection}
+        <Text style={styles.title}>{baseList?.name}</Text>
+        <Pressable onPress={() => setDescCollapsed((p) => !p)}>
+          <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
+            {descCollapsed && baseList?.description?.length > 300
+              ? `${baseList.description.slice(0, 300)}...`
+              : baseList?.description}
+          </Text>
+        </Pressable>
+        <View style={styles.metaRow}>
+          <Pressable onPress={handleLike} style={styles.likeRow}>
+            <MaterialCommunityIcons
+              name={iLiked ? 'cards-heart' : 'cards-heart-outline'}
+              size={widescreen ? 24 : 20}
+              color={iLiked ? Colors.heteroboxd : Colors.text}
             />
-            <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>{baseList?.authorName}</Text>
-          </View>
-        </Pressable>
-        <Text style={{fontSize: widescreen ? 24 : 22, color: Colors.text_title, fontWeight: '600', marginBottom: 3}}>{baseList?.name}</Text>
-        <Pressable onPress={() => setDescCollapsed(prev => !prev)}>
-            { descCollapsed && baseList?.description?.length > 300 ? (
-                <Text style={{fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400'}}>
-                  {widescreen ? baseList.description.slice(0, 300) : baseList.description.slice(0, 150)}<Text style={{color: Colors.text_title}}>...</Text>
-                </Text>
-              ) : !descCollapsed && baseList?.description?.length > 300 ? (
-                <Text style={{fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400'}}>
-                  {baseList?.description}
-                </Text>
-              ) : (
-                <Text style={{fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400'}}>
-                  {baseList?.description}
-                </Text>
-              )
-            }
-        </Pressable>
-        <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 5, justifyContent: 'space-between'}}>
-          <Pressable onPress={handleLike} style={{flexDirection: 'row', alignItems: 'center'}}>
-            { iLiked ? (
-              <MaterialCommunityIcons style={{marginRight: 3}} name="cards-heart" size={widescreen ? 24 : 20} color={Colors.heteroboxd} />
-            ) : (
-              <MaterialCommunityIcons style={{marginRight: 3}} name="cards-heart-outline" size={widescreen ? 24 : 20} color={Colors.text} />
-            )}
-            <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{likeCountLocalCopy} likes</Text>
+            <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{likeCount} likes</Text>
           </Pressable>
-          <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{entries?.length} entries</Text>
+          <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{totalCount} entries</Text>
         </View>
       </View>
-      {Platform.OS !== 'web' ? (
-        //infinite scroll on narrow touchscreens
-        <FlatList
-          refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={() => {
-              setEntries([]);
-              loadListPage(1);
-            }}/>}
-          data={entries}
-          keyExtractor={(item) => item.filmId}
-          numColumns={4}
-          renderItem={({ item }) => (
+      <FlatList
+        data={paddedEntries}
+        keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
+        numColumns={4}
+        renderItem={({ item }) => {
+          if (!item) {
+            return (
+              <View
+                style={{
+                  width: posterWidth,
+                  height: posterHeight,
+                  margin: spacing / 2,
+                }}
+              />
+            );
+          }
+          return (
             <Pressable
               onPress={() => router.push(`/film/${item.filmId}`)}
-              style={{ margin: spacing / 2, marginBottom: 0, alignItems: 'center' }}
+              style={{ margin: spacing / 2 }}
             >
               <Poster
                 posterUrl={item.filmPosterUrl}
                 style={{
                   width: posterWidth,
                   height: posterHeight,
-                  borderRadius: 8,
+                  borderRadius: 6,
                   borderWidth: 2,
                   borderColor: Colors.border_color,
-                  marginBottom: baseList?.ranked ? 0 : spacing / 2
                 }}
               />
-              {baseList?.ranked && (
-                <View
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 9999,
-                    backgroundColor: Colors.card,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginBottom: spacing / 2,
-                    marginTop: -10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: Colors.text_title,
-                      fontSize: 8,
-                      fontWeight: 'bold',
-                      lineHeight: 18,
-                    }}
-                  >
-                    {item.position}
-                  </Text>
-                </View>
-              )}
             </Pressable>
-          )}
-          contentContainerStyle={{
-            paddingHorizontal: spacing / 2,
-            paddingBottom: 80,
-            marginTop: 10,
-            marginBottom: 50
-          }}
-          onEndReached={() => {
-            if (!isLoading && !isEnd) {
-              loadListPage(page + 1, false);
-            }
-          }}
-          onEndReachedThreshold={0.8}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        //explicit pagination on web
-        <>
-          <FlatList
-            data={entries}
-            keyExtractor={(item) => item.filmId}
-            numColumns={4}
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => router.push(`/film/${item.filmId}`)}
-                style={{ margin: spacing / 2, marginBottom: 0, alignItems: 'center' }}
-              >
-                <Poster
-                  posterUrl={item.filmPosterUrl}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    borderRadius: 8,
-                    borderWidth: 2,
-                    borderColor: Colors.border_color,
-                    marginBottom: baseList?.ranked ? 0 : spacing / 2
-                  }}
-                />
-                {baseList?.ranked && (
-                  <View
-                    style={{
-                      width: widescreen ? 28 : 20,
-                      height: widescreen ? 28 : 20,
-                      borderRadius: 9999,
-                      backgroundColor: Colors.card,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginBottom: spacing / 2,
-                      marginTop: -10,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: Colors.text_title,
-                        fontSize: widescreen ? 12 : 8,
-                        fontWeight: 'bold',
-                        lineHeight: 18,
-                      }}
-                    >
-                      {item.position}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            )}
-            contentContainerStyle={{
-              paddingHorizontal: spacing / 2,
-              paddingTop: 20,
-              paddingBottom: 40,
-              width: widescreen ? 1000 : '100%',
-              alignSelf: "center",
-              alignItems: 'center'
-            }}
-            showsVerticalScrollIndicator={false}
+          );
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => loadListPage(page)}
           />
-
-          <PaginationBar
-            numbers={Array.from({ length: Math.ceil(totalCount / pageSize) }, (_, i) => i + 1)}
-            page={page}
-            onPagePress={(num) => {
-              setEntries([]);
-              setIsEnd(false);
-              loadListPage(num, true);
-            }}
-          />
-        </>
-      )}
-
-      <LoadingResponse visible={result === 0} />
-      <Popup visible={[404, 500].includes(result)} message={message} onClose={() => result === 500 ? router.replace('/contact') : router.replace('/')} />
-
+        }
+        style={{
+          alignSelf: 'center'
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing / 2,
+          paddingBottom: 80,
+          marginTop: 20
+        }}
+        showsVerticalScrollIndicator={false}
+        onEndReached={() => setShowPagination(true)}
+        onEndReachedThreshold={0.2}
+      />
+      <PaginationBar
+        page={page}
+        totalPages={totalPages}
+        visible={showPagination}
+        onPagePress={(num) => {
+          setPage(num)
+          loadListPage(num)
+        }}
+      />
+      <LoadingResponse visible={isLoading} />
+      <Popup
+        visible={[404, 500].includes(result)}
+        message={message}
+        onClose={() =>
+          result === 500
+            ? router.replace('/contact')
+            : router.replace('/')
+        }
+      />
     </View>
   )
 }
@@ -382,16 +299,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    justifyContent: "center",
     alignItems: 'center',
     paddingBottom: 50
   },
-  text: {
-    fontWeight: "350",
-    marginTop: 5,
-    marginBottom: 0,
-    fontSize: 16,
+  author: {
     color: Colors.text,
-    textAlign: "center",
+    fontWeight: 'bold',
+    fontSize: 16
   },
+  title: {
+    color: Colors.text_title,
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 6
+  },
+  desc: {
+    color: Colors.text,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8
+  },
+  likeRow: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  metaText: {
+    color: Colors.text,
+    fontWeight: 'bold',
+    marginLeft: 4
+  }
 })

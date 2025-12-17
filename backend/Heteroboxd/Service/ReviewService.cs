@@ -7,16 +7,16 @@ namespace Heteroboxd.Service
 {
     public interface IReviewService
     {
-        Task<List<ReviewInfoResponse>> GetAllReviews();
         Task<ReviewInfoResponse?> GetReview(string ReviewId);
-        Task<List<ReviewInfoResponse>> GetReviewsByFilm(int FilmId);
-        Task<List<ReviewInfoResponse>> GetReviewsByAuthor(string UserId);
-        Task CreateReview(CreateReviewRequest ReviewRequest);
-        Task UpdateReview(UpdateReviewRequest ReviewRequest);
-        Task UpdateReviewLikeCountEfCore7Async(string ReviewId, string LikeChange);
-        Task ToggleNotificationsEfCore7Async(string ReviewId);
-        Task ReportReviewEfCore7Async(string ReviewId);
-        Task LogicalDeleteReview(string ReviewId);
+        Task<ReviewInfoResponse> GetReviewByUserFilm(string UserId, int FilmId);
+        Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize);
+        Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize);
+        Task UpdateReviewLikeCountEfCore7(string ReviewId, int LikeChange);
+        Task ToggleNotificationsEfCore7(string ReviewId);
+        Task ReportReviewEfCore7(string ReviewId);
+        Task<Review> AddReview(CreateReviewRequest ReviewRequest);
+        Task<Review> UpdateReview(UpdateReviewRequest ReviewRequest);
+        Task DeleteReview(string ReviewId);
     }
     public class ReviewService : IReviewService
     {
@@ -31,12 +31,6 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
-        public async Task<List<ReviewInfoResponse>> GetAllReviews()
-        {
-            var AllReviews = await _repo.GetAllAsync();
-            return AllReviews.Select(r => new ReviewInfoResponse(r)).ToList();
-        }
-
         public async Task<ReviewInfoResponse?> GetReview(string ReviewId)
         {
             var Review = await _repo.GetByIdAsync(Guid.Parse(ReviewId));
@@ -47,8 +41,16 @@ namespace Heteroboxd.Service
             return new ReviewInfoResponse(Review, Author, Film);
         }
 
-        public async Task<List<ReviewInfoResponse>> GetReviewsByFilm(int FilmId)
+        public async Task<ReviewInfoResponse> GetReviewByUserFilm(string UserId, int FilmId)
         {
+            var Review = await _repo.GetByUserFilmAsync(Guid.Parse(UserId), FilmId);
+            if (Review == null) throw new KeyNotFoundException();
+            return new ReviewInfoResponse(Review);
+        }
+
+        public async Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize)
+        {
+            /*
             var FilmReviews = await _repo.GetByFilmAsync(FilmId);
 
             var ReviewTasks = FilmReviews.Select(async r =>
@@ -60,10 +62,13 @@ namespace Heteroboxd.Service
 
             var Reviews = await Task.WhenAll(ReviewTasks);
             return Reviews.ToList();
+            */
+            throw new NotImplementedException();
         }
 
-        public async Task<List<ReviewInfoResponse>> GetReviewsByAuthor(string UserId)
+        public async Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize)
         {
+            /*
             var UserReviews = await _repo.GetByAuthorAsync(Guid.Parse(UserId));
 
             var ReviewTasks = UserReviews.Select(async r =>
@@ -75,16 +80,44 @@ namespace Heteroboxd.Service
 
             var Reviews = await Task.WhenAll(ReviewTasks);
             return Reviews.ToList();
+            */
+            throw new NotImplementedException();
         }
 
-        public async Task CreateReview(CreateReviewRequest ReviewRequest)
+        public async Task UpdateReviewLikeCountEfCore7(string ReviewId, int LikeChange)
         {
-            Review Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Flags, ReviewRequest.Spoiler, Guid.Parse(ReviewRequest.AuthorId), ReviewRequest.FilmId);
+            if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
+            await _repo.UpdateReviewLikeCountEfCore7Async(Id, LikeChange);
+        }
+
+        public async Task ToggleNotificationsEfCore7(string ReviewId)
+        {
+            if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
+            await _repo.ToggleNotificationsEfCore7Async(Id);
+        }
+
+        public async Task ReportReviewEfCore7(string ReviewId)
+        {
+            if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
+            await _repo.ReportReviewEfCore7Async(Id);
+        }
+
+        public async Task<Review> AddReview(CreateReviewRequest ReviewRequest)
+        {
+            Guid UserId = Guid.Parse(ReviewRequest.AuthorId);
+            Review Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, Flag(ReviewRequest.Text), ReviewRequest.Spoiler, UserId, ReviewRequest.FilmId);
             _repo.Create(Review);
             await _repo.SaveChangesAsync();
+            //if user never clicked "Watched" on this title, we add it here for their lazy arse
+            if (await _userRepo.GetUserWatchedFilmAsync(UserId, ReviewRequest.FilmId) == null)
+            {
+                _userRepo.CreateUserWatchedFilm(new UserWatchedFilm(UserId, ReviewRequest.FilmId));
+                await _userRepo.SaveChangesAsync();
+            }
+            return Review;
         }
 
-        public async Task UpdateReview(UpdateReviewRequest ReviewRequest)
+        public async Task<Review> UpdateReview(UpdateReviewRequest ReviewRequest)
         {
             var Review = await _repo.GetByIdAsync(Guid.Parse(ReviewRequest.ReviewId));
             if (Review == null) throw new KeyNotFoundException();
@@ -93,34 +126,21 @@ namespace Heteroboxd.Service
             Review.Spoiler = ReviewRequest.Spoiler ?? Review.Spoiler;
             _repo.Update(Review);
             await _repo.SaveChangesAsync();
+            return Review;
         }
 
-        public async Task UpdateReviewLikeCountEfCore7Async(string ReviewId, string LikeChange)
-        {
-            if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
-            if (!int.TryParse(LikeChange, out var Delta)) throw new ArgumentException();
-            await _repo.UpdateReviewLikeCountEfCore7Async(Id, Delta);
-        }
-
-        public async Task ToggleNotificationsEfCore7Async(string ReviewId)
-        {
-            if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
-            await _repo.ToggleNotificationsEfCore7Async(Id);
-        }
-
-        public async Task ReportReviewEfCore7Async(string ReviewId)
-        {
-            if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
-            await _repo.ReportReviewEfCore7Async(Id);
-        }
-
-        public async Task LogicalDeleteReview(string ReviewId)
+        public async Task DeleteReview(string ReviewId)
         {
             var Review = await _repo.GetByIdAsync(Guid.Parse(ReviewId));
             if (Review == null) throw new KeyNotFoundException();
-            Review.Deleted = true;
-            _repo.Update(Review);
+            _repo.Delete(Review);
             await _repo.SaveChangesAsync();
+        }
+        
+        private int Flag(string? Text)
+        {
+            if (string.IsNullOrEmpty(Text)) return 0;
+            return 0; //placeholder
         }
     }
 }

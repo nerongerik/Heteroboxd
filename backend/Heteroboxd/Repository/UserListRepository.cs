@@ -9,9 +9,11 @@ namespace Heteroboxd.Repository
     {
         Task<UserList?> GetByIdAsync(Guid ListId);
         Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize); //view
-        Task<List<ListEntry>> PowerGetEntries(Guid ListId); //update
+        Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId); //update
         Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
-        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId);
+        Task<List<UserList>> GetLightweightAsync(Guid UserId);
+        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize);
+        Task<int> GetFeaturingFilmCountAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
         void CreateEntry(ListEntry ListEntry);
@@ -51,7 +53,7 @@ namespace Heteroboxd.Repository
             return (Entries, TotalCount);
         }
 
-        public async Task<List<ListEntry>> PowerGetEntries(Guid ListId) =>
+        public async Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId) =>
             await _context.ListEntries
                 .Where(le => le.UserListId == ListId)
                 .OrderBy(le => le.Position)
@@ -74,9 +76,33 @@ namespace Heteroboxd.Repository
             return (Lists, TotalCount);
         }
 
+        public async Task<List<UserList>> GetLightweightAsync(Guid UserId) =>
+            await _context.UserLists
+                .Where(ul => ul.AuthorId == UserId)
+                .ToListAsync();
 
-        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId) =>
-            throw new NotImplementedException();
+        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize)
+        {
+            var FilmQuery = _context.UserLists
+                .Include(ul => ul.Films)
+                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
+                .OrderByDescending(f => f.DateCreated);
+
+            var TotalCount = await FilmQuery.CountAsync();
+
+            var Lists = await FilmQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Lists, TotalCount);
+        }
+
+        public async Task<int> GetFeaturingFilmCountAsync(int FilmId) =>
+            await _context.UserLists
+                .Include(ul => ul.Films)
+                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
+                .CountAsync();
 
         public async Task<List<UserList>> SearchAsync(string Search)
         {

@@ -18,7 +18,7 @@ const Home = () => {
         !user ? (
           <Link style={styles.link} href='/login'>Profile</Link>
         ) : (
-          <Link style={styles.link} href={`/profile/${user.userId}`}>Profile</Link>
+          <Link style={styles.link} href={`/profile/${user?.userId ?? null}`}>Profile</Link>
         )
       }
     </View>

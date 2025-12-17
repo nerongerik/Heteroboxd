@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
-import { Colors } from '../constants/colors';
+import { useAuth } from '../../hooks/useAuth';
+import { Colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { BaseUrl } from '../constants/api';
-import * as auth from '../helpers/auth';
+import { BaseUrl } from '../../constants/api';
+import * as auth from '../../helpers/auth';
 import { Snackbar } from 'react-native-paper';
 
 const ListOptionsButton = ({ listId }) => {
@@ -16,7 +16,7 @@ const ListOptionsButton = ({ listId }) => {
 
   const router = useRouter();
 
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   const [baseList, setBaseList] = useState(null);
   const [notifsOnLocal, setNotifsOnLocal] = useState(true);
@@ -70,7 +70,8 @@ const ListOptionsButton = ({ listId }) => {
   const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
 
   async function handleDelete() {
-    if (!user || !isValidSession()) router.replace('/login');
+    const vS = await isValidSession();
+    if (!user || !vS) router.replace('/login');
     try {
       const jwt = await auth.getJwt();
       const res = await fetch(`${BaseUrl.api}/lists/${baseList?.id}`, {
@@ -94,7 +95,8 @@ const ListOptionsButton = ({ listId }) => {
   }
 
   async function handleNotifications() {
-    if (!user || !isValidSession()) router.replace('/login');
+    const vS = await isValidSession();
+    if (!user || !vS) router.replace('/login');
     try {
       const jwt = await auth.getJwt();
       const res = await fetch(`${BaseUrl.api}/lists/toggle-notifications/${baseList?.id}`, {
@@ -119,10 +121,12 @@ const ListOptionsButton = ({ listId }) => {
   }
 
   async function handleEdit() {
-    if (!user || !isValidSession()) router.replace('/login');
+    const vS = await isValidSession();
+    if (!user || !vS) router.replace('/login');
     if (baseList.authorId !== user.userId) {
       setMsg("You are not supposed to be seeing this - what did you do?");
       setSnack(true);
+      return;
     }
     closeMenu();
     router.push(`list/edit/${listId}`);

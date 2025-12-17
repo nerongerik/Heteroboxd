@@ -1,8 +1,7 @@
-﻿using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace Heteroboxd.Controller
 {
@@ -11,33 +10,19 @@ namespace Heteroboxd.Controller
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _service;
+        private readonly ILogger<ReviewController> _logger;
 
-        public ReviewController(IReviewService service)
+        public ReviewController(IReviewService service, ILogger<ReviewController> logger)
         {
             _service = service;
-        }
-
-        //GET endpoints -> limited puiblic access
-
-        [HttpGet]
-        public async Task<IActionResult> GetAllReviews()
-        {
-            //retrives all reviews from database
-            try
-            {
-                var AllReviews = await _service.GetAllReviews();
-                return Ok(AllReviews);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            _logger = logger;
         }
 
         [HttpGet("{ReviewId}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetReview(string ReviewId)
         {
-            //retrives specific review from database
+            _logger.LogInformation($"GET Review endpoint hit for ReviewId: {ReviewId}");
             try
             {
                 var Review = await _service.GetReview(ReviewId);
@@ -53,46 +38,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("film-reviews/{FilmId}")]
-        public async Task<IActionResult> GetReviewsByFilm(int FilmId)
+        [HttpGet("{UserId}/{FilmId}")]
+        [Authorize]
+        public async Task<IActionResult> GetReviewByUserFilm(string UserId, int FilmId)
         {
-            //retrives all reviews for a specific film from database
+            _logger.LogInformation($"GET Review by UserFilm endpoint hit for UserId: {UserId}, FilmId: {FilmId}");
             try
             {
-                var Reviews = await _service.GetReviewsByFilm(FilmId);
-                return Ok(Reviews);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("user-reviews/{UserId}")]
-        public async Task<IActionResult> GetReviewsByAuthor(string UserId)
-        {
-            //retrives all reviews by a specific user from database
-            try
-            {
-                var Reviews = await _service.GetReviewsByAuthor(UserId);
-                return Ok(Reviews);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        //POST endpoints -> public access
-
-        [HttpPost]
-        public async Task<IActionResult> AddReview([FromBody] CreateReviewRequest ReviewRequest)
-        {
-            //adds a new review to the database
-            try
-            {
-                await _service.CreateReview(ReviewRequest);
-                return Ok();
+                var Review = await _service.GetReviewByUserFilm(UserId, FilmId);
+                return Ok(Review);
             }
             catch (KeyNotFoundException)
             {
@@ -104,16 +58,67 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //PUT endpoints -> limited public access (only for their own reviews)
-
-        [HttpPut]
-        public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewRequest ReviewRequest)
+        [HttpGet("film-reviews/{FilmId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetReviewsByFilm(int FilmId, int Page = 1, int PageSize = 20)
         {
-            //updates an existing review in the database
+            _logger.LogInformation($"GET Reviews by Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                await _service.UpdateReview(ReviewRequest);
-                return Ok();
+                var Reviews = await _service.GetReviewsByFilm(FilmId, Page, PageSize);
+                return Ok(Reviews);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("user-reviews/{UserId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetReviewsByAuthor(string UserId, int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation($"GET Reviews by Author endpoint hit for UserId: {UserId}");
+            try
+            {
+                var Reviews = await _service.GetReviewsByAuthor(UserId, Page, PageSize);
+                return Ok(Reviews);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddReview([FromBody] CreateReviewRequest ReviewRequest)
+        {
+            _logger.LogInformation($"POST Review endpoint hit for User: {ReviewRequest.AuthorId} and Film: {ReviewRequest.FilmId}");
+            try
+            {
+                var Review = await _service.AddReview(ReviewRequest);
+                return Ok(Review);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPut]
+        [Authorize]
+        public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewRequest ReviewRequest)
+        {
+            _logger.LogInformation($"PUT Review endpoint hit for ReviewId: {ReviewRequest.ReviewId}");
+            try
+            {
+                var Review = await _service.UpdateReview(ReviewRequest);
+                return Ok(Review);
             }
             catch (KeyNotFoundException)
             {
@@ -126,12 +131,13 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("like-count/{ReviewId}/{LikeChange}")]
-        public async Task<IActionResult> UpdateLikeCount(string ReviewId, string LikeChange)
+        [Authorize]
+        public async Task<IActionResult> UpdateLikeCount(string ReviewId, int LikeChange)
         {
-            //increments/decrements like count for review
+            _logger.LogInformation($"PUT Update Like Count endpoint hit for ReviewId: {ReviewId} with LikeChange: {LikeChange}");
             try
             {
-                await _service.UpdateReviewLikeCountEfCore7Async(ReviewId, LikeChange);
+                await _service.UpdateReviewLikeCountEfCore7(ReviewId, LikeChange);
                 return Ok();
             }
             catch (ArgumentException)
@@ -149,12 +155,13 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("toggle-notifications/{ReviewId}")]
+        [Authorize]
         public async Task<IActionResult> ToggleNotifications(string ReviewId)
         {
-            //toggles the notification setting for a review
+            _logger.LogInformation($"PUT Toggle Notifications endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                await _service.ToggleNotificationsEfCore7Async(ReviewId);
+                await _service.ToggleNotificationsEfCore7(ReviewId);
                 return Ok();
             }
             catch (ArgumentException)
@@ -174,10 +181,10 @@ namespace Heteroboxd.Controller
         [HttpPut("report-review/{ReviewId}")]
         public async Task<IActionResult> ReportReview(string ReviewId)
         {
-            //increments the flag count for a review
+            _logger.LogInformation($"PUT Report Review endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                await _service.ReportReviewEfCore7Async(ReviewId);
+                await _service.ReportReviewEfCore7(ReviewId);
                 return Ok();
             }
             catch (ArgumentException)
@@ -194,15 +201,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //DELETE endpoints -> limited public access (only for their own reviews), ADMIN privileges for any review
-
         [HttpDelete("{ReviewId}")]
+        [Authorize]
         public async Task<IActionResult> DeleteReview(string ReviewId)
         {
-            //deletes a review from the database (logical delete)
+            _logger.LogInformation($"DELETE Review endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                await _service.LogicalDeleteReview(ReviewId);
+                await _service.DeleteReview(ReviewId);
                 return Ok();
             }
             catch (KeyNotFoundException)

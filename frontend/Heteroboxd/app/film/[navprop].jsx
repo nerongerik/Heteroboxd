@@ -12,13 +12,17 @@ import { Backdrop } from '../../components/backdrop';
 import React from 'react';
 import { Headshot } from '../../components/headshot';
 import FilmInteract from '../../components/filmInteract';
+import FilmDataLoaders from '../../components/filmDataLoaders';
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
   const [film, setFilm] = useState(null); //basic film data
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
+  const [usersReview, setUsersReview] = useState(null);
 
   const [watchlisted, setWatchlisted] = useState(null);
+
+  const [listsCount, setListsCount] = useState(0);
 
   const { navprop } = useLocalSearchParams(); //navigational property
   const router = useRouter();
@@ -32,6 +36,7 @@ const Film = () => {
   const loadFilmPage = async () => {
     setRefreshing(true);
     try {
+      const vS = await isValidSession();
       if (/^\d+$/.test(navprop)) {
         //fetch film
         const fRes = await fetch(`${BaseUrl.api}/films/${Number(navprop)}`, {
@@ -44,7 +49,7 @@ const Film = () => {
             id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
             tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
             releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-            collection: json.collection, castAndCrew: json.castAndCrew
+            collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
           });
           setResult(200);
         } else if (fRes.status === 404) {
@@ -61,7 +66,7 @@ const Film = () => {
           return;
         }
         //fetch uwf
-        if (user && isValidSession()) {
+        if (user && vS) {
           const jwt = await auth.getJwt();
           const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(navprop)}`, {
             method: 'GET',
@@ -72,10 +77,23 @@ const Film = () => {
           });
           if (uwfRes.status === 200) { //user HAS watched film before
             const json2 = await uwfRes.json();
-            console.log(json2);
             setUwf({
               dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
             });
+            //fetch users review if it exists
+            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(navprop)}`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${jwt}`
+              }
+            });
+            if (rewRes.status === 200) {
+              const json3 = await rewRes.json();
+              setUsersReview(json3);
+            } else {
+              console.log('User never reviewed this film before.');
+            }
           } else if (uwfRes.status === 404) {
             console.log("User has never seen this film before.");
             setUwf(null);
@@ -102,7 +120,7 @@ const Film = () => {
             id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
             tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
             releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-            collection: json.collection, castAndCrew: json.castAndCrew
+            collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
           });
           setResult(200);
         } else if (fRes.status === 404) {
@@ -119,7 +137,7 @@ const Film = () => {
           return;
         }
         //fetch uwf
-        if (user && isValidSession()) {
+        if (user && vS) {
           const jwt = await auth.getJwt();
           const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(json.filmId)}`, {
             method: 'GET',
@@ -133,6 +151,20 @@ const Film = () => {
             setUwf({
               dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
             });
+            //fetch users review if it exists
+            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(json.filmId)}`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${jwt}`
+              }
+            });
+            if (rewRes.status === 200) {
+              const json3 = await rewRes.json();
+              setUsersReview(json3);
+            } else {
+              console.log('User never reviewed this film before.');
+            }
           } else if (uwfRes.status === 404) {
             console.log("User has never seen this film before.");
             setUwf(null);
@@ -158,7 +190,8 @@ const Film = () => {
 
   useEffect(() => { //checks if user previously watchlisted this film
     (async () => {
-      if (user && film && isValidSession()) {
+      const vS = await isValidSession();
+      if (user && film && vS) {
         const jwt = await auth.getJwt();
         const wlRes = await fetch(`${BaseUrl.api}/users/${user.userId}/watchlist/${film.id}`, {
           method: 'GET',
@@ -175,6 +208,28 @@ const Film = () => {
       }
     })();
   }, [film, user]);
+
+  useEffect(() => {
+    if (!film) return;
+    (async () => {
+      try {
+        const res = await fetch(`${BaseUrl.api}/lists/featuring-film/${film?.id}/count`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (res.status === 200) {
+          const json = await res.json();
+          setListsCount(json);
+        } else {
+          console.log(`${res.status}: Failed to fetch featuring lists count.`);
+        }
+      } catch {
+        console.log(`${res.status}: Possible network error; probably failed earlier.`);
+      }
+    })();
+  }, [film]);
 
   useEffect(() => {
     (async () => {
@@ -303,7 +358,9 @@ const Film = () => {
 
         <View style={[styles.divider, {marginVertical: 15}]} />
         
-        <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
+        {
+          film.tagline && <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
+        }
         <Text style={[styles.text, { fontSize: widescreen ? 18 : 14, paddingHorizontal: 10 }]}>{film.synopsis}</Text>
         
         <View style={[styles.divider, {marginTop: 15, marginBottom: film?.genres && film?.genres.length > 0 ? 10 : 15}]} />
@@ -328,10 +385,16 @@ const Film = () => {
         <View style={styles.divider}></View>
         
         {
-          isValidSession() && (
-            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf?.timesWatched > 0} watchlisted={watchlisted} rating={null}/>
+          user ? (
+            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf} watchlisted={watchlisted} review={usersReview}/>
+          ) : (
+            <Link style={{color: Colors.text_link, fontSize: 16, textAlign: 'center'}} href="/login">Create a Heteroboxd account or log in to interact with this film.</Link>
           )
         }
+
+        <View style={styles.divider}></View>
+
+        <FilmDataLoaders filmId={film?.id} watchCount={film?.watchCount ?? 0} reviewCount={film?.reviewCount} listsIncluded={listsCount} widescreen={widescreen} />
 
         <View style={styles.divider}></View>
 
@@ -339,7 +402,11 @@ const Film = () => {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
-          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          contentContainerStyle={{
+            alignItems: "flex-start",
+            justifyContent: "flex-start"
+          }}
         >
           {actors.length === 0 && (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
@@ -379,8 +446,12 @@ const Film = () => {
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Crew</Text>
         <ScrollView
           horizontal
-          showsHorizontalScrollIndicator={widescreen}
-          style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
+          style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+          contentContainerStyle={{
+            alignItems: "flex-start",
+            justifyContent: "flex-start"
+          }}
         >
           {(directors.length === 0 && crew.length === 0) && (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
@@ -451,7 +522,7 @@ const Film = () => {
 
         <View style={styles.divider}></View>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[REVIEWS]</Text>
+        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[TOP 3 REVIEWS PLACEHOLDER]</Text>
 
         <View style={styles.divider}></View>
         

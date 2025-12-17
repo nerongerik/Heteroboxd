@@ -78,7 +78,7 @@ namespace Heteroboxd.Service
         public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
         {
             var User = await _userManager.FindByEmailAsync(Request.Email);
-            if (User == null || User.Deleted)
+            if (User == null)
             {
                 _logger.LogError($"Failed to sign in: User with email {Request.Email} does not exist.");
                 return (false, null, null);
@@ -120,7 +120,7 @@ namespace Heteroboxd.Service
             Token.Used = true;
 
             var User = await _userManager.FindByIdAsync(Token.UserId.ToString());
-            if (User == null || User.Deleted)
+            if (User == null)
             {
                 _logger.LogError("User for specified token not found.");
                 return (false, null, null);

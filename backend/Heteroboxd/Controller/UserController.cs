@@ -18,29 +18,11 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        //GET endpoints -> limited public access
-
-        [HttpGet]
-        [Authorize(Policy = "RequireAdminTier")]
-        public async Task<IActionResult> GetAllUsers()
-        {
-            //retrives all users from database
-            try
-            {
-                var AllUsers = await _service.GetAllUsers();
-                return Ok(AllUsers);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("{UserId}")]
-        [AllowAnonymous] //Heteroboxd is an open-access app, anyone can search through the community
+        [AllowAnonymous]
         public async Task<IActionResult> GetUser(string UserId)
         {
-            _logger.LogInformation($"GetUser endpoint hit with UserId: {UserId}");
+            _logger.LogInformation($"GET User endpoint hit with UserId: {UserId}");
             try
             {
                 var User = await _service.GetUser(UserId);
@@ -57,10 +39,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("watchlist/{UserId}")]
-        [Authorize] //you can only see your own watchlist
+        [Authorize]
         public async Task<IActionResult> GetUserWatchlist(string UserId, int Page = 1, int PageSize = 20)
         {
-            _logger.LogInformation($"Get Watchlist endpoint hit for User: {UserId}");
+            _logger.LogInformation($"GET Watchlist endpoint hit for User: {UserId}");
             try
             {
                 var Response = await _service.GetWatchlist(UserId, Page, PageSize);
@@ -73,10 +55,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("{UserId}/watchlist/{FilmId}")]
-        [Authorize] //you can only see your own watchlist
+        [Authorize]
         public async Task<IActionResult> IsFilmWatchlisted(string UserId, int FilmId)
         {
-            _logger.LogInformation($"Get isWatchlisted endpoint hit for User: {UserId}");
+            _logger.LogInformation($"GET isWatchlisted endpoint hit for User: {UserId}");
             try
             {
                 var Response = await _service.IsFilmWatchlisted(UserId, FilmId);
@@ -89,10 +71,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user-favorites/{UserId}")]
-        [AllowAnonymous] //must be open so non-logged in users can see other members' profiles
+        [AllowAnonymous]
         public async Task<IActionResult> GetUserFavorites(string UserId)
         {
-            _logger.LogInformation($"Get Favorites enpoint hit with UserId: {UserId}");
+            _logger.LogInformation($"GET Favorites enpoint hit with UserId: {UserId}");
             try
             {
                 var Favorites = await _service.GetFavorites(UserId);
@@ -113,10 +95,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user-relationships/{UserId}")]
-        [AllowAnonymous] //anyone can visit anyone's profile and see their following and followers
+        [AllowAnonymous]
         public async Task<IActionResult> GetUserRelationships(string UserId)
         {
-            _logger.LogInformation($"Get Relationships endpoint hit for UserId: {UserId}");
+            _logger.LogInformation($"GET Relationships endpoint hit for UserId: {UserId}");
             try
             {
                 var Relationships = await _service.GetRelationships(UserId);
@@ -133,9 +115,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user-likes/{UserId}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetUserLikes(string UserId)
         {
-            //retrives a specific user's likes (reviews, comments, lists) from database
+            _logger.LogInformation($"GET Likes endpoint hit for UserId: {UserId}");
             try
             {
                 var Likes = await _service.GetLikes(UserId);
@@ -152,11 +135,11 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("{UserId}/liked/{ObjectId}")]
-        [Authorize] //makes no sense for non-users
+        [Authorize]
         public async Task<IActionResult> IsObjectLiked(string UserId, string ObjectId, [FromQuery] string ObjectType)
         {
             //ObjectType: review, comment, list
-            _logger.LogInformation($"Get isLiked endpoint hit for User: {UserId}");
+            _logger.LogInformation($"GET isLiked endpoint hit for User: {UserId}");
             try
             {
                 var Response = await _service.IsObjectLiked(UserId, ObjectId, ObjectType);
@@ -185,9 +168,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("search")]
+        [AllowAnonymous]
         public async Task<IActionResult> SearchUsers([FromQuery] string Search)
         {
-            //searches for user, probably simpled name-based search
+            _logger.LogInformation($"GET Search Users endpoint hit with Search: {Search}");
             try
             {
                 var Results = await _service.SearchUsers(Search);
@@ -199,13 +183,11 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //PUT endpoints -> protected, user can only modify their own data
-
         [HttpPut]
-        [Authorize] //need to be logged in to perform CUDs
+        [Authorize]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest Request)
         {
-            _logger.LogInformation($"Update endpoint hit with UserId: {Request.UserId}");
+            _logger.LogInformation($"PUT User endpoint hit with UserId: {Request.UserId}");
             try
             {
                 await _service.UpdateUser(Request);
@@ -225,7 +207,7 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> Verify([FromBody] VerifyUserRequest Request)
         {
-            _logger.LogInformation($"Verify endpoint hit with UserId: {Request.UserId} and Token: {Request.Token}");
+            _logger.LogInformation($"PUT Verify endpoint hit with UserId: {Request.UserId} and Token: {Request.Token}");
             try
             {
                 await _service.VerifyUser(Request.UserId, Request.Token);
@@ -243,10 +225,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("report/{UserId}")]
-        [Authorize] //need to be logged in to report users
+        [Authorize]
         public async Task<IActionResult> ReportUser(string UserId)
         {
-            _logger.LogInformation($"Report endpoint hit with UserId: {UserId}");
+            _logger.LogInformation($"PUT Report endpoint hit with UserId: {UserId}");
             try
             {
                 await _service.ReportUserEfCore7Async(UserId);
@@ -267,10 +249,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("watchlist/{UserId}/{FilmId}")]
-        [Authorize] //only own watchlist can be modified
+        [Authorize]
         public async Task<IActionResult> UpdateUserWatchlist(string UserId, int FilmId)
         {
-            _logger.LogInformation($"Update Watchlist endpoint hit for User: {UserId}, Film: {FilmId}");
+            _logger.LogInformation($"PUT Watchlist endpoint hit for User: {UserId}, Film: {FilmId}");
             try
             {
                 await _service.UpdateWatchlist(UserId, FilmId);
@@ -287,9 +269,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("favorites/{UserId}")]
+        [Authorize]
         public async Task<IActionResult> UpdateUserFavorites(string UserId, [FromBody] List<int?> FilmIds)
         {
-            //updates the user's top 5 films
+            _logger.LogInformation($"PUT Favorites endpoint hit for User: {UserId}");
             try
             {
                 await _service.UpdateFavorites(UserId, FilmIds);
@@ -306,10 +289,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("relationships/{UserId}/{TargetId}")]
-        [Authorize] //need to be logged in to perform CUDs
+        [Authorize]
         public async Task<IActionResult> UpdateUserRelationships(string UserId, string TargetId, [FromQuery] string Action)
         {
-            _logger.LogInformation($"Update Relationship endpoint hit with originator {UserId}, target {TargetId}\nAction = {Action}");
+            _logger.LogInformation($"PUT Relationship endpoint hit with originator {UserId}, target {TargetId}\nAction = {Action}");
             try
             {
                 await _service.UpdateRelationship(UserId, TargetId, Action);
@@ -326,10 +309,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("likes")]
-        [Authorize] //need to be logged in to perform CUDs
+        [Authorize]
         public async Task<IActionResult> UpdateUserLikes(UpdateUserLikesRequest Request)
         {
-            _logger.LogInformation($"Update User's Likes endpoint hit for User: {Request.UserId}");
+            _logger.LogInformation($"PUT User's Likes endpoint hit for User: {Request.UserId}");
             try
             {
                 await _service.UpdateLikes(Request);
@@ -349,8 +332,8 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> TrackUserFilm(string UserId, int FilmId, [FromQuery] string Action)
         {
-            //actions: ?action=watched/rewatched/unwatched
-            _logger.LogInformation($"Track Film endpoint hint for User: {UserId}, Film: {FilmId}; action: {Action}");
+            //?action=watched/unwatched
+            _logger.LogInformation($"PUT Track Film endpoint hint for User: {UserId}, Film: {FilmId}; action: {Action}");
             try
             {
                 await _service.TrackFilm(UserId, FilmId, Action);
@@ -371,9 +354,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("donate")]
+        [Authorize]
         public async Task<IActionResult> Donate([FromBody] DonateRequest DonateRequest)
         {
-            //processes a donation from a user
+            _logger.LogInformation($"PUT Donate endpoint hit for User: {DonateRequest.UserId}, Amount: {DonateRequest.Amount}");
             try
             {
                 //await _service.ProcessDonation(DonateRequest);
@@ -385,16 +369,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //DELETE endpoints -> limited private access, ADMIN can delete any user, user can delete their own account
-
         [HttpDelete("{UserId}")]
         [Authorize]
         public async Task<IActionResult> DeleteUser(string UserId)
         {
-            _logger.LogInformation($"Delete endpoint hit with UserId: {UserId}");
+            _logger.LogInformation($"DELETE User endpoint hit with UserId: {UserId}");
             try
             {
-                await _service.LogicalDeleteUser(UserId);
+                await _service.DeleteUser(UserId);
                 return Ok();
             }
             catch (KeyNotFoundException)

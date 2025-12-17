@@ -6,17 +6,16 @@ namespace Heteroboxd.Repository
 {
     public interface IReviewRepository
     {
-        Task<List<Review>> GetAllAsync(CancellationToken CancellationToken = default);
         Task<Review?> GetByIdAsync(Guid Id);
-        Task<List<Review>> GetByFilmAsync(int FilmId);
-        Task<List<Review>> GetByAuthorAsync(Guid AuthorId);
-        void Create(Review Review);
-        void Update(Review Review);
+        Task<(List<Review> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, int Page, int PageSize);
+        Task<(List<Review> Reviews, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize);
+        Task<Review?> GetByUserFilmAsync(Guid AuthorId, int FilmId);
         Task UpdateReviewLikeCountEfCore7Async(Guid ReviewId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid ReviewId);
         Task ReportReviewEfCore7Async(Guid ReviewId);
+        void Create(Review Review);
+        void Update(Review Review);
         void Delete(Review Review);
-        void DeleteByUserFilm(UserWatchedFilm UserFilm);
         Task SaveChangesAsync();
     }
     public class ReviewRepository : IReviewRepository
@@ -28,36 +27,23 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<List<Review>> GetAllAsync(CancellationToken CancellationToken = default) =>
-            await _context.Reviews
-                .Where(r => !r.Deleted)
-                .ToListAsync(CancellationToken);
-
         public async Task<Review?> GetByIdAsync(Guid Id) =>
             await _context.Reviews
-                .FirstOrDefaultAsync(r => r.Id == Id && !r.Deleted);
+                .FirstOrDefaultAsync(r => r.Id == Id);
 
-        public async Task<List<Review>> GetByFilmAsync(int FilmId) =>
-            await _context.Reviews
-                .Where(r => r.FilmId == FilmId && !r.Deleted)
-                .ToListAsync();
-
-        public async Task<List<Review>> GetByAuthorAsync(Guid AuthorId) =>
-            await _context.Reviews
-                .Where(r => r.AuthorId == AuthorId && !r.Deleted)
-                .ToListAsync();
-
-        public void Create(Review Review)
+        public async Task<(List<Review> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, int Page, int PageSize)
         {
-            _context.Reviews
-                .Add(Review);
+            throw new NotImplementedException();
         }
 
-        public void Update(Review Review)
+        public async Task<(List<Review> Reviews, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize)
         {
-            _context.Reviews
-                .Update(Review);
+            throw new NotImplementedException();
         }
+
+        public async Task<Review?> GetByUserFilmAsync(Guid AuthorId, int FilmId) =>
+            await _context.Reviews
+                .FirstOrDefaultAsync(r => r.AuthorId == AuthorId && r.FilmId == FilmId);
 
         public async Task UpdateReviewLikeCountEfCore7Async(Guid ReviewId, int Delta) //increments/decrements like count
         {
@@ -92,20 +78,17 @@ namespace Heteroboxd.Repository
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public void Delete(Review Review) //used in big, weekly (or monthly) purge jobs, consider cascades and side effects later
-        {
+        public void Create(Review Review) =>
+            _context.Reviews
+                .Add(Review);
+
+        public void Update(Review Review) =>
+            _context.Reviews
+                .Update(Review);
+
+        public void Delete(Review Review) =>
             _context.Reviews
                 .Remove(Review);
-        }
-
-        public void DeleteByUserFilm(UserWatchedFilm UserFilm)
-        {
-            var RelevantReviews = _context.Reviews
-                .Where(r => r.AuthorId == UserFilm.UserId && r.FilmId == UserFilm.FilmId)
-                .ToList();
-
-            foreach (var r in RelevantReviews) r.Deleted = true;
-        }
 
         public async Task SaveChangesAsync() =>
             await _context.SaveChangesAsync();

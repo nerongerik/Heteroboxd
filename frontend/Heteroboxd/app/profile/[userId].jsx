@@ -56,7 +56,7 @@ const Profile = () => {
         const json = await res.json();
         setData({ 
           name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
-          expiry: parseDate(json.expiry), patron: json.patron === 'true', joined: parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
+          expiry: parseDate(json.expiry), patron: json.patron, joined: parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
           listsCount: json.listsCount, followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
           reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
@@ -190,7 +190,7 @@ const Profile = () => {
         router.push(`/relationships/${userId}?t=blocked`);
         break;
       default:
-        setSnackbarMessage("I'm gonna touch you");
+        setSnackbarMessage("I'm gonna touch you lil bro");
         setVisible(true);
     }
   }
@@ -363,22 +363,20 @@ const Profile = () => {
                 onPress={handlePress}
                 style={{marginBottom: -5}}
               >
-              <GlowingText color={Colors.heteroboxd}>
-                <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd}/>
-              </GlowingText>
+              <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd}/>
               </Pressable>
             )}
             {isDonor ? (
               <Pressable
                 onPress={handlePress}
               >
-                <GlowingText color={Colors.heteroboxd}>{data.name}</GlowingText>
+                <GlowingText color={Colors.heteroboxd} size={widescreen ? 28 : 25}>{data.name}</GlowingText>
               </Pressable>
             ) : isAdmin ? (
               <Pressable
                 onPress={handlePress}
               >
-                <GlowingText color={Colors._heteroboxd}>{data.name}</GlowingText>
+                <GlowingText color={Colors._heteroboxd} size={widescreen ? 28 : 25}>{data.name}</GlowingText>
               </Pressable>
             ) : (
               <Text style={styles.username}>{data.name}</Text>
@@ -432,7 +430,7 @@ const Profile = () => {
                 style={{
                   width: posterWidth,
                   height: posterHeight,
-                  borderRadius: 8,
+                  borderRadius: 6,
                   borderWidth: 2,
                   borderColor: Colors.border_color,
                 }}
@@ -452,7 +450,9 @@ const Profile = () => {
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
-        <Text style={styles.subtitle}>Recents</Text>
+        <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
+          <Text style={styles.subtitle}>Recents</Text>
+        </Pressable>
         <View 
           style={{
             width: colPosterWidth * 4 + spacing * 3,
@@ -472,7 +472,8 @@ const Profile = () => {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={widescreen}
-              style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+              style={{ maxWidth: Math.min(width * 0.95, 1000), paddingBottom: 10 }}
+              contentContainerStyle={{alignItems: 'center'}}
             >
               {recent.slice(0, 8).map((film, index) => (
                 <Pressable
@@ -485,7 +486,7 @@ const Profile = () => {
                     style={{
                       width: colPosterWidth,
                       height: colPosterHeight,
-                      borderRadius: 8,
+                      borderRadius: 6,
                       borderWidth: 2,
                       borderColor: Colors.border_color,
                     }}
@@ -495,22 +496,10 @@ const Profile = () => {
               ))}
               {
                 recent.length < 8 ? null : (
-                  <Pressable
-                    onPress={() => {router.push(`/films/user-watched/${userId}`)}}
-                    style={{ marginRight: 8 }}
-                  >
-                    <Poster
-                      posterUrl={'more'}
-                      style={{
-                        width: posterWidth,
-                        height: posterHeight,
-                        borderRadius: 8,
-                        borderWidth: 1,
-                        borderColor: Colors.border_color,
-                        opacity: 0.4,
-                      }}
-                      other={!isOwnProfile}
-                    />
+                  <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
+                    <Text style={[styles.boxButtonText, { marginLeft: widescreen ? -spacing/2 : null, color: Colors.text_title, fontSize: widescreen ? 36 : 24 }]}>
+                      {'➜'}
+                    </Text>
                   </Pressable>              
                 )
               }
@@ -531,7 +520,7 @@ const Profile = () => {
             ...(isOwnProfile ? [{ label: "Blocked", count: data.blockedCount }] : []),
           ]
           .map((item, index) => {
-            const disabled = item.label === 'Lists' ? (isOwnProfile ? false : item.count === '0') : item.count === '0';
+            const disabled = item.label === 'Lists' ? (isOwnProfile ? false : item.count === 0) : item.count === 0;
             return (
               <TouchableOpacity
                 key={index}

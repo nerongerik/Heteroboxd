@@ -11,34 +11,19 @@ namespace Heteroboxd.Controller
     public class CommentController : ControllerBase
     {
         private readonly ICommentService _service;
+        private readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentService service)
+        public CommentController(ICommentService service, ILogger<CommentController> logger)
         {
             _service = service;
-        }
-
-        //GET endpoints -> limited public access
-
-        [HttpGet]
-        [Authorize(Policy = "RequireAdminTier")]
-        public async Task<IActionResult> GetComments()
-        {
-            //retrieves all comments from database
-            try
-            {
-                var AllComments = await _service.GetAllComments();
-                return Ok(AllComments);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            _logger = logger;
         }
 
         [HttpGet("{CommentId}")]
-        public async Task<IActionResult> GetCommentById(string CommentId)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetComment(string CommentId)
         {
-            //retrieves specific comment from database
+            _logger.LogInformation($"GET Comment endpoint hit for {CommentId}");
             try
             {
                 var Comment = await _service.GetComment(CommentId);
@@ -55,9 +40,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("review-comments/{ReviewId}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetCommentsByReview(string ReviewId)
         {
-            //retrieves all comments for given review from database
+            _logger.LogInformation($"GET Comments by Review endpoint hit for {ReviewId}");
             try
             {
                 var ReviewComments = await _service.GetCommentsByReview(ReviewId);
@@ -73,27 +59,11 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-comments/{UserId}")]
-        public async Task<IActionResult> GetCommentsByAuthor(string UserId)
-        {
-            //retrieves all comments by given user from database
-            try
-            {
-                var UserComments = await _service.GetCommentsByAuthor(UserId);
-                return Ok(UserComments);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        //POST endpoints -> public access
-
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> AddComment([FromBody] CreateCommentRequest CommentRequest)
         {
-            //adds a new comment to the database
+            _logger.LogInformation($"POST Comment endpoint hit for Review: {CommentRequest.ReviewId} by User: {CommentRequest.AuthorId}");
             try
             {
                 await _service.CreateComment(CommentRequest);
@@ -105,12 +75,11 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //PUT endpoints -> limited public access (only for their own comments)
-
         [HttpPut]
+        [Authorize]
         public async Task<IActionResult> UpdateComment([FromBody] UpdateCommentRequest CommentRequest)
         {
-            //updates an existing comment in the database
+            _logger.LogInformation($"PUT Comment endpoint hit for {CommentRequest.Id}");
             try
             {
                 await _service.UpdateComment(CommentRequest);
@@ -126,37 +95,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("like-count/{CommentId}/{LikeChange}")]
-        public async Task<IActionResult> UpdateLikeCount(string CommentId, string LikeChange)
-        {
-            //LikeChange should be +1 or -1, convert to numeral
-            //updates when a user likes/unlikes a comment
-            try
-            {
-                await _service.UpdateCommentLikeCountEfCore7Async(CommentId, LikeChange);
-                return Ok();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpPut("toggle-notifications/{CommentId}")]
+        [Authorize]
         public async Task<IActionResult> ToggleNotifications(string CommentId)
         {
-            //toggles the notification setting for a comment
+            _logger.LogInformation($"PUT Toggle Notifications endpoint hit for {CommentId}");
             try
             {
-                await _service.ToggleNotificationsEfCore7Async(CommentId);
+                await _service.ToggleNotificationsEfCore7(CommentId);
                 return Ok();
             }
             catch (ArgumentException)
@@ -174,12 +120,13 @@ namespace Heteroboxd.Controller
         }
 
         [HttpPut("report/{CommentId}")]
+        [Authorize]
         public async Task<IActionResult> ReportComment(string CommentId)
         {
-            //flags a comment as reported for admin review
+            _logger.LogInformation($"PUT Report Comment endpoint hit for {CommentId}");
             try
             {
-                await _service.ReportCommentEfCore7Async(CommentId);
+                await _service.ReportCommentEfCore7(CommentId);
                 return Ok();
             }
             catch (ArgumentException)
@@ -196,16 +143,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //DELETE endpoints -> limited public access (only for their own comments), ADMIN privileges for any comment
-
         [HttpDelete("{CommentId}")]
+        [Authorize]
         public async Task<IActionResult> DeleteComment(string CommentId)
         {
-            //deletes a comment from the database
-            //normal users can only delete their own reviews, admins can delete any review
+            _logger.LogInformation($"DELETE Comment endpoint hit for {CommentId}");
             try
             {
-                await _service.LogicalDeleteComment(CommentId);
+                await _service.DeleteComment(CommentId);
                 return Ok();
             }
             catch (KeyNotFoundException)

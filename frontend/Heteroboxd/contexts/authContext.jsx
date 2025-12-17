@@ -49,9 +49,9 @@ export function AuthProvider({ children }) {
     }
 
     async function logout(userId) {
-        console.log(await auth.logout(userId));
-        //whether backend succeeds in invalidating the user's tokens, the front should still log them out
-        setUser(null);
+      await auth.logout(userId);
+      //whether backend succeeds in invalidating the user's tokens, the front should still log them out
+      setUser(null);
     }
 
     if (!hydrated) return (

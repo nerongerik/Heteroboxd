@@ -23,7 +23,6 @@ namespace Heteroboxd.Models
 
         [JsonIgnore]
         public ICollection<CelebrityCredit> CastAndCrew { get; set; }
-        public bool Deleted { get; set; }
 
         [JsonIgnore]
         public ICollection<Review> Reviews { get; set; }
@@ -41,7 +40,7 @@ namespace Heteroboxd.Models
             this.Tagline = Tagline;
             this.Synopsis = Synopsis;
             this.Genres = new List<string>(); //to be filled during sync
-            this.PosterUrl = string.IsNullOrEmpty(PosterUrl) ? "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" : PosterUrl;
+            this.PosterUrl = string.IsNullOrEmpty(PosterUrl) ? "noposter" : PosterUrl;
             this.BackdropUrl = string.IsNullOrEmpty(BackdropUrl) ? null : BackdropUrl;
             this.Length = Length;
             this.ReleaseYear = ReleaseYear;
@@ -49,7 +48,6 @@ namespace Heteroboxd.Models
             this.Collection = new Dictionary<int, string>();
             this.LastSync = DateTime.UtcNow;
             this.CastAndCrew = new List<CelebrityCredit>();
-            this.Deleted = false;
             this.Reviews = new List<Review>();
             this.FavoriteCount = 0;
             this.WatchedBy = new List<UserWatchedFilm>();

@@ -10,37 +10,22 @@ namespace Heteroboxd.Controller
     public class CelebrityController : ControllerBase
     {
         private readonly ICelebrityService _service;
+        private readonly ILogger<CelebrityController> _logger;
 
-        public CelebrityController(ICelebrityService service)
+        public CelebrityController(ICelebrityService service, ILogger<CelebrityController> logger)
         {
             _service = service;
-        }
-
-        //GET endpoints -> limited public access
-
-        [HttpGet]
-        [Authorize(Policy = "RequireAdminTier")]
-        public IActionResult GetAllCelebrities()
-        {
-            //retrives all celebrities from database
-            try
-            {
-                var AllCelebrities = _service.GetAllCelebrities();
-                return Ok(AllCelebrities);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
+            _logger = logger;
         }
 
         [HttpGet("{CelebrityId}")]
+        [AllowAnonymous]
         public IActionResult GetCelebrity(int CelebrityId)
         {
-            //retrives specific celebrity from database
+            _logger.LogInformation($"GET Celebrity endpoint hit for {CelebrityId}");
             try
             {
-                var Celebrity = _service.GetCelebrityById(CelebrityId);
+                var Celebrity = _service.GetCelebrity(CelebrityId);
                 return Ok(Celebrity);
             }
             catch (KeyNotFoundException)
@@ -54,9 +39,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("cast-and-crew/{FilmId}")]
+        [AllowAnonymous]
         public IActionResult GetCelebritiesByFilm(int FilmId)
         {
-            //retrives all celebrity credits for a specific film from database
+            _logger.LogInformation($"GET Celebrities by Film endpoint hit for {FilmId}");
             try
             {
                 var Celebrities = _service.GetCelebritiesByFilm(FilmId);
@@ -69,9 +55,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("search")]
+        [AllowAnonymous]
         public IActionResult SearchCelebrities([FromQuery] string Search)
         {
-            //search by name, possibly case-insensitive
+            _logger.LogInformation($"GET Search Celebrities endpoint hit with {Search}");
             try
             {
                 var Celebrities = _service.SearchCelebrities(Search);

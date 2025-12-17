@@ -18,24 +18,6 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        //GET endpoints -> public access
-
-        [HttpGet]
-        [Authorize(Policy = "RequireAdminTier")]
-        public async Task<IActionResult> GetAllFilms()
-        {
-            //retrives all films from database
-            try
-            {
-                var AllFilms = await _service.GetAllFilms();
-                return Ok(AllFilms);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("trending")]
         public IActionResult GetTrendingFilms()
         {
@@ -45,10 +27,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("{FilmId}")]
-        [AllowAnonymous] //anyone can view films
+        [AllowAnonymous]
         public async Task<IActionResult> GetFilm(int FilmId)
         {
-            _logger.LogInformation($"Get Film endpoint hit with TmdbId: {FilmId}");
+            _logger.LogInformation($"GET Film endpoint hit for: {FilmId}");
             try
             {
                 var Film = await _service.GetFilm(FilmId);
@@ -65,10 +47,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("slug/{Slug}")]
-        [AllowAnonymous] //anyone can view films
+        [AllowAnonymous]
         public async Task<IActionResult> GetFilmBySlug(string Slug, [FromQuery] int? FilmId)
         {
-            _logger.LogInformation($"Get Film by Slug endpoint hit with Slug: {Slug}");
+            _logger.LogInformation($"GET Film by Slug endpoint hit for: {Slug}");
             try
             {
                 var Film = await _service.GetFilmBySlug(Slug.ToLower(), FilmId);
@@ -85,9 +67,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("year/{Year}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetFilmsByYear(int Year, int Page = 1, int PageSize = 20)
         {
-            //retrives all specific year's films from database
+            _logger.LogInformation($"GET Films by Year endpoint hit for: {Year}");
             try
             {
                 var YearsFilms = await _service.GetFilmsByYear(Year, Page, PageSize);
@@ -100,9 +83,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("genre/{Genre}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetFilmsByGenre(string Genre, int Page = 1, int PageSize = 20)
         {
-            _logger.LogInformation($"Get by Genre enpoint hit with Genre: {Genre}");
+            _logger.LogInformation($"GET by Genre enpoint hit for: {Genre}");
             try
             {
                 var Results = await _service.GetFilmsByGenre(Genre, Page, PageSize);
@@ -115,9 +99,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("celebrity/{CelebrityId}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetFilmsByCelebrity(int CelebrityId, int Page = 1, int PageSize = 20)
         {
-            //retrives all films for a specific celebrity from database
+            _logger.LogInformation($"GET Films by Celebrity endpoint hit for: {CelebrityId}");
             try
             {
                 var CelebritiesFilms = await _service.GetFilmsByCelebrity(CelebrityId, Page, PageSize);
@@ -130,10 +115,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("user/{UserId}")]
-        [AllowAnonymous] //public, because anyone can view these on any member's profile page
+        [AllowAnonymous]
         public async Task<IActionResult> GetUsersWatchedFilms(string UserId, int Page = 1, int PageSize = 20)
         {
-            _logger.LogInformation($"Get UWF hit | UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
+            _logger.LogInformation($"GET UWF hit with UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
                 var Result = await _service.GetUsersWatchedFilms(UserId, Page, PageSize);
@@ -150,9 +135,10 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("search")]
+        [AllowAnonymous]
         public async Task<IActionResult> SearchFilms([FromQuery] string Search)
         {
-            _logger.LogInformation($"Search Films endpoint hit with Query: {Search}");
+            _logger.LogInformation($"GET Search Films endpoint hit with: {Search}");
             try
             {
                 var SearchResults = await _service.SearchFilms(Search);
@@ -164,15 +150,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        //PUT endpoints -> free access
-
         [HttpPut("favorite-count/{FilmId}/{FavoriteChange}")]
+        [Authorize]
         public async Task<IActionResult> UpdateFilmFavoriteCount(int FilmId, string FavoriteChange)
         {
-            //increments/decriments film's favorite count in database
+            _logger.LogInformation($"PUT Update Film Favorite Count endpoint hit for FilmId: {FilmId} with Change: {FavoriteChange}");
             try
             {
-                await _service.UpdateFilmFavoriteCountEfCore7Async(FilmId, FavoriteChange);
+                await _service.UpdateFilmFavoriteCountEfCore7(FilmId, FavoriteChange);
                 return Ok();
             }
             catch (KeyNotFoundException)

@@ -17,6 +17,7 @@
         public int FavoriteCount { get; set; }
         public int? WatchCount { get; set; }
         public Dictionary<int, string>? Collection { get; set; }
+        public int ReviewCount { get; set; }
 
         //BIG PROPERTY -> used ONLY on the film details page, NOWHERE ELSE!!!
         public List<CelebrityCreditInfoResponse>? CastAndCrew { get; set; }
@@ -39,6 +40,7 @@
             if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Count();
             else this.WatchCount = null;
             this.Collection = Film.Collection;
+            this.ReviewCount = Film.Reviews.Count();
 
             if (IncludeCredits && Film.CastAndCrew != null)
             {

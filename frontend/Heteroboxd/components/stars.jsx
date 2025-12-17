@@ -1,62 +1,68 @@
 import { View, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
 import { Colors } from '../constants/colors';
 
-const Stars = ({ size, rating = 0, onRatingChange, readonly = false }) => {
-  //local state: array of star values (0 = empty, 1 = half, 2 = full)
-  const [stars, setStars] = useState([0, 0, 0, 0, 0]);
-
-  //initialize stars from rating prop
-  useEffect(() => {
-    const initialStars = [];
+const Stars = ({ size, rating = 0, onRatingChange, readonly = false, padding = false, align }) => {
+  const ratingToStars = (rating) => {
+    const stars = [];
     let remaining = rating;
+
     for (let i = 0; i < 5; i++) {
-      if (remaining >= 1) initialStars.push(2);
-      else if (remaining >= 0.5) initialStars.push(1);
-      else initialStars.push(0);
+      if (remaining >= 1) stars.push(2);
+      else if (remaining >= 0.5) stars.push(1);
+      else stars.push(0);
       remaining -= 1;
     }
-    setStars(initialStars);
-  }, [rating]);
+
+    return stars;
+  };
+
+  const starsToRating = (stars) =>
+    stars.reduce(
+      (sum, val) => sum + (val === 2 ? 1 : val === 1 ? 0.5 : 0),
+      0
+    );
+
+  const stars = ratingToStars(rating);
 
   const handlePress = (index) => {
-    setStars((prevStars) => {
-      const newStars = [...prevStars];
+    if (!onRatingChange || readonly) return;
 
-      //cycle clicked star: 0 -> 2 -> 1 -> 0...
-      const current = newStars[index];
-      const next = current === 0 ? 2 : current === 2 ? 1 : 0;
-      newStars[index] = next;
+    const nextStars = [...stars];
 
-      //fill all stars to the left of clicked star with full stars
-      for (let i = 0; i < index; i++) {
-        newStars[i] = 2;
-      }
+    // cycle clicked star: 0 -> 2 -> 1 -> 0
+    const current = nextStars[index];
+    const next = current === 0 ? 2 : current === 2 ? 1 : 0;
+    nextStars[index] = next;
 
-      //empty all stars to the right of clicked star
-      for (let i = index + 1; i < newStars.length; i++) {
-        newStars[i] = 0;
-      }
+    // fill left
+    for (let i = 0; i < index; i++) {
+      nextStars[i] = 2;
+    }
 
-      //calculate numeric rating
-      const newRating = newStars.reduce(
-        (sum, val) => sum + (val === 2 ? 1 : val === 1 ? 0.5 : 0),
-        0
-      );
+    // clear right
+    for (let i = index + 1; i < nextStars.length; i++) {
+      nextStars[i] = 0;
+    }
 
-      //notify parent
-      if (onRatingChange) onRatingChange(newRating);
-
-      return newStars;
-    });
+    onRatingChange(starsToRating(nextStars));
   };
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: readonly ? 0 : 20, paddingVertical: readonly ? 0 : 10 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: align ? align : 'center',
+        paddingHorizontal: padding ? 20 : 0,
+        paddingVertical: padding ? 10 : 0,
+      }}
+    >
       {stars.map((starValue, index) => (
-        <Pressable key={index} onPress={readonly ? null : () => handlePress(index)}>
+        <Pressable
+          key={index}
+          onPress={readonly ? undefined : () => handlePress(index)}
+        >
           {starValue === 2 && (
             <MaterialCommunityIcons
               name="star"

@@ -22,21 +22,6 @@ namespace Heteroboxd.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("CommentUser", b =>
-                {
-                    b.Property<Guid>("LikedCommentsId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("LikedCommentsId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserLikedComments", (string)null);
-                });
-
             modelBuilder.Entity("Heteroboxd.Models.Celebrity", b =>
                 {
                     b.Property<int>("Id")
@@ -44,9 +29,6 @@ namespace Heteroboxd.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -115,13 +97,7 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("Flags")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("LikeCount")
                         .HasColumnType("integer");
 
                     b.Property<bool>("NotificationsOn")
@@ -159,9 +135,6 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasColumnType("jsonb");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
 
                     b.Property<int>("FavoriteCount")
                         .HasColumnType("integer");
@@ -260,9 +233,6 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("Read")
                         .HasColumnType("boolean");
 
@@ -323,9 +293,6 @@ namespace Heteroboxd.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("FilmId")
                         .HasColumnType("integer");
 
@@ -374,9 +341,6 @@ namespace Heteroboxd.Migrations
 
                     b.Property<DateTime>("DateJoined")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -783,21 +747,6 @@ namespace Heteroboxd.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserWatchedFilms");
-                });
-
-            modelBuilder.Entity("CommentUser", b =>
-                {
-                    b.HasOne("Heteroboxd.Models.Comment", null)
-                        .WithMany()
-                        .HasForeignKey("LikedCommentsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Heteroboxd.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Heteroboxd.Models.CelebrityCredit", b =>

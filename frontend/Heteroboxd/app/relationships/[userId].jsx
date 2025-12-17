@@ -1,4 +1,4 @@
-import { StyleSheet, ScrollView, View, RefreshControl, Platform, useWindowDimensions } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { useState, useEffect } from 'react';
@@ -29,14 +29,19 @@ const Relationships = () => {
     setRefreshing(true);
     setResult(0);
     try {
-      const res = await fetch(`${BaseUrl.api}/users/user-relationships/${userId}`, {method: "GET"});
+      const res = await fetch(`${BaseUrl.api}/users/user-relationships/${userId}`, {
+        method: "GET",
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       
       if (res.status === 200) {
         const json = await res.json();
-        setFollowers(json['followers'].map(uir => ({id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl})));
-        setFollowing(json['following'].map(uir => ({id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl})));
+        setFollowers(json['followers'].map(uir => ({id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl, tier: uir.tier, patron: uir.patron})));
+        setFollowing(json['following'].map(uir => ({id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl, tier: uir.tier, patron: uir.patron})));
         if (isOwnProfile) {
-          setBlocked(json['blocked'].map(uir => ({id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl})));
+          setBlocked(json['blocked'].map(uir => ({id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl, tier: uir.tier, patron: uir.patron})));
         }
         setResult(200);
       } else if (res.status === 404) {

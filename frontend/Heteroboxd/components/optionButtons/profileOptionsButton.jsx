@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
-import { Colors } from '../constants/colors';
+import { useAuth } from '../../hooks/useAuth';
+import { Colors } from '../../constants/colors';
 import { useRouter, Link } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -9,10 +9,10 @@ import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Octicons from '@expo/vector-icons/Octicons';
-import { BaseUrl } from '../constants/api';
-import * as auth from '../helpers/auth';
-import Popup from './popup';
-import LoadingResponse from './loadingResponse';
+import { BaseUrl } from '../../constants/api';
+import * as auth from '../../helpers/auth';
+import Popup from '../popup';
+import LoadingResponse from '../loadingResponse';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 
@@ -257,7 +257,7 @@ const ProfileOptionsButton = ({ userId }) => {
         }}
       />
 
-      <Popup visible={deleteConfirm} message={"This action cannot be undone, and you may be unable to make a new account with the same e-mail until the next database purge. Are you sure you want to delete your account?"}
+      <Popup visible={deleteConfirm} message={"This action cannot be undone, and you may be unable to make a new account with the same e-mail until we finish processing the removal request. Are you sure you want to delete your account?"}
         onClose={() => {setDeleteConfirm(false)}} confirm={true} onConfirm={() => {handleDelete()}}
       />
 

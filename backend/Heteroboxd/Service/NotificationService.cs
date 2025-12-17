@@ -6,12 +6,10 @@ namespace Heteroboxd.Service
 {
     public interface INotificationService
     {
-        Task<List<NotificationInfoResponse>> GetAllNotifications();
-        Task<NotificationInfoResponse> GetNotificationById(string NotificationId);
-        Task<List<NotificationInfoResponse>> GetUsersNotifications(string UserId);
-        Task CreateNotification(CreateNotificationRequest NotificationRequest);
+        Task<List<NotificationInfoResponse>> GetNotificationsByUser(string UserId);
+        Task AddNotification(string Title, string Text, string UserId);
         Task UpdateNotification(string NotificationId);
-        Task LogicalDeleteNotification(string NotificationId);
+        Task DeleteNotification(string NotificationId);
     }
 
     public class NotificationService : INotificationService
@@ -23,29 +21,15 @@ namespace Heteroboxd.Service
             _repo = repo;
         }
 
-        public async Task<List<NotificationInfoResponse>> GetAllNotifications()
+        public async Task<List<NotificationInfoResponse>> GetNotificationsByUser(string UserId)
         {
-            var AllNotifications = await _repo.GetAllAsync();
-            return AllNotifications.Select(n => new NotificationInfoResponse(n)).ToList();
-        }
-
-        public async Task<NotificationInfoResponse> GetNotificationById(string NotificationId)
-        {
-            var Notification = await _repo.GetByIdAsync(Guid.Parse(NotificationId));
-            if (Notification == null) throw new KeyNotFoundException();
-            return new NotificationInfoResponse(Notification);
-        }
-
-        public async Task<List<NotificationInfoResponse>> GetUsersNotifications(string UserId)
-        {
-            var UsersNotifications = await _repo.GetByUserIdAsync(Guid.Parse(UserId));
+            var UsersNotifications = await _repo.GetByUserAsync(Guid.Parse(UserId));
             return UsersNotifications.Select(n => new NotificationInfoResponse(n)).ToList();
         }
 
-        public async Task CreateNotification(CreateNotificationRequest NotificationRequest)
+        public async Task AddNotification(string Title, string Text, string UserId)
         {
-            Notification Notification = new Notification(NotificationRequest.Title, NotificationRequest.Text, Guid.Parse(NotificationRequest.UserId));
-            _repo.Create(Notification);
+            _repo.Create(new Notification(Title, Text, Guid.Parse(UserId)));
             await _repo.SaveChangesAsync();
         }
 
@@ -58,12 +42,11 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
-        public async Task LogicalDeleteNotification(string NotificationId)
+        public async Task DeleteNotification(string NotificationId)
         {
             var Notification = await _repo.GetByIdAsync(Guid.Parse(NotificationId));
             if (Notification == null) throw new KeyNotFoundException();
-            Notification.Deleted = true;
-            _repo.Update(Notification);
+            _repo.Delete(Notification);
             await _repo.SaveChangesAsync();
         }
     }

@@ -5,7 +5,6 @@ namespace Heteroboxd.Service
 {
     public interface  IFilmService
     {
-        Task<List<FilmInfoResponse>> GetAllFilms();
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<FilmInfoResponse?> GetFilmBySlug(string Slug, int? FilmId);
         Task<PagedFilmInfoResponse> GetFilmsByYear(int Year, int Page, int PageSize);
@@ -13,7 +12,7 @@ namespace Heteroboxd.Service
         Task<PagedFilmInfoResponse> GetFilmsByCelebrity(int CelebrityId, int Page, int PageSize);
         Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
         Task<List<FilmInfoResponse>> SearchFilms(string Search);
-        Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, string FavoriteChange);
+        Task UpdateFilmFavoriteCountEfCore7(int FilmId, string FavoriteChange);
     }
 
     public class FilmService : IFilmService
@@ -25,12 +24,6 @@ namespace Heteroboxd.Service
         {
             _repo = repo;
             _logger = logger;
-        }
-
-        public async Task<List<FilmInfoResponse>> GetAllFilms()
-        {
-            var AllFilms = await _repo.GetAllAsync();
-            return AllFilms.Select(f => new FilmInfoResponse(f, false)).ToList();
         }
 
         public Task<List<FilmInfoResponse>> GetTrendingFilms()
@@ -136,7 +129,7 @@ namespace Heteroboxd.Service
             return SearchResults.Select(f => new FilmInfoResponse(f, true, true)).ToList();
         }
 
-        public async Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, string FavoriteChange)
+        public async Task UpdateFilmFavoriteCountEfCore7(int FilmId, string FavoriteChange)
         {
             if (!int.TryParse(FavoriteChange, out var Delta)) throw new ArgumentException();
             await _repo.UpdateFilmFavoriteCountEfCore7Async(FilmId, Delta);

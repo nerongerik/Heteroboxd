@@ -1,7 +1,7 @@
 import { Animated, Platform, StyleSheet } from "react-native";
 import { useEffect, useRef, useState } from "react";
 
-const GlowingText = ({ children, color, div }) => {
+const GlowingText = ({ children, color, div, size }) => {
   const glowAnim = useRef(new Animated.Value(0)).current;
 
   // Web-specific glow level
@@ -62,7 +62,7 @@ const GlowingText = ({ children, color, div }) => {
     return (
       <span
         style={{
-          fontSize: 28,
+          fontSize: size,
           fontWeight: 700,
           textAlign: "center",
           color,
@@ -86,14 +86,13 @@ const GlowingText = ({ children, color, div }) => {
     color,
   };
 
-  return <Animated.Text style={[styles.glowBase, animatedStyle]}>{children}</Animated.Text>;
+  return <Animated.Text style={[styles.glowBase, animatedStyle, {fontSize: size}]}>{children}</Animated.Text>;
 };
 
 export default GlowingText;
 
 const styles = StyleSheet.create({
   glowBase: {
-    fontSize: 25,
     fontWeight: "700",
     textAlign: "center",
   },

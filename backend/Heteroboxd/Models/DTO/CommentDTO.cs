@@ -7,7 +7,6 @@
         public string Date { get; set; }
         public int Flags { get; set; }
         public bool NotificationsOn { get; set; }
-        public int LikeCount { get; set; }
         public string AuthorId { get; set; }
         public string? AuthorName { get; set; }
         public string? AuthorProfilePictureUrl { get; set; }
@@ -20,7 +19,6 @@
             this.Date = Comment.Date.ToString("dd/MM/yyyy HH:mm");
             this.Flags = Comment.Flags;
             this.NotificationsOn = Comment.NotificationsOn;
-            this.LikeCount = Comment.LikeCount;
             this.AuthorId = Comment.AuthorId.ToString();
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
@@ -34,7 +32,6 @@
             this.Date = Comment.Date.ToString("dd/MM/yyyy HH:mm");
             this.Flags = Comment.Flags;
             this.NotificationsOn = Comment.NotificationsOn;
-            this.LikeCount = Comment.LikeCount;
             this.AuthorId = Comment.AuthorId.ToString();
             this.ReviewId = Comment.ReviewId.ToString();
         }

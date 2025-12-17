@@ -72,7 +72,7 @@ const About = () => {
           Does Heteroboxd have guidelines?
         </Text>
         <Text style={styles.text}>
-          Yes! Unlike our competitors, Heteroboxd is 100% transparent with its <Link style={styles.link} href='guidelines'>code of conduct.</Link>
+          Yes! Unlike our competitors, Heteroboxd is 100% transparent with its <Link style={styles.link} href='https://heteroboxd.com/guidelines'>code of conduct.</Link>
         </Text>
     
         <Text style={styles.subtitle}>

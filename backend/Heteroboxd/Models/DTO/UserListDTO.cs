@@ -1,6 +1,4 @@
-﻿using Microsoft.Identity.Client;
-
-namespace Heteroboxd.Models.DTO
+﻿namespace Heteroboxd.Models.DTO
 {
     public class UserListInfoResponse
     {
@@ -16,6 +14,8 @@ namespace Heteroboxd.Models.DTO
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
         public string AuthorProfilePictureUrl { get; set; }
+        public string AuthorTier { get; set; }
+        public bool AuthorPatron { get; set; }
 
         public UserListInfoResponse(UserList List, User Author, int Take = -1)
         {
@@ -33,6 +33,8 @@ namespace Heteroboxd.Models.DTO
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
+            this.AuthorPatron = Author.IsPatron;
+            this.AuthorTier = Author.Tier.ToString().ToLower();
         }
     }
 
@@ -52,6 +54,14 @@ namespace Heteroboxd.Models.DTO
         public List<UserListInfoResponse> Lists { get; set; }
     }
 
+    public class DelimitedListInfoResponse
+    {
+        public string ListId { get; set; }
+        public string ListName { get; set; }
+        public bool ContainsFilm { get; set; }
+        public int Size { get; set; }
+    }
+
     public class CreateUserListRequest
     {
         public string Name { get; set; }
@@ -68,6 +78,13 @@ namespace Heteroboxd.Models.DTO
         public string Description { get; set; }
         public bool Ranked { get; set; }
         public List<CreateListEntryRequest> Entries { get; set; } //send full list; we'll check if they should be removed or added, and in what order
+    }
+
+    public class BulkUpdateRequest
+    {
+        public string AuthorId { get; set; }
+        public int FilmId { get; set; }
+        public List<KeyValuePair<string, int>> Lists { get; set; }
     }
 
     public class ListEntryInfoResponse
