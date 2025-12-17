@@ -1,4 +1,4 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator, FlatList } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
@@ -469,41 +469,52 @@ const Profile = () => {
               <Text style={styles.text}>This user has no motion.</Text>
             </View>
           ) : (
-            <ScrollView
+            <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
               style={{ maxWidth: Math.min(width * 0.95, 1000), paddingBottom: 10 }}
               contentContainerStyle={{alignItems: 'center'}}
-            >
-              {recent.slice(0, 8).map((film, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => router.push(`/film/${film.filmId}`)}
-                  style={{ marginRight: spacing }}
-                >
-                  <Poster
-                    posterUrl={film?.posterUrl ?? null}
-                    style={{
-                      width: colPosterWidth,
-                      height: colPosterHeight,
-                      borderRadius: 6,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color,
-                    }}
-                    other={!isOwnProfile}
-                  />
-                </Pressable>
-              ))}
-              {
-                recent.length < 8 ? null : (
-                  <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
-                    <Text style={[styles.boxButtonText, { marginLeft: widescreen ? -spacing/2 : null, color: Colors.text_title, fontSize: widescreen ? 36 : 24 }]}>
-                      {'➜'}
+              data={[...recent.slice(0, 8), null]}
+              keyExtractor={(item) => item ? item.filmId.toString() : 'seeall'}
+              renderItem={({ item }) => {
+                if (item) {
+                  return (
+                    <Pressable
+                      onPress={() => router.push(`/film/${item.filmId}`)}
+                      style={{ marginRight: spacing }}
+                    >
+                      <Poster
+                        posterUrl={item?.posterUrl ?? null}
+                        style={{
+                          width: colPosterWidth,
+                          height: colPosterHeight,
+                          borderRadius: 6,
+                          borderWidth: 2,
+                          borderColor: Colors.border_color,
+                        }}
+                        other={!isOwnProfile}
+                      />
+                    </Pressable>
+                  );
+                }
+                return (
+                  <Pressable onPress={() => router.push(`/films/user-watched/${userId}`)}>
+                    <Text
+                      style={[
+                        styles.boxButtonText,
+                        {
+                          marginLeft: widescreen ? -spacing / 2 : null,
+                          color: Colors.text_title,
+                          fontSize: widescreen ? 36 : 24
+                        },
+                      ]}
+                    >
+                      {' '}<Text style={{fontWeight: 'bold'}}>{recent.length}</Text>{'➜'}
                     </Text>
-                  </Pressable>              
-                )
-              }
-            </ScrollView>
+                  </Pressable>
+                );
+              }}
+            />
           )}
         </View>
 

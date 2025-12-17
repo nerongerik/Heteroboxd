@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Pressable } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Pressable, FlatList } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
 import { useMemo, useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
@@ -362,12 +362,10 @@ const Film = () => {
           film.tagline && <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
         }
         <Text style={[styles.text, { fontSize: widescreen ? 18 : 14, paddingHorizontal: 10 }]}>{film.synopsis}</Text>
-        
-        <View style={[styles.divider, {marginTop: 15, marginBottom: film?.genres && film?.genres.length > 0 ? 10 : 15}]} />
 
         { film?.genres && film?.genres.length > 0 && (
           <>
-            <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center'}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 10}}>
               {
                 film.genres.map((genre, i) => (
                   <Pressable key={i} onPress={() => router.push(`films/explore?type=genre&subtype=${genre}`)} style={[{backgroundColor: Colors.button, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
@@ -376,9 +374,10 @@ const Film = () => {
                 ))
               }
             </View>
-            <View style={[styles.divider, {marginTop: 10, marginBottom: 15}]} />
           </>
         )}
+
+        <View style={[styles.divider, {marginVertical: 15}]} />
 
         <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[RATINGS GRAPH PLACEHOLDER]</Text>
 
@@ -399,122 +398,96 @@ const Film = () => {
         <View style={styles.divider}></View>
 
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Cast</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
-          style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
-          contentContainerStyle={{
-            alignItems: "flex-start",
-            justifyContent: "flex-start"
-          }}
-        >
-          {actors.length === 0 && (
+        {
+          actors.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
               <Text style={[styles.text, {fontSize: 20}]}>There's no recorded cast for this feature.</Text>
             </View>
-          )}
-          {actors.map((actor, index) => {
-            return (
-              <Pressable
-                key={actor.celebrityId}
-                onPress={() => router.push(`/celebrity/${actor.celebrityId}`)}
-                style={{ marginRight: index < actors.length - 1 ? 15 : 0 }}
-              >
-                <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
-                  <Headshot
-                    pictureUrl={actor.celebrityPictureUrl}
-                    style={{
-                      width: headshotSize,
-                      height: headshotSize,
-                      borderRadius: headshotSize / 2,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color
-                    }}
-                  />
-                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
-                    {actor.celebrityName}
-                  </Text>
-                  <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
-                    {`(${actor.character})`}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          ) : (
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={widescreen}
+              style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+              contentContainerStyle={{
+                alignItems: "flex-start",
+                justifyContent: "flex-start"
+              }}
+              data={actors}
+              keyExtractor={(item) => `${item.celebrityId}-${item.character}`}
+              renderItem={({item, i}) => (
+                <Pressable
+                  onPress={() => router.push(`/celebrity/${item.celebrityId}`)}
+                  style={{ marginRight: i < actors.length - 1 ? 15 : 0 }}
+                >
+                  <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
+                    <Headshot
+                      pictureUrl={item.celebrityPictureUrl}
+                      style={{
+                        width: headshotSize,
+                        height: headshotSize,
+                        borderRadius: headshotSize / 2,
+                        borderWidth: 2,
+                        borderColor: Colors.border_color
+                      }}
+                    />
+                    <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
+                      {item.celebrityName}
+                    </Text>
+                    <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
+                      {`(${item.character})`}
+                    </Text>
+                  </View>
+                </Pressable>
+              )}
+            />
+          )
+        }
 
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Crew</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={widescreen} //browsers with touchscreen SHOULD natively support scrolling
-          style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
-          contentContainerStyle={{
-            alignItems: "flex-start",
-            justifyContent: "flex-start"
-          }}
-        >
-          {(directors.length === 0 && crew.length === 0) && (
+        {
+          (directors.length === 0 && crew.length === 0) ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
               <Text style={[styles.text, {fontSize: 20}]}>There's no recorded crew for this feature.</Text>
             </View>
-          )}
-          {directors.map((director, index) => {
-            return (
-              <Pressable
-                key={director.celebrityId}
-                onPress={() => router.push(`/celebrity/${director.celebrityId}`)}
-                style={{ marginRight: 15 }}
-              >
-                <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
-                  <Headshot
-                    pictureUrl={director.celebrityPictureUrl}
-                    style={{
-                      width: headshotSize,
-                      height: headshotSize,
-                      borderRadius: headshotSize / 2,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color
-                    }}
-                  />
-                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
-                    {director.celebrityName}
-                  </Text>
-                  <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
-                    {`(${director.role})`}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-          {crew.map((crewer, index) => {
-            return (
-              <Pressable
-                key={crewer.celebrityId}
-                onPress={() => router.push(`/celebrity/${crewer.celebrityId}`)}
-                style={{ marginRight: index < crew.length - 1 ? 15 : 0 }}
-              >
-                <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
-                  <Headshot
-                    pictureUrl={crewer.celebrityPictureUrl}
-                    style={{
-                      width: headshotSize,
-                      height: headshotSize,
-                      borderRadius: headshotSize / 2,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color
-                    }}
-                  />
-                  <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
-                    {crewer.celebrityName}
-                  </Text>
-                  <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
-                    {`(${crewer.role})`}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+          ) : (
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={widescreen}
+              style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
+              contentContainerStyle={{
+                alignItems: "flex-start",
+                justifyContent: "flex-start"
+              }}
+              data={[...directors, ...crew]}
+              keyExtractor={(item) => `${item.celebrityId}-${item.role}`}
+              renderItem={({item}) => (
+                <Pressable
+                  onPress={() => router.push(`/celebrity/${item.celebrityId}`)}
+                  style={{ marginRight: 15 }}
+                >
+                  <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
+                    <Headshot
+                      pictureUrl={item.celebrityPictureUrl}
+                      style={{
+                        width: headshotSize,
+                        height: headshotSize,
+                        borderRadius: headshotSize / 2,
+                        borderWidth: 2,
+                        borderColor: Colors.border_color
+                      }}
+                    />
+                    <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
+                      {item.celebrityName}
+                    </Text>
+                    <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
+                      {`(${item.role})`}
+                    </Text>
+                  </View>
+                </Pressable>
+              )}
+            />
+          )
+        }
 
         <View style={styles.divider}></View>
 
@@ -536,30 +509,39 @@ const Film = () => {
                 alignSelf: "center",
               }}
             >
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={widescreen}
-                style={{ maxWidth: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
-              >
-                {Object.entries(film?.collection).map(([tmdbId, posterLink], index) => (
-                  <Pressable
-                    key={tmdbId}
-                    onPress={() => router.push(`/film/${tmdbId}`)}
-                    style={{ marginRight: index < Object.entries(film.collection).length - 1 ? spacing : 0 }}
-                  >
-                    <Poster
-                      posterUrl={posterLink}
-                      style={{
-                        width: colPosterWidth,
-                        height: colPosterHeight,
-                        borderRadius: 8,
-                        borderWidth: 2,
-                        borderColor: Colors.border_color
-                      }}
-                    />
-                  </Pressable>
-                ))}
-              </ScrollView>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={widescreen}
+              style={{
+                maxWidth: Math.min(width * 0.95, 1000),
+                alignSelf: "center",
+                paddingBottom: 10
+              }}
+              data={Object.entries(film?.collection ?? {})}
+              keyExtractor={([tmdbId]) => tmdbId}
+              renderItem={({ item: [tmdbId, posterLink], index }) => (
+                <Pressable
+                  onPress={() => router.push(`/film/${tmdbId}`)}
+                  style={{
+                    marginRight:
+                      index < Object.entries(film.collection).length - 1
+                        ? spacing
+                        : 0
+                  }}
+                >
+                  <Poster
+                    posterUrl={posterLink}
+                    style={{
+                      width: colPosterWidth,
+                      height: colPosterHeight,
+                      borderRadius: 6,
+                      borderWidth: 2,
+                      borderColor: Colors.border_color
+                    }}
+                  />
+                </Pressable>
+              )}
+            />
             </View>
           </>
         )}
