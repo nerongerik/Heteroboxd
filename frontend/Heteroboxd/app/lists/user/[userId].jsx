@@ -7,12 +7,10 @@ import LoadingResponse from '../../../components/loadingResponse';
 import Popup from '../../../components/popup';
 import { BaseUrl } from '../../../constants/api';
 import { Poster } from '../../../components/poster';
-import { UserAvatar } from '../../../components/userAvatar';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useAuth } from '../../../hooks/useAuth';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import GlowingText from '../../../components/glowingText';
+import Author from '../../../components/author';
 
 const pageSize = 40
 
@@ -109,45 +107,17 @@ const UsersLists = () => {
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect ratio
 
   const AuthorSection = useMemo(() =>
-    <Pressable onPress={(e) => {
-      e.stopPropagation();
-      router.push(`/profile/${userId}`)
-    }}>
-      <View style={{flexDirection: 'row', paddingHorizontal: 5, paddingTop: 5, alignItems: 'center'}}>
-        <UserAvatar
-          pictureUrl={avatar}
-          style={{
-            marginRight: 5,
-            width: 26,
-            height: 26,
-            borderRadius: 13,
-            borderWidth: 2,
-            borderColor: Colors.border_color
-          }}
-        />
-        {
-          userTier === 'free' ? (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>
-                {username}
-              </Text>
-              {(userPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>)}
-            </View>
-          ) : userTier === 'admin' ? (
-            <GlowingText color={Colors._heteroboxd} size={widescreen ? 20 : 16}>
-              {username}
-            </GlowingText>
-          ) : (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <GlowingText color={Colors.heteroboxd} size={widescreen ? 20 : 16}>
-                {username}
-              </GlowingText>
-              {userPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
-            </View>
-          )
-        }
-      </View>
-    </Pressable>,
+    <View style={{marginLeft: 5, marginBottom: -5}}>
+      <Author
+        userId={userId}
+        url={avatar}
+        username={username}
+        tier={userTier}
+        patron={userPatron}
+        router={router}
+        widescreen={widescreen}
+      />
+    </View>,
   [userId, avatar, username, userTier, userPatron, widescreen, router]);
 
   return (

@@ -6,13 +6,12 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { BaseUrl } from '../../constants/api'
 import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
-import { UserAvatar } from '../../components/userAvatar'
 import Stars from '../../components/stars'
 import {Poster} from '../../components/poster'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import * as auth from '../../helpers/auth'
 import ParsedRead from '../../components/parsedRead'
-import GlowingText from '../../components/glowingText'
+import Author from '../../components/author'
 
 const Review = () => {
   const { reviewId } = useLocalSearchParams();
@@ -137,48 +136,6 @@ const Review = () => {
   }
 
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  const AuthorSection = useMemo(() =>
-    <Pressable onPress={(e) => {
-      e.stopPropagation();
-      router.push(`/profile/${review?.authorId}`)
-    }}>
-      <View style={{flexDirection: 'row', paddingTop: 25, alignItems: 'center', marginBottom: 0}}>
-        <UserAvatar
-          pictureUrl={review?.authorProfilePictureUrl}
-          style={{
-            marginRight: 5,
-            paddingLeft: 3,
-            width: widescreen ? 30 : 26,
-            height: widescreen ? 30 : 26,
-            borderRadius: widescreen ? 18 : 13,
-            borderWidth: 2,
-            borderColor: Colors.border_color
-          }}
-        />
-        {
-          review?.authorTier === 'free' ? (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>
-                {review?.authorName}
-              </Text>
-              {(review?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>)}
-            </View>
-          ) : review?.authorTier === 'admin' ? (
-            <GlowingText color={Colors._heteroboxd} size={widescreen ? 20 : 16}>
-              {review?.authorName}
-            </GlowingText>
-          ) : (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <GlowingText color={Colors.heteroboxd} size={widescreen ? 20 : 16}>
-                {review?.authorName}
-              </GlowingText>
-              {review?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
-            </View>
-          )
-        }
-      </View>
-    </Pressable>,
-  [review, widescreen, router]);
 
   if (!review) {
     return (
@@ -207,7 +164,17 @@ const Review = () => {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {AuthorSection}
+        <View style={{marginBottom: -5}}>
+          <Author
+            userId={review?.authorId}
+            url={review?.authorProfilePictureUrl}
+            username={review?.authorName}
+            tier={review?.authorTier}
+            patron={review?.authorPatron}
+            router={router}
+            widescreen={widescreen}
+          />
+        </View>
         <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignSelf: 'center'}}>
           <View style={{flex: 1, justifyContent: 'space-around'}}>
             <Text style={{paddingLeft: 3, color: Colors.text_title, fontWeight: '500', fontSize: widescreen ? 24 : 20, textAlign: 'left', flexShrink: 1}}>

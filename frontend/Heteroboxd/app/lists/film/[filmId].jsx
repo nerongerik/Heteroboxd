@@ -7,10 +7,8 @@ import PaginationBar from '../../../components/paginationBar'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
-import { UserAvatar } from '../../../components/userAvatar'
 import Fontisto from '@expo/vector-icons/Fontisto'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import GlowingText from '../../../components/glowingText'
+import Author from '../../../components/author'
 
 const pageSize = 40
 
@@ -96,28 +94,17 @@ const FilmsLists = () => {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={[styles.card, { marginBottom: spacing * 1.25 }]}>
-            <Pressable onPress={() => router.push(`/profile/${item.authorId}`)}>
-              <View style={styles.authorRow}>
-                <UserAvatar
-                  pictureUrl={item.authorProfilePictureUrl}
-                  style={styles.avatar}
-                />
-                {item.authorTier === 'free' ? (
-                  <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-                    <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>{item.authorName}</Text>
-                    {item.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
-                  </View>
-                ) : item.authorTier === 'admin' ? (
-                  <GlowingText color={Colors._heteroboxd} size={widescreen ? 20 : 16}>{item.authorName}</GlowingText>
-                ) : (
-                  <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-                    <GlowingText color={Colors.heteroboxd} size={widescreen ? 20 : 16}>{item.authorName}</GlowingText>
-                    {item.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
-                  </View>
-                )}
-              </View>
-            </Pressable>
-
+            <View style={{marginLeft: 5, marginBottom: -5}}>
+              <Author
+                userId={item.authorId}
+                url={item.authorProfilePictureUrl}
+                username={item.authorName}
+                tier={item.authorTier}
+                patron={item.authorPatron}
+                router={router}
+                widescreen={widescreen}
+              />
+            </View>
             <Pressable onPress={() => router.push(`/list/${item.id}`)}>
               <Text style={[styles.listTitle, {fontSize: widescreen ? 22 : 18}]}>{item.name}</Text>
 
@@ -161,7 +148,7 @@ const FilmsLists = () => {
               </View>
 
               <Text style={[styles.description, {fontSize: widescreen ? 18 : 14}]}>
-                { item.description.slice(0, widescreen ? 500 : 150) }...
+                { item.description.slice(0, widescreen ? 500 : 150) }
               </Text>
 
               <View style={styles.statsRow}>

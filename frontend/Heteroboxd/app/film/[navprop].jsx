@@ -13,12 +13,18 @@ import React from 'react';
 import { Headshot } from '../../components/headshot';
 import FilmInteract from '../../components/filmInteract';
 import FilmDataLoaders from '../../components/filmDataLoaders';
+import Stars from '../../components/stars';
+import ParsedRead from '../../components/parsedRead';
+import Author from '../../components/author';
+
+const topCount = 3;
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
   const [film, setFilm] = useState(null); //basic film data
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
-  const [usersReview, setUsersReview] = useState(null);
+  const [usersReview, setUsersReview] = useState(null); //displays user's rating in stars
+  const [topReviews, setTopReviews] = useState([]); //top 3/4/5 reviews
 
   const [watchlisted, setWatchlisted] = useState(null);
 
@@ -238,7 +244,29 @@ const Film = () => {
       }
       //once we implement reviews, we might want to call for it and display user's rating differently from the usual "interact with this feature" view
     })();
-  }, [film])
+  }, [film]);
+
+  useEffect(() => {
+    if (!film) return;
+    (async () => {
+      try {
+        const res = await fetch(`${BaseUrl.api}/reviews/${film.id}/top/${topCount}`, {
+          method: 'GET',
+          headers: {'Accept': 'application/json'}
+        });
+        if (res.status === 200) {
+          const json = await res.json();
+          setTopReviews(json);
+        } else {
+          //since top reviews aren't critical infrastructure, there's no need to bother the user with failstates
+          console.log('failed to fetch top reviews.');
+        }
+      } catch {
+        //if there's a network error, previous useEffects will have handled it already
+        console.log('failed to fetch top reviews.');
+      }
+    })();
+  }, [film]);
 
   function parseDate(date) {
     if (!date) return date;
@@ -282,7 +310,7 @@ const Film = () => {
   const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen]);
   const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen]);
   //cache backdrop
-  const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl])
+  const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl]);
 
   if (!film) {
     return (
@@ -495,7 +523,26 @@ const Film = () => {
 
         <View style={styles.divider}></View>
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[TOP 3 REVIEWS PLACEHOLDER]</Text>
+        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Top Reviews</Text>
+        {
+          topReviews.map((r) => {
+            return (
+              <View key={r.id} style={{backgroundColor: Colors.card, width: '90%', alignSelf: 'center', padding: 5}}>
+                <Author
+                  userId={r.authorId}
+                  url={r.authorProfilePictureUrl}
+                  username={r.authorName}
+                  tier={r.authorTier}
+                  patron={r.authorPatron}
+                  router={router}
+                  widescreen={widescreen}
+                />
+                <Stars size={widescreen ? 30 : 20} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
+                <ParsedRead html={r.text.slice(0, 500)} />
+              </View>
+            )
+          })
+        }
 
         <View style={styles.divider}></View>
         
