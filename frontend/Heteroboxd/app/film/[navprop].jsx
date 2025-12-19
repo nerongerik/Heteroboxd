@@ -525,38 +525,54 @@ const Film = () => {
 
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Top Reviews</Text>
         {
-          topReviews.map((r) => {
-            return (
-              <View
-                key={r.id}
-                style={{
-                  backgroundColor: Colors.card,
-                  width: '90%',
-                  alignSelf: 'center',
-                  paddingVertical: 5,
-                  paddingHorizontal: 7.5,
-                  marginBottom: 10,
-                  borderRadius: 5,
-                  borderTopWidth: 2,
-                  borderBottomWidth: 2,
-                  borderColor: Colors.border_color
-                }}>
-                <Author
-                  userId={r.authorId}
-                  url={r.authorProfilePictureUrl}
-                  username={r.authorName}
-                  tier={r.authorTier}
-                  patron={r.authorPatron}
-                  router={router}
-                  widescreen={widescreen}
-                />
-                <Pressable onPress={() => router.push(`/review/${r.id}`)}>
-                  <Stars size={widescreen ? 30 : 20} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
-                  <ParsedRead html={r.text.slice(0, 450) + '...'} />
-                </Pressable>
-              </View>
-            )
-          })
+          topReviews.length === 0 ? (
+            <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
+              <Text style={[styles.text, {fontSize: widescreen ? 18 : 14, textAlign: 'center'}]}>
+                There are no spoiler-free reviews for this film yet.
+              </Text>
+              <Link href={`/review/alter/${film.id}`} style={{fontSize: widescreen ? 18 : 14, color: Colors.text_link, textAlign: 'center'}}>Be the first to write one!</Link>
+            </View>
+          ) : (
+            <>
+              {topReviews.map((r) => {
+                return (
+                  <View
+                    key={r.id}
+                    style={{
+                      backgroundColor: Colors.card,
+                      width: '90%',
+                      alignSelf: 'center',
+                      paddingVertical: 5,
+                      paddingHorizontal: 7.5,
+                      marginBottom: 10,
+                      borderRadius: 5,
+                      borderTopWidth: 2,
+                      borderBottomWidth: 2,
+                      borderColor: Colors.border_color
+                    }}>
+                    <Author
+                      userId={r.authorId}
+                      url={r.authorProfilePictureUrl}
+                      username={r.authorName}
+                      tier={r.authorTier}
+                      patron={r.authorPatron}
+                      router={router}
+                      widescreen={widescreen}
+                    />
+                    <Pressable onPress={() => router.push(`/review/${r.id}`)}>
+                      <Stars size={widescreen ? 30 : 20} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
+                      <ParsedRead html={`${r.text.slice(0, 450)}${r.text.length > 450 ? '...' : ''}`} />
+                    </Pressable>
+                  </View>
+                )
+              })}
+              <Pressable onPress={() => router.push(`/reviews/film/${film.id}`)}>
+                <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.text_title, textAlign: 'center'}}>
+                  <Text style={{fontWeight: 'bold'}}>{film.reviewCount}</Text> {'➜'}
+                </Text>
+              </Pressable>
+            </>
+          )
         }
         
         {film.collection && Object.keys(film.collection).length > 0 && (

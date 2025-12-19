@@ -101,13 +101,23 @@ namespace Heteroboxd.Service
         public async Task<PagedUserListsInfoResponse> GetListsFeaturingFilm(int FilmId, int Page, int PageSize)
         {
             var (Lists, TotalCount) = await _repo.GetFeaturingFilmAsync(FilmId, Page, PageSize);
-            List<UserListInfoResponse> ListResponses = new List<UserListInfoResponse>();
+            var AuthorIds = Lists
+                .Select(l => l.AuthorId)
+                .Distinct()
+                .ToList();
+            var Authors = await _userRepo.GetByIdsAsync(AuthorIds);
+
+            var AuthorLookup = Authors.ToDictionary(a => a.Id);
+
+            var ListResponses = new List<UserListInfoResponse>();
+
             foreach (UserList ul in Lists)
             {
-                var Author = await _userRepo.GetByIdAsync(ul.AuthorId);
-                if (Author == null) continue;
+                if (!AuthorLookup.TryGetValue(ul.AuthorId, out var Author))
+                    continue;
                 ListResponses.Add(new UserListInfoResponse(ul, Author, 4));
             }
+
             return new PagedUserListsInfoResponse
             {
                 TotalCount = TotalCount,

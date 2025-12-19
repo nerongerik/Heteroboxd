@@ -215,20 +215,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     padding: 1
   },
-  authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 5,
-    paddingBottom: 0
-  },
-  avatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: Colors.border_color,
-    marginRight: 6,
-  },
   listTitle: {
     color: Colors.text_title,
     fontWeight: '500',

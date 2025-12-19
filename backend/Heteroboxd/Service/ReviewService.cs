@@ -50,7 +50,34 @@ namespace Heteroboxd.Service
 
         public async Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize)
         {
-            throw new NotImplementedException();
+            var Film = await _filmRepo.LightweightFetcher(FilmId);
+            if (Film == null) throw new KeyNotFoundException();
+
+            var (Reviews, TotalCount) = await _repo.GetByFilmAsync(FilmId, Page, PageSize);
+            var AuthorIds = Reviews
+                .Select(r => r.AuthorId)
+                .Distinct()
+                .ToList();
+            var Authors = await _userRepo.GetByIdsAsync(AuthorIds);
+
+            var AuthorLookup = Authors.ToDictionary(a => a.Id);
+
+            var ReviewResponses = new List<ReviewInfoResponse>();
+
+            foreach (Review r in Reviews)
+            {
+                if (!AuthorLookup.TryGetValue(r.AuthorId, out var Author))
+                    continue;
+                ReviewResponses.Add(new ReviewInfoResponse(r, Author, Film));
+            }
+
+            return new PagedReviewResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Reviews = ReviewResponses
+            };
         }
 
         public async Task<List<ReviewInfoResponse>> GetTopReviewsForFilm(int FilmId, int Top)

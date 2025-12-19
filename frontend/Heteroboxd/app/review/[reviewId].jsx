@@ -63,6 +63,14 @@ const Review = () => {
   }, [reviewId]);
 
   useEffect(() => {
+    navigation.setOptions({
+      headerTitle: user?.userId === review?.authorId ? "Your review" : review?.authorName + "'s review",
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title},
+    });
+  }, [user, review]);
+
+  useEffect(() => {
     (async () => {
       if (review?.spoiler) {
         if (review.authorId !== user?.userId) {
@@ -106,14 +114,6 @@ const Review = () => {
       }
     })();
   }, [reviewId]);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: user?.userId === review?.authorId ? "Your review" : review?.authorName + "'s review",
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
-    });
-  }, [user, review]);
 
   function parseDate(date) {
     if (!date) return date;
