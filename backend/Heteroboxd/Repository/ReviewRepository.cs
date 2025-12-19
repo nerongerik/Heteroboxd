@@ -40,7 +40,7 @@ namespace Heteroboxd.Repository
         public async Task<List<Review>> GetTopAsync(int FilmId, int Top) =>
             await _context.Reviews
                 .Where(r => r.FilmId == FilmId && r.Text != null && !r.Spoiler)
-                .OrderBy(r => r.Flags).ThenByDescending(r => r.LikeCount)
+                .OrderBy(r => r.Flags).ThenByDescending(r => r.LikeCount).ThenBy(r => r.Date)
                 .Take(Top)
                 .ToListAsync();
 

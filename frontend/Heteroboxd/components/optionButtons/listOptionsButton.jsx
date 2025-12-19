@@ -25,7 +25,6 @@ const ListOptionsButton = ({ listId }) => {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    if (!user) return;
     (async () => {
       try {
          const res = await fetch(`${BaseUrl.api}/lists/${listId}`, {
@@ -43,7 +42,7 @@ const ListOptionsButton = ({ listId }) => {
         console.log('Network error!');
       }
     })();
-  }, [user, listId]);
+  }, [listId]);
 
   const openMenu = () => {
     setMenuShown(true);
@@ -132,6 +131,10 @@ const ListOptionsButton = ({ listId }) => {
     router.push(`list/edit/${listId}`);
   }
 
+  if (!user || !baseList || (user.userId !== baseList.authorId && user.tier.toLowerCase() !== 'admin')) {
+    return <View />;
+  }
+
   return (
     <View>
       <Pressable onPress={openMenu} style={{zIndex: 1}}>
@@ -145,7 +148,7 @@ const ListOptionsButton = ({ listId }) => {
         onRequestClose={closeMenu}
       >
         <Pressable 
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]}
           onPress={closeMenu}
         />
 

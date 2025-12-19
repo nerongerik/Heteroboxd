@@ -212,7 +212,7 @@ const ProfileOptionsButton = ({ userId }) => {
 
       <Modal transparent visible={menuShown} animationType="fade">
         <Pressable style={styles.overlay} onPress={closeMenu}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
         </Pressable>
 
         <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>

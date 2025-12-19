@@ -105,6 +105,7 @@ const ParsedInput = ({initial, width, onValueChange}) => {
   return (
     <View style={{width: width*0.9, maxWidth: 1000}}>
       <TextInput
+        scrollEnabled={true}
         ref={inputRef}
         value={text}
         onChangeText={setText}

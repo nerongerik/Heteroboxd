@@ -219,11 +219,23 @@ const Profile = () => {
     let message = "";
 
     if (isAdmin) {
-      message = "This person is a community moderator. Learn how you can join our moderation team ";
+      if (isOwnProfile) {
+        message = "You are a community moderator. If you have any requests or issues, please contact us ";
+      } else {
+        message = "This person is a community moderator. Learn how you can join our moderation team ";
+      }
     } else if (data.patron) {
-      message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
+      if (isOwnProfile) {
+        message = "You are 🐐ed — forever. If you're ever feeling generous again, consider further donations ";
+      } else {
+        message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
+      }
     } else if (isDonor) {
-      message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
+      if (isOwnProfile) {
+        message = "Your donor tier expires on " + data?.expiry.replace('joined ', '') + ". You can renew your tier ";
+      } else {
+        message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
+      }
     }
 
     setContextMenuMessage(message);
@@ -576,7 +588,6 @@ const Profile = () => {
         {snackbarMessage}
       </Snackbar>
 
-      {/*context menu*/}
       {contextMenuVisible && (
         <Modal
           transparent

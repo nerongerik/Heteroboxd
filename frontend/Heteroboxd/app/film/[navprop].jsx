@@ -527,7 +527,20 @@ const Film = () => {
         {
           topReviews.map((r) => {
             return (
-              <View key={r.id} style={{backgroundColor: Colors.card, width: '90%', alignSelf: 'center', padding: 5}}>
+              <View
+                key={r.id}
+                style={{
+                  backgroundColor: Colors.card,
+                  width: '90%',
+                  alignSelf: 'center',
+                  paddingVertical: 5,
+                  paddingHorizontal: 7.5,
+                  marginBottom: 10,
+                  borderRadius: 5,
+                  borderTopWidth: 2,
+                  borderBottomWidth: 2,
+                  borderColor: Colors.border_color
+                }}>
                 <Author
                   userId={r.authorId}
                   url={r.authorProfilePictureUrl}
@@ -537,17 +550,18 @@ const Film = () => {
                   router={router}
                   widescreen={widescreen}
                 />
-                <Stars size={widescreen ? 30 : 20} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
-                <ParsedRead html={r.text.slice(0, 500)} />
+                <Pressable onPress={() => router.push(`/review/${r.id}`)}>
+                  <Stars size={widescreen ? 30 : 20} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
+                  <ParsedRead html={r.text.slice(0, 450) + '...'} />
+                </Pressable>
               </View>
             )
           })
         }
-
-        <View style={styles.divider}></View>
         
         {film.collection && Object.keys(film.collection).length > 0 && (
           <>
+            <View style={styles.divider}></View>
             <Text style={styles.regionalTitle}>Related Films</Text>
             <View 
               style={{

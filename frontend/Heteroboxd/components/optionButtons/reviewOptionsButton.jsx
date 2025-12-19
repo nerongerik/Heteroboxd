@@ -149,7 +149,7 @@ const ReviewOptionsButton = ({ reviewId }) => {
         onRequestClose={closeMenu}
       >
         <Pressable 
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]}
           onPress={closeMenu}
         />
 

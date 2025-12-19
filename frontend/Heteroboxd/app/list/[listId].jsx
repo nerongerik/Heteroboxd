@@ -214,6 +214,31 @@ const List = () => {
                   borderColor: Colors.border_color,
                 }}
               />
+              {baseList?.ranked && (
+                <View
+                  style={{
+                    width: widescreen ? 28 : 20,
+                    height: widescreen ? 28 : 20,
+                    borderRadius: 9999,
+                    backgroundColor: Colors.card,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginTop: -10,
+                    alignSelf: 'center'
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: Colors.text_title,
+                      fontSize: widescreen ? 12 : 8,
+                      fontWeight: 'bold',
+                      lineHeight: 18,
+                    }}
+                  >
+                    {item.position}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           );
         }}

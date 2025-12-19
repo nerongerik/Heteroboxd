@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
   },
   username: {
     color: Colors.text,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    lineHeight: 26
   }
 })

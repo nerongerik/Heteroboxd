@@ -18,6 +18,7 @@ const Review = () => {
   const [review, setReview] = useState(null);
   const [iLiked, setILiked] = useState(false);
   const [likeCountLocalCopy, setLikeCountLocalCopy] = useState(0);
+  const [showText, setShowText] = useState(true);
   
   const { user, isValidSession } = useAuth();
 
@@ -60,6 +61,27 @@ const Review = () => {
       }
     })();
   }, [reviewId]);
+
+  useEffect(() => {
+    (async () => {
+      if (review?.spoiler) {
+        if (review.authorId !== user?.userId) {
+          setShowText(false); //safe hide
+          const jwt = await auth.getJwt();
+          const res = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${review.filmId}`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${jwt}`
+            }
+          });
+          if (res.status === 200) {
+            setShowText(true); //user has watched film, show spoilers
+          }
+        }
+      }
+    })();
+  }, [review]);
 
   useEffect(() => {
     (async () => {
@@ -183,21 +205,32 @@ const Review = () => {
             <Stars size={widescreen ? 40 : 30} rating={review?.rating ?? 0} readonly={true} padding={false} align={'flex-start'} />
             <Text style={{paddingLeft: 3, fontWeight: "400", fontSize: widescreen ? 16 : 13, color: Colors.text, textAlign: "left",}}>{parseDate(review?.date)}</Text>
           </View>
-          <Poster
-            posterUrl={review?.filmPosterUrl}
-            style={{
-              width: widescreen ? 150 : 100,
-              height: widescreen ? 150*3/2 : 100*3/2,
-              borderWidth: 2,
-              borderRadius: 4,
-              marginRight: 5,
-              borderColor: Colors.border_color
-            }}
-          />
+          <Pressable onPress={() => router.push(`/film/${review?.filmId}`)}>
+            <Poster
+              posterUrl={review?.filmPosterUrl}
+              style={{
+                width: widescreen ? 150 : 100,
+                height: widescreen ? 150*3/2 : 100*3/2,
+                borderWidth: 2,
+                borderRadius: 4,
+                marginRight: 5,
+                borderColor: Colors.border_color
+              }}
+            />
+          </Pressable>
         </View>
         {
           review?.text && review?.text.length > 0 ? (
-            <ParsedRead html={review.text} />
+            showText ?
+              <ParsedRead html={review.text} />
+            : (
+              <Pressable onPress={() => setShowText(true)}>
+                <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>
+                  <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<Text style={{color: Colors.text_link}}> Read anyway?</Text></Text>
+                </View>
+              </Pressable>
+            )
+            
           ) : (
             <View>
               <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'left'}}>{review?.authorName} wrote no review regarding this film.</Text>
