@@ -152,7 +152,7 @@ const FilmsReviews = () => {
                 item.text && item.text.length > 0 ?
                   canSeeSpoilers || isRevealed(item.id) ? (
                     <View style={{marginVertical: 7.5}}>
-                      <ParsedRead html={`${item.text.slice(0, 500)}${item.text.length > 500 ? '...' : ''}`} />
+                      <ParsedRead html={`${item.text.replace(/\n{3,}/g, '\n\n').trim().slice(0, 350)}${item.text.length > 350 ? '...' : ''}`} />
                     </View>
                   ) : (
                   <Pressable onPress={() => revealSpoiler(item.id)}>

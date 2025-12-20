@@ -57,7 +57,18 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<Review> Reviews, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize)
         {
-            throw new NotImplementedException();
+            var UserQuery = _context.Reviews
+                .Where(r => r.AuthorId == AuthorId)
+                .OrderBy(r => r.Flags).ThenByDescending(r => r.LikeCount).ThenBy(r => r.Date);
+
+            var TotalCount = await UserQuery.CountAsync();
+
+            var Reviews = await UserQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Reviews, TotalCount);
         }
 
         public async Task<Review?> GetByUserFilmAsync(Guid AuthorId, int FilmId) =>

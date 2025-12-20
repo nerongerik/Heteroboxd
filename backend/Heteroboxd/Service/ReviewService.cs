@@ -97,7 +97,34 @@ namespace Heteroboxd.Service
 
         public async Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize)
         {
-            throw new NotImplementedException();
+            var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
+            if (Author == null) throw new KeyNotFoundException();
+
+            var (Reviews, TotalCount) = await _repo.GetByAuthorAsync(Author.Id, Page, PageSize);
+
+            var FilmIds = Reviews
+                .Select(r => r.FilmId)
+                .Distinct()
+                .ToList();
+            var Films = await _filmRepo.GetByIdsAsync(FilmIds);
+            var FilmLookup = Films.ToDictionary(f => f.Id);
+
+            var ReviewResponses = new List<ReviewInfoResponse>();
+
+            foreach (Review r in Reviews)
+            {
+                if (!FilmLookup.TryGetValue(r.FilmId, out var Film))
+                    continue;
+                ReviewResponses.Add(new ReviewInfoResponse(r, Author, Film));
+            }
+
+            return new PagedReviewResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Reviews = ReviewResponses
+            };
         }
 
         public async Task UpdateReviewLikeCountEfCore7(string ReviewId, int LikeChange)
