@@ -12,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import * as auth from '../../helpers/auth'
 import ParsedRead from '../../components/parsedRead'
 import Author from '../../components/author'
+import { Ionicons } from '@expo/vector-icons'
 
 const Review = () => {
   const { reviewId } = useLocalSearchParams();
@@ -226,6 +227,7 @@ const Review = () => {
             : (
               <Pressable onPress={() => setShowText(true)}>
                 <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>
+                  <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
                   <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<Text style={{color: Colors.text_link}}> Read anyway?</Text></Text>
                 </View>
               </Pressable>

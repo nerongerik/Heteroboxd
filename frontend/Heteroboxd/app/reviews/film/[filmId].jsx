@@ -12,6 +12,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import * as auth from '../../../helpers/auth'
 import Stars from '../../../components/stars'
 import ParsedRead from '../../../components/parsedRead'
+import { Ionicons } from '@expo/vector-icons'
 
 const pageSize = 80
 
@@ -156,6 +157,7 @@ const FilmsReviews = () => {
                   ) : (
                   <Pressable onPress={() => revealSpoiler(item.id)}>
                     <View style={{width: '95%', alignSelf: 'center', padding: 10, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center'}}>
+                      <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
                       <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<Text style={{color: Colors.text_link}}> Read anyway?</Text></Text>
                     </View>
                   </Pressable>
