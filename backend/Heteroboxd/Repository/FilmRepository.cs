@@ -7,13 +7,15 @@ namespace Heteroboxd.Repository
 {
     public interface IFilmRepository
     {
-        Task<Film?> GetByIdAsync(int Id);
-        Task<List<Film>> GetBySlugAsync(string Slug);
         Task<Film?> LightweightFetcher(int FilmId);
+        Task<Film?> GetByIdAsync(int Id);
+        Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
+        Task<List<Film>> GetBySlugAsync(string Slug);
         Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
+        Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<List<Film>> SearchAsync(string Title);
         Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta);
     }
@@ -39,6 +41,15 @@ namespace Heteroboxd.Repository
                 .Include(f => f.WatchedBy)
                 .Include(f => f.Reviews)
                 .FirstOrDefaultAsync(f => f.Id == Id);
+
+        public async Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids)
+        {
+            if (Ids.Count == 0) return new();
+
+            return await _context.Films
+                .Where(f => Ids.Contains(f.Id))
+                .ToListAsync();
+        }
 
         public async Task<List<Film>> GetBySlugAsync(string Slug) =>
             await _context.Films
@@ -120,8 +131,14 @@ namespace Heteroboxd.Repository
             var OrderedFilms = PagedFilmIds.Select(id => FilmsById[id]).ToList();
 
             return (OrderedFilms, TotalCount);
-
         }
+
+        public async Task<Dictionary<double, int>> GetRatingsAsync(int FilmId) =>
+            await _context.Reviews
+                .Where(r => r.FilmId == FilmId)
+                .GroupBy(r => r.Rating)
+                .Select(g => new { Rating = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Rating, x => x.Count);
 
         public async Task<List<Film>> SearchAsync(string Search)
         {

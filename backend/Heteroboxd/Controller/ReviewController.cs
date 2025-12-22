@@ -74,6 +74,22 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("{FilmId}/top/{Top}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetTopReviewsForFilm(int FilmId, int Top)
+        {
+            _logger.LogInformation($"GET Top Reviews For Film endpoint hit for {FilmId}");
+            try
+            {
+                var Result = await _service.GetTopReviewsForFilm(FilmId, Top);
+                return Ok(Result);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("user-reviews/{UserId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetReviewsByAuthor(string UserId, int Page = 1, int PageSize = 20)

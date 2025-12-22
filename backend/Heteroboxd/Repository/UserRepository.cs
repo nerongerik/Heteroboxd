@@ -7,6 +7,8 @@ namespace Heteroboxd.Repository
     public interface IUserRepository
     {
         Task<User?> GetByIdAsync(Guid Id);
+        Task<List<User>> GetByIdsAsync(IReadOnlyCollection<Guid> Ids);
+        Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
         Task<List<User>> SearchAsync(string Name);
 
         Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize);
@@ -59,6 +61,22 @@ namespace Heteroboxd.Repository
                 .Include(u => u.LikedReviews)
                 .Include(u => u.WatchedFilms)
                 .FirstOrDefaultAsync(u => u.Id == Id);
+
+        public async Task<List<User>> GetByIdsAsync(IReadOnlyCollection<Guid> Ids)
+        {
+            if (Ids.Count == 0) return new();
+
+            return await _context.Users
+                .Where(u => Ids.Contains(u.Id))
+                .ToListAsync();
+        }
+
+        public async Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId) =>
+            await _context.Reviews
+                .Where(r => r.AuthorId == UserId)
+                .GroupBy(r => r.Rating)
+                .Select(g => new { Rating = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Rating, x => x.Count);
 
         public async Task<List<User>> SearchAsync(string Name)
         {

@@ -6,19 +6,21 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { BaseUrl } from '../../constants/api'
 import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
-import { UserAvatar } from '../../components/userAvatar'
 import Stars from '../../components/stars'
 import {Poster} from '../../components/poster'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import * as auth from '../../helpers/auth'
+import * as format from '../../helpers/format'
 import ParsedRead from '../../components/parsedRead'
-import GlowingText from '../../components/glowingText'
+import Author from '../../components/author'
+import { Ionicons } from '@expo/vector-icons'
 
 const Review = () => {
   const { reviewId } = useLocalSearchParams();
   const [review, setReview] = useState(null);
   const [iLiked, setILiked] = useState(false);
   const [likeCountLocalCopy, setLikeCountLocalCopy] = useState(0);
+  const [showText, setShowText] = useState(true);
   
   const { user, isValidSession } = useAuth();
 
@@ -63,6 +65,35 @@ const Review = () => {
   }, [reviewId]);
 
   useEffect(() => {
+    navigation.setOptions({
+      headerTitle: user?.userId === review?.authorId ? "Your review" : review?.authorName + "'s review",
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title},
+    });
+  }, [user, review]);
+
+  useEffect(() => {
+    (async () => {
+      if (review?.spoiler) {
+        if (review.authorId !== user?.userId) {
+          setShowText(false); //safe hide
+          const jwt = await auth.getJwt();
+          const res = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${review.filmId}`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${jwt}`
+            }
+          });
+          if (res.status === 200) {
+            setShowText(true); //user has watched film, show spoilers
+          }
+        }
+      }
+    })();
+  }, [review]);
+
+  useEffect(() => {
     (async () => {
       const vS = await isValidSession();
       if (!user || !vS) return;
@@ -85,14 +116,6 @@ const Review = () => {
       }
     })();
   }, [reviewId]);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: user?.userId === review?.authorId ? "Your review" : review?.authorName + "'s review",
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
-    });
-  }, [user, review]);
 
   function parseDate(date) {
     if (!date) return date;
@@ -137,48 +160,6 @@ const Review = () => {
   }
 
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  const AuthorSection = useMemo(() =>
-    <Pressable onPress={(e) => {
-      e.stopPropagation();
-      router.push(`/profile/${review?.authorId}`)
-    }}>
-      <View style={{flexDirection: 'row', paddingTop: 25, alignItems: 'center', marginBottom: 0}}>
-        <UserAvatar
-          pictureUrl={review?.authorProfilePictureUrl}
-          style={{
-            marginRight: 5,
-            paddingLeft: 3,
-            width: widescreen ? 30 : 26,
-            height: widescreen ? 30 : 26,
-            borderRadius: widescreen ? 18 : 13,
-            borderWidth: 2,
-            borderColor: Colors.border_color
-          }}
-        />
-        {
-          review?.authorTier === 'free' ? (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>
-                {review?.authorName}
-              </Text>
-              {(review?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>)}
-            </View>
-          ) : review?.authorTier === 'admin' ? (
-            <GlowingText color={Colors._heteroboxd} size={widescreen ? 20 : 16}>
-              {review?.authorName}
-            </GlowingText>
-          ) : (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <GlowingText color={Colors.heteroboxd} size={widescreen ? 20 : 16}>
-                {review?.authorName}
-              </GlowingText>
-              {review?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
-            </View>
-          )
-        }
-      </View>
-    </Pressable>,
-  [review, widescreen, router]);
 
   if (!review) {
     return (
@@ -207,7 +188,17 @@ const Review = () => {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {AuthorSection}
+        <View style={{marginBottom: -5}}>
+          <Author
+            userId={review?.authorId}
+            url={review?.authorProfilePictureUrl}
+            username={review?.authorName}
+            tier={review?.authorTier}
+            patron={review?.authorPatron}
+            router={router}
+            widescreen={widescreen}
+          />
+        </View>
         <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignSelf: 'center'}}>
           <View style={{flex: 1, justifyContent: 'space-around'}}>
             <Text style={{paddingLeft: 3, color: Colors.text_title, fontWeight: '500', fontSize: widescreen ? 24 : 20, textAlign: 'left', flexShrink: 1}}>
@@ -216,21 +207,33 @@ const Review = () => {
             <Stars size={widescreen ? 40 : 30} rating={review?.rating ?? 0} readonly={true} padding={false} align={'flex-start'} />
             <Text style={{paddingLeft: 3, fontWeight: "400", fontSize: widescreen ? 16 : 13, color: Colors.text, textAlign: "left",}}>{parseDate(review?.date)}</Text>
           </View>
-          <Poster
-            posterUrl={review?.filmPosterUrl}
-            style={{
-              width: widescreen ? 150 : 100,
-              height: widescreen ? 150*3/2 : 100*3/2,
-              borderWidth: 2,
-              borderRadius: 4,
-              marginRight: 5,
-              borderColor: Colors.border_color
-            }}
-          />
+          <Pressable onPress={() => router.push(`/film/${review?.filmId}`)}>
+            <Poster
+              posterUrl={review?.filmPosterUrl}
+              style={{
+                width: widescreen ? 150 : 100,
+                height: widescreen ? 150*3/2 : 100*3/2,
+                borderWidth: 2,
+                borderRadius: 4,
+                marginRight: 5,
+                borderColor: Colors.border_color
+              }}
+            />
+          </Pressable>
         </View>
         {
           review?.text && review?.text.length > 0 ? (
-            <ParsedRead html={review.text} />
+            showText ?
+              <ParsedRead html={review.text} />
+            : (
+              <Pressable onPress={() => setShowText(true)}>
+                <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>
+                  <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
+                  <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<Text style={{color: Colors.text_link}}> Read anyway?</Text></Text>
+                </View>
+              </Pressable>
+            )
+            
           ) : (
             <View>
               <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'left'}}>{review?.authorName} wrote no review regarding this film.</Text>
@@ -244,7 +247,7 @@ const Review = () => {
             ) : (
               <MaterialCommunityIcons style={{marginRight: 3}} name="cards-heart-outline" size={widescreen ? 24 : 20} color={Colors.text} />
             )}
-            <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{likeCountLocalCopy} likes</Text>
+            <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{format.formatCount(likeCountLocalCopy)} likes</Text>
           </Pressable>
         </View>
       </ScrollView>

@@ -15,6 +15,7 @@ namespace Heteroboxd.Service
         Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType); //ObjectType: "review", "comment", "list"
         Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
+        Task<Dictionary<double, int>> GetUserRatings(string UserId);
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUserEfCore7Async(string UserId);
         Task UpdateUser(UpdateUserRequest UserUpdate);
@@ -225,6 +226,12 @@ namespace Heteroboxd.Service
         {
             var UserWatchedFilm = await _repo.GetUserWatchedFilmAsync(Guid.Parse(UserId), FilmId);
             return UserWatchedFilm == null ? null : new UserWatchedFilmResponse(UserWatchedFilm);
+        }
+
+        public async Task<Dictionary<double, int>> GetUserRatings(string UserId)
+        {
+            var Ratings = await _repo.GetRatingsAsync(Guid.Parse(UserId));
+            return Ratings;
         }
 
         public async Task<List<UserInfoResponse>> SearchUsers(string SearchName)

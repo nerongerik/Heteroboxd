@@ -10,14 +10,14 @@
         public bool Spoiler { get; set; }
         public bool NotificationsOn { get; set; }
         public int LikeCount { get; set; }
-        public string AuthorId { get; set; } //necessary navigation quality
-        public string? AuthorName { get; set; } //optional decorative
-        public string? AuthorProfilePictureUrl { get; set; } //optional decorative
+        public string AuthorId { get; set; }
+        public string? AuthorName { get; set; }
+        public string? AuthorProfilePictureUrl { get; set; }
         public string? AuthorTier { get; set; }
         public bool? AuthorPatron { get; set; }
-        public int FilmId { get; set; } //necessary navigation quality
-        public string? FilmTitle { get; set; } //optional decorative
-        public string? FilmPosterUrl { get; set; } //optional decorative
+        public int FilmId { get; set; }
+        public string? FilmTitle { get; set; }
+        public string? FilmPosterUrl { get; set; }
 
         public ReviewInfoResponse(Review Review, User Author, Film Film)
         {
@@ -96,7 +96,13 @@
         }
     }
 
-    public class PagedReviewResponse { }
+    public class PagedReviewResponse 
+    {
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public List<ReviewInfoResponse> Reviews { get; set; }
+    }
 
     public class CreateReviewRequest
     {

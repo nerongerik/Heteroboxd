@@ -167,6 +167,22 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("ratings/{UserId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserRatings(string UserId)
+        {
+            _logger.LogInformation($"GET User's Ratings endpoint hit for {UserId}");
+            try
+            {
+                var Ratings = await _service.GetUserRatings(UserId);
+                return Ok(Ratings);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<IActionResult> SearchUsers([FromQuery] string Search)

@@ -1,7 +1,6 @@
 ﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
-using System.ComponentModel;
 
 namespace Heteroboxd.Service
 {
@@ -10,6 +9,7 @@ namespace Heteroboxd.Service
         Task<ReviewInfoResponse?> GetReview(string ReviewId);
         Task<ReviewInfoResponse> GetReviewByUserFilm(string UserId, int FilmId);
         Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize);
+        Task<List<ReviewInfoResponse>> GetTopReviewsForFilm(int FilmId, int Top);
         Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize);
         Task UpdateReviewLikeCountEfCore7(string ReviewId, int LikeChange);
         Task ToggleNotificationsEfCore7(string ReviewId);
@@ -50,38 +50,81 @@ namespace Heteroboxd.Service
 
         public async Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize)
         {
-            /*
-            var FilmReviews = await _repo.GetByFilmAsync(FilmId);
+            var Film = await _filmRepo.LightweightFetcher(FilmId);
+            if (Film == null) throw new KeyNotFoundException();
 
-            var ReviewTasks = FilmReviews.Select(async r =>
+            var (Reviews, TotalCount) = await _repo.GetByFilmAsync(FilmId, Page, PageSize);
+            var AuthorIds = Reviews
+                .Select(r => r.AuthorId)
+                .Distinct()
+                .ToList();
+            var Authors = await _userRepo.GetByIdsAsync(AuthorIds);
+
+            var AuthorLookup = Authors.ToDictionary(a => a.Id);
+
+            var ReviewResponses = new List<ReviewInfoResponse>();
+
+            foreach (Review r in Reviews)
             {
-                var Author = await _userRepo.GetByIdAsync(r.AuthorId);
-                if (Author == null) throw new KeyNotFoundException();
-                return new ReviewInfoResponse(r, Author);
-            });
+                if (!AuthorLookup.TryGetValue(r.AuthorId, out var Author))
+                    continue;
+                ReviewResponses.Add(new ReviewInfoResponse(r, Author, Film));
+            }
 
-            var Reviews = await Task.WhenAll(ReviewTasks);
-            return Reviews.ToList();
-            */
-            throw new NotImplementedException();
+            return new PagedReviewResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Reviews = ReviewResponses
+            };
+        }
+
+        public async Task<List<ReviewInfoResponse>> GetTopReviewsForFilm(int FilmId, int Top)
+        {
+            var TopReviews = await _repo.GetTopAsync(FilmId, Top);
+            if (TopReviews.Count == 0) return new();
+            var AuthorIds = TopReviews.Select(r => r.AuthorId).Distinct().ToArray();
+            var TopAuthors = await _userRepo.GetByIdsAsync(AuthorIds);
+
+            var AuthorLookup = TopAuthors.GroupBy(a => a.Id).ToDictionary(g => g.Key, g => g.First());
+
+            return TopReviews
+                .Where(r => AuthorLookup.ContainsKey(r.AuthorId))
+                .Select(r => new ReviewInfoResponse(r, AuthorLookup[r.AuthorId]))
+                .ToList();
         }
 
         public async Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize)
         {
-            /*
-            var UserReviews = await _repo.GetByAuthorAsync(Guid.Parse(UserId));
+            var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
+            if (Author == null) throw new KeyNotFoundException();
 
-            var ReviewTasks = UserReviews.Select(async r =>
+            var (Reviews, TotalCount) = await _repo.GetByAuthorAsync(Author.Id, Page, PageSize);
+
+            var FilmIds = Reviews
+                .Select(r => r.FilmId)
+                .Distinct()
+                .ToList();
+            var Films = await _filmRepo.GetByIdsAsync(FilmIds);
+            var FilmLookup = Films.ToDictionary(f => f.Id);
+
+            var ReviewResponses = new List<ReviewInfoResponse>();
+
+            foreach (Review r in Reviews)
             {
-                var Film = await _filmRepo.GetByIdAsync(r.FilmId);
-                if (Film == null) throw new KeyNotFoundException();
-                return new ReviewInfoResponse(r, Film);
-            });
+                if (!FilmLookup.TryGetValue(r.FilmId, out var Film))
+                    continue;
+                ReviewResponses.Add(new ReviewInfoResponse(r, Author, Film));
+            }
 
-            var Reviews = await Task.WhenAll(ReviewTasks);
-            return Reviews.ToList();
-            */
-            throw new NotImplementedException();
+            return new PagedReviewResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Reviews = ReviewResponses
+            };
         }
 
         public async Task UpdateReviewLikeCountEfCore7(string ReviewId, int LikeChange)

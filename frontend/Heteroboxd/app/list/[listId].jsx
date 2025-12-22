@@ -7,11 +7,11 @@ import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
 import PaginationBar from '../../components/paginationBar'
 import { Poster } from '../../components/poster'
-import { UserAvatar } from '../../components/userAvatar'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as auth from '../../helpers/auth'
+import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
-import GlowingText from '../../components/glowingText'
+import Author from '../../components/author'
 
 const PAGE_SIZE = 48
 
@@ -123,48 +123,6 @@ const List = () => {
     return padded;
   }, [entries]);
 
-  const AuthorSection = useMemo(() =>
-    <Pressable onPress={(e) => {
-      e.stopPropagation();
-      router.push(`/profile/${baseList?.authorId}`)
-    }}>
-      <View style={{flexDirection: 'row', alignItems: 'center'}}>
-        <UserAvatar
-          pictureUrl={baseList?.authorProfilePictureUrl}
-          style={{
-            marginRight: 5,
-            width: 26,
-            height: 26,
-            borderRadius: 13,
-            borderWidth: 2,
-            borderColor: Colors.border_color
-          }}
-        />
-        {
-          baseList?.authorTier === 'free' ? (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <Text style={{color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 20 : 16}}>
-                {baseList?.authorName}
-              </Text>
-              {(baseList?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>)}
-            </View>
-          ) : baseList?.authorTier === 'admin' ? (
-            <GlowingText color={Colors._heteroboxd} size={widescreen ? 20 : 16}>
-              {baseList?.authorName}
-            </GlowingText>
-          ) : (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <GlowingText color={Colors.heteroboxd} size={widescreen ? 20 : 16}>
-                {baseList?.authorName}
-              </GlowingText>
-              {baseList?.authorPatron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={widescreen ? 24 : 20} color={Colors.heteroboxd}/>}
-            </View>
-          )
-        }
-      </View>
-    </Pressable>,
-  [baseList, widescreen, router]);
-
   const handleLike = async () => {
     const vS = await isValidSession();
     if (!user || !vS) return
@@ -197,7 +155,15 @@ const List = () => {
   return (
     <View style={styles.container}>
       <View style={{ width: maxRowWidth }}>
-        {AuthorSection}
+        <Author
+          userId={baseList?.authorId}
+          url={baseList?.authorProfilePictureUrl}
+          username={baseList?.authorName}
+          tier={baseList?.authorTier}
+          patron={baseList?.authorPatron}
+          router={router}
+          widescreen={widescreen}
+        />
         <Text style={styles.title}>{baseList?.name}</Text>
         <Pressable onPress={() => setDescCollapsed((p) => !p)}>
           <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
@@ -213,7 +179,7 @@ const List = () => {
               size={widescreen ? 24 : 20}
               color={iLiked ? Colors.heteroboxd : Colors.text}
             />
-            <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{likeCount} likes</Text>
+            <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(likeCount)} likes</Text>
           </Pressable>
           <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{totalCount} entries</Text>
         </View>
@@ -249,6 +215,31 @@ const List = () => {
                   borderColor: Colors.border_color,
                 }}
               />
+              {baseList?.ranked && (
+                <View
+                  style={{
+                    width: widescreen ? 28 : 20,
+                    height: widescreen ? 28 : 20,
+                    borderRadius: 9999,
+                    backgroundColor: Colors.card,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginTop: -10,
+                    alignSelf: 'center'
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: Colors.text_title,
+                      fontSize: widescreen ? 12 : 8,
+                      fontWeight: 'bold',
+                      lineHeight: 18,
+                    }}
+                  >
+                    {item.position}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           );
         }}

@@ -8,6 +8,7 @@ namespace Heteroboxd.Repository
     {
         Task<Review?> GetByIdAsync(Guid Id);
         Task<(List<Review> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, int Page, int PageSize);
+        Task<List<Review>> GetTopAsync(int FilmId, int Top);
         Task<(List<Review> Reviews, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize);
         Task<Review?> GetByUserFilmAsync(Guid AuthorId, int FilmId);
         Task UpdateReviewLikeCountEfCore7Async(Guid ReviewId, int Delta);
@@ -33,12 +34,41 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<Review> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, int Page, int PageSize)
         {
-            throw new NotImplementedException();
+            var FilmQuery = _context.Reviews
+                .Where(r => r.FilmId == FilmId)
+                .OrderBy(r => r.Flags).ThenByDescending(r => r.LikeCount).ThenBy(r => r.Date);
+
+            var TotalCount = await FilmQuery.CountAsync();
+
+            var Reviews = await FilmQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Reviews, TotalCount);
         }
+
+        public async Task<List<Review>> GetTopAsync(int FilmId, int Top) =>
+            await _context.Reviews
+                .Where(r => r.FilmId == FilmId && r.Text != null && !r.Spoiler)
+                .OrderBy(r => r.Flags).ThenByDescending(r => r.LikeCount).ThenBy(r => r.Date)
+                .Take(Top)
+                .ToListAsync();
 
         public async Task<(List<Review> Reviews, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize)
         {
-            throw new NotImplementedException();
+            var UserQuery = _context.Reviews
+                .Where(r => r.AuthorId == AuthorId)
+                .OrderBy(r => r.Flags).ThenByDescending(r => r.LikeCount).ThenBy(r => r.Date);
+
+            var TotalCount = await UserQuery.CountAsync();
+
+            var Reviews = await UserQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Reviews, TotalCount);
         }
 
         public async Task<Review?> GetByUserFilmAsync(Guid AuthorId, int FilmId) =>

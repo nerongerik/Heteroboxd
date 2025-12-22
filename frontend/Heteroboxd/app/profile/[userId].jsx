@@ -1,4 +1,4 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator, FlatList } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
@@ -12,7 +12,9 @@ import GlowingText from '../../components/glowingText';
 import { Poster } from '../../components/poster';
 import { Snackbar } from 'react-native-paper';
 import * as auth from '../../helpers/auth';
+import * as format from '../../helpers/format';
 import Foundation from '@expo/vector-icons/Foundation';
+import Histogram from '../../components/histogram';
 
 const Profile = () => {
   const { userId } = useLocalSearchParams();
@@ -23,6 +25,7 @@ const Profile = () => {
   const [pronoun, setPronoun] = useState(["he", "him", "his"])
   const [result, setResult] = useState(-1);
   const [error, setError] = useState("");
+  const [ratings, setRatings] = useState({});
 
   const { width } = useWindowDimensions();
 
@@ -56,7 +59,7 @@ const Profile = () => {
         const json = await res.json();
         setData({ 
           name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
-          expiry: parseDate(json.expiry), patron: json.patron, joined: parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
+          expiry: format.parseDate(json.expiry), patron: json.patron, joined: format.parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
           listsCount: json.listsCount, followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
           reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
@@ -156,14 +159,25 @@ const Profile = () => {
     }
   }, [userId, blocked]);
 
-  function parseDate(date) {
-    if (!date) return date;
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const nums = date.split(" ")[0].split("/");
-    const day = nums[0]; const year = nums[2];
-    const month = months[parseInt(nums[1] - 1)];
-    return `joined ${month} ${day}, ${year}`;
-  }
+  useEffect(() => {
+    (async () => {
+      if (!userId) return;
+      try {
+        const res = await fetch(`${BaseUrl.api}/users/ratings/${userId}`, {
+          method: 'GET',
+          headers: {'Accept': 'application/json'}
+        });
+        if (res.status === 200) {
+          const json = await res.json();
+          setRatings(json);
+        } else {
+          console.log(`${res.status}: Failed to fetch ratings; probably threw in earlier load.`);
+        }
+      } catch {
+        console.log('network error when fetching ratings; probably threw in earlier load.');
+      }
+    })();
+  }, [userId]);
 
   function handleButtons(button) {
     switch(button) {
@@ -219,11 +233,23 @@ const Profile = () => {
     let message = "";
 
     if (isAdmin) {
-      message = "This person is a community moderator. Learn how you can join our moderation team ";
+      if (isOwnProfile) {
+        message = "You are a community moderator. If you have any requests or issues, please contact us ";
+      } else {
+        message = "This person is a community moderator. Learn how you can join our moderation team ";
+      }
     } else if (data.patron) {
-      message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
+      if (isOwnProfile) {
+        message = "You are 🐐ed — forever. If you're ever feeling generous again, consider further donations ";
+      } else {
+        message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
+      }
     } else if (isDonor) {
-      message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
+      if (isOwnProfile) {
+        message = "Your donor tier expires on " + data?.expiry + ". You can renew your tier ";
+      } else {
+        message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
+      }
     }
 
     setContextMenuMessage(message);
@@ -443,10 +469,8 @@ const Profile = () => {
 
         <View style={[styles.divider, {marginVertical: 20}]} />
         
-        <Text style={styles.subtitle}>Ratings</Text>
-        <View style={styles.ratings}>
-          <Text style={styles.text}>[RATINGS GRAPH PLACEHOLDER]</Text>
-        </View>
+        <Text style={[styles.subtitle, {marginBottom: 10}]}>Ratings</Text>
+        <Histogram histogram={ratings} />
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
@@ -469,41 +493,52 @@ const Profile = () => {
               <Text style={styles.text}>This user has no motion.</Text>
             </View>
           ) : (
-            <ScrollView
+            <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
               style={{ maxWidth: Math.min(width * 0.95, 1000), paddingBottom: 10 }}
               contentContainerStyle={{alignItems: 'center'}}
-            >
-              {recent.slice(0, 8).map((film, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => router.push(`/film/${film.filmId}`)}
-                  style={{ marginRight: spacing }}
-                >
-                  <Poster
-                    posterUrl={film?.posterUrl ?? null}
-                    style={{
-                      width: colPosterWidth,
-                      height: colPosterHeight,
-                      borderRadius: 6,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color,
-                    }}
-                    other={!isOwnProfile}
-                  />
-                </Pressable>
-              ))}
-              {
-                recent.length < 8 ? null : (
-                  <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
-                    <Text style={[styles.boxButtonText, { marginLeft: widescreen ? -spacing/2 : null, color: Colors.text_title, fontSize: widescreen ? 36 : 24 }]}>
-                      {'➜'}
+              data={[...recent.slice(0, 8), null]}
+              keyExtractor={(item) => item ? item.filmId.toString() : 'seeall'}
+              renderItem={({ item }) => {
+                if (item) {
+                  return (
+                    <Pressable
+                      onPress={() => router.push(`/film/${item.filmId}`)}
+                      style={{ marginRight: spacing }}
+                    >
+                      <Poster
+                        posterUrl={item?.posterUrl ?? null}
+                        style={{
+                          width: colPosterWidth,
+                          height: colPosterHeight,
+                          borderRadius: 6,
+                          borderWidth: 2,
+                          borderColor: Colors.border_color,
+                        }}
+                        other={!isOwnProfile}
+                      />
+                    </Pressable>
+                  );
+                }
+                return (
+                  <Pressable onPress={() => router.push(`/films/user-watched/${userId}`)}>
+                    <Text
+                      style={[
+                        styles.boxButtonText,
+                        {
+                          marginLeft: widescreen ? -spacing / 2 : null,
+                          color: Colors.text_title,
+                          fontSize: widescreen ? 36 : 24
+                        },
+                      ]}
+                    >
+                      {' '}<Text style={{fontWeight: 'bold'}}>{recent.length}</Text>{'➜'}
                     </Text>
-                  </Pressable>              
-                )
-              }
-            </ScrollView>
+                  </Pressable>
+                );
+              }}
+            />
           )}
         </View>
 
@@ -532,12 +567,12 @@ const Profile = () => {
                   {item.label}
                 </Text>
                 <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
-                  {item.count} {'➜'}
+                  {format.formatCount(item.count)} {'➜'}
                 </Text>
               </TouchableOpacity>
             );
           })}
-          <Text style={[styles.text, {marginTop: 50}]}>{data.joined}</Text>
+          <Text style={[styles.text, {marginTop: 50}]}>joined {data.joined}</Text>
         </View>
       </ScrollView>
 
@@ -565,7 +600,6 @@ const Profile = () => {
         {snackbarMessage}
       </Snackbar>
 
-      {/*context menu*/}
       {contextMenuVisible && (
         <Modal
           transparent

@@ -26,17 +26,15 @@ namespace Heteroboxd.Service
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _config;
         private readonly IRefreshTokenRepository _refreshRepo;
-        private readonly HeteroboxdContext _context;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<AuthService> _logger;
 
-        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, HeteroboxdContext context, IEmailSender emailSender, ILogger<AuthService> logger)
+        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, IEmailSender emailSender, ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
             _refreshRepo = refreshTokenRepo;
-            _context = context;
             _emailSender = emailSender;
             _logger = logger;
         }
