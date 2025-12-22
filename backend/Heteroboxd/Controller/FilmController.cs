@@ -1,5 +1,4 @@
-﻿using Heteroboxd.Models.DTO;
-using Heteroboxd.Service;
+﻿using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -127,6 +126,22 @@ namespace Heteroboxd.Controller
             catch (ArgumentException)
             {
                 return BadRequest();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("ratings/{FilmId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFilmRatings(int FilmId)
+        {
+            _logger.LogInformation($"GET Film's Ratings endpoint hit for {FilmId}");
+            try
+            {
+                var Ratings = await _service.GetFilmRatings(FilmId);
+                return Ok(Ratings);
             }
             catch
             {

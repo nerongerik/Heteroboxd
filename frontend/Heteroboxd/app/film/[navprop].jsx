@@ -16,6 +16,7 @@ import FilmDataLoaders from '../../components/filmDataLoaders';
 import Stars from '../../components/stars';
 import ParsedRead from '../../components/parsedRead';
 import Author from '../../components/author';
+import Histogram from '../../components/histogram';
 
 const topCount = 3;
 
@@ -25,6 +26,7 @@ const Film = () => {
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
   const [usersReview, setUsersReview] = useState(null); //displays user's rating in stars
   const [topReviews, setTopReviews] = useState([]); //top 3/4/5 reviews
+  const [ratings, setRatings] = useState({});
 
   const [watchlisted, setWatchlisted] = useState(null);
 
@@ -193,6 +195,26 @@ const Film = () => {
   useEffect(() => { //handles data loading
     loadFilmPage();
   }, [navprop]);
+
+  useEffect(() => {
+    (async () => {
+      if (!film) return;
+      try {
+        const res = await fetch(`${BaseUrl.api}/films/ratings/${film.id}`, {
+          method: 'GET',
+          headers: {'Accept': 'application/json'}
+        });
+        if (res.status === 200) {
+          const json = await res.json();
+          setRatings(json);
+        } else {
+          console.log(`${res.status}: Failed to fetch ratings; probably threw in earlier load.`);
+        }
+      } catch {
+        console.log('network error when fetching ratings; probably threw in earlier load.');
+      }
+    })();
+  }, [film]);
 
   useEffect(() => { //checks if user previously watchlisted this film
     (async () => {
@@ -370,7 +392,7 @@ const Film = () => {
             </View>
             
             <Text style={[styles.text, { fontSize: widescreen ? 20 : 14 }]}>
-              {film.releaseYear} • {film.length} min {film?.country?.length > 0 && " • "}
+              {film.releaseYear} • {film.length} min {film?.country?.length > 0 && "• "}
               {film?.country?.map((c, i) =>
                 Platform.OS === "web" ? (
                   <img key={i} src={`https://flagcdn.com/24x18/${c}.png`} style={{ marginRight: 6, width: 20, height: 15 }} />
@@ -406,8 +428,9 @@ const Film = () => {
         )}
 
         <View style={[styles.divider, {marginVertical: 15}]} />
-
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center"}]}>[RATINGS GRAPH PLACEHOLDER]</Text>
+        
+        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Ratings</Text>
+        <Histogram histogram={ratings} />
 
         <View style={styles.divider}></View>
         
@@ -422,7 +445,7 @@ const Film = () => {
         <View style={styles.divider}></View>
 
         <FilmDataLoaders filmId={film?.id} watchCount={film?.watchCount ?? 0} reviewCount={film?.reviewCount} listsIncluded={listsCount} widescreen={widescreen} />
-
+        
         <View style={styles.divider}></View>
 
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Cast</Text>

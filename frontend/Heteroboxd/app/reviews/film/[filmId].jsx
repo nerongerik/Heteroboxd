@@ -10,6 +10,7 @@ import Fontisto from '@expo/vector-icons/Fontisto'
 import Author from '../../../components/author'
 import { useAuth } from '../../../hooks/useAuth'
 import * as auth from '../../../helpers/auth'
+import * as format from '../../../helpers/format'
 import Stars from '../../../components/stars'
 import ParsedRead from '../../../components/parsedRead'
 import { Ionicons } from '@expo/vector-icons'
@@ -165,7 +166,7 @@ const FilmsReviews = () => {
               }
               <View style={styles.statsRow}>
                 <Fontisto name="heart" size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
-                <Text style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{item.likeCount}</Text>
+                <Text style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</Text>
               </View>
             </Pressable>
           </View>

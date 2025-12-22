@@ -15,6 +15,7 @@ namespace Heteroboxd.Repository
         Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
+        Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<List<Film>> SearchAsync(string Title);
         Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta);
     }
@@ -130,8 +131,14 @@ namespace Heteroboxd.Repository
             var OrderedFilms = PagedFilmIds.Select(id => FilmsById[id]).ToList();
 
             return (OrderedFilms, TotalCount);
-
         }
+
+        public async Task<Dictionary<double, int>> GetRatingsAsync(int FilmId) =>
+            await _context.Reviews
+                .Where(r => r.FilmId == FilmId)
+                .GroupBy(r => r.Rating)
+                .Select(g => new { Rating = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Rating, x => x.Count);
 
         public async Task<List<Film>> SearchAsync(string Search)
         {

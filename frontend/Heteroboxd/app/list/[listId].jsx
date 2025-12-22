@@ -9,6 +9,7 @@ import PaginationBar from '../../components/paginationBar'
 import { Poster } from '../../components/poster'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as auth from '../../helpers/auth'
+import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
 import Author from '../../components/author'
 
@@ -178,7 +179,7 @@ const List = () => {
               size={widescreen ? 24 : 20}
               color={iLiked ? Colors.heteroboxd : Colors.text}
             />
-            <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{likeCount} likes</Text>
+            <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(likeCount)} likes</Text>
           </Pressable>
           <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{totalCount} entries</Text>
         </View>

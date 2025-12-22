@@ -3,7 +3,7 @@ export const Colors = {
     heteroboxd: '#ff8a00',
     _heteroboxd: '#0075ff',
     background: '#191d1f',
-    card: '#14171a',
+    card: '#22262b',
     //text
     text: '#656f76',
     text_button: '#e4e6e8',

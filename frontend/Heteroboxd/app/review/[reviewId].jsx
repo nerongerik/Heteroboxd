@@ -10,6 +10,7 @@ import Stars from '../../components/stars'
 import {Poster} from '../../components/poster'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import * as auth from '../../helpers/auth'
+import * as format from '../../helpers/format'
 import ParsedRead from '../../components/parsedRead'
 import Author from '../../components/author'
 import { Ionicons } from '@expo/vector-icons'
@@ -246,7 +247,7 @@ const Review = () => {
             ) : (
               <MaterialCommunityIcons style={{marginRight: 3}} name="cards-heart-outline" size={widescreen ? 24 : 20} color={Colors.text} />
             )}
-            <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{likeCountLocalCopy} likes</Text>
+            <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{format.formatCount(likeCountLocalCopy)} likes</Text>
           </Pressable>
         </View>
       </ScrollView>

@@ -12,7 +12,9 @@ import GlowingText from '../../components/glowingText';
 import { Poster } from '../../components/poster';
 import { Snackbar } from 'react-native-paper';
 import * as auth from '../../helpers/auth';
+import * as format from '../../helpers/format';
 import Foundation from '@expo/vector-icons/Foundation';
+import Histogram from '../../components/histogram';
 
 const Profile = () => {
   const { userId } = useLocalSearchParams();
@@ -23,6 +25,7 @@ const Profile = () => {
   const [pronoun, setPronoun] = useState(["he", "him", "his"])
   const [result, setResult] = useState(-1);
   const [error, setError] = useState("");
+  const [ratings, setRatings] = useState({});
 
   const { width } = useWindowDimensions();
 
@@ -56,7 +59,7 @@ const Profile = () => {
         const json = await res.json();
         setData({ 
           name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
-          expiry: parseDate(json.expiry), patron: json.patron, joined: parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
+          expiry: format.parseDate(json.expiry), patron: json.patron, joined: format.parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
           listsCount: json.listsCount, followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
           reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
@@ -156,14 +159,25 @@ const Profile = () => {
     }
   }, [userId, blocked]);
 
-  function parseDate(date) {
-    if (!date) return date;
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const nums = date.split(" ")[0].split("/");
-    const day = nums[0]; const year = nums[2];
-    const month = months[parseInt(nums[1] - 1)];
-    return `joined ${month} ${day}, ${year}`;
-  }
+  useEffect(() => {
+    (async () => {
+      if (!userId) return;
+      try {
+        const res = await fetch(`${BaseUrl.api}/users/ratings/${userId}`, {
+          method: 'GET',
+          headers: {'Accept': 'application/json'}
+        });
+        if (res.status === 200) {
+          const json = await res.json();
+          setRatings(json);
+        } else {
+          console.log(`${res.status}: Failed to fetch ratings; probably threw in earlier load.`);
+        }
+      } catch {
+        console.log('network error when fetching ratings; probably threw in earlier load.');
+      }
+    })();
+  }, [userId]);
 
   function handleButtons(button) {
     switch(button) {
@@ -232,7 +246,7 @@ const Profile = () => {
       }
     } else if (isDonor) {
       if (isOwnProfile) {
-        message = "Your donor tier expires on " + data?.expiry.replace('joined ', '') + ". You can renew your tier ";
+        message = "Your donor tier expires on " + data?.expiry + ". You can renew your tier ";
       } else {
         message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
       }
@@ -455,10 +469,8 @@ const Profile = () => {
 
         <View style={[styles.divider, {marginVertical: 20}]} />
         
-        <Text style={styles.subtitle}>Ratings</Text>
-        <View style={styles.ratings}>
-          <Text style={styles.text}>[RATINGS GRAPH PLACEHOLDER]</Text>
-        </View>
+        <Text style={[styles.subtitle, {marginBottom: 10}]}>Ratings</Text>
+        <Histogram histogram={ratings} />
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
@@ -555,12 +567,12 @@ const Profile = () => {
                   {item.label}
                 </Text>
                 <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
-                  {item.count} {'➜'}
+                  {format.formatCount(item.count)} {'➜'}
                 </Text>
               </TouchableOpacity>
             );
           })}
-          <Text style={[styles.text, {marginTop: 50}]}>{data.joined}</Text>
+          <Text style={[styles.text, {marginTop: 50}]}>joined {data.joined}</Text>
         </View>
       </ScrollView>
 

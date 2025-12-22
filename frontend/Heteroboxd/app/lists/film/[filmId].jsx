@@ -9,6 +9,7 @@ import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import Author from '../../../components/author'
+import * as format from '../../../helpers/format'
 
 const pageSize = 40
 
@@ -153,9 +154,9 @@ const FilmsLists = () => {
 
               <View style={styles.statsRow}>
                 <Fontisto name="nav-icon-list-a" size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
-                <Text style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{item.listEntryCount} </Text>
+                <Text style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </Text>
                 <Fontisto name="heart" size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
-                <Text style={[styles.statText, {fontSize: widescreen ? 18 : 14}]}>{item.likeCount}</Text>
+                <Text style={[styles.statText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</Text>
               </View>
             </Pressable>
           </View>

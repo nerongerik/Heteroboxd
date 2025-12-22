@@ -3,7 +3,7 @@ import { UserAvatar } from './userAvatar'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
 import GlowingText from './glowingText';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Animated } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { BaseUrl } from '../constants/api';
@@ -22,6 +22,9 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const [watchlistedLocalCopy, setWatchlistedLocalCopy] = useState(null);
   const [reviewLocalCopy, setReviewLocalCopy] = useState(null);
   const [seenPressed, setSeenPressed] = useState(false);
+
+  const ratingRequestRef = useRef(0);
+  const [isRatingSaving, setIsRatingSaving] = useState(false);
 
   const {user, isValidSession} = useAuth();
 
@@ -48,10 +51,105 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   }, [seen, watchlisted, review]);
 
   useEffect(() => {
-    if (reviewLocalCopy?.rating != null) {
-      rate();
+    if (!review?.id) return;
+  
+    setReviewLocalCopy(prev => {
+      if (prev?.id === review.id) return prev;
+      return {
+        id: review.id,
+        rating: review.rating,
+        text: review.text,
+        spoiler: review.spoiler
+      };
+    });
+  }, [review?.id]);
+
+  async function handleRatingChange(newRating) {
+    //optimistic UI update
+    setSeenLocalCopy(true);
+    setWatchlistedLocalCopy(false);
+
+    setReviewLocalCopy(prev => ({
+      id: prev?.id ?? null,
+      rating: newRating,
+      text: prev?.text ?? null,
+      spoiler: prev?.spoiler ?? false
+    }));
+
+    const requestId = ++ratingRequestRef.current;
+    setIsRatingSaving(true);
+
+    const vS = await isValidSession();
+    if (!user || !vS) {
+      setIsRatingSaving(false);
+      router.replace('/login');
+      return;
     }
-  }, [reviewLocalCopy?.rating]);
+
+    try {
+      const jwt = await auth.getJwt();
+      let res;
+
+      //update
+      if (reviewLocalCopy?.id) {
+        res = await fetch(`${BaseUrl.api}/reviews`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            ReviewId: reviewLocalCopy.id,
+            Rating: newRating,
+            Text: reviewLocalCopy.text ?? null,
+            Spoiler: reviewLocalCopy.spoiler ?? false
+          })
+        });
+      }
+      //create
+      else {
+        res = await fetch(`${BaseUrl.api}/reviews`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            Rating: newRating,
+            Text: null,
+            Spoiler: false,
+            AuthorId: user.userId,
+            FilmId: filmId
+          })
+        });
+      }
+
+      if (requestId !== ratingRequestRef.current) return; //ignore stale response
+
+      if (res.status === 200) {
+        const json = await res.json();
+
+        setReviewLocalCopy(prev => ({
+          ...prev,
+          id: json.id,
+          rating: json.rating
+        }));
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch {
+      if (requestId !== ratingRequestRef.current) return;
+
+      setSnackMessage('Failed to save rating. Please try again.');
+      setSnackVisible(true);
+    } finally {
+      if (requestId === ratingRequestRef.current) {
+        setIsRatingSaving(false);
+      }
+    }
+  }
 
   const openMenu = () => {
     setMenuShown(true);
@@ -468,15 +566,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
           <Stars
             size={widescreen ? 60 : 50}
             rating={reviewLocalCopy?.rating ?? 0}
-            onRatingChange={(newRating) => {
-              setSeenLocalCopy(true);
-              setWatchlistedLocalCopy(false);
-              if (!reviewLocalCopy?.id) {
-                setReviewLocalCopy({rating: newRating});
-              } else {
-                setReviewLocalCopy({id: reviewLocalCopy.id, rating: newRating, text: reviewLocalCopy.text, spoiler: reviewLocalCopy.spoiler});
-              }
-            }}
+            onRatingChange={handleRatingChange}
             padding={true}
           />
           <Text style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</Text>

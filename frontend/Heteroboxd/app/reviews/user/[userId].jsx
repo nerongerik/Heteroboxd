@@ -11,6 +11,7 @@ import Author from '../../../components/author'
 import Stars from '../../../components/stars'
 import ParsedRead from '../../../components/parsedRead'
 import {Poster} from '../../../components/poster'
+import * as format from '../../../helpers/format'
 
 const pageSize = 40 //user reviews display film posters unlike film reviews, so we need to decrease the page size
 
@@ -149,7 +150,7 @@ const UserReviews = () => {
               </View>
               <View style={styles.statsRow}>
                 <Fontisto name="heart" size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
-                <Text style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{item.likeCount}</Text>
+                <Text style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</Text>
               </View>
             </Pressable>
           </View>
