@@ -100,9 +100,6 @@ namespace Heteroboxd.Migrations
                     b.Property<int>("Flags")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("NotificationsOn")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid>("ReviewId")
                         .HasColumnType("uuid");
 
