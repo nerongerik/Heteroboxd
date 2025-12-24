@@ -171,11 +171,12 @@ const ReviewWithComments = () => {
   }, [reviewId]);
 
   useEffect(() => {
+    if (!review) return;
     navigation.setOptions({
-      headerTitle: user?.userId === review?.authorId ? "Your review" : review?.authorName + "'s review",
+      headerTitle: user?.userId === review.authorId ? "Your review" : review.authorName + "'s review",
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
-      headerRight: () => user ? <ReviewOptionsButton reviewId={review?.id} /> : null
+      headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} /> : null
     });
   }, [user, review]);
 
@@ -521,8 +522,7 @@ const ReviewWithComments = () => {
           backgroundColor: Colors.card,
           width: widescreen ? '50%' : '90%',
           alignSelf: 'center',
-          position: 'absolute',
-          bottom: Platform.OS === 'ios' ? 100 : 80,
+          borderRadius: 8
         }}
         action={{
           label: 'OK',

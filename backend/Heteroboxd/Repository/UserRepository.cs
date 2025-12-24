@@ -14,6 +14,7 @@ namespace Heteroboxd.Repository
         Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize);
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
+        Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
         Task<User?> GetUserFollowingAsync(Guid UserId);
         Task<User?> GetUserFollowersAsync(Guid UserId);
         Task<User?> GetUserBlockedAsync(Guid UserId);
@@ -119,6 +120,38 @@ namespace Heteroboxd.Repository
         public async Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId) =>
             await _context.UserWatchedFilms
                 .FirstOrDefaultAsync(uwf => uwf.UserId == UserId && uwf.FilmId == FilmId);
+
+        public async Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId)
+        {
+            var FriendIds = await _context.Users
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.Following)
+                .Where(f => f.WatchedFilms.Any(uwf => uwf.FilmId == FilmId))
+                .Select(f => f.Id)
+                .ToListAsync();
+
+            if (FriendIds.Count == 0)
+            {
+                return (new List<User>(), new List<Review>());
+            }
+
+            var Friends = await _context.Users
+                .Where(u => FriendIds.Contains(u.Id))
+                .Select(f => new User
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    PictureUrl = f.PictureUrl,
+                    WatchedFilms = f.WatchedFilms.Where(uwf => uwf.FilmId == FilmId).ToList()
+                })
+                .ToListAsync();
+
+            var Reviews = await _context.Reviews
+                .Where(r => FriendIds.Contains(r.AuthorId) && r.FilmId == FilmId)
+                .ToListAsync();
+
+            return (Friends, Reviews);
+        }
 
         public async Task<User?> GetUserFollowingAsync(Guid UserId) =>
             await _context.Users

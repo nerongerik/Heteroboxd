@@ -156,10 +156,6 @@ namespace Heteroboxd.Migrations
                     b.Property<int>("ReleaseYear")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Synopsis")
                         .IsRequired()
                         .HasColumnType("text");
@@ -173,8 +169,6 @@ namespace Heteroboxd.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Slug");
 
                     b.ToTable("Films");
                 });

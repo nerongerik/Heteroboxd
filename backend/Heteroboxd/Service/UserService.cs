@@ -15,6 +15,7 @@ namespace Heteroboxd.Service
         Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType); //ObjectType: "review", "comment", "list"
         Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
+        Task<List<FriendFilmResponse>> GetFriendsForFilm(string UserId, int FilmId);
         Task<Dictionary<double, int>> GetUserRatings(string UserId);
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUserEfCore7Async(string UserId);
@@ -226,6 +227,30 @@ namespace Heteroboxd.Service
         {
             var UserWatchedFilm = await _repo.GetUserWatchedFilmAsync(Guid.Parse(UserId), FilmId);
             return UserWatchedFilm == null ? null : new UserWatchedFilmResponse(UserWatchedFilm);
+        }
+
+        public async Task<List<FriendFilmResponse>> GetFriendsForFilm(string UserId, int FilmId)
+        {
+            var (Friends, Reviews) = await _repo.GetFriendsForFilmAsync(Guid.Parse(UserId), FilmId);
+
+            return Friends
+                .Select(f => new FriendFilmResponse
+                {
+                    FriendId = f.Id.ToString(),
+                    FriendProfilePictureUrl = f.PictureUrl,
+                    DateWatched = f.WatchedFilms
+                        .First(uwf => uwf.FilmId == FilmId)
+                        .DateWatched
+                        .ToString("dd/MM/yyyy HH:mm"),
+                    Rating = Reviews
+                        .FirstOrDefault(r => r.AuthorId == f.Id)?
+                        .Rating ?? null,
+                    ReviewId = Reviews
+                        .FirstOrDefault(r => r.AuthorId == f.Id)?
+                        .Id
+                        .ToString() ?? null
+                })
+                .ToList();
         }
 
         public async Task<Dictionary<double, int>> GetUserRatings(string UserId)

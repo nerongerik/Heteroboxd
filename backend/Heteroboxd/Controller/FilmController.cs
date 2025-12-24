@@ -45,26 +45,6 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("slug/{Slug}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetFilmBySlug(string Slug, [FromQuery] int? FilmId)
-        {
-            _logger.LogInformation($"GET Film by Slug endpoint hit for: {Slug}");
-            try
-            {
-                var Film = await _service.GetFilmBySlug(Slug.ToLower(), FilmId);
-                return Ok(Film);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("year/{Year}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilmsByYear(int Year, int Page = 1, int PageSize = 20)

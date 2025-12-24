@@ -27,7 +27,7 @@ const RootLayout = () => {
           })}
         />
         <Stack.Screen
-          name='film/[navprop]'
+          name='film/[filmId]'
           options={{
             headerShown: Platform.OS === 'web' ? false : true,
             headerTransparent: true,

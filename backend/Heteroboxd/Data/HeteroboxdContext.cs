@@ -133,7 +133,6 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<Film>(entity =>
             {
                 entity.HasKey(f => f.Id);
-                entity.HasIndex(f => f.Slug); //.IsUnique(); -> what if two films have same title and release year?
 
                 entity.HasMany(f => f.Reviews)
                       .WithOne()

@@ -16,7 +16,6 @@ namespace Heteroboxd.Integrations
         Task ParseCreditsResponse(Credits? Credits, int FilmId);
         Celebrity ParseCelebrity(TMDBCelebrityResponse CelebrityResponse);
         string FormUrls(string? Path);
-        string GenerateSlug(string Title, int ReleaseYear);
         Task Serialize<T>(T Object, string Path);
     }
 
@@ -101,10 +100,9 @@ namespace Heteroboxd.Integrations
             string? BackdropUrl = FormUrls(Response.backdrop_path);
             int Length = Response.runtime ?? 0;
             int.TryParse(Response.release_date?.Substring(0, 4), out int ReleaseYear);
-            string Slug = GenerateSlug(Title, ReleaseYear);
             int TmdbId = Response.id ?? throw new Exception("TMDB response missing ID");
 
-            Film Film = new Film(TmdbId, Title, OriginalTitle, Country, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear, Slug);
+            Film Film = new Film(TmdbId, Title, OriginalTitle, Country, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear);
             foreach (var Genre in Response.genres ?? new List<Genre>())
             {
                 Film.Genres.Add(Genre.name!);
@@ -241,11 +239,6 @@ namespace Heteroboxd.Integrations
                 return "";
 
             return $"{_configuration["TMDB:ImageUrl"]!}{Path}";
-        }
-
-        public string GenerateSlug(string Title, int ReleaseYear)
-        {
-            return $"{Title.ToLower().Replace(' ', '-').Replace("'", "").Replace("\"", "").Replace("/", "").Replace(":", "")}-{ReleaseYear}";
         }
 
         public async Task Serialize<T>(T Object, string Path)

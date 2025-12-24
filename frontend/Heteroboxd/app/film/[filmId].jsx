@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Pressable, FlatList } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
+import * as format from '../../helpers/format';
 import Popup from '../../components/popup';
 import { Poster } from '../../components/poster';
 import { Backdrop } from '../../components/backdrop';
@@ -17,6 +18,8 @@ import Stars from '../../components/stars';
 import ParsedRead from '../../components/parsedRead';
 import Author from '../../components/author';
 import Histogram from '../../components/histogram';
+import { Snackbar } from 'react-native-paper';
+import { UserAvatar } from '../../components/userAvatar';
 
 const topCount = 3;
 
@@ -32,11 +35,16 @@ const Film = () => {
 
   const [listsCount, setListsCount] = useState(0);
 
-  const { navprop } = useLocalSearchParams(); //navigational property
+  const [friends, setFriends] = useState(null);
+
+  const { filmId } = useLocalSearchParams();
   const router = useRouter();
   const {width} = useWindowDimensions();
 
   const [refreshing, setRefreshing] = useState(false);
+
+  const [snack, setSnack] = useState(false);
+  const snackRef = useRef(false);
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
@@ -45,156 +53,94 @@ const Film = () => {
     setRefreshing(true);
     try {
       const vS = await isValidSession();
-      if (/^\d+$/.test(navprop)) {
-        //fetch film
-        const fRes = await fetch(`${BaseUrl.api}/films/${Number(navprop)}`, {
-          method: "GET",
-          headers: {'Accept': 'application/json'}
+      //fetch film
+      const fRes = await fetch(`${BaseUrl.api}/films/${Number(filmId)}`, {
+        method: "GET",
+        headers: {'Accept': 'application/json'}
+      });
+      if (fRes.status === 200) {
+        const json = await fRes.json();
+        setFilm({
+          id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: format.parseCountry(json.country, Platform.OS), genres: json.genres,
+          tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
+          releaseYear: json.releaseYear, favCount: json.favoriteCount, watchCount: json.watchCount,
+          collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
         });
-        if (fRes.status === 200) {
-          const json = await fRes.json();
-          setFilm({
-            id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
-            tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
-            releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-            collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
+        setResult(200);
+      } else if (fRes.status === 404) {
+        setMessage("This film no longer seems to exist.");
+        setResult(404);
+        setFilm({});
+        return;
+      } else {
+        setMessage("Something went wrong! Contact Heteroboxd support for more information!");
+        setResult(500);
+        setFilm({});
+        return;
+      }
+      //fetch uwf
+      if (user && vS) {
+        const jwt = await auth.getJwt();
+        const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(filmId)}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${jwt}`
+          }
+        });
+        if (uwfRes.status === 200) { //user HAS watched film before
+          const json2 = await uwfRes.json();
+          setUwf({
+            dateWatched: `Last watched on ${format.parseDate(json2.dateWatched)}`, timesWatched: Number(json2.timesWatched)
           });
-          setResult(200);
-        } else if (fRes.status === 404) {
-          setMessage("This film no longer seems to exist.");
-          setResult(404);
-          setFilm({});
-          setRefreshing(false);
-          return;
-        } else {
-          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-          setResult(500);
-          setFilm({});
-          setRefreshing(false);
-          return;
-        }
-        //fetch uwf
-        if (user && vS) {
-          const jwt = await auth.getJwt();
-          const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(navprop)}`, {
+          //fetch users review if it exists
+          const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(filmId)}`, {
             method: 'GET',
             headers: {
               'Accept': 'application/json',
               'Authorization': `Bearer ${jwt}`
             }
           });
-          if (uwfRes.status === 200) { //user HAS watched film before
-            const json2 = await uwfRes.json();
-            setUwf({
-              dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
-            });
-            //fetch users review if it exists
-            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(navprop)}`, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${jwt}`
-              }
-            });
-            if (rewRes.status === 200) {
-              const json3 = await rewRes.json();
-              setUsersReview(json3);
-            } else {
-              console.log('User never reviewed this film before.');
-            }
-          } else if (uwfRes.status === 404) {
-            console.log("User has never seen this film before.");
-            setUwf(null);
+          if (rewRes.status === 200) {
+            const json3 = await rewRes.json();
+            setUsersReview(json3);
           } else {
-            setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-            setResult(500);
-            setUwf(null);
+            console.log('User never reviewed this film before.');
           }
+        } else if (uwfRes.status === 404) {
+          console.log("User has never seen this film before.");
+          setUwf(null);
         } else {
+          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
+          setResult(500);
           setUwf(null);
         }
       } else {
-        //fetching by slug will ONLY be happening on browsers, meaning it's genuenly meaningful to make sure its the same film on refresh
-        //but if a user manually enters url (id unknown) then it's ok to fetch by slug alone (it's not that deep)
-        let json;
-        const url = film ? `${BaseUrl.api}/films/slug/${navprop}?FilmId=${film.id}` : `${BaseUrl.api}/films/slug/${navprop}`;
-        const fRes = await fetch(url, {
-          method: "GET",
-          headers: {'Accept': 'application/json'}
-        });
-        if (fRes.status === 200) {
-          json = await fRes.json();
-          setFilm({
-            id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: parseCountry(json.country), genres: json.genres,
-            tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
-            releaseYear: json.releaseYear, slug: json.slug, favCount: json.favoriteCount, watchCount: json.watchCount,
-            collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
-          });
-          setResult(200);
-        } else if (fRes.status === 404) {
-          setMessage("This film no longer seems to exist.");
-          setResult(404);
-          setFilm({});
-          setRefreshing(false);
-          return;
-        } else {
-          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-          setResult(500);
-          setFilm({});
-          setRefreshing(false);
-          return;
-        }
-        //fetch uwf
-        if (user && vS) {
-          const jwt = await auth.getJwt();
-          const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(json.filmId)}`, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${jwt}`
-            }
-          });
-          if (uwfRes.status === 200) { //user HAS watched film before
-            const json2 = await uwfRes.json();
-            setUwf({
-              dateWatched: parseDate(json2.dateWatched), timesWatched: Number(json2.timesWatched)
-            });
-            //fetch users review if it exists
-            const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(json.filmId)}`, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${jwt}`
-              }
-            });
-            if (rewRes.status === 200) {
-              const json3 = await rewRes.json();
-              setUsersReview(json3);
-            } else {
-              console.log('User never reviewed this film before.');
-            }
-          } else if (uwfRes.status === 404) {
-            console.log("User has never seen this film before.");
-            setUwf(null);
-          } else {
-            setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-            setResult(500);
-            setUwf(null);
-          }
-        } else {
-          setUwf(null);
-        }
+        setUwf(null);
       }
     } catch {
       setMessage("Network error - Please check your internet connection!");
       setResult(500);
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   }
 
-  useEffect(() => { //handles data loading
+  useEffect(() => {
     loadFilmPage();
-  }, [navprop]);
+  }, [filmId]);
+
+  useEffect(() => {
+    if (!user || !uwf) return;
+    if (snackRef.current) return;
+    snackRef.current = true;
+    setSnack(true);
+  }, [user, uwf]);
+
+  useEffect(() => {
+    snackRef.current = false;
+    setSnack(false);
+  }, [filmId]);
 
   useEffect(() => {
     (async () => {
@@ -216,7 +162,7 @@ const Film = () => {
     })();
   }, [film]);
 
-  useEffect(() => { //checks if user previously watchlisted this film
+  useEffect(() => {
     (async () => {
       const vS = await isValidSession();
       if (user && film && vS) {
@@ -260,15 +206,6 @@ const Film = () => {
   }, [film]);
 
   useEffect(() => {
-    (async () => {
-      if (Platform.OS === 'web' && /^\d+$/.test(navprop) && film && film.slug && navprop !== film.slug) { //replace id for slug
-        router.setParams({ navprop: film.slug });
-      }
-      //once we implement reviews, we might want to call for it and display user's rating differently from the usual "interact with this feature" view
-    })();
-  }, [film]);
-
-  useEffect(() => {
     if (!film) return;
     (async () => {
       try {
@@ -290,28 +227,30 @@ const Film = () => {
     })();
   }, [film]);
 
-  function parseDate(date) {
-    if (!date) return date;
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const nums = date.split(" ")[0].split("/");
-    const day = nums[0]; const year = nums[2];
-    const month = months[parseInt(nums[1] - 1)];
-    return `last watched on ${month} ${day}, ${year}`;
-  }
-
-  function parseCountry(country) {
-    if (!country || country.length === 0) return null;
-    return Object.keys(country).map(c => {
-      const code = country[c]?.toUpperCase() ?? null;
-      if (!code || code === "XX") return null;
-      if (Platform.OS === "web") {
-        return code.toLowerCase();
+  useEffect(() => {
+    (async () => {
+      const vS = await isValidSession();
+      if (!user || !vS || !film) return;
+      try {
+        const jwt = await auth.getJwt();
+        const res = await fetch(`${BaseUrl.api}/users/${user.userId}/friends/${film.id}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${jwt}`
+          }
+        });
+        if (res.status === 200) {
+          const json = await res.json();
+          setFriends(json);
+        } else {
+          console.log(`${res.status}: failed to fetch friends' film interactions`);
+        }
+      } catch {
+        console.log('network error; probably caught by a previous useEffect by now');
       }
-      return code.replace(/./g, char =>
-        String.fromCodePoint(127397 + char.charCodeAt(0))
-      );
-    });
-  }
+    })();
+  }, [film, user])
   
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
 
@@ -331,6 +270,8 @@ const Film = () => {
   //compute picture dimensions
   const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen]);
   const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen]);
+  //compute avatar dimensions
+  const friendSize = useMemo(() => headshotSize*0.75, [headshotSize]);
   //cache backdrop
   const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl]);
 
@@ -540,11 +481,51 @@ const Film = () => {
           )
         }
 
-        <View style={styles.divider}></View>
+        {
+          friends && friends.length > 0 && (
+            <>
+              <View style={styles.divider} />
 
-        <Text style={[styles.text, {fontSize: 20, alignSelf: "center", textAlign: "center"}]}>[FRIENDS WHO'VE WATCHED PLACEHOLDER]</Text>
+              <Text style={styles.regionalTitle}>Also watched by...</Text>
 
-        <View style={styles.divider}></View>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={widescreen}
+                style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center" }}
+                contentContainerStyle={{
+                  alignItems: "flex-start",
+                  justifyContent: "flex-start",
+                }}
+                data={friends}
+                keyExtractor={(item) => item.friendId}
+                renderItem={({item, i}) => (
+                  <Pressable
+                    onPress={() => item.reviewId ? router.push(`/review/${item.reviewId}`) : router.push(`/profile/${item.friendId}`)}
+                    style={{ marginRight: i < friends.length - 1 ? 15 : 0 }}
+                  >
+                    <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
+                      <UserAvatar
+                        pictureUrl={item.friendProfilePictureUrl}
+                        style={{
+                          width: friendSize,
+                          height: friendSize,
+                          borderRadius: friendSize/2,
+                          borderWidth: 2,
+                          borderColor: Colors.border_color
+                        }}
+                      />
+                      {
+                        item.rating && <Stars size={widescreen ? 18 : 12.5} rating={item.rating} readonly={true} padding={false} align={'center'}/> 
+                      }
+                    </View>
+                  </Pressable>
+                )}
+              />
+            </>
+          )
+        }
+
+        <View style={styles.divider} />
 
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Top Reviews</Text>
         {
@@ -655,6 +636,25 @@ const Film = () => {
         result === 500 ? router.replace('/contact') : router.replace('/');
         }}
       />
+
+      <Snackbar
+        visible={snack}
+        onDismiss={() => setSnack(false)}
+        duration={3000}
+        style={{
+          backgroundColor: Colors.card,
+          width: widescreen ? '50%' : '90%',
+          alignSelf: 'center',
+          borderRadius: 8
+        }}
+        action={{
+          label: 'OK',
+          onPress: () => setSnack(false),
+          textColor: Colors.text_link,
+        }}
+      >
+        {uwf?.dateWatched}
+      </Snackbar>
 
     </View>
   )

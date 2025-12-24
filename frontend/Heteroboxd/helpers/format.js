@@ -20,3 +20,17 @@ export function parseDate(date) {
     const month = months[parseInt(nums[1] - 1)];
     return `${month} ${day}, ${year}`;
 }
+
+export function parseCountry(country, platform) {
+  if (!country || country.length === 0) return null;
+  return Object.keys(country).map(c => {
+    const code = country[c]?.toUpperCase() ?? null;
+    if (!code || code === "XX") return null;
+    if (platform === "web") {
+      return code.toLowerCase();
+    }
+    return code.replace(/./g, char =>
+      String.fromCodePoint(127397 + char.charCodeAt(0))
+    );
+  });
+}
