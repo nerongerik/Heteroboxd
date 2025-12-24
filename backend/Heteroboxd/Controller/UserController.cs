@@ -167,6 +167,26 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("{UserId}/friends/{FilmId}")]
+        [Authorize]
+        public async Task<IActionResult> GetFriendsForFilm(string UserId, int FilmId)
+        {
+            _logger.LogInformation($"GET Friends interactions with a Film endpoint hit for User: {UserId}; Film: {FilmId}");
+            try
+            {
+                var Result = await _service.GetFriendsForFilm(UserId, FilmId);
+                return Ok(Result);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("ratings/{UserId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserRatings(string UserId)

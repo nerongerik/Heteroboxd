@@ -13,7 +13,6 @@
         public string? BackdropUrl { get; set; }
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
-        public string Slug { get; set; }
         public int FavoriteCount { get; set; }
         public int? WatchCount { get; set; }
         public Dictionary<int, string>? Collection { get; set; }
@@ -35,7 +34,6 @@
             this.BackdropUrl = Film.BackdropUrl;
             this.Length = Film.Length;
             this.ReleaseYear = Film.ReleaseYear;
-            this.Slug = Film.Slug;
             this.FavoriteCount = Film.FavoriteCount;
             if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Count();
             else this.WatchCount = null;

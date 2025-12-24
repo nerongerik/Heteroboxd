@@ -2,7 +2,6 @@
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace Heteroboxd.Controller
 {
@@ -19,34 +18,14 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet("{CommentId}")]
+        [HttpGet("review/{ReviewId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetComment(string CommentId)
-        {
-            _logger.LogInformation($"GET Comment endpoint hit for {CommentId}");
-            try
-            {
-                var Comment = await _service.GetComment(CommentId);
-                return Ok(Comment);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("review-comments/{ReviewId}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetCommentsByReview(string ReviewId)
+        public async Task<IActionResult> GetCommentsByReview(string ReviewId, int Page = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GET Comments by Review endpoint hit for {ReviewId}");
             try
             {
-                var ReviewComments = await _service.GetCommentsByReview(ReviewId);
+                var ReviewComments = await _service.GetCommentsByReview(ReviewId, Page, PageSize);
                 return Ok(ReviewComments);
             }
             catch (KeyNotFoundException)
@@ -68,50 +47,6 @@ namespace Heteroboxd.Controller
             {
                 await _service.CreateComment(CommentRequest);
                 return Ok();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpPut]
-        [Authorize]
-        public async Task<IActionResult> UpdateComment([FromBody] UpdateCommentRequest CommentRequest)
-        {
-            _logger.LogInformation($"PUT Comment endpoint hit for {CommentRequest.Id}");
-            try
-            {
-                await _service.UpdateComment(CommentRequest);
-                return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpPut("toggle-notifications/{CommentId}")]
-        [Authorize]
-        public async Task<IActionResult> ToggleNotifications(string CommentId)
-        {
-            _logger.LogInformation($"PUT Toggle Notifications endpoint hit for {CommentId}");
-            try
-            {
-                await _service.ToggleNotificationsEfCore7(CommentId);
-                return Ok();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {

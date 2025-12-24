@@ -17,7 +17,6 @@ namespace Heteroboxd.Models
         public string? BackdropUrl { get; set; }
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
-        public string Slug { get; set; } //unique
         public Dictionary<int, string> Collection { get; set; }
         public DateTime? LastSync { get; set; } //if LastSync < tMDB's last update, resync
 
@@ -31,7 +30,7 @@ namespace Heteroboxd.Models
         [JsonIgnore]
         public ICollection<UserWatchedFilm> WatchedBy { get; set; }
 
-        public Film(int Id, string Title, string? OriginalTitle, Dictionary<string, string> Country, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear, string Slug)
+        public Film(int Id, string Title, string? OriginalTitle, Dictionary<string, string> Country, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear)
         {
             this.Id = Id;
             this.Title = Title;
@@ -44,7 +43,6 @@ namespace Heteroboxd.Models
             this.BackdropUrl = string.IsNullOrEmpty(BackdropUrl) ? null : BackdropUrl;
             this.Length = Length;
             this.ReleaseYear = ReleaseYear;
-            this.Slug = Slug;
             this.Collection = new Dictionary<int, string>();
             this.LastSync = DateTime.UtcNow;
             this.CastAndCrew = new List<CelebrityCredit>();

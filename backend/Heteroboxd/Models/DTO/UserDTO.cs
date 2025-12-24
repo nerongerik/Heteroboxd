@@ -44,6 +44,15 @@
         }
     }
 
+    public class FriendFilmResponse
+    {
+        public string FriendId { get; set; }
+        public string FriendProfilePictureUrl { get; set; }
+        public string DateWatched { get; set; }
+        public string? ReviewId { get; set; }
+        public double? Rating { get; set; }
+    }
+
     public class UpdateUserRequest
     {
         public string UserId { get; set; }

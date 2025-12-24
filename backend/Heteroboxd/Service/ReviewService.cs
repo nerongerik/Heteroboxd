@@ -141,7 +141,7 @@ namespace Heteroboxd.Service
 
         public async Task ReportReviewEfCore7(string ReviewId)
         {
-            if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
+            if (!Guid.TryParse(ReviewId, out Guid Id)) throw new ArgumentException();
             await _repo.ReportReviewEfCore7Async(Id);
         }
 

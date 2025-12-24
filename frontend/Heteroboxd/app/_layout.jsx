@@ -5,7 +5,6 @@ import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
 import './browser.css'
 import ListOptionsButton from '../components/optionButtons/listOptionsButton'
-import ReviewOptionsButton from '../components/optionButtons/reviewOptionsButton'
 
 const RootLayout = () => {
   return (
@@ -28,7 +27,7 @@ const RootLayout = () => {
           })}
         />
         <Stack.Screen
-          name='film/[navprop]'
+          name='film/[filmId]'
           options={{
             headerShown: Platform.OS === 'web' ? false : true,
             headerTransparent: true,
@@ -67,12 +66,6 @@ const RootLayout = () => {
             headerRight: () => <ListOptionsButton listId={route.params?.listId} />,
             headerTitle: '',
             })}
-        />
-        <Stack.Screen 
-          name="review/[reviewId]" 
-          options={({ route }) => ({
-            headerRight: () => <ReviewOptionsButton reviewId={route.params?.reviewId} />
-          })}
         />
         <Stack.Screen 
           name="lists/film/[filmId]" 

@@ -6,12 +6,10 @@ namespace Heteroboxd.Repository
 {
     public interface ICommentRepository
     {
-        Task<Comment?> GetByIdAsync(Guid Id);
-        Task<List<Comment>> GetByReviewAsync(Guid ReviewId);
-        Task ToggleNotificationsEfCore7Async(Guid CommentId);
+        Task<Comment?> GetByIdAsync(Guid CommentId);
+        Task<(List<Comment> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize);
         Task ReportEfCore7Async(Guid CommentId);
         void Create(Comment Comment);
-        void Update(Comment Comment);
         void Delete(Comment Comment);
         Task SaveChangesAsync();
     }
@@ -25,24 +23,24 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<Comment?> GetByIdAsync(Guid Id) =>
+        public async Task<Comment?> GetByIdAsync(Guid CommentId) =>
             await _context.Comments
-                .FirstOrDefaultAsync(c => c.Id == Id);
+                .FirstOrDefaultAsync(c => c.Id == CommentId);
 
-        public async Task<List<Comment>> GetByReviewAsync(Guid ReviewId) =>
-            await _context.Comments
+        public async Task<(List<Comment> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize)
+        {
+            var ReviewQuery = _context.Comments
                 .Where(c => c.ReviewId == ReviewId)
+                .OrderBy(c => c.Date);
+
+            var TotalCount = await ReviewQuery.CountAsync();
+
+            var Comments = await ReviewQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
 
-        public async Task ToggleNotificationsEfCore7Async(Guid CommentId) //flips the boolean value of notifications on a review
-        {
-            var Rows = await _context.Comments
-                .Where(c => c.Id == CommentId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    c => c.NotificationsOn,
-                    c => !c.NotificationsOn
-                ));
-            if (Rows == 0) throw new KeyNotFoundException();
+            return (Comments, TotalCount);
         }
 
         public async Task ReportEfCore7Async(Guid CommentId) //increments the flag count of a review
@@ -59,10 +57,6 @@ namespace Heteroboxd.Repository
         public void Create(Comment Comment) =>
              _context.Comments
                 .Add(Comment);
-
-        public void Update(Comment Comment) =>
-            _context.Comments
-                .Update(Comment);
 
         public void Delete(Comment Comment) =>
             _context.Comments

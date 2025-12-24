@@ -32,10 +32,6 @@ const Histogram = ({ histogram }) => {
   const MAX_HEIGHT = widescreen ? 90 : 70;
   const BAR_WIDTH = widescreen ? 750/12.5 : width/15;
 
-  //widescreen ? 13*30 : 14*20-5
-
-  //widescreen ? 30 : 20
-
   useEffect(() => {
     if (averageRating) {
       setActiveOutput(format.round1(averageRating));
@@ -44,7 +40,7 @@ const Histogram = ({ histogram }) => {
 
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: widescreen ? 750 : '90%', alignSelf: 'center'}}>
-      <View style={{flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center'}}>
+      <View style={{flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', marginRight: 5}}>
         {data.map(({ rating, count, height }) => (
             <TouchableOpacity key={rating} onPressIn={() => setActiveOutput(format.formatCount(count))} onPressOut={() => setActiveOutput(format.round1(averageRating))}>
               <View
@@ -60,7 +56,7 @@ const Histogram = ({ histogram }) => {
             </TouchableOpacity>
         ))}
       </View>
-      <Text style={{color: Colors.text_title, fontSize: widescreen ? 24 : 20, fontWeight: '600'}}>{activeOutput}</Text>
+      <Text style={{color: Colors.text_title, fontSize: widescreen ? 28 : 20, fontWeight: '600'}}>{activeOutput}</Text>
     </View>
   );
 };
