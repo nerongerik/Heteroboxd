@@ -7,6 +7,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
 import { Snackbar } from 'react-native-paper';
+import { Octicons } from '@expo/vector-icons';
 
 const ReviewOptionsButton = ({ reviewId }) => {
   const { user, isValidSession } = useAuth();
@@ -132,8 +133,29 @@ const ReviewOptionsButton = ({ reviewId }) => {
     router.push(`review/alter/${review?.filmId}`);
   }
 
-  async function handleShare() {
-    //todo
+  async function handleReport() {
+    try {
+      const vS = await isValidSession();
+      if (!user || !vS) {
+        setMsg("Session expired! Try logging in again.");
+        setSnack(true);  
+      }
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/reviews/report/${reviewId}`, {
+        method: 'PUT',
+        headers: {'Authorization': `Bearer ${jwt}`}
+      });
+      if (res.status === 200) {
+        setMsg("Review reported.");
+        setSnack(true);
+      } else {
+        setMsg(`${res.status}: Failed to report review! Try reloading Heteroboxd.`);
+        setSnack(true);
+      }
+    } catch {
+      setMsg("Network error! Check your internet connection.");
+      setSnack(true);
+    }
   }
 
   return (
@@ -159,6 +181,11 @@ const ReviewOptionsButton = ({ reviewId }) => {
               <TouchableOpacity style={styles.option} onPress={handleDelete}>
                 <Text style={styles.optionText}>Delete w/ Admin Privileges </Text>
                 <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
+              </TouchableOpacity>
+            ) : user?.userId !== review?.authorId ? (
+              <TouchableOpacity style={styles.option} onPress={handleReport}>
+                <Text style={styles.optionText}>Report Review </Text>
+                <Octicons name="report" size={18} color={Colors.text} />
               </TouchableOpacity>
             ) : (
               <>
@@ -228,7 +255,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     alignContent: 'center',
-    flexDirection: 'row'
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   optionText: {
     fontSize: 16,

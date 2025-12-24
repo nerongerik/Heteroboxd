@@ -194,7 +194,8 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("report-review/{ReviewId}")]
+        [HttpPut("report/{ReviewId}")]
+        [Authorize]
         public async Task<IActionResult> ReportReview(string ReviewId)
         {
             _logger.LogInformation($"PUT Report Review endpoint hit for ReviewId: {ReviewId}");

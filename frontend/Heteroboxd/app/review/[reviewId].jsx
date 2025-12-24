@@ -27,6 +27,9 @@ import { Ionicons } from '@expo/vector-icons'
 import PaginationBar from '../../components/paginationBar'
 import { Snackbar } from 'react-native-paper'
 import CommentInput from '../../components/commentInput'
+import ReviewOptionsButton from '../../components/optionButtons/reviewOptionsButton'
+import { MaterialIcons } from '@expo/vector-icons'
+import { Octicons } from '@expo/vector-icons'
 
 const ReviewWithComments = () => {
   const { reviewId } = useLocalSearchParams();
@@ -172,6 +175,7 @@ const ReviewWithComments = () => {
       headerTitle: user?.userId === review?.authorId ? "Your review" : review?.authorName + "'s review",
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
+      headerRight: () => user ? <ReviewOptionsButton reviewId={review?.id} /> : null
     });
   }, [user, review]);
 
@@ -208,7 +212,7 @@ const ReviewWithComments = () => {
     }
   }
 
-  const addComment = useCallback(async (commentText) => {
+  const handleCreate = useCallback(async (commentText) => {
     try {
       const vS = await isValidSession();
       if (!user || !vS) router.replace('/login');
@@ -240,8 +244,56 @@ const ReviewWithComments = () => {
     }
   }, [user, isValidSession, router, reviewId, totalCount]);
 
-  const handleDelete = async (commentId) => {};
-  const handleReport = async (commentId) => {};
+  const handleDelete = async (commentId) => {
+    try {
+      const vS = await isValidSession();
+      if (!user || !vS) {
+        setMessage("Session expired! Try logging in again.");
+        setSnack(true);  
+      }
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {'Authorization': `Bearer ${jwt}`}
+      });
+      if (res.status === 200) {
+        setMessage("Comment deleted.");
+        setSnack(true);
+        loadCommentsPage(page);
+      } else {
+        setMessage(`${res.status}: Failed to delete comment! Try reloading Heteroboxd.`);
+        setSnack(true);
+      }
+    } catch {
+      setMessage("Network error! Check your internet connection.");
+      setSnack(true);
+    }
+  };
+
+  const handleReport = async (commentId) => {
+    try {
+      const vS = await isValidSession();
+      if (!user || !vS) {
+        setMessage("Session expired! Try logging in again.");
+        setSnack(true);  
+      }
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/comments/report/${commentId}`, {
+        method: 'PUT',
+        headers: {'Authorization': `Bearer ${jwt}`}
+      });
+      if (res.status === 200) {
+        setMessage("Comment reported.");
+        setSnack(true);
+      } else {
+        setMessage(`${res.status}: Failed to report comment! Try reloading Heteroboxd.`);
+        setSnack(true);
+      }
+    } catch {
+      setMessage("Network error! Check your internet connection.");
+      setSnack(true);
+    }
+  };
 
   const renderReviewHeader = () => (
     <View style={{
@@ -317,9 +369,9 @@ const ReviewWithComments = () => {
       
       <View style={[styles.divider, {marginVertical: 10}]} />
 
-      {user && !snack && (
+      {user && (
         <CommentInput
-          onSubmit={addComment}
+          onSubmit={handleCreate}
           widescreen={widescreen}
           maxRowWidth={maxRowWidth}
           user={user}
@@ -341,16 +393,38 @@ const ReviewWithComments = () => {
   const renderCommentItem = ({ item }) => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
       <View>
-        <View style={{marginLeft: 5}}>
-          <Author
-            userId={item.authorId}
-            url={item.authorProfilePictureUrl}
-            username={item.authorName}
-            tier={item.authorTier}
-            patron={item.authorPatron}
-            router={router}
-            widescreen={widescreen}
-          />
+        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+          <View style={{marginLeft: 10}}>
+            <Author
+              userId={item.authorId}
+              url={item.authorProfilePictureUrl}
+              username={item.authorName}
+              tier={item.authorTier}
+              patron={item.authorPatron}
+              router={router}
+              widescreen={widescreen}
+            />
+          </View>
+          {
+            user ? (
+              <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginRight: 20}}>
+                {
+                  user.tier.toLowerCase() !== 'admin' && user.userId !== item.authorId && (
+                    <Pressable onPress={() => handleReport(item.id)}>
+                      <Octicons name="report" size={widescreen ? 22 : 18} color={Colors.text} />
+                    </Pressable>
+                  )
+                }
+                {
+                  user.tier.toLowerCase() === 'admin' || user.userId === item.authorId && (
+                    <Pressable onPress={() => handleDelete(item.id)}>
+                      <MaterialIcons name="delete-forever" size={widescreen ? 24 : 20} color={Colors.text} />
+                    </Pressable>
+                  )
+                }
+              </View>
+            ) : null
+          }
         </View>
         <View style={{padding: 10}}>
           <ParsedRead html={`${item.text.replace(/\n{3,}/g, '\n\n').trim()}`} />
@@ -458,6 +532,7 @@ const ReviewWithComments = () => {
       >
         {message}
       </Snackbar>
+
     </View>
   )
 }
