@@ -1,4 +1,4 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator, FlatList } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Animated, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator, FlatList } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
@@ -15,6 +15,7 @@ import * as auth from '../../helpers/auth';
 import * as format from '../../helpers/format';
 import Foundation from '@expo/vector-icons/Foundation';
 import Histogram from '../../components/histogram';
+import SearchBox from '../../components/searchBox';
 
 const Profile = () => {
   const { userId } = useLocalSearchParams();
@@ -27,7 +28,7 @@ const Profile = () => {
   const [error, setError] = useState("");
   const [ratings, setRatings] = useState({});
 
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const router = useRouter();
 
@@ -46,6 +47,12 @@ const Profile = () => {
   //context menu
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
   const [contextMenuMessage, setContextMenuMessage] = useState("");
+
+  //searchbar
+  const [menuShown2, setMenuShown2] = useState(false);
+  const slideAnim2 = useState(new Animated.Value(0))[0]; //sliding animation prep
+  const [favIndex, setFavIndex] = useState(-1);
+  const [searchResults, setSearchResults] = useState(null);
 
 
   const loadProfileData = async () => {
@@ -228,7 +235,6 @@ const Profile = () => {
     });
   }
 
-  //context menu
   const handlePress = () => {
     let message = "";
 
@@ -255,6 +261,57 @@ const Profile = () => {
     setContextMenuMessage(message);
     setContextMenuVisible(true);
   };
+
+  const updateFavorites = async (filmId) => {
+    try {
+      const vS = await isValidSession();
+      if (!user || !isOwnProfile || !isValidSession) {
+        setSnackbarMessage(`Session expired! Try logging in again.`);
+        setVisible(true);
+      }
+      const index = Number(filmId) > 0 ? `?Index=${favIndex}` : ''
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/users/favorites/${user.userId}/${Number(filmId)}${index}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${jwt}`,
+          'Accept': 'application/json'
+        }
+      });
+      if (res.status === 200) {
+        const json = await res.json();
+        setFavorites([json["1"], json["2"], json["3"], json["4"]]);
+      } else {
+        setSnackbarMessage(`${res.status}: Failed to update your favorites! Try reloading Heteroboxd.`);
+        setVisible(true);
+      }
+    } catch {
+      setSnackbarMessage(`Network error! Check your internet connection.`)
+      setVisible(true);
+    }
+  }
+
+  const openMenu2 = () => {
+    setMenuShown2(true);
+    Animated.timing(slideAnim2, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu2 = () => {
+    Animated.timing(slideAnim2, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown2(false));
+  };
+
+  const translateY2 = slideAnim2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0], //slide from bottom
+  });
 
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
   const isOwnProfile = useMemo(() => user?.userId === userId, [user?.userId, userId]);
@@ -431,25 +488,30 @@ const Profile = () => {
             <ActivityIndicator size="large" color={Colors.text_link} />
           </View>
         ) : (
-        <View style={[styles.movies, { width: "100%", justifyContent: "space-between", paddingHorizontal: 10 }]}>
+        <View style={[styles.movies, { width: "100%", justifyContent: "space-between", paddingHorizontal: 5 }]}>
           {favorites.map((film, index) => (
             <Pressable
               key={index}
+              onLongPress={() => {
+                if (!isOwnProfile) return;
+                setFavIndex(index + 1);
+                openMenu2();
+              }}
               onPress={() => {
                 if (favoritesResult === 404) {
                   setSnackbarMessage("There was an error loading this film...");
                   setVisible(true);
-                }
-                else if (film && film.filmId) {
+                } else if (film && film.filmId) {
                   router.push(`/film/${film.filmId}`);
                 } else if (!isOwnProfile) {
                   setSnackbarMessage("You can't choose favorites for other people!");
                   setVisible(true);
                 } else {
-                  console.log(index + 1);
+                  setFavIndex(index + 1);
+                  openMenu2();
                 }
               }}
-              style={{ alignItems: "center", marginRight: 5 }}
+              style={{ alignItems: "center", marginRight: index === 3 ? 0 : 5 }}
             >
               <Poster
                 posterUrl={favoritesResult === 404 ? 'error' : (film?.posterUrl ?? null)}
@@ -635,6 +697,60 @@ const Profile = () => {
           </Pressable>
         </Modal>
       )}
+
+      <Modal transparent visible={menuShown2} animationType="fade">
+        <Pressable style={{...StyleSheet.absoluteFillObject}} onPress={() => {
+          setSearchResults(null);
+          closeMenu2();
+        }}>
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
+        </Pressable>
+
+        <Animated.View style={[{backgroundColor: Colors.card, bottom: 0, borderTopLeftRadius: 12, borderTopRightRadius: 12, paddingVertical: 8, position: 'absolute'}, { transform: [{ translateY: translateY2 }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
+          <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
+          {
+            (searchResults && searchResults.length > 0) ? (
+              <View style={[{alignSelf: 'center', backgroundColor: Colors.card, borderColor: Colors.border_color, borderRadius: 5, borderTopWidth: 2, borderBottomWidth: 2, marginBottom: 8, overflow: 'hidden'}, {minHeight: height/3, maxHeight: height/3, width: widescreen ? width*0.5 : width*0.95}]}>
+              <FlatList
+                data={searchResults}
+                numColumns={1}
+                renderItem={({item, index}) => (
+                  <Pressable key={index} onPress={() => {
+                    updateFavorites(item.filmId);
+                    setSearchResults(null);
+                    closeMenu2();
+                  }}>
+                    <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
+                      <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
+                      <View style={{flexShrink: 1, maxWidth: '100%'}}>
+                        <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+                          {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
+                        </Text>
+                        <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                          item.castAndCrew?.map((d, i) => (
+                            <Text key={i} style={{}}>
+                              {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                            </Text>
+                          ))
+                        }</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                )}
+                contentContainerStyle={{
+                  padding: 20,
+                  alignItems: 'flex-start',
+                  width: '100%'
+                }}
+                showsVerticalScrollIndicator={false}
+              />
+              </View>
+            ) : (searchResults && searchResults.length === 0) && (
+              <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+            )
+          }
+        </Animated.View>
+      </Modal>
       
     </View>
   );

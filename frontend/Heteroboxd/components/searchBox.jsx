@@ -6,7 +6,7 @@ import { BaseUrl } from '../constants/api';
 import Fontisto from '@expo/vector-icons/Fontisto';
 
 const SearchBox = ({ placeholder, context, onSelected }) => {
-  const [query, setQuery] = useState(null);
+  const [query, setQuery] = useState('');
 
   const [result, setResult] = useState(-1);
   const [snack, setSnack] = useState(false);
@@ -15,7 +15,7 @@ const SearchBox = ({ placeholder, context, onSelected }) => {
   const { width } = useWindowDimensions();
 
   async function handleSearch() {
-    if (!query) return;
+    if (!query || query.length === 0) return;
     try {
       setResult(0);
       const res = await fetch(`${BaseUrl.api}/${context}/search?Search=${query}`, {

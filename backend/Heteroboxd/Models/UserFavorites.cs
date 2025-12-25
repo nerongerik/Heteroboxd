@@ -1,5 +1,4 @@
-﻿using Heteroboxd.Models.DTO;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Heteroboxd.Models
 {

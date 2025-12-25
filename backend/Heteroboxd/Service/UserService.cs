@@ -22,7 +22,7 @@ namespace Heteroboxd.Service
         Task UpdateUser(UpdateUserRequest UserUpdate);
         Task VerifyUser(string UserId, string Token);
         Task UpdateWatchlist(string UserId, int FilmId);
-        Task UpdateFavorites(string UserId, List<int?> FilmIds);
+        Task<Dictionary<string, FilmInfoResponse?>> UpdateFavorites(string UserId, int? FilmId, int Index);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
         Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
         Task TrackFilm(string UserId, int FilmId, string Action);
@@ -333,57 +333,35 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateFavorites(string UserId, List<int?> FilmIds)
+        public async Task<Dictionary<string, FilmInfoResponse?>> UpdateFavorites(string UserId, int? FilmId, int Index)
         {
-            var UserFavorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
+            UserFavorites? UserFavorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
             if (UserFavorites == null) throw new KeyNotFoundException();
-
-            if (FilmIds[0] == null)
+            if (UserFavorites.Film1 == FilmId) UserFavorites.Film1 = null;
+            if (UserFavorites.Film2 == FilmId) UserFavorites.Film2 = null;
+            if (UserFavorites.Film3 == FilmId) UserFavorites.Film3 = null;
+            if (UserFavorites.Film4 == FilmId) UserFavorites.Film4 = null;
+            switch (Index)
             {
-                UserFavorites.Film1 = null;
-            }
-            else
-            {
-                var Film = await _filmRepo.GetByIdAsync(FilmIds[0]!.Value);
-                if (Film == null) throw new KeyNotFoundException();
-                UserFavorites.Film1 = Film.Id;
-            }
-
-            if (FilmIds[1] == null)
-            {
-                UserFavorites.Film2 = null;
-            }
-            else
-            {
-                var Film = await _filmRepo.GetByIdAsync(FilmIds[1]!.Value);
-                if (Film == null) throw new KeyNotFoundException();
-                UserFavorites.Film2 = Film.Id;
-            }
-
-            if (FilmIds[2] == null)
-            {
-                UserFavorites.Film3 = null;
-            }
-            else
-            {
-                var Film = await _filmRepo.GetByIdAsync(FilmIds[2]!.Value);
-                if (Film == null) throw new KeyNotFoundException();
-                UserFavorites.Film3 = Film.Id;
-            }
-
-            if (FilmIds[3] == null)
-            {
-                UserFavorites.Film4 = null;
-            }
-            else
-            {
-                var Film = await _filmRepo.GetByIdAsync(FilmIds[3]!.Value);
-                if (Film == null) throw new KeyNotFoundException();
-                UserFavorites.Film4 = Film.Id;
+                case 1:
+                    UserFavorites.Film1 = FilmId;
+                    break;
+                case 2:
+                    UserFavorites.Film2 = FilmId;
+                    break;
+                case 3:
+                    UserFavorites.Film3 = FilmId;
+                    break;
+                case 4:
+                    UserFavorites.Film4 = FilmId;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             _repo.UpdateFavorites(UserFavorites);
             await _repo.SaveChangesAsync();
+            return await GetFavorites(UserId);
         }
 
         public async Task UpdateRelationship(string UserId, string TargetId, string Action)

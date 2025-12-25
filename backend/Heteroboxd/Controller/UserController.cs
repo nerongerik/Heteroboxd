@@ -304,19 +304,31 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("favorites/{UserId}")]
+        [HttpPut("favorites/{UserId}/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> UpdateUserFavorites(string UserId, [FromBody] List<int?> FilmIds)
+        public async Task<IActionResult> UpdateUserFavorites(string UserId, int FilmId, [FromQuery] int Index)
         {
             _logger.LogInformation($"PUT Favorites endpoint hit for User: {UserId}");
             try
             {
-                await _service.UpdateFavorites(UserId, FilmIds);
-                return Ok();
+                if (FilmId < 0)
+                {
+                    var UpdatedFavorites = await _service.UpdateFavorites(UserId, null, Index);
+                    return Ok(UpdatedFavorites);
+                }
+                else
+                {
+                    var UpdatedFavorites = await _service.UpdateFavorites(UserId, FilmId, Index);
+                    return Ok(UpdatedFavorites);
+                }
             }
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return BadRequest();
             }
             catch
             {
