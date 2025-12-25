@@ -337,23 +337,73 @@ namespace Heteroboxd.Service
         {
             UserFavorites? UserFavorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
             if (UserFavorites == null) throw new KeyNotFoundException();
-            if (UserFavorites.Film1 == FilmId) UserFavorites.Film1 = null;
-            if (UserFavorites.Film2 == FilmId) UserFavorites.Film2 = null;
-            if (UserFavorites.Film3 == FilmId) UserFavorites.Film3 = null;
-            if (UserFavorites.Film4 == FilmId) UserFavorites.Film4 = null;
+
+            if (UserFavorites.Film1 != null && UserFavorites.Film1 == FilmId)
+            {
+                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film1.Value, -1);
+                UserFavorites.Film1 = null;
+            }
+            if (UserFavorites.Film2 != null && UserFavorites.Film2 == FilmId)
+            {
+                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film2.Value, -1);
+                UserFavorites.Film2 = null;
+            }
+            if (UserFavorites.Film3 != null && UserFavorites.Film3 == FilmId)
+            {
+                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film3.Value, -1);
+                UserFavorites.Film3 = null;
+            }
+            if (UserFavorites.Film4 != null && UserFavorites.Film4 == FilmId)
+            {
+                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film4.Value, -1);
+                UserFavorites.Film4 = null;
+            }
+
             switch (Index)
             {
                 case 1:
+                    if (UserFavorites.Film1 != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film1.Value, -1);
+                    } 
                     UserFavorites.Film1 = FilmId;
+                    if (FilmId != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
+                    }
                     break;
                 case 2:
+                    if (UserFavorites.Film2 != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film2.Value, -1);
+                    }
                     UserFavorites.Film2 = FilmId;
+                    if (FilmId != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
+                    }
                     break;
                 case 3:
+                    if (UserFavorites.Film3 != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film3.Value, -1);
+                    }
                     UserFavorites.Film3 = FilmId;
+                    if (FilmId != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
+                    }
                     break;
                 case 4:
+                    if (UserFavorites.Film4 != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film4.Value, -1);
+                    }
                     UserFavorites.Film4 = FilmId;
+                    if (FilmId != null)
+                    {
+                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
+                    }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

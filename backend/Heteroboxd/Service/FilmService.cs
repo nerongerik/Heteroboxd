@@ -12,7 +12,6 @@ namespace Heteroboxd.Service
         Task<PagedFilmInfoResponse> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
         Task<List<FilmInfoResponse>> SearchFilms(string Search);
-        Task UpdateFilmFavoriteCountEfCore7(int FilmId, string FavoriteChange);
     }
 
     public class FilmService : IFilmService
@@ -110,12 +109,6 @@ namespace Heteroboxd.Service
         {
             var SearchResults = await _repo.SearchAsync(Search.ToLower());
             return SearchResults.Select(f => new FilmInfoResponse(f, true, true)).ToList();
-        }
-
-        public async Task UpdateFilmFavoriteCountEfCore7(int FilmId, string FavoriteChange)
-        {
-            if (!int.TryParse(FavoriteChange, out var Delta)) throw new ArgumentException();
-            await _repo.UpdateFilmFavoriteCountEfCore7Async(FilmId, Delta);
         }
     }
 }

@@ -144,29 +144,5 @@ namespace Heteroboxd.Controller
                 return StatusCode(500);
             }
         }
-
-        [HttpPut("favorite-count/{FilmId}/{FavoriteChange}")]
-        [Authorize]
-        public async Task<IActionResult> UpdateFilmFavoriteCount(int FilmId, string FavoriteChange)
-        {
-            _logger.LogInformation($"PUT Update Film Favorite Count endpoint hit for FilmId: {FilmId} with Change: {FavoriteChange}");
-            try
-            {
-                await _service.UpdateFilmFavoriteCountEfCore7(FilmId, FavoriteChange);
-                return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
     }
 }

@@ -262,16 +262,16 @@ const Profile = () => {
     setContextMenuVisible(true);
   };
 
-  const updateFavorites = async (filmId) => {
+  const updateFavorites = async (filmId, index) => {
     try {
       const vS = await isValidSession();
       if (!user || !isOwnProfile || !isValidSession) {
         setSnackbarMessage(`Session expired! Try logging in again.`);
         setVisible(true);
       }
-      const index = Number(filmId) > 0 ? `?Index=${favIndex}` : ''
       const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/users/favorites/${user.userId}/${Number(filmId)}${index}`, {
+      const i = index ? index : favIndex;
+      const res = await fetch(`${BaseUrl.api}/users/favorites/${user.userId}/${filmId}?Index=${i}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${jwt}`,
@@ -494,8 +494,7 @@ const Profile = () => {
               key={index}
               onLongPress={() => {
                 if (!isOwnProfile) return;
-                setFavIndex(index + 1);
-                openMenu2();
+                updateFavorites(-1, index+1);
               }}
               onPress={() => {
                 if (favoritesResult === 404) {
