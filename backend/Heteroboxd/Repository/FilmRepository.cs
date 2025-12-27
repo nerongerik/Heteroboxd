@@ -7,12 +7,13 @@ namespace Heteroboxd.Repository
 {
     public interface IFilmRepository
     {
-        Task<Film?> LightweightFetcher(int FilmId);
         Task<Film?> GetByIdAsync(int Id);
+        Task<Film?> LightweightFetcher(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
         Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
+        Task<List<Film>> CelebFilmographyFetcherAsync(IReadOnlyCollection<int> Ids);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<List<Film>> SearchAsync(string Title);
@@ -28,17 +29,23 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<Film?> LightweightFetcher(int FilmId) =>
-            await _context.Films
-                .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.Id == FilmId);
-
         public async Task<Film?> GetByIdAsync(int Id) =>
             await _context.Films
                 .AsSplitQuery()
                 .Include(f => f.CastAndCrew)
                 .Include(f => f.WatchedBy)
                 .Include(f => f.Reviews)
+                .FirstOrDefaultAsync(f => f.Id == Id);
+
+        public async Task<Film?> LightweightFetcher(int Id) =>
+            await _context.Films
+                .AsNoTracking()
+                .FirstOrDefaultAsync(f => f.Id == Id);
+
+        public async Task<Film?> LightweightFetcherIncludingWatchCountAsync(int Id) =>
+            await _context.Films
+                .AsNoTracking()
+                .Include(f => f.WatchedBy)
                 .FirstOrDefaultAsync(f => f.Id == Id);
 
         public async Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids)
@@ -97,6 +104,16 @@ namespace Heteroboxd.Repository
                 .ToListAsync();
 
             return (Films, TotalCount);
+        }
+
+        public async Task<List<Film>> CelebFilmographyFetcherAsync(IReadOnlyCollection<int> Ids)
+        {
+            if (Ids.Count == 0) return new();
+
+            return await _context.Films
+                .Include(f => f.WatchedBy)
+                .Where(f => Ids.Contains(f.Id))
+                .ToListAsync();
         }
 
         public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)

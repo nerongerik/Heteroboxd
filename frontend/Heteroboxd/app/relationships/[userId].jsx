@@ -53,8 +53,9 @@ const Relationships = () => {
       }
     } catch {
       console.log('Failed to fetch relationships.');
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   }
 
   useEffect(() => {
