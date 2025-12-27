@@ -70,7 +70,7 @@ const Relationships = () => {
         followers={followers}
         following={following}
         blocked={blocked}
-        onUserPress={(u) => router.replace(`/profile/${u.id}`)}
+        onUserPress={(uid) => router.push(`/profile/${uid}`)}
         active={t}
         refreshing={refreshing}
         onRefresh={loadData}

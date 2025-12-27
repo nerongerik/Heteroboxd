@@ -79,7 +79,7 @@ const Celebrity = () => {
         wrote={wrote}
         produced={produced}
         composed={composed}
-        onFilmPress={(f) => router.replace(`film/${f.filmId}`)}
+        onFilmPress={(filmId) => router.push(`/film/${filmId}`)}
         active={t}
         refreshing={refreshing}
         onRefresh={loadData}
@@ -101,8 +101,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 50,
   },
 })
