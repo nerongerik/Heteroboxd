@@ -81,11 +81,11 @@ namespace Heteroboxd.Service
             return new CelebrityDelimitedResponse
             {
                 BaseCeleb = new CelebrityInfoResponse(Celebrity),
-                Starred = Starred.OrderByDescending(f => f.WatchCount).ToList(),
-                Directed = Directed.OrderByDescending(f => f.WatchCount).ToList(),
-                Produced = Produced.OrderByDescending(f => f.WatchCount).ToList(),
-                Wrote = Wrote.OrderByDescending(f => f.WatchCount).ToList(),
-                Composed = Composed.OrderByDescending(f => f.WatchCount).ToList(),
+                Starred = Starred,
+                Directed = Directed,
+                Produced = Produced,
+                Wrote = Wrote,
+                Composed = Composed,
             };
         }
 

@@ -1,35 +1,67 @@
-import { useState, useMemo } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable } from "react-native";
+import { useState, useMemo, act } from "react";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView } from "react-native";
 import { Colors } from "../../constants/colors";
 import {Headshot} from '../headshot';
 import {Poster} from '../poster';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as sort from '../../helpers/sort';
 
 const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFilmPress, active, refreshing, onRefresh}) => {
 
   const [activeTab, setActiveTab] = useState(active);
   const { width } = useWindowDimensions();
 
+  const [sortBy, setSortBy] = useState("watchCount");
+  const [sortDirection, setSortDirection] = useState("desc"); //or "asc"
+
   const seen = 0; //todo
 
-  const getData = () => {
+  const widescreen = useMemo(() => width > 1000, [width]);
+  const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen]);
+  const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width]);
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]);
+  const headshotWidth = useMemo(() => widescreen ? posterWidth - 20 : posterWidth + 20, [widescreen, posterWidth]);
+  const headshotHeight = useMemo(() => headshotWidth * 3 / 2, [headshotWidth]);
+
+  const baseData = useMemo(() => {
     switch (activeTab) {
-      case "bio":
-        return bio;
       case "starred":
-        return starred;
+        return starred ?? [];
       case "directed":
-        return directed;
+        return directed ?? [];
       case "wrote":
-        return wrote;
+        return wrote ?? [];
       case "produced":
-        return produced;
+        return produced ?? [];
       case "composed":
-        return composed;
+        return composed ?? [];
       default:
         return [];
     }
-  };
+  }, [activeTab, starred, directed, wrote, produced, composed]);
+
+  const sortedData = useMemo(() => {
+    return [...baseData].sort(
+      sort.compareFilms({ sortBy: sortBy, direction: sortDirection })
+    );
+  }, [baseData, sortBy, sortDirection]);
+
+  const paddedEntries = useMemo(() => {
+    if (activeTab === "bio") return [];
+
+    const padded = [...sortedData];
+    const remainder = padded.length % 4;
+
+    if (remainder !== 0) {
+      const placeholdersToAdd = 4 - remainder;
+      for (let i = 0; i < placeholdersToAdd; i++) {
+        padded.push(null);
+      }
+    }
+
+    return padded;
+  }, [sortedData, activeTab]);
 
   const TabButton = ({ title, active, onPress }) => {
     return (
@@ -45,7 +77,7 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
       <>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth}}>
           <View style={{padding: 5}}>
-            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>{getData().length} films</Text>
+            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>{sortedData.length} films</Text>
           </View>
           <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', 'justifyContent': 'center'}}>
             <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
@@ -88,25 +120,6 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
     );
   }
 
-  const widescreen = useMemo(() => width > 1000, [width]);
-  const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen]);
-  const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width]);
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
-  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]);
-
-  const paddedEntries = useMemo(() => {
-    if (activeTab === 'bio') return [];
-    const padded = [...getData()];
-    const remainder = padded.length % 4;
-    if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder;
-      for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null);
-      }
-    }
-    return padded;
-  }, [activeTab, bio, starred, directed, wrote, produced, composed]);
-
   return (
     <View style={styles.container}>
       <View style={[widescreen && styles.tabRowWeb, !widescreen && styles.tabRowMobile]}>
@@ -117,23 +130,47 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
         {wrote?.length > 0 && <TabButton title="Wrote" active={activeTab === "wrote"} onPress={() => setActiveTab("wrote")} />}
         {composed?.length > 0 && <TabButton title="Composed" active={activeTab === "composed"} onPress={() => setActiveTab("composed")} />}
       </View>
-      <FlatList
-        data={paddedEntries}
-        keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
-        ListHeaderComponent={Header}
-        renderItem={Filmography}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        style={{
-          width: maxRowWidth,
-          alignSelf: 'center'
-        }}
-        contentContainerStyle={{
-          paddingHorizontal: spacing / 2,
-          paddingBottom: 80,
-        }}
-        showsVerticalScrollIndicator={false}
-      />
+      {
+        activeTab === 'bio' && bio ? (
+          <ScrollView style={{alignSelf: 'center', marginBottom: 50}} contentContainerStyle={{width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start'}} showsVerticalScrollIndicator={false}>
+            <Headshot
+              pictureUrl={bio.url}
+              style={{
+                width: headshotWidth,
+                height: headshotHeight,
+                borderWidth: 1,
+                borderColor: Colors.border_color,
+                borderRadius: 4,
+                margin: widescreen ? 10 : 0,
+                alignSelf: widescreen ? 'auto' : 'center'
+              }}
+            />
+            <Text style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>
+              {bio.text}
+            </Text>
+          </ScrollView>
+        ) : (
+          <FlatList
+            data={paddedEntries}
+            key={activeTab}
+            keyExtractor={(item, index) => item?.filmId ? `${activeTab}-${item.filmId}` : `${activeTab}-placeholder-${index}`}
+            ListHeaderComponent={Header}
+            renderItem={Filmography}
+            numColumns={4}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            style={{
+              width: maxRowWidth,
+              alignSelf: 'center'
+            }}
+            contentContainerStyle={{
+              paddingHorizontal: spacing / 2,
+              paddingBottom: 80,
+            }}
+            showsVerticalScrollIndicator={false}
+          />
+        )
+      }
     </View>
   );
 }

@@ -41,6 +41,7 @@ const Celebrity = () => {
         setProduced(json.produced);
         setComposed(json.composed);
         setResult(200);
+        console.log(json.directed);
       } else if (res.status === 404) {
         setResult(404);
         setMessage('Celebrity not found.');
@@ -73,7 +74,7 @@ const Celebrity = () => {
     <View style={styles.container}>
 
       <CelebrityTabs
-        bio={bio}
+        bio={{text: bio?.celebrityDescription, url: bio?.celebrityPictureUrl}}
         starred={starred}
         directed={directed}
         wrote={wrote}
