@@ -7,7 +7,6 @@ namespace Heteroboxd.Repository
     public interface ICelebrityRepository
     {
         Task<Celebrity?> GetByIdAsync(int Id);
-        Task<List<Celebrity>> GetByFilmAsync(int FilmId);
         Task<List<Celebrity>> SearchAsync(string Name);
     }
 
@@ -25,24 +24,18 @@ namespace Heteroboxd.Repository
                 .Include(c => c.Credits)
                 .FirstOrDefaultAsync(c => c.Id == Id);
 
-        public async Task<List<Celebrity>> GetByFilmAsync(int FilmId) =>
-            await _context.Celebrities
-                .Include(c => c.Credits)
-                .Where(c => c.Credits.Any(cc => cc.FilmId == FilmId))
-                .ToListAsync();
-
         public async Task<List<Celebrity>> SearchAsync(string Name)
         {
-            var query = _context.Celebrities.AsQueryable();
+            var Query = _context.Celebrities.AsQueryable();
 
             if (!string.IsNullOrEmpty(Name))
             {
-                query = query.Where(c =>
+                Query = Query.Where(c =>
                     EF.Functions.Like(c.Name.ToLower() ?? "", $"%{Name}%")
                 );
             }
 
-            return await query
+            return await Query
                 .ToListAsync();
         }
 

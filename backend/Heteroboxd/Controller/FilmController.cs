@@ -45,6 +45,38 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ExploreFilms(int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation("GET Explore films endpoint hit.");
+            try
+            {
+                var FilmPage = await _service.ExploreFilms(Page, PageSize);
+                return Ok(FilmPage);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("popular")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PopularOnHeteroboxd(int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation("GET Popular on Heteroboxd films endpoint hit.");
+            try
+            {
+                var FilmPage = await _service.PopularFilms(Page, PageSize);
+                return Ok(FilmPage);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("year/{Year}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilmsByYear(int Year, int Page = 1, int PageSize = 20)
@@ -72,22 +104,6 @@ namespace Heteroboxd.Controller
                 return Ok(Results);
             }
             catch             
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("celebrity/{CelebrityId}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetFilmsByCelebrity(int CelebrityId, int Page = 1, int PageSize = 20)
-        {
-            _logger.LogInformation($"GET Films by Celebrity endpoint hit for: {CelebrityId}");
-            try
-            {
-                var CelebritiesFilms = await _service.GetFilmsByCelebrity(CelebrityId, Page, PageSize);
-                return Ok(CelebritiesFilms);
-            }
-            catch
             {
                 return StatusCode(500);
             }

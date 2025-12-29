@@ -322,7 +322,7 @@ const Film = () => {
               {directors.map((director, index) => (
                 <React.Fragment key={director.celebrityId}>
                   <Link
-                    href={`/celebrity/${director.celebrityId}`}
+                    href={`/celebrity/${director.celebrityId}?t=directed`}
                     style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}
                   >
                     {director.celebrityName}
@@ -371,7 +371,15 @@ const Film = () => {
         <View style={[styles.divider, {marginVertical: 15}]} />
         
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Ratings</Text>
-        <Histogram histogram={ratings} />
+        {
+          Object.entries(ratings).length > 0 ? (
+            <Histogram histogram={ratings} />
+          ) : (
+            <Text style={{padding: widescreen ? 40 : 30, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
+              There are no ratings for this film yet.
+            </Text>
+          )
+        }
 
         <View style={styles.divider}></View>
         
@@ -408,7 +416,7 @@ const Film = () => {
               keyExtractor={(item) => `${item.celebrityId}-${item.character}`}
               renderItem={({item, i}) => (
                 <Pressable
-                  onPress={() => router.push(`/celebrity/${item.celebrityId}`)}
+                  onPress={() => router.push(`/celebrity/${item.celebrityId}?t=starred`)}
                   style={{ marginRight: i < actors.length - 1 ? 15 : 0 }}
                 >
                   <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
@@ -426,7 +434,7 @@ const Film = () => {
                       {item.celebrityName}
                     </Text>
                     <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
-                      {`(${item.character})`}
+                      {`(${item.character?.length === 0 ? 'N.N.' : item.character})`}
                     </Text>
                   </View>
                 </Pressable>
@@ -454,7 +462,7 @@ const Film = () => {
               keyExtractor={(item) => `${item.celebrityId}-${item.role}`}
               renderItem={({item}) => (
                 <Pressable
-                  onPress={() => router.push(`/celebrity/${item.celebrityId}`)}
+                  onPress={() => router.push(`/celebrity/${item.celebrityId}${item.role.toLowerCase() === 'director' ? '?t=directed' : item.role.toLowerCase() === 'producer' ? '?t=produced' : item.role.toLowerCase() === 'writer' ? '?t=wrote' : item.role.toLowerCase() === 'composer' ? '?t=composed' : ''}`)}
                   style={{ marginRight: 15 }}
                 >
                   <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>

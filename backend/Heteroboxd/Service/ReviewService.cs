@@ -155,6 +155,7 @@ namespace Heteroboxd.Service
             if (await _userRepo.GetUserWatchedFilmAsync(UserId, ReviewRequest.FilmId) == null)
             {
                 _userRepo.CreateUserWatchedFilm(new UserWatchedFilm(UserId, ReviewRequest.FilmId));
+                await _filmRepo.UpdateFilmWatchCountEfCore7Async(ReviewRequest.FilmId, 1);
                 await _userRepo.SaveChangesAsync();
             }
             return Review;

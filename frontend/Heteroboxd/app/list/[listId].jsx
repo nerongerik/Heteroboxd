@@ -152,102 +152,133 @@ const List = () => {
     } catch { console.log('failed to like/unlike list.') }
   }
 
+  const renderHeader = () => (
+    <View style={{ width: maxRowWidth, alignSelf: 'center' }}>
+      <Author
+        userId={baseList?.authorId}
+        url={baseList?.authorProfilePictureUrl}
+        username={baseList?.authorName}
+        tier={baseList?.authorTier}
+        patron={baseList?.authorPatron}
+        router={router}
+        widescreen={widescreen}
+      />
+      <Text style={styles.title}>{baseList?.name}</Text>
+      <Pressable onPress={() => setDescCollapsed((p) => !p)}>
+        <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
+          {descCollapsed && baseList?.description?.length > 300
+            ? `${baseList.description.slice(0, 300)}...`
+            : baseList?.description}
+        </Text>
+      </Pressable>
+      <View style={styles.metaRow}>
+        <Pressable onPress={handleLike} style={styles.likeRow}>
+          <MaterialCommunityIcons
+            name={iLiked ? 'cards-heart' : 'cards-heart-outline'}
+            size={widescreen ? 24 : 20}
+            color={iLiked ? Colors.heteroboxd : Colors.text}
+          />
+          <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(likeCount)} likes</Text>
+        </Pressable>
+        <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{totalCount} entries</Text>
+      </View>
+      <View style={{ height: 20 }} />
+    </View>
+  )
+
+  const renderContent = ({item}) => {
+    if (!item) {
+      return (
+        <View
+          style={{
+            width: posterWidth,
+            height: posterHeight,
+            margin: spacing / 2,
+          }}
+        />
+      );
+    }
+    return (
+      <Pressable
+        onPress={() => router.push(`/film/${item.filmId}`)}
+        style={{ margin: spacing / 2 }}
+      >
+        <Poster
+          posterUrl={item.filmPosterUrl}
+          style={{
+            width: posterWidth,
+            height: posterHeight,
+            borderRadius: 6,
+            borderWidth: 2,
+            borderColor: Colors.border_color,
+          }}
+        />
+        {baseList?.ranked && (
+          <View
+            style={{
+              width: widescreen ? 28 : 20,
+              height: widescreen ? 28 : 20,
+              borderRadius: 9999,
+              backgroundColor: Colors.card,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: -10,
+              alignSelf: 'center'
+            }}
+          >
+            <Text
+              style={{
+                color: Colors.text_title,
+                fontSize: widescreen ? 12 : 8,
+                fontWeight: 'bold',
+                lineHeight: 18,
+              }}
+            >
+              {item.position}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+    );
+  }
+
+  const renderFooter = () => (
+    <PaginationBar
+      page={page}
+      totalPages={totalPages}
+      visible={showPagination}
+      onPagePress={(num) => {
+        setPage(num)
+        loadListPage(num)
+      }}
+    />
+  )
+
+  if (!baseList) {
+    return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        paddingHorizontal: 5,
+        backgroundColor: Colors.background,
+      }}>
+        <LoadingResponse visible={true} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <View style={{ width: maxRowWidth }}>
-        <Author
-          userId={baseList?.authorId}
-          url={baseList?.authorProfilePictureUrl}
-          username={baseList?.authorName}
-          tier={baseList?.authorTier}
-          patron={baseList?.authorPatron}
-          router={router}
-          widescreen={widescreen}
-        />
-        <Text style={styles.title}>{baseList?.name}</Text>
-        <Pressable onPress={() => setDescCollapsed((p) => !p)}>
-          <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
-            {descCollapsed && baseList?.description?.length > 300
-              ? `${baseList.description.slice(0, 300)}...`
-              : baseList?.description}
-          </Text>
-        </Pressable>
-        <View style={styles.metaRow}>
-          <Pressable onPress={handleLike} style={styles.likeRow}>
-            <MaterialCommunityIcons
-              name={iLiked ? 'cards-heart' : 'cards-heart-outline'}
-              size={widescreen ? 24 : 20}
-              color={iLiked ? Colors.heteroboxd : Colors.text}
-            />
-            <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(likeCount)} likes</Text>
-          </Pressable>
-          <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{totalCount} entries</Text>
-        </View>
-      </View>
       <FlatList
         data={paddedEntries}
         keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
         numColumns={4}
-        renderItem={({ item }) => {
-          if (!item) {
-            return (
-              <View
-                style={{
-                  width: posterWidth,
-                  height: posterHeight,
-                  margin: spacing / 2,
-                }}
-              />
-            );
-          }
-          return (
-            <Pressable
-              onPress={() => router.push(`/film/${item.filmId}`)}
-              style={{ margin: spacing / 2 }}
-            >
-              <Poster
-                posterUrl={item.filmPosterUrl}
-                style={{
-                  width: posterWidth,
-                  height: posterHeight,
-                  borderRadius: 6,
-                  borderWidth: 2,
-                  borderColor: Colors.border_color,
-                }}
-              />
-              {baseList?.ranked && (
-                <View
-                  style={{
-                    width: widescreen ? 28 : 20,
-                    height: widescreen ? 28 : 20,
-                    borderRadius: 9999,
-                    backgroundColor: Colors.card,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginTop: -10,
-                    alignSelf: 'center'
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: Colors.text_title,
-                      fontSize: widescreen ? 12 : 8,
-                      fontWeight: 'bold',
-                      lineHeight: 18,
-                    }}
-                  >
-                    {item.position}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          );
-        }}
+        ListHeaderComponent={renderHeader}
+        renderItem={renderContent}
+        ListFooterComponent={renderFooter}
         refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={() => loadListPage(page)}
-          />
+          <RefreshControl refreshing={isLoading} onRefresh={() => loadListPage(page)} />
         }
         style={{
           alignSelf: 'center'
@@ -255,21 +286,12 @@ const List = () => {
         contentContainerStyle={{
           paddingHorizontal: spacing / 2,
           paddingBottom: 80,
-          marginTop: 20
         }}
         showsVerticalScrollIndicator={false}
         onEndReached={() => setShowPagination(true)}
         onEndReachedThreshold={0.2}
       />
-      <PaginationBar
-        page={page}
-        totalPages={totalPages}
-        visible={showPagination}
-        onPagePress={(num) => {
-          setPage(num)
-          loadListPage(num)
-        }}
-      />
+
       <LoadingResponse visible={isLoading} />
       <Popup
         visible={[404, 500].includes(result)}

@@ -149,7 +149,9 @@ const FilmsLists = () => {
               </View>
 
               <Text style={[styles.description, {fontSize: widescreen ? 18 : 14}]}>
-                { item.description.slice(0, widescreen ? 500 : 150) }
+                {item.description.slice(0, widescreen ? 500 : 150)}
+                {widescreen && item.description.length > 500 && '...'}
+                {!widescreen && item.description.length > 150 && '...'}
               </Text>
 
               <View style={styles.statsRow}>
@@ -219,11 +221,11 @@ const styles = StyleSheet.create({
   listTitle: {
     color: Colors.text_title,
     fontWeight: '500',
-    padding: 5,
+    padding: 10,
   },
   description: {
     color: Colors.text,
-    padding: 5,
+    padding: 10,
   },
   statsRow: {
     flexDirection: 'row',

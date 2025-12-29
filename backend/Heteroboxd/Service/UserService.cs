@@ -465,11 +465,13 @@ namespace Heteroboxd.Service
                     {
                         Existing.TimesWatched++;
                         Existing.DateWatched = DateTime.UtcNow;
+                        await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, 1);
                     }
                     else
                     {
                         UserWatchedFilm UserWatchedFilm = new UserWatchedFilm(User.Id, Film.Id);
                         _repo.CreateUserWatchedFilm(UserWatchedFilm);
+                        await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, 1);
                     }
                     //remove film from watchlist
                     var ExistingEntry = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
@@ -486,11 +488,13 @@ namespace Heteroboxd.Service
                         _logger.LogError($"Failed to unwatch UserWatchedFilm for {UserId} -> {FilmId}; UWF not found;");
                         throw new KeyNotFoundException();
                     }
+                    //decrement watchcount
+                    await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, -1);
                     //delete uwf
                     _repo.DeleteUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();
                     //delete associated review if any
-                    var Review = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, UserUnWatchedFilm.FilmId);
+                    var Review = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, Film.Id);
                     if (Review != null)
                     {
                         _reviewRepo.Delete(Review);

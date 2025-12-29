@@ -1,14 +1,15 @@
 ﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
+using Heteroboxd.Models.Enums;
 using Heteroboxd.Repository;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Routing;
+using Org.BouncyCastle.Pqc.Crypto.Lms;
 
 namespace Heteroboxd.Service
 {
     public interface ICelebrityService
     {
-        Task<CelebrityInfoResponse?> GetCelebrity(int CelebrityId);
-        Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(int FilmId);
+        Task<CelebrityDelimitedResponse?> GetCelebrity(int CelebrityId);
         Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search);
     }
 
@@ -23,31 +24,69 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
-        public async Task<CelebrityInfoResponse?> GetCelebrity(int CelebrityId)
+        public async Task<CelebrityDelimitedResponse?> GetCelebrity(int CelebrityId)
         {
-            var Celebrity = await _repo.GetByIdAsync(CelebrityId);
+            Celebrity? Celebrity = await _repo.GetByIdAsync(CelebrityId);
             if (Celebrity == null) throw new KeyNotFoundException();
 
-            //distill film IDs
-            var FilmIds = Celebrity.Credits
-                .Select(c => c.FilmId)
+            int[] UniqueIds = Celebrity.Credits
+                .Select(cc => cc.FilmId)
                 .Distinct()
-                .ToList();
+                .ToArray();
 
-            if (!FilmIds.Any()) return new CelebrityInfoResponse(Celebrity);
+            var Films = (await _filmRepo.GetByIdsAsync(UniqueIds))
+                .Where(f => f != null)
+                .ToDictionary(f => f!.Id);
 
-            //parallel safe async calls
-            var FilmTasks = FilmIds.Select(fid => _filmRepo.GetByIdAsync(fid));
-            var FilmResults = await Task.WhenAll(FilmTasks);
-            var Films = FilmResults.Where(f => f != null).ToList()!;
+            List<FilmInfoResponse> Starred = new List<FilmInfoResponse>();
+            List<FilmInfoResponse> Directed = new List<FilmInfoResponse>();
+            List<FilmInfoResponse> Produced = new List<FilmInfoResponse>();
+            List<FilmInfoResponse> Wrote = new List<FilmInfoResponse>();
+            List<FilmInfoResponse> Composed = new List<FilmInfoResponse>();
 
-            return new CelebrityInfoResponse(Celebrity, Films);
-        }
+            var StarredSet = new HashSet<int>();
+            var DirectedSet = new HashSet<int>();
+            var ProducedSet = new HashSet<int>();
+            var WroteSet = new HashSet<int>();
+            var ComposedSet = new HashSet<int>();
 
-        public async Task<List<CelebrityInfoResponse>> GetCelebritiesByFilm(int FilmId)
-        {
-            var Celebrities = await _repo.GetByFilmAsync(FilmId);
-            return Celebrities.Select(c => new CelebrityInfoResponse(c)).ToList();
+            foreach (CelebrityCredit cc in Celebrity.Credits)
+            {
+                if (!Films.TryGetValue(cc.FilmId, out Film? Film)) continue;
+
+                switch (cc.Role)
+                {
+                    case Role.Actor when StarredSet.Add(cc.FilmId):
+                        Starred.Add(new FilmInfoResponse(Film!));
+                        break;
+
+                    case Role.Director when DirectedSet.Add(cc.FilmId):
+                        Directed.Add(new FilmInfoResponse(Film!));
+                        break;
+
+                    case Role.Producer when ProducedSet.Add(cc.FilmId):
+                        Produced.Add(new FilmInfoResponse(Film!));
+                        break;
+
+                    case Role.Writer when WroteSet.Add(cc.FilmId):
+                        Wrote.Add(new FilmInfoResponse(Film!));
+                        break;
+
+                    case Role.Composer when ComposedSet.Add(cc.FilmId):
+                        Composed.Add(new FilmInfoResponse(Film!));
+                        break;
+                }
+            }
+
+            return new CelebrityDelimitedResponse
+            {
+                BaseCeleb = new CelebrityInfoResponse(Celebrity),
+                Starred = Starred,
+                Directed = Directed,
+                Produced = Produced,
+                Wrote = Wrote,
+                Composed = Composed,
+            };
         }
 
         public async Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search)

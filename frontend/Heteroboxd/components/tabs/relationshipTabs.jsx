@@ -46,7 +46,7 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
         data={getData()}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Pressable style={styles.userRow} onPress={() => onUserPress(item)}>
+          <Pressable style={styles.userRow} onPress={() => onUserPress(item.id)}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <UserAvatar pictureUrl={item.pictureUrl} style={[styles.picture, (item.tier !== 'free' && {marginRight: 10})]} />
               {item.tier === 'free' ? (
