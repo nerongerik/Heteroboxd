@@ -14,14 +14,12 @@
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
         public int FavoriteCount { get; set; }
-        public int? WatchCount { get; set; }
+        public int WatchCount { get; set; }
         public Dictionary<int, string>? Collection { get; set; }
         public int ReviewCount { get; set; }
-
-        //BIG PROPERTY -> used ONLY on the film details page, NOWHERE ELSE!!!
         public List<CelebrityCreditInfoResponse>? CastAndCrew { get; set; }
 
-        public FilmInfoResponse(Film Film, bool IncludeWatchCount = true, bool IncludeCredits = false)
+        public FilmInfoResponse(Film Film, bool IncludeCredits = false)
         {
             this.FilmId = Film.Id;
             this.Title = Film.Title;
@@ -35,8 +33,7 @@
             this.Length = Film.Length;
             this.ReleaseYear = Film.ReleaseYear;
             this.FavoriteCount = Film.FavoriteCount;
-            if (IncludeWatchCount) this.WatchCount = Film.WatchedBy.Count();
-            else this.WatchCount = null;
+            this.WatchCount = Film.WatchCount;
             this.Collection = Film.Collection;
             this.ReviewCount = Film.Reviews.Count();
 

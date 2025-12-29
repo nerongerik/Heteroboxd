@@ -34,7 +34,7 @@ namespace Heteroboxd.Service
                 .Distinct()
                 .ToArray();
 
-            var Films = (await _filmRepo.CelebFilmographyFetcherAsync(UniqueIds))
+            var Films = (await _filmRepo.GetByIdsAsync(UniqueIds))
                 .Where(f => f != null)
                 .ToDictionary(f => f!.Id);
 
@@ -57,23 +57,23 @@ namespace Heteroboxd.Service
                 switch (cc.Role)
                 {
                     case Role.Actor when StarredSet.Add(cc.FilmId):
-                        Starred.Add(new FilmInfoResponse(Film!, true, false));
+                        Starred.Add(new FilmInfoResponse(Film!));
                         break;
 
                     case Role.Director when DirectedSet.Add(cc.FilmId):
-                        Directed.Add(new FilmInfoResponse(Film!, true, false));
+                        Directed.Add(new FilmInfoResponse(Film!));
                         break;
 
                     case Role.Producer when ProducedSet.Add(cc.FilmId):
-                        Produced.Add(new FilmInfoResponse(Film!, true, false));
+                        Produced.Add(new FilmInfoResponse(Film!));
                         break;
 
                     case Role.Writer when WroteSet.Add(cc.FilmId):
-                        Wrote.Add(new FilmInfoResponse(Film!, true, false));
+                        Wrote.Add(new FilmInfoResponse(Film!));
                         break;
 
                     case Role.Composer when ComposedSet.Add(cc.FilmId):
-                        Composed.Add(new FilmInfoResponse(Film!, true, false));
+                        Composed.Add(new FilmInfoResponse(Film!));
                         break;
                 }
             }

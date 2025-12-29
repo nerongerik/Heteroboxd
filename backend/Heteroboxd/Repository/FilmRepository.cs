@@ -10,14 +10,16 @@ namespace Heteroboxd.Repository
         Task<Film?> GetByIdAsync(int Id);
         Task<Film?> LightweightFetcher(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
+        Task<(List<Film> Films, int TotalCount)> ExploreAsync(int Page, int PageSize);
+        Task<(List<Film> Films, int TotalCount)> PopularAsync(int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
-        Task<List<Film>> CelebFilmographyFetcherAsync(IReadOnlyCollection<int> Ids);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<List<Film>> SearchAsync(string Title);
         Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta);
+        Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta);
     }
 
     public class FilmRepository : IFilmRepository
@@ -33,19 +35,12 @@ namespace Heteroboxd.Repository
             await _context.Films
                 .AsSplitQuery()
                 .Include(f => f.CastAndCrew)
-                .Include(f => f.WatchedBy)
                 .Include(f => f.Reviews)
                 .FirstOrDefaultAsync(f => f.Id == Id);
 
         public async Task<Film?> LightweightFetcher(int Id) =>
             await _context.Films
                 .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.Id == Id);
-
-        public async Task<Film?> LightweightFetcherIncludingWatchCountAsync(int Id) =>
-            await _context.Films
-                .AsNoTracking()
-                .Include(f => f.WatchedBy)
                 .FirstOrDefaultAsync(f => f.Id == Id);
 
         public async Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids)
@@ -55,6 +50,36 @@ namespace Heteroboxd.Repository
             return await _context.Films
                 .Where(f => Ids.Contains(f.Id))
                 .ToListAsync();
+        }
+
+        public async Task<(List<Film> Films, int TotalCount)> ExploreAsync(int Page, int PageSize)
+        {
+            var ExploreQuery = _context.Films
+                .OrderByDescending(f => f.ReleaseYear).ThenByDescending(f => f.WatchCount).ThenByDescending(f => f.FavoriteCount);
+
+            var TotalCount = await ExploreQuery.CountAsync();
+
+            var Films = await ExploreQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Films, TotalCount);
+        }
+
+        public async Task<(List<Film> Films, int TotalCount)> PopularAsync(int Page, int PageSize)
+        {
+            var PopularQuery = _context.Films
+                .OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.FavoriteCount);
+
+            var TotalCount = await PopularQuery.CountAsync();
+
+            var Films = await PopularQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Films, TotalCount);
         }
 
         public async Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize)
@@ -77,7 +102,7 @@ namespace Heteroboxd.Repository
         {
             var GenreQuery = _context.Films
                 .Where(f => f.Genres.Contains(Genre))
-                .OrderByDescending(f => f.FavoriteCount);
+                .OrderByDescending(f => f.ReleaseYear).ThenByDescending(f => f.FavoriteCount);
 
             var TotalCount = await GenreQuery.CountAsync();
 
@@ -104,16 +129,6 @@ namespace Heteroboxd.Repository
                 .ToListAsync();
 
             return (Films, TotalCount);
-        }
-
-        public async Task<List<Film>> CelebFilmographyFetcherAsync(IReadOnlyCollection<int> Ids)
-        {
-            if (Ids.Count == 0) return new();
-
-            return await _context.Films
-                .Include(f => f.WatchedBy)
-                .Where(f => Ids.Contains(f.Id))
-                .ToListAsync();
         }
 
         public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
@@ -160,9 +175,8 @@ namespace Heteroboxd.Repository
             }
 
             return await Query
-                .Include(f => f.WatchedBy)
                 .Include(f => f.CastAndCrew.Where(cc => cc.Role == Role.Director))
-                .OrderByDescending(f => f.WatchedBy.Count).ThenByDescending(f => f.FavoriteCount).ThenByDescending(f => f.ReleaseYear)
+                .OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.FavoriteCount).ThenByDescending(f => f.ReleaseYear)
                 .ToListAsync();
         }
 
@@ -173,6 +187,17 @@ namespace Heteroboxd.Repository
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     f => f.FavoriteCount,
                     f => f.FavoriteCount + Delta
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
+
+        public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta) //increments/decrements watch count
+        {
+            var Rows = await _context.Films
+                .Where(f => f.Id == FilmId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    f => f.WatchCount,
+                    f => f.WatchCount + Delta
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
         }

@@ -6,6 +6,8 @@ namespace Heteroboxd.Service
     public interface  IFilmService
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
+        Task<PagedFilmInfoResponse> ExploreFilms(int Page, int PageSize);
+        Task<PagedFilmInfoResponse> PopularFilms(int Page, int PageSize);
         Task<PagedFilmInfoResponse> GetFilmsByYear(int Year, int Page, int PageSize);
         Task<PagedFilmInfoResponse> GetFilmsByGenre(string Genre, int Page, int PageSize);
         Task<PagedFilmInfoResponse> GetFilmsByCelebrity(int CelebrityId, int Page, int PageSize);
@@ -38,7 +40,31 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Found no film with TmdbID: {FilmId}");
                 throw new KeyNotFoundException();
             }
-            return new FilmInfoResponse(Film, true, true);
+            return new FilmInfoResponse(Film, true);
+        }
+
+        public async Task<PagedFilmInfoResponse> ExploreFilms(int Page, int PageSize)
+        {
+            var (Films, TotalCount) = await _repo.ExploreAsync(Page, PageSize);
+            return new PagedFilmInfoResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Films = Films.Select(f => new FilmInfoResponse(f)).ToList()
+            };
+        }
+
+        public async Task<PagedFilmInfoResponse> PopularFilms(int Page, int PageSize)
+        {
+            var (Films, TotalCount) = await _repo.PopularAsync(Page, PageSize);
+            return new PagedFilmInfoResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Films = Films.Select(f => new FilmInfoResponse(f)).ToList()
+            };
         }
 
         public async Task<PagedFilmInfoResponse> GetFilmsByYear(int Year, int Page, int PageSize)
@@ -50,7 +76,7 @@ namespace Heteroboxd.Service
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Films = Films.Select(f => new FilmInfoResponse(f, false, false)).ToList()
+                Films = Films.Select(f => new FilmInfoResponse(f)).ToList()
             };
         }
 
@@ -63,7 +89,7 @@ namespace Heteroboxd.Service
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Films = Films.Select(f => new FilmInfoResponse(f, false, false)).ToList()
+                Films = Films.Select(f => new FilmInfoResponse(f)).ToList()
             };
         }
 
@@ -76,7 +102,7 @@ namespace Heteroboxd.Service
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Films = Films.Select(f => new FilmInfoResponse(f, false, false)).ToList()
+                Films = Films.Select(f => new FilmInfoResponse(f)).ToList()
             };
         }
 
@@ -95,7 +121,7 @@ namespace Heteroboxd.Service
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Films = Films.Select(f => new FilmInfoResponse(f, false, false)).ToList()
+                Films = Films.Select(f => new FilmInfoResponse(f)).ToList()
             };
         }
 
@@ -108,7 +134,7 @@ namespace Heteroboxd.Service
         public async Task<List<FilmInfoResponse>> SearchFilms(string Search)
         {
             var SearchResults = await _repo.SearchAsync(Search.ToLower());
-            return SearchResults.Select(f => new FilmInfoResponse(f, true, true)).ToList();
+            return SearchResults.Select(f => new FilmInfoResponse(f, true)).ToList();
         }
     }
 }

@@ -25,6 +25,7 @@ namespace Heteroboxd.Models
 
         [JsonIgnore]
         public ICollection<Review> Reviews { get; set; }
+        public int WatchCount { get; set; }
         public int FavoriteCount { get; set; }
 
         [JsonIgnore]
@@ -47,6 +48,7 @@ namespace Heteroboxd.Models
             this.LastSync = DateTime.UtcNow;
             this.CastAndCrew = new List<CelebrityCredit>();
             this.Reviews = new List<Review>();
+            this.WatchCount = 0;
             this.FavoriteCount = 0;
             this.WatchedBy = new List<UserWatchedFilm>();
         }

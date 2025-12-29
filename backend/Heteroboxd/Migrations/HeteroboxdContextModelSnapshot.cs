@@ -168,6 +168,9 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("WatchCount")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("Films");

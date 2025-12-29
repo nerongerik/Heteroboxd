@@ -371,7 +371,15 @@ const Film = () => {
         <View style={[styles.divider, {marginVertical: 15}]} />
         
         <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Ratings</Text>
-        <Histogram histogram={ratings} />
+        {
+          Object.entries(ratings).length > 0 ? (
+            <Histogram histogram={ratings} />
+          ) : (
+            <Text style={{padding: widescreen ? 40 : 30, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
+              There are no ratings for this film yet.
+            </Text>
+          )
+        }
 
         <View style={styles.divider}></View>
         
@@ -426,7 +434,7 @@ const Film = () => {
                       {item.celebrityName}
                     </Text>
                     <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
-                      {`(${item.character})`}
+                      {`(${item.character?.length === 0 ? 'N.N.' : item.character})`}
                     </Text>
                   </View>
                 </Pressable>
