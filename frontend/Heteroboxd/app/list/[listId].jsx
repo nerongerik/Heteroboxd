@@ -68,7 +68,8 @@ const List = () => {
         setTotalCount(json.totalCount)
         setEntries(json.entries)
       } else {
-        throw new Error()
+        setResult(res.status)
+        setMessage('Loading error! Try reloading Heteroboxd.')
       }
     } catch {
       setResult(500)
