@@ -45,31 +45,6 @@ const CreateList = () => {
     });
   }, [listName, desc, entries, ranked]);
 
-  //web on compooper?
-  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  //minimum spacing between posters
-  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
-  //determine max usable row width:
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
-  //compute poster width:
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
-  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
-
-  //padded entries
-  const paddedEntries = useMemo(() => {
-    const padded = [...entries];
-    const remainder = padded.length % 4;
-
-    if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder;
-      for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null);
-      }
-    }
-
-    return padded;
-  }, [entries]);
-
   const openMenu = () => {
     setMenuShown(true);
     Animated.timing(slideAnim, {
@@ -141,8 +116,32 @@ const CreateList = () => {
     }
   }
 
-  return (
-    <View style={[styles.container]}>
+  //web on compooper?
+  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
+  //minimum spacing between posters
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
+  //determine max usable row width:
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
+  //compute poster width:
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
+  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
+  //padded entries
+  const paddedEntries = useMemo(() => {
+    const padded = [...entries];
+    const remainder = padded.length % 4;
+
+    if (remainder !== 0) {
+      const placeholdersToAdd = 4 - remainder;
+      for (let i = 0; i < placeholdersToAdd; i++) {
+        padded.push(null);
+      }
+    }
+
+    return padded;
+  }, [entries]);
+
+  const Header = () => (
+    <>
       <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
         <TextInput
           style={[styles.input, {marginBottom: 15}]}
@@ -167,85 +166,97 @@ const CreateList = () => {
             {desc.length}/1000
           </Text>
         </View>
+        <Text style={{color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 20 : 18}}> Entries</Text>
       </View>
-      <View style={{width: widescreen ? 990 : width*0.9, alignSelf: 'center'}}>
-        <Pressable onPress={openMenu} style={{flexDirection: 'row', alignItems: 'center', marginBottom: 3}}>
-          <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.heteroboxd}}>Films </Text>
-          <AntDesign name="plus-circle" size={widescreen ? 20 : 16} color={Colors.heteroboxd} />
-        </Pressable>
-      </View>
-      <View style={[styles.entryContainer, {minHeight: widescreen ? height/2 : height/3, maxHeight: widescreen ? height/2 : height/3, width: maxRowWidth}]}> 
-        <FlatList
-          data={paddedEntries}
-          numColumns={4}
-          renderItem={({ item, index }) => {
-            if (!item) {
-              return (
-                <View
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    //margin: spacing / 2,
-                  }}
-                />
-              );
-            }
-            return (
-              <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
-                <Poster
-                  posterUrl={item.posterUrl}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    borderRadius: 6,
-                    borderWidth: 2,
-                    borderColor: Colors.border_color,
-                    marginBottom: ranked ? 0 : spacing
-                  }}
-                />
-                {ranked && (
-                  <View
-                    style={{
-                      width: widescreen ? 28 : 20,
-                      height: widescreen ? 28 : 20,
-                      borderRadius: 9999,
-                      backgroundColor: Colors.background,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginBottom: spacing / 2,
-                      marginTop: -10,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: Colors.text_title,
-                        fontSize: widescreen ? 12 : 8,
-                        fontWeight: 'bold',
-                        lineHeight: 18,
-                      }}
-                    >
-                      {index + 1}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            )
+      <View style={{height: 15}} />
+    </>
+  )
+
+  const Render = ({ item, index }) => {
+    if (!item) {
+      return (
+        <View
+          style={{
+            width: posterWidth,
+            height: posterHeight,
           }}
-          contentContainerStyle={{
-            padding: spacing,
-            alignItems: 'center'
-          }}
-          columnWrapperStyle={{
-            columnGap: spacing,
-            rowGap: spacing,
-          }}
-          showsVerticalScrollIndicator={false}
         />
-      </View>
-      <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
-        <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
-        <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
+      );
+    }
+    return (
+      <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
+        <Poster
+          posterUrl={item.posterUrl}
+          style={{
+            width: posterWidth,
+            height: posterHeight,
+            borderRadius: 6,
+            borderWidth: 2,
+            borderColor: Colors.border_color,
+            marginBottom: ranked ? 0 : spacing
+          }}
+        />
+        {ranked && (
+          <View
+            style={{
+              width: widescreen ? 28 : 20,
+              height: widescreen ? 28 : 20,
+              borderRadius: 9999,
+              backgroundColor: Colors.background,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: spacing / 2,
+              marginTop: -10,
+            }}
+          >
+            <Text
+              style={{
+                color: Colors.text_title,
+                fontSize: widescreen ? 12 : 8,
+                fontWeight: 'bold',
+                lineHeight: 18,
+              }}
+            >
+              {index + 1}
+            </Text>
+          </View>
+        )}
       </Pressable>
+    )
+  }
+
+  const Footer = () => (
+    <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
+      <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
+      <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
+    </Pressable>
+  )
+
+  return (
+    <View style={[styles.container]}>
+      <FlatList
+        data={paddedEntries}
+        numColumns={4}
+        ListHeaderComponent={Header}
+        renderItem={Render}
+        ListEmptyComponent={<Text style={{color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>This list is empty.</Text>}
+        ListFooterComponent={Footer}
+        contentContainerStyle={{
+          padding: spacing,
+          alignItems: 'center'
+        }}
+        columnWrapperStyle={{
+          columnGap: spacing,
+          rowGap: spacing,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={openMenu}
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
 
       <Modal transparent visible={menuShown} animationType="fade">
         <Pressable style={styles.overlay} onPress={() => {
@@ -392,5 +403,22 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     paddingVertical: 8,
     position: 'absolute'
-  }
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 75,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: Colors._heteroboxd,
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5, //android
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 }, //iOS
+  },
 });

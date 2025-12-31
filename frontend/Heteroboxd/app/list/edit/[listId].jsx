@@ -105,10 +105,6 @@ const EditList = () => {
     });
   }, [listName, desc, ranked, entries]);
 
-  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  const posterWidth = useMemo(() => widescreen ? 150 : 75, [widescreen]);
-  const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth]);
-
   const openMenu = () => {
     setMenuShown(true);
     Animated.timing(slideAnim, {
@@ -189,6 +185,10 @@ const EditList = () => {
     }
   }
 
+  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
+  const posterWidth = useMemo(() => widescreen ? 150 : 75, [widescreen]);
+  const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth]);
+
   if (!entries) {
     return (
       <View style={{
@@ -203,9 +203,9 @@ const EditList = () => {
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <View style={{marginBottom: 20, width: widescreen ? 1000 : width*0.9, alignSelf: 'center',}}>
+  const Header = () => (
+    <>
+      <View style={{width: widescreen ? 1000 : width*0.9, alignSelf: 'center',}}>
         <Text style={{color: Colors.text_title, fontSize: widescreen ? 30 : 20, textAlign: 'center', fontWeight: '500', marginBottom: 25}}>Edit List</Text>
         <TextInput
           style={[styles.input, {marginBottom: 15}]}
@@ -235,44 +235,57 @@ const EditList = () => {
           <Text style={{textAlign: 'center', fontSize: widescreen ? 16 : 12, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
         </Pressable>
       </View>
+    </>
+  )
+
+  const Render = ({item, index}) => (
+    <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', width: '100%', justifyContent: 'space-between'}}>
+      <View style={[styles.card, {width: widescreen ? '95%' : '90%'}]}>
+        <Poster posterUrl={item.filmPosterUrl} style={{marginRight: 3, borderWidth: 2, borderRadius: 4, borderColor: Colors.border_color, width: posterWidth, height: posterHeight}} other={true} />
+        <View style={{flexShrink: 1, maxWidth: '100%'}}>
+          <Text style={{color: Colors.text_title, fontWeight: '600', fontSize: widescreen ? 24 : 16, textAlign: 'center'}}>
+            {item.filmTitle}
+            <Text style={{color: Colors.text, fontWeight: '400', fontSize: widescreen ? 20 : 12}}> {item.filmYear}</Text>
+          </Text>
+        </View>
+        <View style={{ gap: 5, marginLeft: 3 }}>
+          <Pressable onPress={() => moveItem(index, -1)}>
+            <MaterialIcons name="keyboard-arrow-up" size={28} color={Colors.text_title} />
+          </Pressable>
+          <Pressable onPress={() => moveItem(index, +1)}>
+            <MaterialIcons name="keyboard-arrow-down" size={28} color={Colors.text_title} />
+          </Pressable>
+        </View>
+      </View>
+      <Pressable onPress={() => deleteItem(index)}>
+        <FontAwesome5 name="trash" size={20} color={Colors.text} />
+      </Pressable>
+    </View>
+  )
+
+  return (
+    <View style={styles.container}>
       <FlatList
         data={entries}
         keyExtractor={(item) => item.filmId.toString()}
-        renderItem={({ item, index }) => (
-          <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', width: '100%', justifyContent: 'space-between'}}>
-            <View style={[styles.card, {width: widescreen ? '95%' : '90%'}]}>
-              <Poster posterUrl={item.filmPosterUrl} style={{marginRight: 3, borderWidth: 2, borderRadius: 4, borderColor: Colors.border_color, width: posterWidth, height: posterHeight}} other={true} />
-              <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                <Text style={{color: Colors.text_title, fontWeight: '600', fontSize: widescreen ? 24 : 16, textAlign: 'center'}}>
-                  {item.filmTitle}
-                  <Text style={{color: Colors.text, fontWeight: '400', fontSize: widescreen ? 20 : 12}}> {item.filmYear}</Text>
-                </Text>
-              </View>
-              <View style={{ gap: 5, marginLeft: 3 }}>
-                <Pressable onPress={() => moveItem(index, -1)}>
-                  <MaterialIcons name="keyboard-arrow-up" size={28} color={Colors.text_title} />
-                </Pressable>
-                <Pressable onPress={() => moveItem(index, +1)}>
-                  <MaterialIcons name="keyboard-arrow-down" size={28} color={Colors.text_title} />
-                </Pressable>
-              </View>
-            </View>
-            <Pressable onPress={() => deleteItem(index)}>
-              <FontAwesome5 name="trash" size={20} color={Colors.text} />
-            </Pressable>
-          </View>
-        )}
+        ListHeaderComponent={Header}
+        renderItem={Render}
+        ListEmptyComponent={<Text style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>No entries.</Text>}
         contentContainerStyle={{
           width: widescreen ? 1000 : width*0.9,
           alignSelf: 'center',
-          minHeight: Platform.OS === 'web' ? height*0.75 : null,
-          maxHeight: Platform.OS === 'web' ? height*0.75 : null,
           gap: 10,
           paddingBottom: widescreen ? null : 100
         }}
         showsVerticalScrollIndicator={false}
         scrollEnabled={true}
       />
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={openMenu}
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
 
       <LoadingResponse visible={result === 0} />
       <Snackbar
@@ -294,13 +307,6 @@ const EditList = () => {
         {msg}
       </Snackbar>
       <Popup visible={popupVisible} message={popupMsg} onClose={() => router.replace('/')} />
-
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={openMenu}
-      >
-        <Ionicons name="add" size={28} color="white" />
-      </TouchableOpacity>
 
       <Modal transparent visible={menuShown} animationType="fade">
         <Pressable style={styles.overlay} onPress={() => {

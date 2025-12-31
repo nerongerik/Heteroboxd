@@ -603,7 +603,6 @@ const Film = () => {
               showsHorizontalScrollIndicator={widescreen}
               style={{
                 maxWidth: Math.min(width * 0.95, 1000),
-                alignSelf: "center",
                 paddingBottom: 10
               }}
               data={Object.entries(film?.collection ?? {})}

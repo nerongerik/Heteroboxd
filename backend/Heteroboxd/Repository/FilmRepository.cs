@@ -169,14 +169,14 @@ namespace Heteroboxd.Repository
             if (!string.IsNullOrEmpty(Search))
             {
                 Query = Query.Where(f =>
-                    EF.Functions.Like(f.Title.ToLower(), $"%{Search}%") ||
-                    (f.OriginalTitle != null && EF.Functions.Like(f.OriginalTitle.ToLower(), $"%{Search}%"))
-                );
+                    EF.Functions.TrigramsSimilarity(f.Title, Search) > 0.3f ||
+                    EF.Functions.TrigramsSimilarity(f.OriginalTitle ?? "", Search) > 0.3f);
             }
 
             return await Query
                 .Include(f => f.CastAndCrew.Where(cc => cc.Role == Role.Director))
-                .OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.FavoriteCount).ThenByDescending(f => f.ReleaseYear)
+                .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Search))
+                .ThenByDescending(f => f.WatchCount)
                 .ToListAsync();
         }
 
@@ -188,7 +188,8 @@ namespace Heteroboxd.Repository
                     f => f.FavoriteCount,
                     f => f.FavoriteCount + Delta
                 ));
-            if (Rows == 0) throw new KeyNotFoundException();
+            //if (Rows == 0) throw new KeyNotFoundException();
+            //this throw would prevent deleted films from being tossed out of User's Favorites, which we WANT
         }
 
         public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta) //increments/decrements watch count

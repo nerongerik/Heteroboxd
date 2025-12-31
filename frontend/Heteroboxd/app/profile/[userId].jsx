@@ -90,7 +90,10 @@ const Profile = () => {
     // --- FETCH FAVORITES ---
     setFavoritesResult(0);
     try {
-      const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`);
+      const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`, {
+        method: 'GET',
+        headers: {'Accept': 'application/json'}
+      });
       if (res.status === 200) {
         const json = await res.json();
         setFavorites([json["1"], json["2"], json["3"], json["4"]]);
@@ -500,6 +503,9 @@ const Profile = () => {
                 if (favoritesResult === 404) {
                   setSnackbarMessage("There was an error loading this film...");
                   setVisible(true);
+                } else if (film === 'error') {
+                  setSnackbarMessage("There was an error loading this film...");
+                  setVisible(true);
                 } else if (film && film.filmId) {
                   router.push(`/film/${film.filmId}`);
                 } else if (!isOwnProfile) {
@@ -513,7 +519,7 @@ const Profile = () => {
               style={{ alignItems: "center", marginRight: index === 3 ? 0 : 5 }}
             >
               <Poster
-                posterUrl={favoritesResult === 404 ? 'error' : (film?.posterUrl ?? null)}
+                posterUrl={favoritesResult === 404 || film === 'error' ? 'error' : (film?.posterUrl ?? null)}
                 style={{
                   width: posterWidth,
                   height: posterHeight,
@@ -531,7 +537,15 @@ const Profile = () => {
         <View style={[styles.divider, {marginVertical: 20}]} />
         
         <Text style={[styles.subtitle, {marginBottom: 10}]}>Ratings</Text>
-        <Histogram histogram={ratings} />
+        {
+          Object.entries(ratings).length > 0 ? (
+            <Histogram histogram={ratings} />
+          ) : (
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
+              <Text style={styles.text}>Nothing yet.</Text>
+            </View>
+          )
+        }
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 

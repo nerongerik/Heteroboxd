@@ -282,12 +282,10 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
             </View>
           </ScrollView>
         ) : (
-          <View>
-            <Text>
-              You have not created any lists. 
-              <Link href="/list/create">Create one now?</Link>
-            </Text>
-          </View>
+          <Text style={{color: Colors.text_placeholder, textAlign: 'center', paddingHorizontal: 10, paddingBottom: 15, fontSize: 14}}>
+            You have not created any lists. 
+            <Link href="/list/create" style={{color: Colors.text_link}}> Create one now?</Link>
+          </Text>
         )
       }
     </>

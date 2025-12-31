@@ -1,6 +1,6 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
-using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Text.Json;
 
 namespace Heteroboxd.Integrations
@@ -94,36 +94,41 @@ namespace Heteroboxd.Integrations
 
         public void LoadCredits(int Step)
         {
-            if (!Directory.Exists(_config["TMDB:CreditSerialPath"]!)) throw new DirectoryNotFoundException($"{_config["TMDB:CreditSerialPath"]!} not found.");
+            if (!Directory.Exists(_config["TMDB:CreditSerialPath"]!)) throw new DirectoryNotFoundException();
 
             while (true)
             {
                 var Batch = Directory.EnumerateFiles(_config["TMDB:CreditSerialPath"]!, "*.json").Take(Step).ToList();
                 if (Batch.Count == 0) break;
 
+                var ValidFilmIds = new HashSet<int>(_context.Films.Select(f => f.Id));
+
                 foreach (var JsonFile in Batch)
                 {
                     try
                     {
-                        string Json = File.ReadAllText(JsonFile);
-                        CelebrityCredit? Credit = JsonSerializer.Deserialize<CelebrityCredit>(Json);
-                        if (Credit != null)
+                        var Json = File.ReadAllText(JsonFile);
+                        var Credit = JsonSerializer.Deserialize<CelebrityCredit>(Json);
+
+                        if (Credit == null) continue;
+
+                        if (!ValidFilmIds.Contains(Credit.FilmId))
                         {
-                            _context.CelebrityCredits.Add(Credit);
+                            continue;
                         }
+
+                        _context.CelebrityCredits.Add(Credit);
                     }
                     catch
                     {
-                        continue; //no reason to let one bad file stop the whole process
+                        continue;
                     }
                 }
 
                 _context.SaveChanges();
 
                 foreach (var JsonFile in Batch)
-                {
                     File.Delete(JsonFile);
-                }
             }
         }
     }

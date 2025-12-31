@@ -28,6 +28,8 @@ namespace Heteroboxd.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasPostgresExtension("pg_trgm");
+
             base.OnModelCreating(modelBuilder); //let Identity configure itself
 
             //map Identity tables to preferred names

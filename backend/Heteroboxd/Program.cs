@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -129,7 +130,7 @@ using var Scope = app.Services.CreateScope();
 var TmdbClient = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
 var TmdbService = Scope.ServiceProvider.GetRequiredService<ITMDBSerializer>();
 
-var FilePath = "D:/Code/tmdb/test_1.txt";
+var FilePath = "C:/Code/Heteroboxd/ids.txt";
 
 if (File.Exists(FilePath))
 {
@@ -165,7 +166,7 @@ Console.WriteLine("=== IMPORT STARTED ===");
 try
 {
     // Step size determines how many JSON files per batch
-    int Step = 10;
+    int Step = 50;
 
     Console.WriteLine("Loading Films...");
     Loader.LoadFilms(Step);
