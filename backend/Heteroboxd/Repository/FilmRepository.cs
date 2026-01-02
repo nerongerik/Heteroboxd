@@ -2,6 +2,7 @@
 using Heteroboxd.Models;
 using Heteroboxd.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 
 namespace Heteroboxd.Repository
 {
@@ -10,6 +11,7 @@ namespace Heteroboxd.Repository
         Task<Film?> GetByIdAsync(int Id);
         Task<Film?> LightweightFetcher(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
+        Task<List<Trending>> GetTrendingAsync();
         Task<(List<Film> Films, int TotalCount)> ExploreAsync(int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> PopularAsync(int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize);
@@ -51,6 +53,12 @@ namespace Heteroboxd.Repository
                 .Where(f => Ids.Contains(f.Id))
                 .ToListAsync();
         }
+
+        public async Task<List<Trending>> GetTrendingAsync() =>
+            await _context.Trendings
+                .AsNoTracking()
+                .OrderBy(t => t.Rank)
+                .ToListAsync();
 
         public async Task<(List<Film> Films, int TotalCount)> ExploreAsync(int Page, int PageSize)
         {
@@ -169,14 +177,14 @@ namespace Heteroboxd.Repository
             if (!string.IsNullOrEmpty(Search))
             {
                 Query = Query.Where(f =>
-                    EF.Functions.Like(f.Title.ToLower(), $"%{Search}%") ||
-                    (f.OriginalTitle != null && EF.Functions.Like(f.OriginalTitle.ToLower(), $"%{Search}%"))
-                );
+                    EF.Functions.TrigramsSimilarity(f.Title, Search) > 0.3f ||
+                    EF.Functions.TrigramsSimilarity(f.OriginalTitle ?? "", Search) > 0.3f);
             }
 
             return await Query
                 .Include(f => f.CastAndCrew.Where(cc => cc.Role == Role.Director))
-                .OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.FavoriteCount).ThenByDescending(f => f.ReleaseYear)
+                .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Search))
+                .ThenByDescending(f => f.WatchCount)
                 .ToListAsync();
         }
 
@@ -188,7 +196,8 @@ namespace Heteroboxd.Repository
                     f => f.FavoriteCount,
                     f => f.FavoriteCount + Delta
                 ));
-            if (Rows == 0) throw new KeyNotFoundException();
+            //if (Rows == 0) throw new KeyNotFoundException();
+            //this throw would prevent deleted films from being tossed out of User's Favorites, which we WANT
         }
 
         public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta) //increments/decrements watch count

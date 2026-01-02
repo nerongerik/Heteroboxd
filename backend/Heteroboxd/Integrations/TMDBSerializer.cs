@@ -1,8 +1,6 @@
 ﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Models.Enums;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

@@ -18,6 +18,9 @@ namespace Heteroboxd.Service
         Task<bool> Logout(string RefreshToken, string UserId);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string RefreshToken);
         Task RevokeAllUserTokens(Guid UserId);
+        Task ForgotPassword(string Email);
+        Task<bool> ResetPassword(ResetPasswordRequest Request);
+
     }
 
     public class AuthService : IAuthService
@@ -200,6 +203,44 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Failed to generate Refresh token for user {User.Id}");
                 throw new Exception();
             }
+        }
+
+        public async Task ForgotPassword(string Email)
+        {
+            User? User = await _userManager.FindByEmailAsync(Email);
+
+            //never reveal user's existance
+            if (User == null || !(await _userManager.IsEmailConfirmedAsync(User))) return;
+
+            var Token = await _userManager.GeneratePasswordResetTokenAsync(User);
+
+            var ResetUrl = $"{_config["Frontend:BaseUrl"]}/reset-password" + $"?userId={User.Id}&token={Uri.EscapeDataString(Token)}";
+
+            var message = $@"
+                <html>
+                    <body>
+                        <p>You requested a password reset.</p>
+                        <p>
+                            Click <a href=""{ResetUrl}"">here</a> to reset your password.
+                        </p>
+                        <p>If you did not request this, you can safely ignore this email.</p>
+                    </body>
+                </html>";
+
+            await _emailSender.SendEmailAsync(User.Email!, "Reset your password", message);
+        }
+
+        public async Task<bool> ResetPassword(ResetPasswordRequest Request)
+        {
+            User? User = await _userManager.FindByIdAsync(Request.UserId);
+            if (User == null) return false;
+
+            var Result = await _userManager.ResetPasswordAsync(User, Request.Token, Request.NewPassword);
+
+            if (!Result.Succeeded) return false;
+
+            await RevokeAllUserTokens(User.Id);
+            return true;
         }
     }
 }

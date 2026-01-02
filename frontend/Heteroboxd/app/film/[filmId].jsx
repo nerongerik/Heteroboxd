@@ -413,7 +413,7 @@ const Film = () => {
                 justifyContent: "flex-start"
               }}
               data={actors}
-              keyExtractor={(item) => `${item.celebrityId}-${item.character}`}
+              keyExtractor={(item, index) => `${item.celebrityId}-${item.character}-${index}`}
               renderItem={({item, i}) => (
                 <Pressable
                   onPress={() => router.push(`/celebrity/${item.celebrityId}?t=starred`)}
@@ -459,7 +459,7 @@ const Film = () => {
                 justifyContent: "flex-start"
               }}
               data={[...directors, ...crew]}
-              keyExtractor={(item) => `${item.celebrityId}-${item.role}`}
+              keyExtractor={(item, index) => `${item.celebrityId}-${item.role}-${index}`}
               renderItem={({item}) => (
                 <Pressable
                   onPress={() => router.push(`/celebrity/${item.celebrityId}${item.role.toLowerCase() === 'director' ? '?t=directed' : item.role.toLowerCase() === 'producer' ? '?t=produced' : item.role.toLowerCase() === 'writer' ? '?t=wrote' : item.role.toLowerCase() === 'composer' ? '?t=composed' : ''}`)}
@@ -505,7 +505,7 @@ const Film = () => {
                   justifyContent: "flex-start",
                 }}
                 data={friends}
-                keyExtractor={(item) => item.friendId}
+                keyExtractor={(item, index) => `${item.friendId}-${index}`}
                 renderItem={({item, i}) => (
                   <Pressable
                     onPress={() => item.reviewId ? router.push(`/review/${item.reviewId}`) : router.push(`/profile/${item.friendId}`)}
@@ -603,11 +603,10 @@ const Film = () => {
               showsHorizontalScrollIndicator={widescreen}
               style={{
                 maxWidth: Math.min(width * 0.95, 1000),
-                alignSelf: "center",
                 paddingBottom: 10
               }}
               data={Object.entries(film?.collection ?? {})}
-              keyExtractor={([tmdbId]) => tmdbId}
+              keyExtractor={([tmdbId], index) => `${tmdbId}-${index}`}
               renderItem={({ item: [tmdbId, posterLink], index }) => (
                 <Pressable
                   onPress={() => router.push(`/film/${tmdbId}`)}

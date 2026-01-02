@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl } from 'react-native'
 import { Colors } from '../../constants/colors'
 import { useEffect, useMemo, useState } from 'react'
@@ -11,13 +11,13 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
-import Author from '../../components/author'
 
 const PAGE_SIZE = 48
 
 const List = () => {
   const { listId } = useLocalSearchParams()
   const router = useRouter()
+  const navigation = useNavigation();
   const { width } = useWindowDimensions()
   const { user, isValidSession } = useAuth()
 
@@ -68,7 +68,8 @@ const List = () => {
         setTotalCount(json.totalCount)
         setEntries(json.entries)
       } else {
-        throw new Error()
+        setResult(res.status)
+        setMessage('Loading error! Try reloading Heteroboxd.')
       }
     } catch {
       setResult(500)
@@ -103,6 +104,15 @@ const List = () => {
   useEffect(() => {
     loadLiked()
   }, [user, listId])
+
+  useEffect(() => {
+    if (!baseList) return;
+    navigation.setOptions({
+      headerTitle: `${baseList.authorName}'s list`,
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title},
+    });
+  }, [baseList])
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
   const widescreen = useMemo(() => width > 1000, [width])
@@ -154,16 +164,7 @@ const List = () => {
 
   const renderHeader = () => (
     <View style={{ width: maxRowWidth, alignSelf: 'center' }}>
-      <Author
-        userId={baseList?.authorId}
-        url={baseList?.authorProfilePictureUrl}
-        username={baseList?.authorName}
-        tier={baseList?.authorTier}
-        patron={baseList?.authorPatron}
-        router={router}
-        widescreen={widescreen}
-      />
-      <Text style={styles.title}>{baseList?.name}</Text>
+      <Text style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: 20}]}>{baseList?.name}</Text>
       <Pressable onPress={() => setDescCollapsed((p) => !p)}>
         <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
           {descCollapsed && baseList?.description?.length > 300
@@ -322,7 +323,6 @@ const styles = StyleSheet.create({
   },
   title: {
     color: Colors.text_title,
-    fontSize: 22,
     fontWeight: '600',
     marginBottom: 6
   },

@@ -154,6 +154,11 @@ namespace Heteroboxd.Service
             //if user never clicked "Watched" on this title, we add it here for their lazy arse
             if (await _userRepo.GetUserWatchedFilmAsync(UserId, ReviewRequest.FilmId) == null)
             {
+                var ExistingEntry = await _userRepo.IsWatchlistedAsync(ReviewRequest.FilmId, UserId);
+                if (ExistingEntry != null)
+                {
+                    await _userRepo.RemoveFromWatchlist(ExistingEntry);
+                }
                 _userRepo.CreateUserWatchedFilm(new UserWatchedFilm(UserId, ReviewRequest.FilmId));
                 await _filmRepo.UpdateFilmWatchCountEfCore7Async(ReviewRequest.FilmId, 1);
                 await _userRepo.SaveChangesAsync();

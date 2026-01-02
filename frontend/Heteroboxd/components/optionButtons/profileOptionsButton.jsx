@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { StyleSheet, View, TouchableOpacity, Text, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
 import { useRouter, Link } from 'expo-router';
@@ -14,7 +14,7 @@ import * as auth from '../../helpers/auth';
 import Popup from '../popup';
 import LoadingResponse from '../loadingResponse';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
+import SlidingMenu from '../slidingMenu';
 
 const ProfileOptionsButton = ({ userId }) => {
   const { user, logout, isValidSession } = useAuth();
@@ -210,47 +210,41 @@ const ProfileOptionsButton = ({ userId }) => {
         <MaterialIcons name="more-vert" size={24} color={Colors.text} />
       </Pressable>
 
-      <Modal transparent visible={menuShown} animationType="fade">
-        <Pressable style={styles.overlay} onPress={closeMenu}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
-        </Pressable>
-
-        <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
-          {other ? (
-            <>
-              <TouchableOpacity style={styles.option} onPress={() => {setReportConfirm(true)}}>
-                <Text style={styles.optionText}>Report User  <Octicons name="report" size={18} color={Colors.text} /></Text>
-              </TouchableOpacity>
-              {
-                blocked ? (
-                  <TouchableOpacity style={styles.option} onPress={handleBlock}>
-                    <Text style={styles.optionText}>Unblock User  <Entypo name="lock-open" size={18} color={Colors.text} /></Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity style={styles.option} onPress={handleBlock}>
-                    <Text style={styles.optionText}>Block User  <Entypo name="block" size={18} color={Colors.text} /></Text>
-                  </TouchableOpacity>
-                )
-              }
-            </>
-          ) : (
-            <>
-              <TouchableOpacity style={styles.option} onPress={handleShare}>
-                <Text style={styles.optionText}>Share Profile  <Entypo name="share" size={18} color={Colors.text} /></Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.option} onPress={handleEdit}>
-                <Text style={styles.optionText}>Edit Profile  <Feather name="edit" size={18} color={Colors.text} /></Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.option} onPress={handleLogout}>
-                <Text style={styles.optionText}>Sign Out  <FontAwesome name="sign-out" size={18} color={Colors.text} /></Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.option} onPress={() => {setDeleteConfirm(true)}}>
-                <Text style={styles.optionText}>Delete Profile  <AntDesign name="user-delete" size={18} color={Colors.text} /></Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </Animated.View>
-      </Modal>
+      <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
+        {other ? (
+          <>
+            <TouchableOpacity style={styles.option} onPress={() => {setReportConfirm(true)}}>
+              <Text style={styles.optionText}>Report User  <Octicons name="report" size={18} color={Colors.text} /></Text>
+            </TouchableOpacity>
+            {
+              blocked ? (
+                <TouchableOpacity style={styles.option} onPress={handleBlock}>
+                  <Text style={styles.optionText}>Unblock User  <Entypo name="lock-open" size={18} color={Colors.text} /></Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.option} onPress={handleBlock}>
+                  <Text style={styles.optionText}>Block User  <Entypo name="block" size={18} color={Colors.text} /></Text>
+                </TouchableOpacity>
+              )
+            }
+          </>
+        ) : (
+          <>
+            <TouchableOpacity style={styles.option} onPress={handleShare}>
+              <Text style={styles.optionText}>Share Profile  <Entypo name="share" size={18} color={Colors.text} /></Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={handleEdit}>
+              <Text style={styles.optionText}>Edit Profile  <Feather name="edit" size={18} color={Colors.text} /></Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={handleLogout}>
+              <Text style={styles.optionText}>Sign Out  <FontAwesome name="sign-out" size={18} color={Colors.text} /></Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={() => {setDeleteConfirm(true)}}>
+              <Text style={styles.optionText}>Delete Profile  <AntDesign name="user-delete" size={18} color={Colors.text} /></Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </SlidingMenu>
 
       <Popup visible={result === 400 || result === 401 || result === 404 || result === 500} message={message} onClose={() => {
           result === 500 ? router.replace('/contact') : router.replace(`/profile/${userId}`);
@@ -277,18 +271,6 @@ const ProfileOptionsButton = ({ userId }) => {
 export default ProfileOptionsButton;
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
-  menu: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: Colors.card,
-    paddingVertical: 10,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
   option: {
     paddingVertical: 14,
     paddingHorizontal: 20,

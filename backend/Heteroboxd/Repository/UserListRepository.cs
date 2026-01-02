@@ -1,6 +1,5 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
@@ -106,17 +105,16 @@ namespace Heteroboxd.Repository
 
         public async Task<List<UserList>> SearchAsync(string Search)
         {
-            var query = _context.UserLists.AsQueryable();
+            var Query = _context.UserLists.AsQueryable();
 
             if (!string.IsNullOrEmpty(Search))
             {
-                query = query.Where(ul =>
-                    EF.Functions.Like(ul.Name.ToLower() ?? "", $"%{Search}%")
-                );
+                Query = Query.Where(ul =>
+                    EF.Functions.TrigramsSimilarity(ul.Name, Search) > 0.3f);
             }
 
-            return await query
-                .OrderByDescending(ul => ul.LikeCount).ThenBy(ul => ul.DateCreated)
+            return await Query
+                .OrderByDescending(ul => EF.Functions.TrigramsSimilarity(ul.Name, Search))
                 .ToListAsync();
         }
 

@@ -1,11 +1,10 @@
-import { StyleSheet, useWindowDimensions, View, Platform, TextInput, Text, Pressable, FlatList, Modal, Animated } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, Platform, TextInput, Text, Pressable, FlatList, Animated } from 'react-native'
 import { useAuth } from '../../hooks/useAuth';
 import { useMemo, useState, useEffect } from 'react';
 import { Colors } from '../../constants/colors';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Poster } from '../../components/poster';
 import { useRouter, useNavigation } from 'expo-router';
-import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as auth from '../../helpers/auth';
 import { BaseUrl } from '../../constants/api';
@@ -13,6 +12,7 @@ import LoadingResponse from '../../components/loadingResponse';
 import { Snackbar } from 'react-native-paper';
 import { TouchableOpacity } from 'react-native';
 import SearchBox from '../../components/searchBox';
+import SlidingMenu from '../../components/slidingMenu';
 
 const CreateList = () => {
   const { user, isValidSession } = useAuth();
@@ -44,31 +44,6 @@ const CreateList = () => {
       )
     });
   }, [listName, desc, entries, ranked]);
-
-  //web on compooper?
-  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  //minimum spacing between posters
-  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
-  //determine max usable row width:
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
-  //compute poster width:
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
-  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
-
-  //padded entries
-  const paddedEntries = useMemo(() => {
-    const padded = [...entries];
-    const remainder = padded.length % 4;
-
-    if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder;
-      for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null);
-      }
-    }
-
-    return padded;
-  }, [entries]);
 
   const openMenu = () => {
     setMenuShown(true);
@@ -141,8 +116,32 @@ const CreateList = () => {
     }
   }
 
-  return (
-    <View style={[styles.container]}>
+  //web on compooper?
+  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
+  //minimum spacing between posters
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
+  //determine max usable row width:
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
+  //compute poster width:
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
+  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
+  //padded entries
+  const paddedEntries = useMemo(() => {
+    const padded = [...entries];
+    const remainder = padded.length % 4;
+
+    if (remainder !== 0) {
+      const placeholdersToAdd = 4 - remainder;
+      for (let i = 0; i < placeholdersToAdd; i++) {
+        padded.push(null);
+      }
+    }
+
+    return padded;
+  }, [entries]);
+
+  const Header = () => (
+    <>
       <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
         <TextInput
           style={[styles.input, {marginBottom: 15}]}
@@ -167,139 +166,142 @@ const CreateList = () => {
             {desc.length}/1000
           </Text>
         </View>
+        <Text style={{color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 20 : 18}}> Entries</Text>
       </View>
-      <View style={{width: widescreen ? 990 : width*0.9, alignSelf: 'center'}}>
-        <Pressable onPress={openMenu} style={{flexDirection: 'row', alignItems: 'center', marginBottom: 3}}>
-          <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.heteroboxd}}>Films </Text>
-          <AntDesign name="plus-circle" size={widescreen ? 20 : 16} color={Colors.heteroboxd} />
-        </Pressable>
-      </View>
-      <View style={[styles.entryContainer, {minHeight: widescreen ? height/2 : height/3, maxHeight: widescreen ? height/2 : height/3, width: maxRowWidth}]}> 
-        <FlatList
-          data={paddedEntries}
-          numColumns={4}
-          renderItem={({ item, index }) => {
-            if (!item) {
-              return (
-                <View
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    //margin: spacing / 2,
-                  }}
-                />
-              );
-            }
-            return (
-              <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
-                <Poster
-                  posterUrl={item.posterUrl}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    borderRadius: 6,
-                    borderWidth: 2,
-                    borderColor: Colors.border_color,
-                    marginBottom: ranked ? 0 : spacing
-                  }}
-                />
-                {ranked && (
-                  <View
-                    style={{
-                      width: widescreen ? 28 : 20,
-                      height: widescreen ? 28 : 20,
-                      borderRadius: 9999,
-                      backgroundColor: Colors.background,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginBottom: spacing / 2,
-                      marginTop: -10,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: Colors.text_title,
-                        fontSize: widescreen ? 12 : 8,
-                        fontWeight: 'bold',
-                        lineHeight: 18,
-                      }}
-                    >
-                      {index + 1}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            )
+      <View style={{height: 15}} />
+    </>
+  )
+
+  const Render = ({ item, index }) => {
+    if (!item) {
+      return (
+        <View
+          style={{
+            width: posterWidth,
+            height: posterHeight,
           }}
-          contentContainerStyle={{
-            padding: spacing,
-            alignItems: 'center'
-          }}
-          columnWrapperStyle={{
-            columnGap: spacing,
-            rowGap: spacing,
-          }}
-          showsVerticalScrollIndicator={false}
         />
-      </View>
-      <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
-        <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
-        <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
+      );
+    }
+    return (
+      <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
+        <Poster
+          posterUrl={item.posterUrl}
+          style={{
+            width: posterWidth,
+            height: posterHeight,
+            borderRadius: 6,
+            borderWidth: 2,
+            borderColor: Colors.border_color,
+            marginBottom: ranked ? 0 : spacing
+          }}
+        />
+        {ranked && (
+          <View
+            style={{
+              width: widescreen ? 28 : 20,
+              height: widescreen ? 28 : 20,
+              borderRadius: 9999,
+              backgroundColor: Colors.background,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: spacing / 2,
+              marginTop: -10,
+            }}
+          >
+            <Text
+              style={{
+                color: Colors.text_title,
+                fontSize: widescreen ? 12 : 8,
+                fontWeight: 'bold',
+                lineHeight: 18,
+              }}
+            >
+              {index + 1}
+            </Text>
+          </View>
+        )}
       </Pressable>
+    )
+  }
 
-      <Modal transparent visible={menuShown} animationType="fade">
-        <Pressable style={styles.overlay} onPress={() => {
-          setSearchResults(null);
-          closeMenu();
-        }}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
-        </Pressable>
+  const Footer = () => (
+    <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
+      <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
+      <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
+    </Pressable>
+  )
 
-        <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
-          <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
-          {
-            (searchResults && searchResults.length > 0) ? (
-              <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: widescreen ? width*0.5 : width*0.95}]}>
-              <FlatList
-                data={searchResults}
-                numColumns={1}
-                renderItem={({item, index}) => (
-                  <Pressable key={index} onPress={() => {
-                    if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }]);
-                    setSearchResults(null);
-                    closeMenu();
-                  }}>
-                    <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
-                      <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
-                      <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                        <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                          {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
-                        </Text>
-                        <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
-                          item.castAndCrew?.map((d, i) => (
-                            <Text key={i} style={{}}>
-                              {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
-                            </Text>
-                          ))
-                        }</Text>
-                      </View>
+  return (
+    <View style={[styles.container]}>
+      <FlatList
+        data={paddedEntries}
+        numColumns={4}
+        ListHeaderComponent={Header}
+        renderItem={Render}
+        ListEmptyComponent={<Text style={{color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>This list is empty.</Text>}
+        ListFooterComponent={Footer}
+        contentContainerStyle={{
+          padding: spacing,
+          alignItems: 'center'
+        }}
+        columnWrapperStyle={{
+          columnGap: spacing,
+          rowGap: spacing,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={openMenu}
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
+      
+      <SlidingMenu menuShown={menuShown} closeMenu={() => {setSearchResults(null); closeMenu();}} translateY={translateY} widescreen={widescreen} width={width}>
+        <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
+        {
+          (searchResults && searchResults.length > 0) ? (
+            <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: widescreen ? width*0.5 : width*0.95}]}>
+            <FlatList
+              data={searchResults}
+              numColumns={1}
+              renderItem={({item, index}) => (
+                <Pressable key={index} onPress={() => {
+                  if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }]);
+                  setSearchResults(null);
+                  closeMenu();
+                }}>
+                  <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
+                    <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
+                    <View style={{flexShrink: 1, maxWidth: '100%'}}>
+                      <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+                        {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
+                      </Text>
+                      <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                        item.castAndCrew?.map((d, i) => (
+                          <Text key={i} style={{}}>
+                            {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                          </Text>
+                        ))
+                      }</Text>
                     </View>
-                  </Pressable>
-                )}
-                contentContainerStyle={{
-                  padding: 20,
-                  alignItems: 'flex-start',
-                  width: '100%'
-                }}
-                showsVerticalScrollIndicator={false}
-              />
-              </View>
-            ) : (searchResults && searchResults.length === 0) && (
-              <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
-            )
-          }
-        </Animated.View>
-      </Modal>
+                  </View>
+                </Pressable>
+              )}
+              contentContainerStyle={{
+                padding: 20,
+                alignItems: 'flex-start',
+                width: '100%'
+              }}
+              showsVerticalScrollIndicator={false}
+            />
+            </View>
+          ) : (searchResults && searchResults.length === 0) && (
+            <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+          )
+        }
+      </SlidingMenu>
 
       <LoadingResponse visible={result === 0} />
       <Snackbar
@@ -382,15 +384,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     overflow: 'hidden'
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject
+  fab: {
+    position: 'absolute',
+    bottom: 75,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: Colors._heteroboxd,
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5, //android
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 }, //iOS
   },
-  menu: {
-    backgroundColor: Colors.card,
-    bottom: 0,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    paddingVertical: 8,
-    position: 'absolute'
-  }
 });

@@ -16,6 +16,7 @@ import * as format from '../../helpers/format';
 import Foundation from '@expo/vector-icons/Foundation';
 import Histogram from '../../components/histogram';
 import SearchBox from '../../components/searchBox';
+import SlidingMenu from '../../components/slidingMenu';
 
 const Profile = () => {
   const { userId } = useLocalSearchParams();
@@ -90,7 +91,10 @@ const Profile = () => {
     // --- FETCH FAVORITES ---
     setFavoritesResult(0);
     try {
-      const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`);
+      const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`, {
+        method: 'GET',
+        headers: {'Accept': 'application/json'}
+      });
       if (res.status === 200) {
         const json = await res.json();
         setFavorites([json["1"], json["2"], json["3"], json["4"]]);
@@ -500,6 +504,9 @@ const Profile = () => {
                 if (favoritesResult === 404) {
                   setSnackbarMessage("There was an error loading this film...");
                   setVisible(true);
+                } else if (film === 'error') {
+                  setSnackbarMessage("There was an error loading this film...");
+                  setVisible(true);
                 } else if (film && film.filmId) {
                   router.push(`/film/${film.filmId}`);
                 } else if (!isOwnProfile) {
@@ -513,7 +520,7 @@ const Profile = () => {
               style={{ alignItems: "center", marginRight: index === 3 ? 0 : 5 }}
             >
               <Poster
-                posterUrl={favoritesResult === 404 ? 'error' : (film?.posterUrl ?? null)}
+                posterUrl={favoritesResult === 404 || film === 'error' ? 'error' : (film?.posterUrl ?? null)}
                 style={{
                   width: posterWidth,
                   height: posterHeight,
@@ -531,7 +538,15 @@ const Profile = () => {
         <View style={[styles.divider, {marginVertical: 20}]} />
         
         <Text style={[styles.subtitle, {marginBottom: 10}]}>Ratings</Text>
-        <Histogram histogram={ratings} />
+        {
+          Object.entries(ratings).length > 0 ? (
+            <Histogram histogram={ratings} />
+          ) : (
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
+              <Text style={styles.text}>Nothing yet.</Text>
+            </View>
+          )
+        }
 
         <View style={[styles.divider, {marginVertical: 20}]} />
 
@@ -696,61 +711,50 @@ const Profile = () => {
           </Pressable>
         </Modal>
       )}
-
-      <Modal transparent visible={menuShown2} animationType="fade">
-        <Pressable style={{...StyleSheet.absoluteFillObject}} onPress={() => {
-          setSearchResults(null);
-          closeMenu2();
-        }}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
-        </Pressable>
-
-        <Animated.View style={[{backgroundColor: Colors.card, bottom: 0, borderTopLeftRadius: 12, borderTopRightRadius: 12, paddingVertical: 8, position: 'absolute'}, { transform: [{ translateY: translateY2 }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
-          <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
-          {
-            (searchResults && searchResults.length > 0) ? (
-              <View style={[{alignSelf: 'center', backgroundColor: Colors.card, borderColor: Colors.border_color, borderRadius: 5, borderTopWidth: 2, borderBottomWidth: 2, marginBottom: 8, overflow: 'hidden'}, {minHeight: height/3, maxHeight: height/3, width: widescreen ? width*0.5 : width*0.95}]}>
-              <FlatList
-                data={searchResults}
-                numColumns={1}
-                renderItem={({item, index}) => (
-                  <Pressable key={index} onPress={() => {
-                    updateFavorites(item.filmId);
-                    setSearchResults(null);
-                    closeMenu2();
-                  }}>
-                    <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
-                      <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
-                      <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                        <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                          {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
-                        </Text>
-                        <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
-                          item.castAndCrew?.map((d, i) => (
-                            <Text key={i} style={{}}>
-                              {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
-                            </Text>
-                          ))
-                        }</Text>
-                      </View>
+      <SlidingMenu menuShown={menuShown2} closeMenu={() => {setSearchResults(null); closeMenu2();}} translateY={translateY2} widescreen={widescreen} width={width}>
+        <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
+        {
+          (searchResults && searchResults.length > 0) ? (
+            <View style={[{alignSelf: 'center', backgroundColor: Colors.card, borderColor: Colors.border_color, borderRadius: 5, borderTopWidth: 2, borderBottomWidth: 2, marginBottom: 8, overflow: 'hidden'}, {minHeight: height/3, maxHeight: height/3, width: widescreen ? width*0.5 : width*0.95}]}>
+            <FlatList
+              data={searchResults}
+              numColumns={1}
+              renderItem={({item, index}) => (
+                <Pressable key={index} onPress={() => {
+                  updateFavorites(item.filmId);
+                  setSearchResults(null);
+                  closeMenu2();
+                }}>
+                  <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
+                    <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
+                    <View style={{flexShrink: 1, maxWidth: '100%'}}>
+                      <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+                        {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
+                      </Text>
+                      <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                        item.castAndCrew?.map((d, i) => (
+                          <Text key={i} style={{}}>
+                            {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                          </Text>
+                        ))
+                      }</Text>
                     </View>
-                  </Pressable>
-                )}
-                contentContainerStyle={{
-                  padding: 20,
-                  alignItems: 'flex-start',
-                  width: '100%'
-                }}
-                showsVerticalScrollIndicator={false}
-              />
-              </View>
-            ) : (searchResults && searchResults.length === 0) && (
-              <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
-            )
-          }
-        </Animated.View>
-      </Modal>
-      
+                  </View>
+                </Pressable>
+              )}
+              contentContainerStyle={{
+                padding: 20,
+                alignItems: 'flex-start',
+                width: '100%'
+              }}
+              showsVerticalScrollIndicator={false}
+            />
+            </View>
+          ) : (searchResults && searchResults.length === 0) && (
+            <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+          )
+        }
+      </SlidingMenu>
     </View>
   );
 };

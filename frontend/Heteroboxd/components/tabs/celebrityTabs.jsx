@@ -1,4 +1,4 @@
-import { useState, useMemo, act } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView } from "react-native";
 import { Colors } from "../../constants/colors";
 import {Headshot} from '../headshot';
@@ -65,7 +65,14 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
 
   const TabButton = ({ title, active, onPress }) => {
     return (
-      <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
+      <TouchableOpacity
+        onPress={onPress}
+        style={[
+          styles.tabButton,
+          {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 15 : 10},
+          active && styles.activeTabButton
+        ]}
+      >
         <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
       </TouchableOpacity>
     );
@@ -157,6 +164,9 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
             ListHeaderComponent={Header}
             renderItem={Filmography}
             numColumns={4}
+            columnWrapperStyle={{
+                justifyContent: 'center',
+              }}
             refreshing={refreshing}
             onRefresh={onRefresh}
             style={{
@@ -181,9 +191,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   tabRowMobile: {
     flexDirection: "row",
-    paddingHorizontal: 15,
     paddingVertical: 5,
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     width: '100%',
     marginBottom: 20,
   },
@@ -199,10 +208,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 6,
-    flex: 1,
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.text,
   },
   activeTabText: {

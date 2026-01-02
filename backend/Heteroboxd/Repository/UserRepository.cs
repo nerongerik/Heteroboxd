@@ -9,7 +9,7 @@ namespace Heteroboxd.Repository
         Task<User?> GetByIdAsync(Guid Id);
         Task<List<User>> GetByIdsAsync(IReadOnlyCollection<Guid> Ids);
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
-        Task<List<User>> SearchAsync(string Name);
+        Task<List<User>> SearchAsync(string Search);
 
         Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize);
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
@@ -79,19 +79,18 @@ namespace Heteroboxd.Repository
                 .Select(g => new { Rating = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Rating, x => x.Count);
 
-        public async Task<List<User>> SearchAsync(string Name)
+        public async Task<List<User>> SearchAsync(string Search)
         {
             var Query = _context.Users.AsQueryable();
 
-            if (!string.IsNullOrEmpty(Name))
+            if (!string.IsNullOrEmpty(Search))
             {
                 Query = Query.Where(u =>
-                    EF.Functions.Like(u.Name.ToLower() ?? "", $"%{Name}%")
-                );
+                    EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3f);
             }
 
             return await Query
-                .OrderByDescending(u => u.IsPatron).ThenByDescending(u => u.TierExpiry)
+                .OrderByDescending(u => EF.Functions.TrigramsSimilarity(u.Name, Search))
                 .ToListAsync();
         }
 

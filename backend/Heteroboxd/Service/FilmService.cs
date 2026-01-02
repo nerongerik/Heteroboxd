@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 
 namespace Heteroboxd.Service
@@ -6,6 +7,7 @@ namespace Heteroboxd.Service
     public interface  IFilmService
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
+        Task<List<Trending>> GetTrending();
         Task<PagedFilmInfoResponse> ExploreFilms(int Page, int PageSize);
         Task<PagedFilmInfoResponse> PopularFilms(int Page, int PageSize);
         Task<PagedFilmInfoResponse> GetFilmsByYear(int Year, int Page, int PageSize);
@@ -27,10 +29,8 @@ namespace Heteroboxd.Service
             _logger = logger;
         }
 
-        public Task<List<FilmInfoResponse>> GetTrendingFilms()
-        {
-            throw new NotImplementedException();
-        }
+        public async Task<List<Trending>> GetTrending() =>
+            await _repo.GetTrendingAsync();
 
         public async Task<FilmInfoResponse?> GetFilm(int FilmId)
         {

@@ -86,4 +86,22 @@ public class AuthController : ControllerBase
             return StatusCode(500);
         }
     }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest Request)
+    {
+        _logger.LogInformation($"Forgot Password endpoint hit for {Request.Email}");
+        await _service.ForgotPassword(Request.Email);
+        return Ok(); //prevents user enumeration
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest Request)
+    {
+        _logger.LogInformation($"Reset Password endpoint hit for {Request.UserId}");
+        var Success = await _service.ResetPassword(Request);
+        return Success ? Ok() : BadRequest();
+    }
 }
