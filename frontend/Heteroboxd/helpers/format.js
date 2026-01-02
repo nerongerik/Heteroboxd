@@ -34,3 +34,14 @@ export function parseCountry(country, platform) {
     );
   });
 }
+
+export function isValidFormatExplore(type, subtype) {
+  if (!type || !subtype) return false;
+  if (type === 'year') {
+    return /^\d{4}$/.test(subtype);
+  }
+  if (type === 'genre') {
+    return typeof subtype === 'string' && subtype.length > 0;
+  }
+  return false;
+}

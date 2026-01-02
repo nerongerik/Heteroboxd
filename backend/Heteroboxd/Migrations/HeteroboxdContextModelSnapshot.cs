@@ -141,7 +141,7 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<DateTime?>("LastSync")
+                    b.Property<DateTime>("LastSync")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Length")
@@ -316,6 +316,30 @@ namespace Heteroboxd.Migrations
                     b.HasIndex("FilmId");
 
                     b.ToTable("Reviews");
+                });
+
+            modelBuilder.Entity("Heteroboxd.Models.Trending", b =>
+                {
+                    b.Property<int>("FilmId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FilmId"));
+
+                    b.Property<string>("PosterUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("FilmId");
+
+                    b.ToTable("Trendings");
                 });
 
             modelBuilder.Entity("Heteroboxd.Models.User", b =>

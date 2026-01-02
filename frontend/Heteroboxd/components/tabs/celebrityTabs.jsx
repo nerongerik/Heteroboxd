@@ -1,4 +1,4 @@
-import { useState, useMemo, act } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView } from "react-native";
 import { Colors } from "../../constants/colors";
 import {Headshot} from '../headshot';

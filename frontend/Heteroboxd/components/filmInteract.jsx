@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View, Pressable, Modal, ScrollView } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View, Pressable, ScrollView, useWindowDimensions } from 'react-native'
 import { UserAvatar } from './userAvatar'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
@@ -13,10 +13,13 @@ import { Snackbar } from 'react-native-paper';
 import Stars from './stars';
 import Checkbox from 'expo-checkbox';
 import { Link, useRouter } from 'expo-router';
+import SlidingMenu from './slidingMenu';
 
 const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const [menuShown, setMenuShown] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
+
+  const {width} = useWindowDimensions();
 
   const [seenLocalCopy, setSeenLocalCopy] = useState(null);
   const [watchlistedLocalCopy, setWatchlistedLocalCopy] = useState(null);
@@ -537,88 +540,76 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
           button
         )
       }
-      <Modal transparent visible={menuShown} animationType="fade">
-        <Pressable style={styles.overlay} onPress={closeMenu}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]} />
-        </Pressable>
-
-        <Animated.View style={[styles.menu, {width: widescreen ? 750 : '100%', alignSelf: 'center'}, { transform: [{ translateY }] }]}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            {seenLocalCopy ? (
-              seenPressed ? (
-                <>
-                  {rewatch}
-                  {unwatch}
-                </>
-              ) : (
-                watched
-              )
+      <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+          {seenLocalCopy ? (
+            seenPressed ? (
+              <>
+                {rewatch}
+                {unwatch}
+              </>
             ) : (
-              watch
-            )}
-            {watchlistedLocalCopy ? unwatchlist : watchlist}
-          </View>
-
-          <View style={styles.divider} />
-
-          <Stars
-            size={widescreen ? 60 : 50}
-            rating={reviewLocalCopy?.rating ?? 0}
-            onRatingChange={handleRatingChange}
-            padding={true}
-          />
-          <Text style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</Text>
-
-          <View style={styles.divider} />
-
-          <TouchableOpacity onPress={async () => {
-            closeMenu();
-            reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/alter/${filmId}`);
-          }}>
-            <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
-              <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</Text>
-              <MaterialCommunityIcons name="typewriter" size={24} color={Colors.text} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-          
-          {
-            listsClicked ? (
-                selectLists
-            ) : (
-              <TouchableOpacity onPress={async () => {
-                await fetchLists();
-                setListsClicked(true);
-              }}>
-                <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
-                  <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</Text>
-                  <MaterialCommunityIcons name="playlist-plus" size={28} color={Colors.text} />
-                </View>
-              </TouchableOpacity>
+              watched
             )
-          }
-
-          <Snackbar
-            visible={snackVisible}
-            onDismiss={() => setSnackVisible(false)}
-            duration={3000}
-            style={{
-              backgroundColor: Colors.card,
-              width: widescreen ? '50%' : '90%',
-              alignSelf: 'center',
-              borderRadius: 8,
-            }}
-            action={{
-              label: 'OK',
-              onPress: () => setSnackVisible(false),
-              textColor: Colors.text_link
-            }}
-          >
-            {snackMessage}
-          </Snackbar>
-        </Animated.View>
-      </Modal>
+          ) : (
+            watch
+          )}
+          {watchlistedLocalCopy ? unwatchlist : watchlist}
+        </View>
+        <View style={styles.divider} />
+        <Stars
+          size={widescreen ? 60 : 50}
+          rating={reviewLocalCopy?.rating ?? 0}
+          onRatingChange={handleRatingChange}
+          padding={true}
+        />
+        <Text style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</Text>
+        <View style={styles.divider} />
+        <TouchableOpacity onPress={async () => {
+          closeMenu();
+          reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/alter/${filmId}`);
+        }}>
+          <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
+            <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</Text>
+            <MaterialCommunityIcons name="typewriter" size={24} color={Colors.text} />
+          </View>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        
+        {
+          listsClicked ? (
+              selectLists
+          ) : (
+            <TouchableOpacity onPress={async () => {
+              await fetchLists();
+              setListsClicked(true);
+            }}>
+              <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
+                <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</Text>
+                <MaterialCommunityIcons name="playlist-plus" size={28} color={Colors.text} />
+              </View>
+            </TouchableOpacity>
+          )
+        }
+        <Snackbar
+          visible={snackVisible}
+          onDismiss={() => setSnackVisible(false)}
+          duration={3000}
+          style={{
+            backgroundColor: Colors.card,
+            width: widescreen ? '50%' : '90%',
+            alignSelf: 'center',
+            borderRadius: 8,
+          }}
+          action={{
+            label: 'OK',
+            onPress: () => setSnackVisible(false),
+            textColor: Colors.text_link
+          }}
+        >
+          {snackMessage}
+        </Snackbar>
+      </SlidingMenu>
     </>
   )
 }
@@ -636,18 +627,6 @@ const styles = StyleSheet.create({
   avatar: {
     borderWidth: 2,
     borderColor: Colors.border_color,
-  },
-  overlay: {
-    flex: 1,
-  },
-  menu: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: Colors.card,
-    paddingVertical: 10,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
   },
   buttonContainer: {
     alignSelf: 'center',

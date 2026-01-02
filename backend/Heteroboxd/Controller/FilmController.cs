@@ -18,11 +18,18 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("trending")]
-        public IActionResult GetTrendingFilms()
+        public async Task<IActionResult> GetTrendingFilms()
         {
-            //retrives today's trending films from database
-            //maybe a direct tMDB API call instead? only called once a day
-            throw new NotImplementedException();
+            _logger.LogInformation("GET Trending endpoint hit.");
+            try
+            {
+                var Trending = await _service.GetTrending();
+                return Ok(Trending);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{FilmId}")]

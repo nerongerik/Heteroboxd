@@ -7,6 +7,7 @@ import { Poster } from '../../components/poster';
 import PaginationBar from '../../components/paginationBar';
 import LoadingResponse from '../../components/loadingResponse';
 import Popup from '../../components/popup';
+import * as format from '../../helpers/format';
 
 const PAGE_SIZE = 48
 
@@ -54,9 +55,42 @@ const Explore = () => {
     }
   }
 
+  const defaultFallback = async (pageNumber) => {
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${BaseUrl.api}/films?Page=${pageNumber}&PageSize=${PAGE_SIZE}`, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
+      if (res.status === 200) {
+        const json = await res.json();
+        setPage(json.page);
+        setTotalCount(json.totalCount);
+        setFilms(json.films);
+      } else {
+        setResult(res.status);
+        setMessage('Loading error! Try reloading Heteroboxd.');
+      }
+    } catch {
+      setResult(500);
+      setMessage('Network error! Check your internet connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadPage = async (pageNumber) => {
+    const valid = format.isValidFormatExplore(type, subtype);
+    if (valid) {
+      await loadExplorePage(pageNumber);
+    } else {
+      await defaultFallback(pageNumber);
+    }
+  };
+
   useEffect(() => {
     setPage(1);
-    loadExplorePage(1);
+    loadPage(1);
   }, [type, subtype])
 
   useEffect(() => {
@@ -132,7 +166,7 @@ const Explore = () => {
       visible={showPagination}
       onPagePress={(num) => {
         setPage(num)
-        loadExplorePage(num)
+        loadPage(num)
         listRef.current?.scrollToOffset({
           offset: 0,
           animated: true,
@@ -150,10 +184,10 @@ const Explore = () => {
         numColumns={4}
         ListHeaderComponent={renderHeader}
         renderItem={renderContent}
-        ListEmptyComponent={<Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, padding: 35}}>There are currently no films matching this criteria...</Text>}
+        ListEmptyComponent={<Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no films matching this criteria...</Text>}
         ListFooterComponent={renderFooter}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={() => loadExplorePage(page)} />
+          <RefreshControl refreshing={isLoading} onRefresh={() => loadPage(page)} />
         }
         style={{
           alignSelf: 'center'

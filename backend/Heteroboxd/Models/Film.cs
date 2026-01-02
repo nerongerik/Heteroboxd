@@ -18,7 +18,7 @@ namespace Heteroboxd.Models
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
         public Dictionary<int, string> Collection { get; set; }
-        public DateTime? LastSync { get; set; } //if LastSync < tMDB's last update, resync
+        public DateTime LastSync { get; set; } //if LastSync < tMDB's last update, resync
 
         [JsonIgnore]
         public ICollection<CelebrityCredit> CastAndCrew { get; set; }

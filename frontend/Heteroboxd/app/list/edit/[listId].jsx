@@ -1,4 +1,4 @@
-import { Platform, StyleSheet, Text, TextInput, useWindowDimensions, View, TouchableOpacity, Pressable, FlatList, Modal, Animated } from 'react-native'
+import { Platform, StyleSheet, Text, TextInput, useWindowDimensions, View, TouchableOpacity, Pressable, FlatList, Animated } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth';
 import * as auth from '../../../helpers/auth';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -13,6 +13,7 @@ import { Poster } from '../../../components/poster';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import SearchBox from '../../../components/searchBox';
+import SlidingMenu from '../../../components/slidingMenu';
 
 const EditList = () => {
   const { listId } = useLocalSearchParams();
@@ -308,59 +309,50 @@ const EditList = () => {
       </Snackbar>
       <Popup visible={popupVisible} message={popupMsg} onClose={() => router.replace('/')} />
 
-      <Modal transparent visible={menuShown} animationType="fade">
-        <Pressable style={styles.overlay} onPress={() => {
-          setSearchResults(null);
-          closeMenu();
-        }}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
-        </Pressable>
-        <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
-          <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
-          {
-            (searchResults && searchResults.length > 0) ? (
-              <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: width*0.95}]}>
-              <FlatList
-                data={searchResults}
-                numColumns={1}
-                renderItem={({item, index}) => (
-                  <Pressable key={index} onPress={() => {
-                    if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, filmPosterUrl: item.posterUrl, filmTitle: item.title, filmYear: item.releaseYear }]);
-                    setSearchResults(null);
-                    closeMenu();
-                  }}>
-                    <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
-                      <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} other={true} />
-                      <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                        <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                          {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
-                        </Text>
-                        <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
-                          item.castAndCrew?.map((d, i) => (
-                            <Text key={i} style={{}}>
-                              {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
-                            </Text>
-                          ))
-                        }</Text>
-                      </View>
+      <SlidingMenu menuShown={menuShown} closeMenu={() => {setSearchResults(null); closeMenu();}} translateY={translateY} widescreen={widescreen} width={width}>
+        <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
+        {
+          (searchResults && searchResults.length > 0) ? (
+            <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: width*0.95}]}>
+            <FlatList
+              data={searchResults}
+              numColumns={1}
+              renderItem={({item, index}) => (
+                <Pressable key={index} onPress={() => {
+                  if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, filmPosterUrl: item.posterUrl, filmTitle: item.title, filmYear: item.releaseYear }]);
+                  setSearchResults(null);
+                  closeMenu();
+                }}>
+                  <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
+                    <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} other={true} />
+                    <View style={{flexShrink: 1, maxWidth: '100%'}}>
+                      <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+                        {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
+                      </Text>
+                      <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                        item.castAndCrew?.map((d, i) => (
+                          <Text key={i} style={{}}>
+                            {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                          </Text>
+                        ))
+                      }</Text>
                     </View>
-                  </Pressable>
-                )}
-                contentContainerStyle={{
-                  padding: 20,
-                  alignItems: 'flex-start',
-                  width: '100%'
-                }}
-                showsVerticalScrollIndicator={false}
-              />
-              </View>
-            ) : (searchResults && searchResults.length === 0) && (
-              <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
-            )
-          }
-        </Animated.View>
-      </Modal>
-
+                  </View>
+                </Pressable>
+              )}
+              contentContainerStyle={{
+                padding: 20,
+                alignItems: 'flex-start',
+                width: '100%'
+              }}
+              showsVerticalScrollIndicator={false}
+            />
+            </View>
+          ) : (searchResults && searchResults.length === 0) && (
+            <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+          )
+        }
+      </SlidingMenu>
     </View>
   )
 }
@@ -383,17 +375,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     alignSelf: 'center',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject
-  },
-  menu: {
-    backgroundColor: Colors.card,
-    bottom: 0,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    paddingVertical: 8,
-    position: 'absolute'
   },
   fab: {
     position: 'absolute',

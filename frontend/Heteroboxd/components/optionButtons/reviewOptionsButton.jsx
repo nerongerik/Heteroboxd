@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Modal, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import { BaseUrl } from '../../constants/api';
 import * as auth from '../../helpers/auth';
 import { Snackbar } from 'react-native-paper';
 import { Octicons } from '@expo/vector-icons';
+import SlidingMenu from '../slidingMenu';
 
 const ReviewOptionsButton = ({ reviewId }) => {
   const { user, isValidSession } = useAuth();
@@ -164,75 +165,63 @@ const ReviewOptionsButton = ({ reviewId }) => {
         <MaterialIcons name="more-vert" size={24} color={Colors.text} />
       </Pressable>
 
-      <Modal
-        transparent
-        visible={menuShown}
-        animationType="fade"
-        onRequestClose={closeMenu}
-      >
-        <Pressable 
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]}
-          onPress={closeMenu}
-        />
-
-        <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
-          {
-            user?.tier.toLowerCase() === 'admin' ? (
+      <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
+        {
+          user?.tier.toLowerCase() === 'admin' ? (
+            <TouchableOpacity style={styles.option} onPress={handleDelete}>
+              <Text style={styles.optionText}>Delete w/ Admin Privileges </Text>
+              <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
+            </TouchableOpacity>
+          ) : user?.userId !== review?.authorId ? (
+            <TouchableOpacity style={styles.option} onPress={handleReport}>
+              <Text style={styles.optionText}>Report Review </Text>
+              <Octicons name="report" size={18} color={Colors.text} />
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity style={styles.option} onPress={handleEdit}>
+                <Text style={styles.optionText}>Edit Review </Text>
+                <MaterialIcons name="edit" size={20} color={Colors.text} />
+              </TouchableOpacity>
+                {
+                  notifsOnLocal ? (
+                    <TouchableOpacity style={styles.option} onPress={handleNotifications}>
+                      <Text style={styles.optionText}>Turn Notifications Off </Text>
+                      <MaterialIcons name="notifications-off" size={20} color={Colors.text} />
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity style={styles.option} onPress={handleNotifications}>
+                      <Text style={styles.optionText}>Turn Notifications On </Text>
+                      <MaterialIcons name="notifications-active" size={20} color={Colors.text} />
+                    </TouchableOpacity>
+                  )
+                }
               <TouchableOpacity style={styles.option} onPress={handleDelete}>
-                <Text style={styles.optionText}>Delete w/ Admin Privileges </Text>
+                <Text style={styles.optionText}>Delete Review </Text>
                 <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
               </TouchableOpacity>
-            ) : user?.userId !== review?.authorId ? (
-              <TouchableOpacity style={styles.option} onPress={handleReport}>
-                <Text style={styles.optionText}>Report Review </Text>
-                <Octicons name="report" size={18} color={Colors.text} />
-              </TouchableOpacity>
-            ) : (
-              <>
-                <TouchableOpacity style={styles.option} onPress={handleEdit}>
-                  <Text style={styles.optionText}>Edit Review </Text>
-                  <MaterialIcons name="edit" size={20} color={Colors.text} />
-                </TouchableOpacity>
-                  {
-                    notifsOnLocal ? (
-                      <TouchableOpacity style={styles.option} onPress={handleNotifications}>
-                        <Text style={styles.optionText}>Turn Notifications Off </Text>
-                        <MaterialIcons name="notifications-off" size={20} color={Colors.text} />
-                      </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity style={styles.option} onPress={handleNotifications}>
-                        <Text style={styles.optionText}>Turn Notifications On </Text>
-                        <MaterialIcons name="notifications-active" size={20} color={Colors.text} />
-                      </TouchableOpacity>
-                    )
-                  }
-                <TouchableOpacity style={styles.option} onPress={handleDelete}>
-                  <Text style={styles.optionText}>Delete Review </Text>
-                  <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
-                </TouchableOpacity>
-              </>
-            )
-          }
-          <Snackbar
-            visible={snack}
-            onDismiss={() => setSnack(false)}
-            duration={3000}
-            style={{
-              backgroundColor: Colors.card,
-              width: Platform.OS === 'web' && width > 1000 ? width*0.5 : width*0.9,
-              alignSelf: 'center',
-              borderRadius: 8,
-            }}
-            action={{
-              label: 'OK',
-              onPress: () => setSnack(false),
-              textColor: Colors.text_link
-            }}
-          >
-            {msg}
-          </Snackbar>
-        </Animated.View>
-      </Modal>
+            </>
+          )
+        }
+        <Snackbar
+          visible={snack}
+          onDismiss={() => setSnack(false)}
+          duration={3000}
+          style={{
+            backgroundColor: Colors.card,
+            width: Platform.OS === 'web' && width > 1000 ? width*0.5 : width*0.9,
+            alignSelf: 'center',
+            borderRadius: 8,
+          }}
+          action={{
+            label: 'OK',
+            onPress: () => setSnack(false),
+            textColor: Colors.text_link
+          }}
+        >
+          {msg}
+        </Snackbar>
+      </SlidingMenu>
     </View>
   );
 };
@@ -240,17 +229,6 @@ const ReviewOptionsButton = ({ reviewId }) => {
 export default ReviewOptionsButton;
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
-  menu: {
-    position: 'absolute',
-    bottom: 0,
-    backgroundColor: Colors.card,
-    paddingVertical: 10,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12
-  },
   option: {
     paddingVertical: 14,
     paddingHorizontal: 20,
