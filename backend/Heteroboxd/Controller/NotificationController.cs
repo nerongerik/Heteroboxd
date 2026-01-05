@@ -19,13 +19,13 @@ namespace Heteroboxd.Controller
 
         [HttpGet("{UserId}")]
         [Authorize]
-        public async Task<IActionResult> GetNotificationsByUser(string UserId)
+        public async Task<IActionResult> GetNotificationsByUser(string UserId, int Page, int PageSize)
         {
             _logger.LogInformation($"GET Notifications by User endpoint hit for User: {UserId}");
             try
             {
-                var Notifications = await _service.GetNotificationsByUser(UserId);
-                return Ok(Notifications);
+                var NotificationsPage = await _service.GetNotificationsByUser(UserId, Page, PageSize);
+                return Ok(NotificationsPage);
             }
             catch
             {

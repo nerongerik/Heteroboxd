@@ -21,6 +21,15 @@ export function parseDate(date) {
     return `${month} ${day}, ${year}`;
 }
 
+export function parseDateShort(date) {
+    if (!date) return date;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const nums = date.split(" ")[0].split("/");
+    const day = nums[0]; const year = nums[2];
+    const month = months[parseInt(nums[1] - 1)];
+    return `${month} ${day},\n${year}`;
+}
+
 export function parseCountry(country, platform) {
   if (!country || country.length === 0) return null;
   return Object.keys(country).map(c => {

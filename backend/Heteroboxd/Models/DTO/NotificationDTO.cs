@@ -1,4 +1,6 @@
-﻿namespace Heteroboxd.Models.DTO
+﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+namespace Heteroboxd.Models.DTO
 {
     public class NotificationInfoResponse
     {
@@ -16,5 +18,13 @@
             this.Read = Notification.Read;
             this.UserId = Notification.UserId.ToString();
         }
+    }
+
+    public class PagedNotificationResponse
+    {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public List<NotificationInfoResponse> Notifications { get; set; }
     }
 }

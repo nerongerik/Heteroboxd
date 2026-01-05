@@ -14,6 +14,7 @@ const Home = () => {
       <Link style={styles.link} href='/film/769'>Film</Link>
       <Link style={styles.link} href='/film/11'>Film w/ Collection</Link>
       <Link style={styles.link} href='/profile/019a699e-189a-72f3-a490-75efd46c1994'>Other User</Link>
+      <Link style={styles.link} href='/notifications'>Notifs</Link>
       {
         !user ? (
           <Link style={styles.link} href='/login'>Profile</Link>

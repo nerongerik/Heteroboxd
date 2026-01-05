@@ -1,5 +1,4 @@
 import { Platform, StyleSheet } from 'react-native'
-import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
@@ -57,6 +56,14 @@ const RootLayout = () => {
           name="list/create" 
           options={{
             headerTitle: 'New List',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title},
+          }}
+        />
+        <Stack.Screen 
+          name="notifications" 
+          options={{
+            headerTitle: 'Your notifications',
             headerTitleAlign: 'center',
             headerTitleStyle: {color: Colors.text_title},
           }}

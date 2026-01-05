@@ -45,7 +45,8 @@ namespace Heteroboxd.Repository
 
             var TotalCount = await EntryQuery.CountAsync();
 
-            var Entries = await EntryQuery.Skip((Page - 1) * PageSize)
+            var Entries = await EntryQuery
+                .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
 

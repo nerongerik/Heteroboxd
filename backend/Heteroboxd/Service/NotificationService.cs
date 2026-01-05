@@ -8,7 +8,7 @@ namespace Heteroboxd.Service
 {
     public interface INotificationService
     {
-        Task<List<NotificationInfoResponse>> GetNotificationsByUser(string UserId);
+        Task<PagedNotificationResponse> GetNotificationsByUser(string UserId, int Page, int PageSize);
         Task<int> AnyNewNotifications(string UserId);
         Task AddNotification(string Text, NotificationType Type, Guid UserId);
         Task ReadAll(string UserId);
@@ -27,10 +27,16 @@ namespace Heteroboxd.Service
             _userRepo = userRepo;
         }
 
-        public async Task<List<NotificationInfoResponse>> GetNotificationsByUser(string UserId)
+        public async Task<PagedNotificationResponse> GetNotificationsByUser(string UserId, int Page, int PageSize)
         {
-            var UsersNotifications = await _repo.GetByUserAsync(Guid.Parse(UserId));
-            return UsersNotifications.Select(n => new NotificationInfoResponse(n)).ToList();
+            var (Notifications, TotalCount) = await _repo.GetByUserPagedAsync(Guid.Parse(UserId), Page, PageSize);
+            return new PagedNotificationResponse
+            {
+                Page = Page,
+                PageSize = PageSize,
+                TotalCount = TotalCount,
+                Notifications = Notifications.Select(n => new NotificationInfoResponse(n)).ToList()
+            };
         }
 
         public async Task<int> AnyNewNotifications(string UserId) =>
