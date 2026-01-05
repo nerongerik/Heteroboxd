@@ -2,6 +2,7 @@
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Heteroboxd.Controller
 {
@@ -343,27 +344,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"PUT Relationship endpoint hit with originator {UserId}, target {TargetId}\nAction = {Action}");
             try
             {
-                await _service.UpdateRelationship(UserId, TargetId, Action);
-                return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpPut("likes")]
-        [Authorize]
-        public async Task<IActionResult> UpdateUserLikes(UpdateUserLikesRequest Request)
-        {
-            _logger.LogInformation($"PUT User's Likes endpoint hit for User: {Request.UserId}");
-            try
-            {
-                await _service.UpdateLikes(Request);
+                await _service.UpdateRelationship(UserId, TargetId, Action); //also handles notifs
                 return Ok();
             }
             catch (KeyNotFoundException)

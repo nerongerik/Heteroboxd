@@ -24,7 +24,7 @@ namespace Heteroboxd.Service
         Task UpdateWatchlist(string UserId, int FilmId);
         Task<Dictionary<string, object?>> UpdateFavorites(string UserId, int? FilmId, int Index);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
-        Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
+        Task UpdateLikes(UpdateLikesRequest LikeRequest);
         Task TrackFilm(string UserId, int FilmId, string Action);
         Task DeleteUser(string UserId);
     }
@@ -34,18 +34,22 @@ namespace Heteroboxd.Service
         private readonly IUserRepository _repo;
         private readonly IFilmRepository _filmRepo;
         private readonly IReviewRepository _reviewRepo;
+        private readonly IUserListRepository _listRepo;
         private readonly IAuthService _authService;
         private readonly UserManager<User> _userManager;
         private readonly ILogger<UserService> _logger;
+        private readonly INotificationService _notificationService;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IUserListRepository listRepo, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger, INotificationService notificationService)
         {
             _repo = repo;
             _filmRepo = filmRepo;
             _reviewRepo = reviewRepository;
+            _listRepo = listRepo;
             _authService = authService;
             _userManager = userManager;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         public async Task<UserInfoResponse?> GetUser(string UserId)
@@ -311,7 +315,6 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Failed to verify User with Id: {UserId}; Parsing failed.");
                 throw new Exception();
             }
-            
         }
 
         public async Task ReportUserEfCore7Async(string UserId)
@@ -428,16 +431,24 @@ namespace Heteroboxd.Service
             switch(Action)
             {
                 case ("follow-unfollow"):
-                    await _repo.FollowUnfollowAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
+                    var (SendNotif, UserName) = await _repo.FollowUnfollowAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
                     _logger.LogInformation("Successfully followed/unfollowed.");
                     await _repo.SaveChangesAsync();
+                    if (SendNotif)
+                    {
+                        await _notificationService.AddNotification(
+                            $"{UserName} just followed you!",
+                            Models.Enums.NotificationType.Follow,
+                            Guid.Parse(TargetId)
+                        );
+                    }
                     break;
                 case ("block-unblock"):
                     await _repo.BlockUnblockAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
                     _logger.LogInformation("Successfully blocked/unblocked.");
                     await _repo.SaveChangesAsync();
                     break;
-                case ("add-remove-follower"):
+                case ("remove-follower"):
                     await _repo.FollowUnfollowAsync(Guid.Parse(TargetId), Guid.Parse(UserId));
                     _logger.LogInformation("Successfully added/removed follower.");
                     await _repo.SaveChangesAsync();
@@ -445,17 +456,40 @@ namespace Heteroboxd.Service
             }
         }
 
-        public async Task UpdateLikes(UpdateUserLikesRequest LikeRequest)
+        public async Task UpdateLikes(UpdateLikesRequest LikeRequest)
         {
             if (LikeRequest.ReviewId != null)
             {
+
+                var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(LikeRequest.ReviewId));
+                if (Review == null) throw new KeyNotFoundException();
+
                 await _repo.UpdateLikedReviewsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ReviewId));
                 await _repo.SaveChangesAsync();
+
+                if (LikeRequest.LikeChange < 0 || !Review!.NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
+                
+                await _notificationService.AddNotification(
+                    $"{LikeRequest.UserName} liked your review of {LikeRequest.FilmTitle!}",
+                    Models.Enums.NotificationType.Review,
+                    Guid.Parse(LikeRequest.AuthorId)
+                );
             }
             else if (LikeRequest.ListId != null)
             {
+                var UserList = await _listRepo.GetByIdAsync(Guid.Parse(LikeRequest.ListId));
+                if (UserList == null) throw new KeyNotFoundException();
+
                 await _repo.UpdateLikedListsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ListId));
                 await _repo.SaveChangesAsync();
+
+                if (LikeRequest.LikeChange < 0 || !UserList!.NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
+
+                await _notificationService.AddNotification(
+                    $"{LikeRequest.UserName} liked your list '{LikeRequest.ListName!}'",
+                    Models.Enums.NotificationType.List,
+                    Guid.Parse(LikeRequest.AuthorId)
+                );
             }
             else throw new ArgumentNullException();
         }

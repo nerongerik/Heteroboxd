@@ -1,4 +1,5 @@
 import { Platform, StyleSheet } from 'react-native'
+import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'

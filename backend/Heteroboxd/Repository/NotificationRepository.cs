@@ -7,6 +7,7 @@ namespace Heteroboxd.Repository
     public interface INotificationRepository
     {
         Task<Notification?> GetByIdAsync(Guid NotificationId);
+        Task<int> CountUnread(Guid UserId);
         Task<List<Notification>> GetByUserAsync(Guid UserId);
         void Create(Notification Notification);
         void Update(Notification Notification);
@@ -26,6 +27,9 @@ namespace Heteroboxd.Repository
         public async Task<Notification?> GetByIdAsync(Guid NotificationId) =>
             await _context.Notifications
                 .FirstOrDefaultAsync(n => n.Id == NotificationId);
+
+        public async Task<int> CountUnread(Guid UserId) =>
+            await _context.Notifications.Where(n => n.UserId == UserId && !n.Read).CountAsync();
 
         public async Task<List<Notification>> GetByUserAsync(Guid UserId) =>
             await _context.Notifications

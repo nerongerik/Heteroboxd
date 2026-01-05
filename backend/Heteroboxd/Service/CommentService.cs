@@ -14,15 +14,17 @@ namespace Heteroboxd.Service
 
     public class CommentService : ICommentService
     {
+        private readonly INotificationService _notificationService;
         private readonly ICommentRepository _repo;
         private readonly IUserRepository _userRepo;
         private readonly IReviewRepository _reviewRepo;
 
-        public CommentService(ICommentRepository repo, IUserRepository userRepo, IReviewRepository reviewRepo)
+        public CommentService(ICommentRepository repo, IUserRepository userRepo, IReviewRepository reviewRepo, INotificationService notificationService)
         {
             _repo = repo;
             _userRepo = userRepo;
             _reviewRepo = reviewRepo;
+            _notificationService = notificationService;
         }
 
         public async Task<PagedCommentResponse> GetCommentsByReview(string ReviewId, int Page, int PageSize)
@@ -66,9 +68,20 @@ namespace Heteroboxd.Service
 
         public async Task CreateComment(CreateCommentRequest CommentRequest)
         {
-            Comment Comment = new Comment(CommentRequest.Text, Guid.Parse(CommentRequest.AuthorId), Guid.Parse(CommentRequest.ReviewId));
+            Review? Review = await _reviewRepo.GetByIdAsync(Guid.Parse(CommentRequest.ReviewId));
+            if (Review == null) throw new KeyNotFoundException();
+
+            Comment Comment = new Comment(CommentRequest.Text, Guid.Parse(CommentRequest.AuthorId), Review.Id);
             _repo.Create(Comment);
             await _repo.SaveChangesAsync();
+
+            if (!Review.NotificationsOn || Review.AuthorId == Guid.Parse(CommentRequest.AuthorId)) return;
+
+            await _notificationService.AddNotification(
+                $"{CommentRequest.AuthorName} commented on your review of {CommentRequest.FilmTitle}",
+                Models.Enums.NotificationType.Comment,
+                Review.AuthorId
+            );
         }
 
         public async Task DeleteComment(string CommentId)

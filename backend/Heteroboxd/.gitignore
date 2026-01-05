@@ -64,3 +64,6 @@ dist/
 # App settings (contains secrets, don't commit)
 appsettings.json
 appsettings.Development.json
+
+# Firebase Console Config
+heteroboxd-firebase-adminsdk-fbsvc-25e265c424.json

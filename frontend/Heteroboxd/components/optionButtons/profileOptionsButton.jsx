@@ -93,17 +93,19 @@ const ProfileOptionsButton = ({ userId }) => {
   //button functionalities
   async function handleLogout() {
     setResult(0);
-    if (!(isValidSession)) {
+    const vS = await isValidSession();
+    if (!vS) {
       setMessage("Session invalid - you cannot sign out of your account.")
       setResult(401);
-    } else {
-      await logout(userId);
-      router.replace('/');
+      return;
     }
+    await logout(userId);
+    router.replace('/');
   }
   async function handleDelete() {
     setResult(0);
-    if (!(await isValidSession())) {
+    const vS = await isValidSession();
+    if (!vS) {
       setMessage("Session invalid - you cannot delete your account.")
       setResult(401);
     }
@@ -136,7 +138,8 @@ const ProfileOptionsButton = ({ userId }) => {
     }
   }
   async function handleEdit() {
-    if (!(isValidSession())) {
+    const vS = await isValidSession();
+    if (!vS) {
       setMessage("Session invalid - you cannot edit your account.")
       setResult(401);
     } else {
@@ -151,7 +154,8 @@ const ProfileOptionsButton = ({ userId }) => {
     }
   }
   async function handleReport() {
-    if (!(isValidSession())) {
+    const vS = await isValidSession();
+    if (!vS) {
       setMessage("Session invalid - you cannot report this account.")
       setResult(401);
     } else {
@@ -176,7 +180,8 @@ const ProfileOptionsButton = ({ userId }) => {
     }
   }
   async function handleBlock() {
-    if (!(isValidSession())) {
+    const vS = await isValidSession();
+    if (!vS) {
       setMessage("Session invalid - you cannot block this account.")
       setResult(401);
     } else {

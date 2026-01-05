@@ -61,11 +61,16 @@
         public string? Bio { get; set; }
     }
 
-    public class UpdateUserLikesRequest
+    public class UpdateLikesRequest
     {
-        public string UserId { get; set; }
-        public string? ReviewId { get; set; }
-        public string? ListId { get; set; }
+        public string UserId { get; set; } //who likes it
+        public string UserName { get; set; } //his display
+        public string AuthorId { get; set; } //who gets a notification
+        public string? ReviewId { get; set; } //target
+        public string? FilmTitle { get; set; } //if review
+        public string? ListId { get; set; } //target
+        public string? ListName { get; set; } //if list
+        public int LikeChange { get; set; } // +1 or -1
     }
 
     public class DonateRequest

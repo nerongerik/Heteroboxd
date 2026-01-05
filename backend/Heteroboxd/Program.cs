@@ -1,3 +1,4 @@
+using Heteroboxd.Background;
 using Heteroboxd.Data;
 using Heteroboxd.Integrations;
 using Heteroboxd.Models;
@@ -8,7 +9,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
+//using FirebaseAdmin;
+//using Google.Apis.Auth.OAuth2;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -107,8 +109,18 @@ builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
+builder.Services.AddHostedService<RefreshPurgeService>();
+
 // --- CONTROLLERS ---
 builder.Services.AddControllers();
+
+/*
+// --- REAL-TIME NOTIFICATIONS SERVICE (Firebase) ---
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile("heteroboxd-firebase-adminsdk-fbsvc-25e265c424.json")
+});
+*/
 
 var app = builder.Build();
 

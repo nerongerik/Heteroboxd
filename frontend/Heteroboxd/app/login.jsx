@@ -38,7 +38,6 @@ const Login = () => {
       if (res.status === 200) {
         const data = await res.json();
         await login(data.jwt, data.refresh);
-
         setResponse(200);
         router.replace('/');
         return;

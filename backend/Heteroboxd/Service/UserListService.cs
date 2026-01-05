@@ -18,7 +18,7 @@ namespace Heteroboxd.Service
         Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries);
         Task UpdateList(UpdateUserListRequest ListRequest);
         Task UpdateListsBulk(BulkUpdateRequest Request);
-        Task UpdateLikeCountEfCore7(string ListId, string LikeChange);
+        Task UpdateLikeCountEfCore7(string ListId, int Delta);
         Task ToggleNotificationsEfCore7(string ListId);
         Task DeleteList(string ListId);
     }
@@ -194,10 +194,9 @@ namespace Heteroboxd.Service
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateLikeCountEfCore7(string ListId, string LikeChange)
+        public async Task UpdateLikeCountEfCore7(string ListId, int Delta)
         {
             if (!Guid.TryParse(ListId, out var Id)) throw new ArgumentException();
-            if (!int.TryParse(LikeChange, out var Delta)) throw new ArgumentException();
             await _repo.UpdateLikeCountEfCore7Async(Id, Delta);
         }
 

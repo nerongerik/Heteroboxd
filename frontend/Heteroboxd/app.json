@@ -14,7 +14,8 @@
       "backgroundColor": "#0075ff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nerongerik.heteroboxd"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +27,9 @@
       "statusBar": {
         "barStyle": "light-content",
         "backgroundColor": "#191d1f"
-      }
+      },
+      "googleServicesFile": "./google-services.json",
+      "package": "com.nerongerik.heteroboxd"
     },
     "web": {
       "favicon": "./assets/favicon.png"

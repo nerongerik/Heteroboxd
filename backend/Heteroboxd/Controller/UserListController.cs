@@ -10,12 +10,14 @@ namespace Heteroboxd.Controller
     public class UserListController : ControllerBase
     {
         private readonly IUserListService _service;
+        private readonly IUserService _userService;
         private readonly ILogger<UserListController> _logger;
 
-        public UserListController(IUserListService service, ILogger<UserListController> logger)
+        public UserListController(IUserListService service,  ILogger<UserListController> logger, IUserService userService)
         {
             _service = service;
             _logger = logger;
+            _userService = userService;
         }
 
         [HttpGet("{UserListId}")]
@@ -227,14 +229,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("like-count/{UserListId}/{LikeChange}")]
+        [HttpPut("like")]
         [Authorize]
-        public async Task<IActionResult> UpdateLikeCount(string UserListId, string LikeChange)
+        public async Task<IActionResult> UpdateLikes(UpdateLikesRequest Request)
         {
-            _logger.LogInformation($"PUT Like Count endpoint hit for ListId: {UserListId} with Change: {LikeChange}");
+            _logger.LogInformation($"PUT UserList likes endpoint hit for {Request.ListId!}");
             try
             {
-                await _service.UpdateLikeCountEfCore7(UserListId, LikeChange);
+                await _service.UpdateLikeCountEfCore7(Request.ListId!, Request.LikeChange);
+                await _userService.UpdateLikes(Request); //also handles notifs
                 return Ok();
             }
             catch (KeyNotFoundException)

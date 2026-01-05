@@ -275,6 +275,7 @@ namespace Heteroboxd.Data
                 entity.HasKey(rt => rt.Id);
             });
 
+            // Trending
             modelBuilder.Entity<Trending>(entity =>
             {
                 entity.HasKey(t => t.FilmId);

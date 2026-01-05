@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Heteroboxd.Controller
@@ -19,7 +17,7 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet("user-notifications/{UserId}")]
+        [HttpGet("{UserId}")]
         [Authorize]
         public async Task<IActionResult> GetNotificationsByUser(string UserId)
         {
@@ -28,6 +26,38 @@ namespace Heteroboxd.Controller
             {
                 var Notifications = await _service.GetNotificationsByUser(UserId);
                 return Ok(Notifications);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("count/{UserId}")]
+        [Authorize]
+        public async Task<IActionResult> CheckNotifications(string UserId)
+        {
+            _logger.LogInformation($"GET number of new notifications endpoint hit for User: {UserId}");
+            try
+            {
+                var Count = await _service.AnyNewNotifications(UserId);
+                return Ok(Count);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPut("all/{UserId}")]
+        [Authorize]
+        public async Task<IActionResult> MarkAllAsRead(string UserId)
+        {
+            _logger.LogInformation($"PUT all notifs as read endpoint hit for User: {UserId}");
+            try
+            {
+                await _service.ReadAll(UserId);
+                return Ok();
             }
             catch
             {
