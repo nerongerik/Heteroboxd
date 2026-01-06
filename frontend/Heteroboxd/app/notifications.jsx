@@ -70,15 +70,84 @@ const Notifications = () => {
   const maxRowWidth = useMemo(() => Math.min(1000, width*0.95), [width])
 
   const handleReadAll = async () => {
-
+    const vS = await isValidSession();
+    if (!user || !vS) {
+      router.replace('/login')
+      return
+    }
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/notifications/all/${user.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        }
+      })
+      if (res.status === 200) {
+        loadNotifsPage(page)
+      } else {
+        setMessage('Something went wrong. Please try again later.')
+        setResponse(res.status)
+      }
+    } catch {
+      setMessage('Network error! Please check your internet connection.')
+      setResponse(500)
+    }
   }
 
   const handleNotifRead = async (i) => {
-
+    const vS = await isValidSession();
+    if (!user || !vS) {
+      router.replace('/login')
+      return
+    }
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/notifications/${notifs[i]?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        }
+      })
+      if (res.status === 200) {
+        loadNotifsPage(page)
+      } else {
+        setMessage('Something went wrong. Please try again later.')
+        setResponse(res.status)
+      }
+    } catch {
+      setMessage('Network error! Please check your internet connection.')
+      setResponse(500)
+    }
   }
 
   const handleNotifDelete = async (i) => {
-
+    const vS = await isValidSession();
+    if (!user || !vS) {
+      router.replace('/login')
+      return
+    }
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/notifications/${notifs[i]?.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        }
+      })
+      if (res.status === 200) {
+        loadNotifsPage(page)
+      } else {
+        setMessage('Something went wrong. Please try again later.')
+        setResponse(res.status)
+      }
+    } catch {
+      setMessage('Network error! Please check your internet connection.')
+      setResponse(500)
+    }
   }
 
   const renderHeader = () => (
@@ -104,9 +173,11 @@ const Notifications = () => {
           marginBottom: 10,
           paddingVertical: 15,
           width: maxRowWidth,
-          borderRadius: 3
+          borderRadius: 3,
+          borderWidth: 1,
+          borderColor: Colors.border_color
         }}
-        onPress={() => handleNotifRead(index)}
+        onPress={item.read ? null : () => handleNotifRead(index)}
         onLongPress={() => handleNotifDelete(index)}
       >
         <View style={{flexShrink: 0, backgroundColor: item.read ? 'transparent' : Colors.heteroboxd, width: 15, height: 15, borderRadius: 999, marginLeft: 10}} />
