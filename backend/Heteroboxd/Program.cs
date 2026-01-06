@@ -110,6 +110,7 @@ builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 builder.Services.AddHostedService<RefreshPurgeService>();
+builder.Services.AddHostedService<NotificationPurgeService>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();
