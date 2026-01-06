@@ -54,7 +54,7 @@ namespace Heteroboxd.Background
                     HeteroboxdContext _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
 
                     List<Notification> Expired = await _context.Notifications
-                        .Where(n => n.Read && n.Date.AddDays(30) < DateTime.UtcNow)
+                        .Where(n => n.Date.AddDays(30) < DateTime.UtcNow)
                         .ToListAsync(CancellationToken);
                     _context.Notifications.RemoveRange(Expired);
                     await _context.SaveChangesAsync(CancellationToken);
