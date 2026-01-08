@@ -1,6 +1,6 @@
-﻿using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
-using Heteroboxd.Models;
 using Microsoft.AspNetCore.Identity;
 
 namespace Heteroboxd.Service
@@ -12,7 +12,7 @@ namespace Heteroboxd.Service
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId); //for checking if a film is in the watchlist (quick lookup)
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<Dictionary<string, List<UserInfoResponse>>> GetRelationships(string UserId); //example: {"following": [User1, User2, User3], "followers": [User2], "blocked": [User4, User5]}
-        Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedComments": [Comment1, Comment2], "likedLists": [List1, List2]}
+        Task<Dictionary<string, IEnumerable<object>>> GetLikes(string UserId); //example: {"likedReviews": [Review1, Review2], "likedLists": [List1, List2]}
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType); //ObjectType: "review", "comment", "list"
         Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
         Task<List<FriendFilmResponse>> GetFriendsForFilm(string UserId, int FilmId);
@@ -194,23 +194,30 @@ namespace Heteroboxd.Service
 
             if (_likedLists == null || _likedReviews == null) throw new KeyNotFoundException();
 
-            var TaskedReviews = _likedReviews.LikedReviews.Select(async r =>
+            var ReviewAuthorIds = _likedReviews.LikedReviews.Select(r => r.AuthorId).ToHashSet();
+            var ListAuthorIds = _likedLists.LikedLists.Select(ul => ul.AuthorId).ToHashSet();
+            var AuthorIds = ReviewAuthorIds.Union(ListAuthorIds).ToList();
+            var FilmIds = _likedReviews.LikedReviews.Select(r => r.FilmId).ToList();
+
+            var AuthorsTask = _repo.GetByIdsAsync(AuthorIds);
+            var FilmsTask = _filmRepo.GetByIdsAsync(FilmIds);
+
+            await Task.WhenAll(AuthorsTask, FilmsTask);
+
+            var Authors = (await AuthorsTask).ToDictionary(a => a.Id);
+            var Films = (await FilmsTask).ToDictionary(f => f.Id);
+
+            var LikedReviews = _likedReviews.LikedReviews.Select(r =>
             {
-                var Author = await _repo.GetByIdAsync(r.AuthorId);
-                var Film = await _filmRepo.GetByIdAsync(r.FilmId);
-                if (Author == null || Film == null) throw new KeyNotFoundException();
+                if (!Authors.TryGetValue(r.AuthorId, out var Author) || !Films.TryGetValue(r.FilmId, out var Film)) throw new KeyNotFoundException();
                 return new ReviewInfoResponse(r, Author, Film);
-            });
+            }).ToList();
 
-            var TaskedLists = _likedLists.LikedLists.Select(async ul =>
+            var LikedLists = _likedLists.LikedLists.Select(ul =>
             {
-                var Author = await _repo.GetByIdAsync(ul.AuthorId);
-                if (Author == null) throw new KeyNotFoundException();
+                if (!Authors.TryGetValue(ul.AuthorId, out var Author)) throw new KeyNotFoundException();
                 return new UserListInfoResponse(ul, Author);
-            });
-
-            var LikedReviews = await Task.WhenAll(TaskedReviews);
-            var LikedLists = await Task.WhenAll(TaskedLists);
+            }).ToList();
 
             return new Dictionary<string, IEnumerable<object>>
             {

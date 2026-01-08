@@ -192,6 +192,9 @@ const Profile = () => {
 
   function handleButtons(button) {
     switch(button) {
+      case 'Watched':
+        router.push(`/films/user-watched/${userId}`);
+        break;
       case 'Watchlist':
         router.push(`/films/watchlist/${userId}`);
         break;
@@ -203,7 +206,7 @@ const Profile = () => {
         else router.push(`/lists/user/${userId}`);
         break;
       case 'Likes':
-        console.log('I am yet to decide on the most practical way to make this happen with tabs and all.');
+        router.push(`/likes/${userId}`);
         break;
       case 'Followers':
         router.push(`/relationships/${userId}?t=followers`);
@@ -574,43 +577,25 @@ const Profile = () => {
               showsHorizontalScrollIndicator={widescreen}
               style={{ maxWidth: Math.min(width * 0.95, 1000), paddingBottom: 10 }}
               contentContainerStyle={{alignItems: 'center'}}
-              data={[...recent.slice(0, 8), null]}
-              keyExtractor={(item) => item ? item.filmId.toString() : 'seeall'}
+              data={recent.slice(0, 8)}
+              keyExtractor={(item) => item.filmId.toString()}
               renderItem={({ item }) => {
-                if (item) {
-                  return (
-                    <Pressable
-                      onPress={() => router.push(`/film/${item.filmId}`)}
-                      style={{ marginRight: spacing }}
-                    >
-                      <Poster
-                        posterUrl={item?.posterUrl ?? null}
-                        style={{
-                          width: colPosterWidth,
-                          height: colPosterHeight,
-                          borderRadius: 6,
-                          borderWidth: 2,
-                          borderColor: Colors.border_color,
-                        }}
-                        other={!isOwnProfile}
-                      />
-                    </Pressable>
-                  );
-                }
                 return (
-                  <Pressable onPress={() => router.push(`/films/user-watched/${userId}`)}>
-                    <Text
-                      style={[
-                        styles.boxButtonText,
-                        {
-                          marginLeft: widescreen ? -spacing / 2 : null,
-                          color: Colors.text_title,
-                          fontSize: widescreen ? 36 : 24
-                        },
-                      ]}
-                    >
-                      {' '}<Text style={{fontWeight: 'bold'}}>{recent.length}</Text>{'➜'}
-                    </Text>
+                  <Pressable
+                    onPress={() => router.push(`/film/${item.filmId}`)}
+                    style={{ marginRight: spacing }}
+                  >
+                    <Poster
+                      posterUrl={item?.posterUrl ?? null}
+                      style={{
+                        width: colPosterWidth,
+                        height: colPosterHeight,
+                        borderRadius: 6,
+                        borderWidth: 2,
+                        borderColor: Colors.border_color,
+                      }}
+                      other={!isOwnProfile}
+                    />
                   </Pressable>
                 );
               }}
@@ -623,6 +608,7 @@ const Profile = () => {
         <View style={styles.buttons}>
           {[
             ...(isOwnProfile ? [{ label: "Watchlist", count: data.watchlistCount }] : []),
+            { label: "Watched", count: recent?.length ?? 0 },
             { label: "Reviews", count: data.reviewsCount },
             { label: "Lists", count: data.listsCount },
             { label: "Likes", count: data.likes },

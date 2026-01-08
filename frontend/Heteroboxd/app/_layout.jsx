@@ -73,7 +73,15 @@ const RootLayout = () => {
           options={({ route }) => ({
             headerRight: () => <ListOptionsButton listId={route.params?.listId} />,
             headerTitle: '',
-            })}
+          })}
+        />
+        <Stack.Screen 
+          name="likes/[userId]"
+          options={{
+            headerTitle: 'Likes',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title},
+          }}
         />
         <Stack.Screen 
           name="lists/film/[filmId]" 
