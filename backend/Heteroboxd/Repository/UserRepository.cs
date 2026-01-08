@@ -25,7 +25,7 @@ namespace Heteroboxd.Repository
         Task RemoveFromWatchlist(WatchlistEntry Entry);
         Task UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId);
         Task UpdateLikedListsAsync(Guid UserId, Guid ListId);
-        Task FollowUnfollowAsync(Guid UserId, Guid TargetId);
+        Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId);
         Task BlockUnblockAsync(Guid UserId, Guid TargetId);
 
         Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId);
@@ -224,7 +224,7 @@ namespace Heteroboxd.Repository
             else User.LikedLists.Add(UserList);
         }
 
-        public async Task FollowUnfollowAsync(Guid UserId, Guid TargetId)
+        public async Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId)
         {
             var User = await _context.Users
                 .Include(u => u.Following)
@@ -237,11 +237,13 @@ namespace Heteroboxd.Repository
             {
                 User.Following.Remove(Target);
                 Target.Followers.Remove(User);
+                return (false, "");
             }
             else
             {
                 User.Following.Add(Target);
                 Target.Followers.Add(User);
+                return (true, User.Name);
             }
         }
 

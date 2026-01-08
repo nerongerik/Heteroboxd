@@ -1,13 +1,17 @@
-﻿using Heteroboxd.Models.DTO;
+﻿using FirebaseAdmin.Messaging;
 using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
+using Heteroboxd.Models.Enums;
 using Heteroboxd.Repository;
 
 namespace Heteroboxd.Service
 {
     public interface INotificationService
     {
-        Task<List<NotificationInfoResponse>> GetNotificationsByUser(string UserId);
-        Task AddNotification(string Title, string Text, string UserId);
+        Task<PagedNotificationResponse> GetNotificationsByUser(string UserId, int Page, int PageSize);
+        Task<int> AnyNewNotifications(string UserId);
+        Task AddNotification(string Text, NotificationType Type, Guid UserId);
+        Task ReadAll(string UserId);
         Task UpdateNotification(string NotificationId);
         Task DeleteNotification(string NotificationId);
     }
@@ -15,21 +19,44 @@ namespace Heteroboxd.Service
     public class NotificationService : INotificationService
     {
         private readonly INotificationRepository _repo;
+        private readonly IUserRepository _userRepo;
 
-        public NotificationService(INotificationRepository repo)
+        public NotificationService(INotificationRepository repo, IUserRepository userRepo)
         {
             _repo = repo;
+            _userRepo = userRepo;
         }
 
-        public async Task<List<NotificationInfoResponse>> GetNotificationsByUser(string UserId)
+        public async Task<PagedNotificationResponse> GetNotificationsByUser(string UserId, int Page, int PageSize)
         {
-            var UsersNotifications = await _repo.GetByUserAsync(Guid.Parse(UserId));
-            return UsersNotifications.Select(n => new NotificationInfoResponse(n)).ToList();
+            var (Notifications, TotalCount) = await _repo.GetByUserPagedAsync(Guid.Parse(UserId), Page, PageSize);
+            return new PagedNotificationResponse
+            {
+                Page = Page,
+                PageSize = PageSize,
+                TotalCount = TotalCount,
+                Notifications = Notifications.Select(n => new NotificationInfoResponse(n)).ToList()
+            };
         }
 
-        public async Task AddNotification(string Title, string Text, string UserId)
+        public async Task<int> AnyNewNotifications(string UserId) =>
+            await _repo.CountUnread(Guid.Parse(UserId));
+
+        public async Task AddNotification(string Text, NotificationType Type, Guid UserId)
         {
-            _repo.Create(new Notification(Title, Text, Guid.Parse(UserId)));
+            Models.Notification Notification = new Models.Notification(Text, Type, UserId);
+            _repo.Create(Notification);
+            await _repo.SaveChangesAsync();
+        }
+
+        public async Task ReadAll(string UserId)
+        {
+            List<Models.Notification> Notifications = await _repo.GetByUserAsync(Guid.Parse(UserId));
+            foreach (var n in Notifications.Where(n => !n.Read))
+            {
+                n.Read = true;
+                _repo.Update(n);
+            }
             await _repo.SaveChangesAsync();
         }
 

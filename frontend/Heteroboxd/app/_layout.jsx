@@ -61,11 +61,27 @@ const RootLayout = () => {
           }}
         />
         <Stack.Screen 
+          name="notifications" 
+          options={{
+            headerTitle: 'Your notifications',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title},
+          }}
+        />
+        <Stack.Screen 
           name="list/[listId]"
           options={({ route }) => ({
             headerRight: () => <ListOptionsButton listId={route.params?.listId} />,
             headerTitle: '',
-            })}
+          })}
+        />
+        <Stack.Screen 
+          name="likes/[userId]"
+          options={{
+            headerTitle: 'Likes',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title},
+          }}
         />
         <Stack.Screen 
           name="lists/film/[filmId]" 

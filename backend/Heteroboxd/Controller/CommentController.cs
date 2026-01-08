@@ -45,7 +45,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"POST Comment endpoint hit for Review: {CommentRequest.ReviewId} by User: {CommentRequest.AuthorId}");
             try
             {
-                await _service.CreateComment(CommentRequest);
+                await _service.CreateComment(CommentRequest); //also handles notifs
                 return Ok();
             }
             catch

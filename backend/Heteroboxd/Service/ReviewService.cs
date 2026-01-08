@@ -11,7 +11,7 @@ namespace Heteroboxd.Service
         Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize);
         Task<List<ReviewInfoResponse>> GetTopReviewsForFilm(int FilmId, int Top);
         Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize);
-        Task UpdateReviewLikeCountEfCore7(string ReviewId, int LikeChange);
+        Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta);
         Task ToggleNotificationsEfCore7(string ReviewId);
         Task ReportReviewEfCore7(string ReviewId);
         Task<Review> AddReview(CreateReviewRequest ReviewRequest);
@@ -127,10 +127,10 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task UpdateReviewLikeCountEfCore7(string ReviewId, int LikeChange)
+        public async Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta)
         {
             if (!Guid.TryParse(ReviewId, out var Id)) throw new ArgumentException();
-            await _repo.UpdateReviewLikeCountEfCore7Async(Id, LikeChange);
+            await _repo.UpdateReviewLikeCountEfCore7Async(Id, Delta);
         }
 
         public async Task ToggleNotificationsEfCore7(string ReviewId)
@@ -188,8 +188,11 @@ namespace Heteroboxd.Service
         
         private int Flag(string? Text)
         {
+            /*
+            IMPLEMENT ANALYZING LOGIC
+            */
             if (string.IsNullOrEmpty(Text)) return 0;
-            return 0; //placeholder
+            return 0;
         }
     }
 }

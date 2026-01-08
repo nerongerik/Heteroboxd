@@ -88,8 +88,12 @@ const List = () => {
         `${BaseUrl.api}/users/${user.userId}/liked/${listId}?ObjectType=list`,
         { headers: { Authorization: `Bearer ${jwt}` } }
       )
-      if (res.status === 200) setILiked(await res.json())
-    } catch {}
+      const json = await res.json();
+      if (res.status === 200) setILiked(json)
+      else console.log('failed to load iLiked');
+    } catch {
+      console.log('failed to load iLiked');
+    }
   }
 
   useEffect(() => {
@@ -141,24 +145,24 @@ const List = () => {
     setLikeCount((c) => c + delta)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/like-count/${listId}/${delta}`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${jwt}` }
-      });
-      if (res.status !== 200) console.log("Update List Likes FAILED w/" + res.status);
-      const uRes = await fetch(`${BaseUrl.api}/users/likes`, {
+      const res = await fetch(`${BaseUrl.api}/lists/like`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`
+          'Authorization': `Bearer ${jwt}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          UserId: user.userId,
-          ReviewId: null,
-          ListId: listId
+          'UserId': user.userId,
+          'UserName': user.name,
+          'AuthorId': baseList?.authorId,
+          'ReviewId': null,
+          'FilmTitle': null,
+          'ListId': listId,
+          'ListName': baseList?.name,
+          'LikeChange': delta
         })
-      });
-      if (uRes.status !== 200) console.log("Update User FAILED w/" + uRes.status);
+      })
+      if (res.status !== 200) console.log('failed to send like request for this list');
     } catch { console.log('failed to like/unlike list.') }
   }
 

@@ -10,11 +10,13 @@ namespace Heteroboxd.Controller
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _service;
+        private readonly IUserService _userService;
         private readonly ILogger<ReviewController> _logger;
 
-        public ReviewController(IReviewService service, ILogger<ReviewController> logger)
+        public ReviewController(IReviewService service, ILogger<ReviewController> logger, IUserService userService)
         {
             _service = service;
+            _userService = userService;
             _logger = logger;
         }
 
@@ -146,14 +148,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("like-count/{ReviewId}/{LikeChange}")]
+        [HttpPut("like")]
         [Authorize]
-        public async Task<IActionResult> UpdateLikeCount(string ReviewId, int LikeChange)
+        public async Task<IActionResult> UpdateLikes(UpdateLikesRequest Request)
         {
-            _logger.LogInformation($"PUT Update Like Count endpoint hit for ReviewId: {ReviewId} with LikeChange: {LikeChange}");
+            _logger.LogInformation($"PUT Review likes endpoint hit for {Request.ReviewId!}");
             try
             {
-                await _service.UpdateReviewLikeCountEfCore7(ReviewId, LikeChange);
+                await _service.UpdateReviewLikeCountEfCore7(Request.ReviewId!, Request.LikeChange);
+                await _userService.UpdateLikes(Request); //also handles notifs
                 return Ok();
             }
             catch (ArgumentException)

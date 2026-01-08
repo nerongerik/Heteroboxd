@@ -188,26 +188,24 @@ const ReviewWithComments = () => {
       setLikeCountLocalCopy(prev => prev + likeChange);
       setILiked(prev => !prev);
       const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/reviews/like-count/${reviewId}/${likeChange}`, {
+      const res = await fetch(`${BaseUrl.api}/reviews/like`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      });
-      if (res.status !== 200) console.log("Update Review FAILED w/" + res.status);
-      const uRes = await fetch(`${BaseUrl.api}/users/likes`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`
+          'Authorization': `Bearer ${jwt}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          UserId: user.userId,
-          ReviewId: reviewId,
-          ListId: null
+          'UserId': user.userId,
+          'UserName': user.name,
+          'AuthorId': review?.authorId,
+          'ReviewId': reviewId,
+          'FilmTitle': review?.filmTitle,
+          'ListId': null,
+          'ListName': null,
+          'LikeChange': likeChange
         })
-      });
-      if (uRes.status !== 200) console.log("Update User FAILED w/" + uRes.status);
+      })
+      if (res.status !== 200) console.log('failed to send like request for this review');
     } catch {
       console.log("Network error.")
     }
@@ -227,7 +225,9 @@ const ReviewWithComments = () => {
         body: JSON.stringify({
           'Text': commentText,
           'AuthorId': user.userId,
-          'ReviewId': reviewId
+          'AuthorName': user.name,
+          'ReviewId': reviewId,
+          'FilmTitle': review?.filmTitle
         })
       });
       if (res.status === 200) {
@@ -243,7 +243,7 @@ const ReviewWithComments = () => {
       setMessage(`Network error! Check your internet connection.`);
       setSnack(true);
     }
-  }, [user, isValidSession, router, reviewId, totalCount]);
+  }, [user, isValidSession, router, reviewId, totalCount, review]);
 
   const handleDelete = async (commentId) => {
     try {
