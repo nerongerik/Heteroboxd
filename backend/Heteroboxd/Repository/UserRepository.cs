@@ -174,7 +174,7 @@ namespace Heteroboxd.Repository
 
         public async Task<User?> GetUserLikedListsAsync(Guid UserId) =>
             await _context.Users
-                .Include(u => u.LikedLists)
+                .Include(u => u.LikedLists).ThenInclude(ll => ll.Films)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
 
         public async Task ReportUserEfCore7Async(Guid UserId)

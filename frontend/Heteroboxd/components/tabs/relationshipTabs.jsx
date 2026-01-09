@@ -23,13 +23,13 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
     }
   };
 
-  function TabButton({ title, active, onPress }) {
-      return (
-        <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
-          <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
-        </TouchableOpacity>
-      );
-    }
+  const TabButton = ({ title, active, onPress }) => {
+    return (
+      <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
+        <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <View style={styles.container}>

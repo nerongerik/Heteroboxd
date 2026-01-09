@@ -18,7 +18,6 @@ const UserLikes = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const router = useRouter();
-  const navigation = useNavigation();
 
   async function loadData() {
     setRefreshing(true);
@@ -57,10 +56,9 @@ const UserLikes = () => {
       <LikeTabs
         reviews={reviews}
         lists={lists}
-        onReviewPress={(reviewId) => router.push(`/review/${reviewId}`)}
-        onListPress={(listId) => router.push(`/list/${listId}`)}
         refreshing={refreshing}
         onRefresh={loadData}
+        router={router}
       />
 
       <Popup visible={result === 404 || result === 500} message={message} onClose={() => {

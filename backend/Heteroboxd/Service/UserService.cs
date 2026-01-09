@@ -199,13 +199,8 @@ namespace Heteroboxd.Service
             var AuthorIds = ReviewAuthorIds.Union(ListAuthorIds).ToList();
             var FilmIds = _likedReviews.LikedReviews.Select(r => r.FilmId).ToList();
 
-            var AuthorsTask = _repo.GetByIdsAsync(AuthorIds);
-            var FilmsTask = _filmRepo.GetByIdsAsync(FilmIds);
-
-            await Task.WhenAll(AuthorsTask, FilmsTask);
-
-            var Authors = (await AuthorsTask).ToDictionary(a => a.Id);
-            var Films = (await FilmsTask).ToDictionary(f => f.Id);
+            var Authors = (await _repo.GetByIdsAsync(AuthorIds)).ToDictionary(a => a.Id);
+            var Films = (await _filmRepo.GetByIdsAsync(FilmIds)).ToDictionary(f => f.Id);
 
             var LikedReviews = _likedReviews.LikedReviews.Select(r =>
             {
@@ -216,7 +211,7 @@ namespace Heteroboxd.Service
             var LikedLists = _likedLists.LikedLists.Select(ul =>
             {
                 if (!Authors.TryGetValue(ul.AuthorId, out var Author)) throw new KeyNotFoundException();
-                return new UserListInfoResponse(ul, Author);
+                return new UserListInfoResponse(ul, Author, 4);
             }).ToList();
 
             return new Dictionary<string, IEnumerable<object>>
