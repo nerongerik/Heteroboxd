@@ -287,7 +287,7 @@ namespace Heteroboxd.Controller
 
         [HttpPut("watchlist/{UserId}/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> UpdateUserWatchlist(string UserId, int FilmId)
+        public async Task<IActionResult> UpdateWatchlist(string UserId, int FilmId)
         {
             _logger.LogInformation($"PUT Watchlist endpoint hit for User: {UserId}, Film: {FilmId}");
             try
@@ -307,7 +307,7 @@ namespace Heteroboxd.Controller
 
         [HttpPut("favorites/{UserId}/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> UpdateUserFavorites(string UserId, int FilmId, [FromQuery] int Index)
+        public async Task<IActionResult> UpdateFavorites(string UserId, int FilmId, [FromQuery] int Index)
         {
             _logger.LogInformation($"PUT Favorites endpoint hit for User: {UserId}");
             try
@@ -339,7 +339,7 @@ namespace Heteroboxd.Controller
 
         [HttpPut("relationships/{UserId}/{TargetId}")]
         [Authorize]
-        public async Task<IActionResult> UpdateUserRelationships(string UserId, string TargetId, [FromQuery] string Action)
+        public async Task<IActionResult> UpdateRelationships(string UserId, string TargetId, [FromQuery] string Action)
         {
             _logger.LogInformation($"PUT Relationship endpoint hit with originator {UserId}, target {TargetId}\nAction = {Action}");
             try
@@ -359,7 +359,7 @@ namespace Heteroboxd.Controller
 
         [HttpPut("track-film/{UserId}/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> TrackUserFilm(string UserId, int FilmId, [FromQuery] string Action)
+        public async Task<IActionResult> TrackFilm(string UserId, int FilmId, [FromQuery] string Action)
         {
             //?action=watched/unwatched
             _logger.LogInformation($"PUT Track Film endpoint hint for User: {UserId}, Film: {FilmId}; action: {Action}");

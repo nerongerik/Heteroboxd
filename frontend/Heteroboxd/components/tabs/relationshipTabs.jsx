@@ -4,8 +4,9 @@ import { UserAvatar } from "../userAvatar";
 import { Colors } from "../../constants/colors";
 import GlowingText from "../glowingText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Feather from '@expo/vector-icons/Feather';
 
-const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, active, refreshing, onRefresh }) => {
+const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, active, refreshing, onRefresh }) => {
 
   const [activeTab, setActiveTab] = useState(active);
   const { width } = useWindowDimensions()
@@ -46,24 +47,31 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
         data={getData()}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Pressable style={styles.userRow} onPress={() => onUserPress(item.id)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <UserAvatar pictureUrl={item.pictureUrl} style={[styles.picture, (item.tier !== 'free' && {marginRight: 10})]} />
-              {item.tier === 'free' ? (
-                <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-                  <Text style={styles.username}>{item.name}</Text>
-                  {item.patron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={18} color={Colors.heteroboxd}/>}
-                </View>
-              ) : item.tier === 'admin' ? (
-                <GlowingText color={Colors._heteroboxd} size={18}>{item.name}</GlowingText>
-              ) : (
-                <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-                  <GlowingText color={Colors.heteroboxd} size={18}>{item.name}</GlowingText>
-                  {item.patron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={18} color={Colors.heteroboxd}/>}
-                </View>
-              )}
-            </View>
-          </Pressable>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+            <Pressable style={styles.userRow} onPress={() => onUserPress(item.id)}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <UserAvatar pictureUrl={item.pictureUrl} style={[styles.picture, (item.tier !== 'free' && {marginRight: 10})]} />
+                {item.tier === 'free' ? (
+                  <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+                    <Text style={styles.username}>{item.name}</Text>
+                    {item.patron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={18} color={Colors.heteroboxd}/>}
+                  </View>
+                ) : item.tier === 'admin' ? (
+                  <GlowingText color={Colors._heteroboxd} size={18}>{item.name}</GlowingText>
+                ) : (
+                  <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+                    <GlowingText color={Colors.heteroboxd} size={18}>{item.name}</GlowingText>
+                    {item.patron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={18} color={Colors.heteroboxd}/>}
+                  </View>
+                )}
+              </View>
+            </Pressable>
+            { isMyProfile && activeTab === "followers" &&
+              <Pressable onPress={() => onRemoveFollower(item.id)}>
+                <Feather name="x" size={20} color={Colors.text} />
+              </Pressable>
+            }
+          </View>
         )}
         refreshing={refreshing}
         onRefresh={onRefresh}

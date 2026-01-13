@@ -7,11 +7,12 @@ import Popup from '../../components/popup';
 import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
+import * as auth from '../../helpers/auth';
 
 const Relationships = () => {
 
   const { userId, t } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user, isValidSession } = useAuth();
 
   const isOwnProfile = user && user.userId === userId;
 
@@ -62,6 +63,25 @@ const Relationships = () => {
     loadData();
   }, [userId]);
 
+  const handleRemoveFollower = async (followerId) => {
+    const vS = await isValidSession();
+    if (!user || !vS) router.replace('/login');
+    try {
+      const jwt = await auth.getJwt();
+      const res = await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${followerId}?Action=remove-follower`, {
+        method: 'PUT',
+        headers: {'Authorization': `Bearer ${jwt}`}
+      });
+      if (res.status === 200) {
+        loadData();
+      } else {
+        router.replace('/contact');
+      }
+    } catch {
+      router.replace('/contact');
+    }
+  }
+
   return (
     <View style={styles.container}>
 
@@ -71,6 +91,7 @@ const Relationships = () => {
         following={following}
         blocked={blocked}
         onUserPress={(uid) => router.push(`/profile/${uid}`)}
+        onRemoveFollower={(followerId) => handleRemoveFollower(followerId)}
         active={t}
         refreshing={refreshing}
         onRefresh={loadData}

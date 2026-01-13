@@ -276,7 +276,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
               </View>
             ))}
             <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15}}>
-              <Pressable style={{marginRight: 20, backgroundColor: Colors.button_reject, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4}} onPress={() => listsClicked(false)}>
+              <Pressable style={{marginRight: 20, backgroundColor: Colors.button_reject, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4}} onPress={() => setListsClicked(false)}>
                 <Text style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Cancel</Text>
               </Pressable>
               <Pressable style={{backgroundColor: Colors.button_confirm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 2}} onPress={addToLists}>
