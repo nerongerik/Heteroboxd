@@ -15,9 +15,7 @@ namespace Heteroboxd.Repository
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
-        Task<User?> GetUserFollowingAsync(Guid UserId);
-        Task<User?> GetUserFollowersAsync(Guid UserId);
-        Task<User?> GetUserBlockedAsync(Guid UserId);
+        Task<User?> GetUserRelationshipsAsync(Guid UserId);
         Task<User?> GetUserLikedReviewsAsync(Guid UserId);
         Task<User?> GetUserLikedListsAsync(Guid UserId);
         Task ReportUserEfCore7Async(Guid UserId);
@@ -152,18 +150,10 @@ namespace Heteroboxd.Repository
             return (Friends, Reviews);
         }
 
-        public async Task<User?> GetUserFollowingAsync(Guid UserId) =>
+        public async Task<User?> GetUserRelationshipsAsync(Guid UserId) =>
             await _context.Users
                 .Include(u => u.Following)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-
-        public async Task<User?> GetUserFollowersAsync(Guid UserId) =>
-            await _context.Users
                 .Include(u => u.Followers)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-
-        public async Task<User?> GetUserBlockedAsync(Guid UserId) =>
-            await _context.Users
                 .Include(u => u.Blocked)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
 

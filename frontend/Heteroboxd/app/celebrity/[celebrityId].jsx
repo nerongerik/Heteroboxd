@@ -7,16 +7,18 @@ import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
 
+const PAGE_SIZE = 20
+
 const Celebrity = () => {
 
   const { celebrityId, t } = useLocalSearchParams();
   
-  const [bio, setBio] = useState(null)
-  const [starred, setStarred] = useState([]);
-  const [directed, setDirected] = useState([]);
-  const [wrote, setWrote] = useState([]);
-  const [produced, setProduced] = useState([]);
-  const [composed, setComposed] = useState([]);
+  const [bio, setBio] = useState(null);
+  const [starred, setStarred] = useState({ films: [], totalCount: 0, page: 1 });
+  const [directed, setDirected] = useState({ films: [], totalCount: 0, page: 1 });
+  const [wrote, setWrote] = useState({ films: [], totalCount: 0, page: 1 });
+  const [produced, setProduced] = useState({ films: [], totalCount: 0, page: 1 });
+  const [composed, setComposed] = useState({ films: [], totalCount: 0, page: 1 });
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
@@ -25,21 +27,51 @@ const Celebrity = () => {
   const router = useRouter();
   const navigation = useNavigation();
 
-  async function loadData() {
+  const loadData = async (pages = {}) => {
     setRefreshing(true);
     try {
-      const res = await fetch(`${BaseUrl.api}/celebrities/${celebrityId}`, {
+      const params = new URLSearchParams({
+        StarredPage: pages.starred || 1,
+        DirectedPage: pages.directed || 1,
+        WrotePage: pages.wrote || 1,
+        ProducedPage: pages.produced || 1,
+        ComposedPage: pages.composed || 1,
+        PageSize: PAGE_SIZE
+      });
+      
+      const res = await fetch(`${BaseUrl.api}/celebrities/${celebrityId}?${params}`, {
         method: 'GET',
         headers: {'Accept': 'application/json'}
       });
+      
       if (res.status === 200) {
         const json = await res.json();
         setBio(json.baseCeleb);
-        setStarred(json.starred);
-        setDirected(json.directed);
-        setWrote(json.wrote);
-        setProduced(json.produced);
-        setComposed(json.composed);
+        setStarred({
+          films: json.starred.films,
+          totalCount: json.starred.totalCount,
+          page: json.starred.page
+        });
+        setDirected({
+          films: json.directed.films,
+          totalCount: json.directed.totalCount,
+          page: json.directed.page
+        });
+        setWrote({
+          films: json.wrote.films,
+          totalCount: json.wrote.totalCount,
+          page: json.wrote.page
+        });
+        setProduced({
+          films: json.produced.films,
+          totalCount: json.produced.totalCount,
+          page: json.produced.page
+        });
+        setComposed({
+          films: json.composed.films,
+          totalCount: json.composed.totalCount,
+          page: json.composed.page
+        });
         setResult(200);
       } else if (res.status === 404) {
         setResult(404);
@@ -55,6 +87,17 @@ const Celebrity = () => {
       setRefreshing(false);
     }
   }
+
+  const loadPage = (tab, pageNumber) => {
+    const pages = {
+      starred: tab === 'starred' ? pageNumber : starred.page,
+      directed: tab === 'directed' ? pageNumber : directed.page,
+      wrote: tab === 'wrote' ? pageNumber : wrote.page,
+      produced: tab === 'produced' ? pageNumber : produced.page,
+      composed: tab === 'composed' ? pageNumber : composed.page
+    };
+    loadData(pages);
+  };
 
   useEffect(() => {
     loadData();
@@ -80,9 +123,11 @@ const Celebrity = () => {
         produced={produced}
         composed={composed}
         onFilmPress={(filmId) => router.push(`/film/${filmId}`)}
+        onPageChange={loadPage}
         active={t}
         refreshing={refreshing}
-        onRefresh={loadData}
+        onRefresh={() => loadData()}
+        pageSize={PAGE_SIZE}
       />
 
       <Popup visible={result === 404 || result === 500} message={message} onClose={() => {

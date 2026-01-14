@@ -1,17 +1,20 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform, useWindowDimensions, Pressable } from "react-native";
+import { useState, useRef, useMemo } from "react";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform, useWindowDimensions, Pressable, RefreshControl } from "react-native";
 import { UserAvatar } from "../userAvatar";
 import { Colors } from "../../constants/colors";
 import GlowingText from "../glowingText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from '@expo/vector-icons/Feather';
+import PaginationBar from '../paginationBar'
 
-const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, active, refreshing, onRefresh }) => {
+const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, refreshing, onRefresh, pageSize }) => {
 
   const [activeTab, setActiveTab] = useState(active);
-  const { width } = useWindowDimensions()
+  const [showPagination, setShowPagination] = useState(false);
+  const { width } = useWindowDimensions();
+  const listRef = useRef(null);
 
-  const getData = () => {
+  const currentData = useMemo(() => {
     switch (activeTab) {
       case "followers":
         return followers;
@@ -20,9 +23,13 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
       case "blocked":
         return blocked;
       default:
-        return [];
+        return { items: [], totalCount: 0, page: 1 };
     }
-  };
+  }, [activeTab, followers, following, blocked]);
+
+  const totalPages = Math.ceil(currentData.totalCount / pageSize);
+
+  const getData = () => currentData.items ?? [];
 
   const TabButton = ({ title, active, onPress }) => {
     return (
@@ -31,6 +38,18 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
       </TouchableOpacity>
     );
   }
+
+  const Footer = () => (
+    <PaginationBar
+      page={currentData.page}
+      totalPages={totalPages}
+      visible={showPagination}
+      onPagePress={(num) => {
+        onPageChange(activeTab, num);
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }}
+    />
+  );
 
   return (
     <View style={styles.container}>
@@ -44,8 +63,10 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
       </View>
 
       <FlatList
+        ref={listRef}
         data={getData()}
-        keyExtractor={(item) => item.id}
+        key={activeTab}
+        keyExtractor={(item) => `${activeTab}-${item.id}`}
         renderItem={({ item }) => (
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
             <Pressable style={styles.userRow} onPress={() => onUserPress(item.id)}>
@@ -73,19 +94,25 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
             }
           </View>
         )}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
+        ListFooterComponent={Footer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         contentContainerStyle={{
           width: Platform.OS === "web" ? Math.min(width, 1000) : "100%",
           alignSelf: Platform.OS === "web" ? "center" : "stretch",
           paddingHorizontal: 10,
+          paddingBottom: 80,
         }}
+        showsVerticalScrollIndicator={false}
+        onEndReached={() => setShowPagination(true)}
+        onEndReachedThreshold={0.2}
       />
     </View>
   );
 }
 
-export default RelationshipTabs
+export default RelationshipTabs;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

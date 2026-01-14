@@ -44,6 +44,19 @@
         }
     }
 
+    public class LikesDelimitedResponse
+    {
+        public PagedResponse<ReviewInfoResponse> LikedReviews { get; set; }
+        public PagedResponse<UserListInfoResponse> LikedLists { get; set; }
+    }
+
+    public class RelationshipsDelimitedResponse
+    {
+        public PagedResponse<UserInfoResponse> Following { get; set; }
+        public PagedResponse<UserInfoResponse> Followers { get; set; }
+        public PagedResponse<UserInfoResponse> Blocked { get; set; }
+    }
+
     public class FriendFilmResponse
     {
         public string FriendId { get; set; }

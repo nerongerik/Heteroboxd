@@ -20,11 +20,11 @@
     public class CelebrityDelimitedResponse
     {
         public CelebrityInfoResponse BaseCeleb { get; set; }
-        public List<FilmInfoResponse> Starred { get; set; }
-        public List<FilmInfoResponse> Directed { get; set; }
-        public List<FilmInfoResponse> Produced { get; set; }
-        public List<FilmInfoResponse> Wrote { get; set; }
-        public List<FilmInfoResponse> Composed { get; set; }
+        public PagedFilmResponse Starred { get; set; }
+        public PagedFilmResponse Directed { get; set; }
+        public PagedFilmResponse Produced { get; set; }
+        public PagedFilmResponse Wrote { get; set; }
+        public PagedFilmResponse Composed { get; set; }
     }
 
     public class CelebrityCreditInfoResponse

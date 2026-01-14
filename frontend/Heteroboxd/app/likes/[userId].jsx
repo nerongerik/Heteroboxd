@@ -7,11 +7,13 @@ import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
 
+const PAGE_SIZE = 32
+
 const UserLikes = () => {
   const {userId} = useLocalSearchParams();
   
-  const [reviews, setReviews] = useState([])
-  const [lists, setLists] = useState([])
+  const [reviews, setReviews] = useState({ items: [], totalCount: 0, page: 1 });
+  const [lists, setLists] = useState({ items: [], totalCount: 0, page: 1 });
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
@@ -19,17 +21,32 @@ const UserLikes = () => {
 
   const router = useRouter();
 
-  async function loadData() {
+  const loadData = async (pages = {}) => {
     setRefreshing(true);
     try {
-      const res = await fetch(`${BaseUrl.api}/users/user-likes/${userId}`, {
+      const params = new URLSearchParams({
+        ReviewsPage: pages.reviews || 1,
+        ListsPage: pages.lists || 1,
+        PageSize: PAGE_SIZE
+      });
+      
+      const res = await fetch(`${BaseUrl.api}/users/user-likes/${userId}?${params}`, {
         method: 'GET',
         headers: {'Accept': 'application/json'}
       });
+      
       if (res.status === 200) {
         const json = await res.json();
-        setReviews(json['liked_reviews'])
-        setLists(json['liked_lists'])
+        setReviews({
+          items: json.likedReviews.items,
+          totalCount: json.likedReviews.totalCount,
+          page: json.likedReviews.page
+        });
+        setLists({
+          items: json.likedLists.items,
+          totalCount: json.likedLists.totalCount,
+          page: json.likedLists.page
+        });
         setResult(200);
       } else if (res.status === 404) {
         setResult(404);
@@ -44,7 +61,15 @@ const UserLikes = () => {
     } finally {
       setRefreshing(false);
     }
-  }
+  };
+
+  const loadPage = (tab, pageNumber) => {
+    const pages = {
+      reviews: tab === 'reviews' ? pageNumber : reviews.page,
+      lists: tab === 'lists' ? pageNumber : lists.page
+    };
+    loadData(pages);
+  };
 
   useEffect(() => {
     loadData();
@@ -57,8 +82,10 @@ const UserLikes = () => {
         reviews={reviews}
         lists={lists}
         refreshing={refreshing}
-        onRefresh={loadData}
+        onRefresh={() => loadData()}
+        onPageChange={loadPage}
         router={router}
+        pageSize={PAGE_SIZE}
       />
 
       <Popup visible={result === 404 || result === 500} message={message} onClose={() => {
@@ -71,7 +98,7 @@ const UserLikes = () => {
   );
 }
 
-export default UserLikes
+export default UserLikes;
 
 const styles = StyleSheet.create({
   container: {

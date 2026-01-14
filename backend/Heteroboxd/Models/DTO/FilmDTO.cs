@@ -47,7 +47,7 @@
         }
     }
 
-    public class PagedFilmInfoResponse
+    public class PagedFilmResponse
     {
         public int TotalCount { get; set; }
         public int Page { get; set; }

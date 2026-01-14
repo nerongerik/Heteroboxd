@@ -20,12 +20,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("{CelebrityId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCelebrity(int CelebrityId)
+        public async Task<IActionResult> GetCelebrity(int CelebrityId, int StarredPage = 1, int DirectedPage = 1, int ProducedPage = 1, int WrotePage = 1, int ComposedPage = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GET Celebrity endpoint hit for {CelebrityId}");
             try
             {
-                var Celebrity = await _service.GetCelebrity(CelebrityId);
+                var Celebrity = await _service.GetCelebrity(CelebrityId, StarredPage, DirectedPage, ProducedPage, WrotePage, ComposedPage, PageSize);
                 return Ok(Celebrity);
             }
             catch (KeyNotFoundException)

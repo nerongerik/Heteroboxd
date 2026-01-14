@@ -97,12 +97,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("user-relationships/{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUserRelationships(string UserId)
+        public async Task<IActionResult> GetUserRelationships(string UserId, int FollowersPage = 1, int FollowingPage = 1, int BlockedPage = 1, int PageSize = 50)
         {
             _logger.LogInformation($"GET Relationships endpoint hit for UserId: {UserId}");
             try
             {
-                var Relationships = await _service.GetRelationships(UserId);
+                var Relationships = await _service.GetRelationships(UserId, FollowersPage, FollowingPage, BlockedPage, PageSize);
                 return Ok(Relationships);
             }
             catch (KeyNotFoundException)
@@ -117,12 +117,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("user-likes/{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUserLikes(string UserId)
+        public async Task<IActionResult> GetUserLikes(string UserId, int ReviewsPage = 1, int ListsPage = 1, int PageSize = 32)
         {
             _logger.LogInformation($"GET Likes endpoint hit for UserId: {UserId}");
             try
             {
-                var Likes = await _service.GetLikes(UserId);
+                var Likes = await _service.GetLikes(UserId, ReviewsPage, ListsPage, PageSize);
                 return Ok(Likes);
             }
             catch (KeyNotFoundException)

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions, TouchableOpacity, FlatList, Pressable } from 'react-native'
+import { useMemo, useState, useRef } from 'react';
+import { StyleSheet, Text, View, useWindowDimensions, TouchableOpacity, FlatList, Pressable, RefreshControl } from 'react-native'
 import { Colors } from '../../constants/colors';
 import Author from '../author';
 import Stars from '../stars';
@@ -7,10 +7,13 @@ import ParsedRead from '../parsedRead';
 import { Fontisto } from '@expo/vector-icons';
 import * as format from '../../helpers/format';
 import {Poster} from '../poster';
+import PaginationBar from '../paginationBar';
 
-const LikeTabs = ({reviews, lists, refreshing, onRefresh, router }) => {
+const LikeTabs = ({reviews, lists, refreshing, onRefresh, onPageChange, router, pageSize }) => {
   const [activeTab, setActiveTab] = useState("reviews");
+  const [showPagination, setShowPagination] = useState(false);
   const { width } = useWindowDimensions();
+  const listRef = useRef(null);
 
   const maxRowWidth = useMemo(() => width > 1000 ? 900 : width*0.95, [width]);
   const spacing = useMemo(() => (width > 1000 ? 30 : 5), [width])
@@ -23,21 +26,37 @@ const LikeTabs = ({reviews, lists, refreshing, onRefresh, router }) => {
     [posterWidth]
   )
 
-  const getData = () => {
+  const currentData = useMemo(() => {
     switch (activeTab) {
       case 'reviews':
-        return reviews ?? [];
+        return reviews;
       case 'lists':
-        return lists ?? [];
+        return lists;
       default:
-        return [];
+        return { items: [], totalCount: 0, page: 1 };
     }
-  }
+  }, [activeTab, reviews, lists]);
+
+  const totalPages = Math.ceil(currentData.totalCount / pageSize);
+
+  const getData = () => currentData.items ?? [];
 
   const TabButton = ({ title, active, onPress }) => (
     <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
       <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
     </TouchableOpacity>
+  );
+
+  const Footer = () => (
+    <PaginationBar
+      page={currentData.page}
+      totalPages={totalPages}
+      visible={showPagination}
+      onPagePress={(num) => {
+        onPageChange(activeTab, num);
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }}
+    />
   );
 
   const RenderReview = ({item}) => (
@@ -76,7 +95,7 @@ const LikeTabs = ({reviews, lists, refreshing, onRefresh, router }) => {
               </View>
             :
               <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-                <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{authorName} wrote no review regarding this film.</Text>
+                <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{item.authorName} wrote no review regarding this film.</Text>
               </View>
           }
         </View>
@@ -167,13 +186,16 @@ const LikeTabs = ({reviews, lists, refreshing, onRefresh, router }) => {
       </View>
 
       <FlatList
+        ref={listRef}
         data={getData()}
         key={activeTab}
-        keyExtractor={(item) => item?.reviewId ? `${activeTab}-${item.reviewId}` : `${activeTab}-${item.listId}`}
+        keyExtractor={(item) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-${item.listId}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
         ListEmptyComponent={<Text style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</Text>}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
+        ListFooterComponent={Footer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         style={{
           width: maxRowWidth,
           alignSelf: 'center'
@@ -182,12 +204,14 @@ const LikeTabs = ({reviews, lists, refreshing, onRefresh, router }) => {
           paddingBottom: 80,
         }}
         showsVerticalScrollIndicator={false}
+        onEndReached={() => setShowPagination(true)}
+        onEndReachedThreshold={0.2}
       />
     </View>
   )
 }
 
-export default LikeTabs
+export default LikeTabs;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

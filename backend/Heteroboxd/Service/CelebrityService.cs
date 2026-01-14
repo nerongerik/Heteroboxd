@@ -2,14 +2,12 @@
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Models.Enums;
 using Heteroboxd.Repository;
-using Microsoft.AspNetCore.Routing;
-using Org.BouncyCastle.Pqc.Crypto.Lms;
 
 namespace Heteroboxd.Service
 {
     public interface ICelebrityService
     {
-        Task<CelebrityDelimitedResponse?> GetCelebrity(int CelebrityId);
+        Task<CelebrityDelimitedResponse?> GetCelebrity(int CelebrityId, int StarredPage, int DirectedPage, int ProducedPage, int WrotePage, int ComposedPage, int PageSize);
         Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search);
     }
 
@@ -24,7 +22,7 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
-        public async Task<CelebrityDelimitedResponse?> GetCelebrity(int CelebrityId)
+        public async Task<CelebrityDelimitedResponse?> GetCelebrity(int CelebrityId, int StarredPage, int DirectedPage, int ProducedPage, int WrotePage, int ComposedPage, int PageSize)
         {
             Celebrity? Celebrity = await _repo.GetByIdAsync(CelebrityId);
             if (Celebrity == null) throw new KeyNotFoundException();
@@ -38,54 +36,19 @@ namespace Heteroboxd.Service
                 .Where(f => f != null)
                 .ToDictionary(f => f!.Id);
 
-            List<FilmInfoResponse> Starred = new List<FilmInfoResponse>();
-            List<FilmInfoResponse> Directed = new List<FilmInfoResponse>();
-            List<FilmInfoResponse> Produced = new List<FilmInfoResponse>();
-            List<FilmInfoResponse> Wrote = new List<FilmInfoResponse>();
-            List<FilmInfoResponse> Composed = new List<FilmInfoResponse>();
-
-            var StarredSet = new HashSet<int>();
-            var DirectedSet = new HashSet<int>();
-            var ProducedSet = new HashSet<int>();
-            var WroteSet = new HashSet<int>();
-            var ComposedSet = new HashSet<int>();
-
-            foreach (CelebrityCredit cc in Celebrity.Credits)
-            {
-                if (!Films.TryGetValue(cc.FilmId, out Film? Film)) continue;
-
-                switch (cc.Role)
-                {
-                    case Role.Actor when StarredSet.Add(cc.FilmId):
-                        Starred.Add(new FilmInfoResponse(Film!));
-                        break;
-
-                    case Role.Director when DirectedSet.Add(cc.FilmId):
-                        Directed.Add(new FilmInfoResponse(Film!));
-                        break;
-
-                    case Role.Producer when ProducedSet.Add(cc.FilmId):
-                        Produced.Add(new FilmInfoResponse(Film!));
-                        break;
-
-                    case Role.Writer when WroteSet.Add(cc.FilmId):
-                        Wrote.Add(new FilmInfoResponse(Film!));
-                        break;
-
-                    case Role.Composer when ComposedSet.Add(cc.FilmId):
-                        Composed.Add(new FilmInfoResponse(Film!));
-                        break;
-                }
-            }
+            var CreditsByRole = Celebrity.Credits
+                .Where(cc => Films.ContainsKey(cc.FilmId))
+                .GroupBy(cc => cc.Role)
+                .ToDictionary(g => g.Key, g => g.Select(cc => cc.FilmId).Distinct().ToList());
 
             return new CelebrityDelimitedResponse
             {
                 BaseCeleb = new CelebrityInfoResponse(Celebrity),
-                Starred = Starred,
-                Directed = Directed,
-                Produced = Produced,
-                Wrote = Wrote,
-                Composed = Composed,
+                Starred = PaginateFilms(CreditsByRole, Role.Actor, Films, StarredPage, PageSize),
+                Directed = PaginateFilms(CreditsByRole, Role.Director, Films, DirectedPage, PageSize),
+                Produced = PaginateFilms(CreditsByRole, Role.Producer, Films, ProducedPage, PageSize),
+                Wrote = PaginateFilms(CreditsByRole, Role.Writer, Films, WrotePage, PageSize),
+                Composed = PaginateFilms(CreditsByRole, Role.Composer, Films, ComposedPage, PageSize)
             };
         }
 
@@ -93,6 +56,36 @@ namespace Heteroboxd.Service
         {
             var SearchResults = await _repo.SearchAsync(Search.ToLower());
             return SearchResults.Select(c => new CelebrityInfoResponse(c)).ToList();
+        }
+
+        private PagedFilmResponse PaginateFilms(Dictionary<Role, List<int>> CreditsByRole, Role Role, Dictionary<int, Film> Films, int Page, int PageSize)
+        {
+            if (!CreditsByRole.TryGetValue(Role, out var FilmIds))
+            {
+                return new PagedFilmResponse
+                {
+                    Films = new List<FilmInfoResponse>(),
+                    TotalCount = 0,
+                    Page = Page,
+                    PageSize = PageSize
+                };
+            }
+
+            int TotalCount = FilmIds.Count;
+            var PagedFilms = FilmIds
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .Select(id => Films.TryGetValue(id, out var Film) ? new FilmInfoResponse(Film) : null)
+                .Where(f => f != null)
+                .ToList();
+
+            return new PagedFilmResponse
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Films = PagedFilms!
+            };
         }
     }
 }
