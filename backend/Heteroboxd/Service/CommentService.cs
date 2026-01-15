@@ -6,7 +6,7 @@ namespace Heteroboxd.Service
 {
     public interface ICommentService
     {
-        Task<PagedCommentResponse> GetCommentsByReview(string ReviewId, int Page, int PageSize);
+        Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize);
         Task ReportCommentEfCore7(string CommentId);
         Task CreateComment(CreateCommentRequest CommentRequest);
         Task DeleteComment(string CommentId);
@@ -27,7 +27,7 @@ namespace Heteroboxd.Service
             _notificationService = notificationService;
         }
 
-        public async Task<PagedCommentResponse> GetCommentsByReview(string ReviewId, int Page, int PageSize)
+        public async Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize)
         {
             Review? Review = await _reviewRepo.GetByIdAsync(Guid.Parse(ReviewId));
             if (Review == null) throw new KeyNotFoundException();
@@ -51,12 +51,12 @@ namespace Heteroboxd.Service
                 CommentResponses.Add(new CommentInfoResponse(c, Author));
             }
 
-            return new PagedCommentResponse
+            return new PagedResponse<CommentInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Comments = CommentResponses
+                Items = CommentResponses
             };
         }
 

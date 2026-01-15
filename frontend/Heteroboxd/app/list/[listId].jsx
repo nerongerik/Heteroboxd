@@ -66,7 +66,7 @@ const List = () => {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
-        setEntries(json.entries)
+        setEntries(json.items)
       } else {
         setResult(res.status)
         setMessage('Loading error! Try reloading Heteroboxd.')

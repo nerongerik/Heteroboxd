@@ -42,7 +42,7 @@ const Explore = () => {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
-        setFilms(json.films)
+        setFilms(json.items)
       } else {
         setResult(res.status)
         setMessage('Loading error! Try reloading Heteroboxd.')
@@ -66,7 +66,7 @@ const Explore = () => {
         const json = await res.json();
         setPage(json.page);
         setTotalCount(json.totalCount);
-        setFilms(json.films);
+        setFilms(json.items);
       } else {
         setResult(res.status);
         setMessage('Loading error! Try reloading Heteroboxd.');

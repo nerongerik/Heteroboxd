@@ -48,7 +48,7 @@ const Notifications = () => {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
-        setNotifs(json.notifications)
+        setNotifs(json.items)
       } else {
         setMessage('Something went wrong while fetching your notifications! Try again later.')
       }

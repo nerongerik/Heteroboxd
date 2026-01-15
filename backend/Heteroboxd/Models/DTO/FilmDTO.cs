@@ -47,22 +47,6 @@
         }
     }
 
-    public class PagedFilmResponse
-    {
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public List<FilmInfoResponse> Films { get; set; }
-    }
-
-    public class PagedWatchlistResponse
-    {
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public List<WatchlistEntryInfoResponse> Entries { get; set; }
-    }
-
     public class WatchlistEntryInfoResponse
     {
         public string Id { get; set; }

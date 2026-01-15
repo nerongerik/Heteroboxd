@@ -37,7 +37,7 @@ const UserWatchedFilms = () => {
         const json = await res.json();
         setPage(json.page);
         setTotalCount(json.totalCount);
-        setEntries(json.films);
+        setEntries(json.items);
       } else {
         setResult(500);
         setMessage("Something went wrong! Contact Heteroboxd support for more information!");

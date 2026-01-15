@@ -58,13 +58,13 @@ namespace Heteroboxd.Service
             return SearchResults.Select(c => new CelebrityInfoResponse(c)).ToList();
         }
 
-        private PagedFilmResponse PaginateFilms(Dictionary<Role, List<int>> CreditsByRole, Role Role, Dictionary<int, Film> Films, int Page, int PageSize)
+        private PagedResponse<FilmInfoResponse> PaginateFilms(Dictionary<Role, List<int>> CreditsByRole, Role Role, Dictionary<int, Film> Films, int Page, int PageSize)
         {
             if (!CreditsByRole.TryGetValue(Role, out var FilmIds))
             {
-                return new PagedFilmResponse
+                return new PagedResponse<FilmInfoResponse>
                 {
-                    Films = new List<FilmInfoResponse>(),
+                    Items = new List<FilmInfoResponse>(),
                     TotalCount = 0,
                     Page = Page,
                     PageSize = PageSize
@@ -79,12 +79,12 @@ namespace Heteroboxd.Service
                 .Where(f => f != null)
                 .ToList();
 
-            return new PagedFilmResponse
+            return new PagedResponse<FilmInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Films = PagedFilms!
+                Items = PagedFilms!
             };
         }
     }

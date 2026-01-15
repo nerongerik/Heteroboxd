@@ -28,14 +28,6 @@
         }
     }
 
-    public class PagedCommentResponse
-    {
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int TotalCount { get; set; }
-        public List<CommentInfoResponse> Comments { get; set; }
-    }
-
     public class CreateCommentRequest
     {
         public string Text { get; set; }

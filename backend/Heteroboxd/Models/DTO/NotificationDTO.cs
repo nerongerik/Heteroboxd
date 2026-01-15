@@ -19,12 +19,4 @@ namespace Heteroboxd.Models.DTO
             this.UserId = Notification.UserId.ToString();
         }
     }
-
-    public class PagedNotificationResponse
-    {
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int TotalCount { get; set; }
-        public List<NotificationInfoResponse> Notifications { get; set; }
-    }
 }

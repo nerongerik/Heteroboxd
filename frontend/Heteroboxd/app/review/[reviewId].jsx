@@ -103,7 +103,7 @@ const ReviewWithComments = () => {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
-        setComments(json.comments)
+        setComments(json.items)
       } else if (res.status === 404) {
         setMessage("This review doesn't exist anymore!");
         setComments([]);

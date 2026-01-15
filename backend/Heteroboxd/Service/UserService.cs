@@ -8,7 +8,7 @@ namespace Heteroboxd.Service
     public interface IUserService
     {
         Task<UserInfoResponse?> GetUser(string UserId);
-        Task<PagedWatchlistResponse> GetWatchlist(string UserId, int Page, int PageSize); //for viewing
+        Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize); //for viewing
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId); //for checking if a film is in the watchlist (quick lookup)
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<RelationshipsDelimitedResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
@@ -68,15 +68,15 @@ namespace Heteroboxd.Service
             return new UserInfoResponse(User);
         }
 
-        public async Task<PagedWatchlistResponse> GetWatchlist(string UserId, int Page, int PageSize)
+        public async Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize)
         {
             var (WatchlistPage, TotalCount) = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId), Page, PageSize);
-            return new PagedWatchlistResponse
+            return new PagedResponse<WatchlistEntryInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Entries = WatchlistPage.Select(wle => new WatchlistEntryInfoResponse(wle)).ToList()
+                Items = WatchlistPage.Select(wle => new WatchlistEntryInfoResponse(wle)).ToList()
             };
         }
 

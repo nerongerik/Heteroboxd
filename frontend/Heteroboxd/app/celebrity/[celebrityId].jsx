@@ -48,27 +48,27 @@ const Celebrity = () => {
         const json = await res.json();
         setBio(json.baseCeleb);
         setStarred({
-          films: json.starred.films,
+          films: json.starred.items,
           totalCount: json.starred.totalCount,
           page: json.starred.page
         });
         setDirected({
-          films: json.directed.films,
+          films: json.directed.items,
           totalCount: json.directed.totalCount,
           page: json.directed.page
         });
         setWrote({
-          films: json.wrote.films,
+          films: json.wrote.items,
           totalCount: json.wrote.totalCount,
           page: json.wrote.page
         });
         setProduced({
-          films: json.produced.films,
+          films: json.produced.items,
           totalCount: json.produced.totalCount,
           page: json.produced.page
         });
         setComposed({
-          films: json.composed.films,
+          films: json.composed.items,
           totalCount: json.composed.totalCount,
           page: json.composed.page
         });

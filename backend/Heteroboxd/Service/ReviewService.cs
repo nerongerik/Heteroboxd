@@ -8,9 +8,9 @@ namespace Heteroboxd.Service
     {
         Task<ReviewInfoResponse?> GetReview(string ReviewId);
         Task<ReviewInfoResponse> GetReviewByUserFilm(string UserId, int FilmId);
-        Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize);
+        Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, int Page, int PageSize);
         Task<List<ReviewInfoResponse>> GetTopReviewsForFilm(int FilmId, int Top);
-        Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize);
+        Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize);
         Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta);
         Task ToggleNotificationsEfCore7(string ReviewId);
         Task ReportReviewEfCore7(string ReviewId);
@@ -48,7 +48,7 @@ namespace Heteroboxd.Service
             return new ReviewInfoResponse(Review);
         }
 
-        public async Task<PagedReviewResponse> GetReviewsByFilm(int FilmId, int Page, int PageSize)
+        public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, int Page, int PageSize)
         {
             var Film = await _filmRepo.LightweightFetcher(FilmId);
             if (Film == null) throw new KeyNotFoundException();
@@ -71,12 +71,12 @@ namespace Heteroboxd.Service
                 ReviewResponses.Add(new ReviewInfoResponse(r, Author, Film));
             }
 
-            return new PagedReviewResponse
+            return new PagedResponse<ReviewInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Reviews = ReviewResponses
+                Items = ReviewResponses
             };
         }
 
@@ -95,7 +95,7 @@ namespace Heteroboxd.Service
                 .ToList();
         }
 
-        public async Task<PagedReviewResponse> GetReviewsByAuthor(string UserId, int Page, int PageSize)
+        public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize)
         {
             var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
             if (Author == null) throw new KeyNotFoundException();
@@ -118,12 +118,12 @@ namespace Heteroboxd.Service
                 ReviewResponses.Add(new ReviewInfoResponse(r, Author, Film));
             }
 
-            return new PagedReviewResponse
+            return new PagedResponse<ReviewInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Reviews = ReviewResponses
+                Items = ReviewResponses
             };
         }
 
