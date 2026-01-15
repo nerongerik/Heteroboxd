@@ -119,7 +119,7 @@ const Profile = () => {
       const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=1&PageSize=8`);
       if (res.status === 200) {
         const json = await res.json();
-        setRecent(json.films);
+        setRecent(json.items);
         setRecentResult(200);
       } else if (res.status === 400) {
         setError("This user no longer exists!")

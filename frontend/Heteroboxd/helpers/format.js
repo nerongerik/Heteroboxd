@@ -52,5 +52,8 @@ export function isValidFormatExplore(type, subtype) {
   if (type === 'genre') {
     return typeof subtype === 'string' && subtype.length > 0;
   }
+  if (type === 'popular') {
+    return subtype === 'heteroboxd';
+  }
   return false;
 }

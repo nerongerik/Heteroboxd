@@ -53,12 +53,12 @@ const UserReviews = () => {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
-        setReviews(json.reviews)
+        setReviews(json.items)
         if (authorPic === '' || authorName === '' || authorTier === '') {
-          setAuthorPic(json.reviews.length > 0 ? json.reviews[0].authorProfilePictureUrl : null)
-          setAuthorName(json.reviews.length > 0 ? json.reviews[0].authorName : 'User')
-          setAuthorTier(json.reviews.length > 0 ? json.reviews[0].authorTier : 'free')
-          setAuthorPatron(json.reviews.length > 0 ? json.reviews[0].authorPatron : false)
+          setAuthorPic(json.items.length > 0 ? json.items[0].authorProfilePictureUrl : null)
+          setAuthorName(json.items.length > 0 ? json.items[0].authorName : 'User')
+          setAuthorTier(json.items.length > 0 ? json.items[0].authorTier : 'free')
+          setAuthorPatron(json.items.length > 0 ? json.items[0].authorPatron : false)
         }
       } else if (res.status === 404) {
         setResult(404)

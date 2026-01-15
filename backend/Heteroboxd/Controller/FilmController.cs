@@ -68,7 +68,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("popular")]
+        [HttpGet("popular/heteroboxd")]
         [AllowAnonymous]
         public async Task<IActionResult> PopularOnHeteroboxd(int Page = 1, int PageSize = 20)
         {

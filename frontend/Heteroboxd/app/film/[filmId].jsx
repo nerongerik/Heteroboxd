@@ -28,7 +28,7 @@ const Film = () => {
   const [film, setFilm] = useState(null); //basic film data
   const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
   const [usersReview, setUsersReview] = useState(null); //displays user's rating in stars
-  const [topReviews, setTopReviews] = useState([]); //top 3/4/5 reviews
+  const [topReviews, setTopReviews] = useState([]); //top n reviews
   const [ratings, setRatings] = useState({});
 
   const [watchlisted, setWatchlisted] = useState(null);
@@ -580,7 +580,7 @@ const Film = () => {
               })}
               <Pressable onPress={() => router.push(`/reviews/film/${film.id}`)}>
                 <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.text_title, textAlign: 'center'}}>
-                  <Text style={{fontWeight: 'bold'}}>{film.reviewCount}</Text> {'➜'}
+                  <Text style={{fontWeight: 'bold'}}>SEE ALL ({format.formatCount(film.reviewCount)})</Text> {'➜'}
                 </Text>
               </Pressable>
             </>

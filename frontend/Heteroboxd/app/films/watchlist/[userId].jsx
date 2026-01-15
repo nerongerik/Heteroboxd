@@ -1,16 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Animated, Text } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Text } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { Colors } from '../../../constants/colors'
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as auth from '../../../helpers/auth'
 import { BaseUrl } from '../../../constants/api'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import PaginationBar from '../../../components/paginationBar'
 import { Poster } from '../../../components/poster'
-import { FontAwesome5 } from '@expo/vector-icons'
-import SlidingMenu from '../../../components/slidingMenu'
 
 const Watchlist = () => {
   const { userId } = useLocalSearchParams()
@@ -29,11 +27,6 @@ const Watchlist = () => {
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [showPagination, setShowPagination] = useState(false)
-
-  const deletable = useRef(-1);
-
-  const [menuShown, setMenuShown] = useState(false);
-  const slideAnim = useState(new Animated.Value(0))[0];
 
   const loadWatchlistPage = async (pageNumber) => {
     try {
@@ -62,7 +55,7 @@ const Watchlist = () => {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
-        setEntries(json.entries)
+        setEntries(json.items)
       } else {
         setResult(500)
         setMessage('Something went wrong! Contact Heteroboxd support for more information!')
@@ -80,61 +73,31 @@ const Watchlist = () => {
     loadWatchlistPage(1)
   }, [userId])
 
-  const handleDelete = async () => {
+  const handleDelete = async (filmId) => {
     const vS = await isValidSession();
     if (!user || !vS || user.userId !== userId) return;
     try {
       const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/users/watchlist/${userId}/${deletable.current}`, {
+      const res = await fetch(`${BaseUrl.api}/users/watchlist/${userId}/${filmId}`, {
         method: 'PUT',
         headers: {'Authorization': `Bearer ${jwt}`}
       });
       if (res.status === 200) {
-        closeMenu();
-        deletable.current = -1;
         loadWatchlistPage(page);
       } else {
-        closeMenu();
-        deletable.current = -1;
         setResult(res.status)
         setMessage('Something went wrong! Try reloading Heteroboxd!')
       }
     } catch {
-      closeMenu();
-      deletable.current = -1;
       setResult(500)
       setMessage('Network error! Check your internet connection...')
     }
   }
 
-  const openMenu = () => {
-    setMenuShown(true);
-    Animated.timing(slideAnim, {
-      toValue: 1,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeMenu = () => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(async () => {
-      setMenuShown(false);
-    });
-  };
-
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0], //slide from bottom
-  });
-
   const totalPages = Math.ceil(totalCount / pageSize)
 
   const widescreen = useMemo(
-    () => Platform.OS === 'web' && width > 1000,
+    () => width > 1000,
     [width]
   )
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
@@ -200,10 +163,7 @@ const Watchlist = () => {
           return (
             <Pressable
               onPress={() => router.push(`/film/${item.filmId}`)}
-              onLongPress={() => {
-                deletable.current = item.filmId;
-                openMenu();
-              }}
+              onLongPress={() => {handleDelete(item.filmId)}}
               style={{ margin: spacing / 2 }}
             >
               <Poster
@@ -250,13 +210,6 @@ const Watchlist = () => {
         onEndReached={() => setShowPagination(true)}
         onEndReachedThreshold={0.2}
       />
-
-      <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
-        <Pressable onPress={handleDelete} style={{padding: 15, alignItems: 'center', flexDirection: 'row'}}>
-          <Text style={{color: Colors.text, fontSize: 16}}>Remove from Watchlist </Text>
-          <FontAwesome5 name="trash" size={20} color={Colors.text} />
-        </Pressable>
-      </SlidingMenu>
       
       <LoadingResponse visible={isLoading} />
       <Popup

@@ -43,7 +43,7 @@ const FilmsLists = () => {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
-        setLists(json.lists)
+        setLists(json.items)
       } else if (res.status === 404) {
         setResult(404)
         setMessage("This film doesn't exist anymore!")

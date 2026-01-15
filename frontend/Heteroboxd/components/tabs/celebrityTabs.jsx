@@ -1,20 +1,22 @@
-import { useState, useMemo } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView } from "react-native";
+import { useState, useMemo, useRef } from "react";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView, RefreshControl } from "react-native";
 import { Colors } from "../../constants/colors";
 import {Headshot} from '../headshot';
 import {Poster} from '../poster';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as sort from '../../helpers/sort';
+import PaginationBar from '../paginationBar';
 
-const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFilmPress, active, refreshing, onRefresh}) => {
-
+const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFilmPress, onPageChange,active, refreshing, onRefresh, pageSize}) => {
   const [activeTab, setActiveTab] = useState(active);
+  const [showPagination, setShowPagination] = useState(false);
   const { width } = useWindowDimensions();
+  const listRef = useRef(null);
 
   const [sortBy, setSortBy] = useState("watchCount");
-  const [sortDirection, setSortDirection] = useState("desc"); //or "asc"
+  const [sortDirection, setSortDirection] = useState("desc");
 
-  const seen = 0; //todo
+  const seen = 0;
 
   const widescreen = useMemo(() => width > 1000, [width]);
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen]);
@@ -24,59 +26,50 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
   const headshotWidth = useMemo(() => widescreen ? posterWidth - 20 : posterWidth + 20, [widescreen, posterWidth]);
   const headshotHeight = useMemo(() => headshotWidth * 3 / 2, [headshotWidth]);
 
-  const baseData = useMemo(() => {
+  const currentData = useMemo(() => {
     switch (activeTab) {
-      case "starred":
-        return starred ?? [];
-      case "directed":
-        return directed ?? [];
-      case "wrote":
-        return wrote ?? [];
-      case "produced":
-        return produced ?? [];
-      case "composed":
-        return composed ?? [];
-      default:
-        return [];
+      case "starred": return starred;
+      case "directed": return directed;
+      case "wrote": return wrote;
+      case "produced": return produced;
+      case "composed": return composed;
+      default: return { films: [], totalCount: 0, page: 1 };
     }
   }, [activeTab, starred, directed, wrote, produced, composed]);
 
-  const sortedData = useMemo(() => {
-    return [...baseData].sort(
-      sort.compareFilms({ sortBy: sortBy, direction: sortDirection })
+  const sortedFilms = useMemo(() => {
+    return [...currentData.films].sort(
+      sort.compareFilms({ sortBy, direction: sortDirection })
     );
-  }, [baseData, sortBy, sortDirection]);
+  }, [currentData.films, sortBy, sortDirection]);
 
   const paddedEntries = useMemo(() => {
     if (activeTab === "bio") return [];
-
-    const padded = [...sortedData];
+    const padded = [...sortedFilms];
     const remainder = padded.length % 4;
-
     if (remainder !== 0) {
       const placeholdersToAdd = 4 - remainder;
       for (let i = 0; i < placeholdersToAdd; i++) {
         padded.push(null);
       }
     }
-
     return padded;
-  }, [sortedData, activeTab]);
+  }, [sortedFilms, activeTab]);
 
-  const TabButton = ({ title, active, onPress }) => {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        style={[
-          styles.tabButton,
-          {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 15 : 10},
-          active && styles.activeTabButton
-        ]}
-      >
-        <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
-      </TouchableOpacity>
-    );
-  }
+  const totalPages = Math.ceil(currentData.totalCount / pageSize);
+
+  const TabButton = ({ title, active, onPress }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.tabButton,
+        {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 15 : 10},
+        active && styles.activeTabButton
+      ]}
+    >
+      <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
+    </TouchableOpacity>
+  );
 
   const Header = () => {
     if (activeTab === 'bio') return null;
@@ -84,17 +77,29 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
       <>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth}}>
           <View style={{padding: 5}}>
-            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>{sortedData.length} films</Text>
+            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>{currentData.totalCount} films</Text>
           </View>
-          <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', 'justifyContent': 'center'}}>
+          <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
             <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
             <Text style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13}}> {seen}% seen</Text>
           </View>
         </View>
         <View style={{height: 20}} />
       </>
-    )
-  }
+    );
+  };
+
+  const Footer = () => (
+    <PaginationBar
+      page={currentData.page}
+      totalPages={totalPages}
+      visible={showPagination}
+      onPagePress={(num) => {
+        onPageChange(activeTab, num);
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }}
+    />
+  );
 
   const Filmography = ({item}) => {
     if (!item) {
@@ -125,65 +130,66 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
         />
       </Pressable>
     );
-  }
+  };
 
   return (
     <View style={styles.container}>
       <View style={[widescreen && styles.tabRowWeb, !widescreen && styles.tabRowMobile]}>
         {bio && <TabButton title="Bio" active={activeTab === "bio"} onPress={() => setActiveTab("bio")} />}
-        {starred?.length > 0 && <TabButton title="Acted" active={activeTab === "starred"} onPress={() => setActiveTab("starred")} />}
-        {directed?.length > 0 && <TabButton title="Directed" active={activeTab === "directed"} onPress={() => setActiveTab("directed")} />}
-        {produced?.length > 0 && <TabButton title="Produced" active={activeTab === "produced"} onPress={() => setActiveTab("produced")} />}
-        {wrote?.length > 0 && <TabButton title="Wrote" active={activeTab === "wrote"} onPress={() => setActiveTab("wrote")} />}
-        {composed?.length > 0 && <TabButton title="Composed" active={activeTab === "composed"} onPress={() => setActiveTab("composed")} />}
+        {starred?.totalCount > 0 && <TabButton title="Acted" active={activeTab === "starred"} onPress={() => setActiveTab("starred")} />}
+        {directed?.totalCount > 0 && <TabButton title="Directed" active={activeTab === "directed"} onPress={() => setActiveTab("directed")} />}
+        {produced?.totalCount > 0 && <TabButton title="Produced" active={activeTab === "produced"} onPress={() => setActiveTab("produced")} />}
+        {wrote?.totalCount > 0 && <TabButton title="Wrote" active={activeTab === "wrote"} onPress={() => setActiveTab("wrote")} />}
+        {composed?.totalCount > 0 && <TabButton title="Composed" active={activeTab === "composed"} onPress={() => setActiveTab("composed")} />}
       </View>
-      {
-        activeTab === 'bio' && bio ? (
-          <ScrollView style={{alignSelf: 'center', marginBottom: 50}} contentContainerStyle={{width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start'}} showsVerticalScrollIndicator={false}>
-            <Headshot
-              pictureUrl={bio.url}
-              style={{
-                width: headshotWidth,
-                height: headshotHeight,
-                borderWidth: 1,
-                borderColor: Colors.border_color,
-                borderRadius: 4,
-                margin: widescreen ? 10 : 0,
-                alignSelf: widescreen ? 'auto' : 'center'
-              }}
-            />
-            <Text style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>
-              {bio.text}
-            </Text>
-          </ScrollView>
-        ) : (
-          <FlatList
-            data={paddedEntries}
-            key={activeTab}
-            keyExtractor={(item, index) => item?.filmId ? `${activeTab}-${item.filmId}` : `${activeTab}-placeholder-${index}`}
-            ListHeaderComponent={Header}
-            renderItem={Filmography}
-            numColumns={4}
-            columnWrapperStyle={{
-                justifyContent: 'center',
-              }}
-            refreshing={refreshing}
-            onRefresh={onRefresh}
+      {activeTab === 'bio' && bio ? (
+        <ScrollView style={{alignSelf: 'center', marginBottom: 50}} contentContainerStyle={{width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start'}} showsVerticalScrollIndicator={false}>
+          <Headshot
+            pictureUrl={bio.url}
             style={{
-              width: maxRowWidth,
-              alignSelf: 'center'
+              width: headshotWidth,
+              height: headshotHeight,
+              borderWidth: 1,
+              borderColor: Colors.border_color,
+              borderRadius: 4,
+              margin: widescreen ? 10 : 0,
+              alignSelf: widescreen ? 'auto' : 'center'
             }}
-            contentContainerStyle={{
-              paddingHorizontal: spacing / 2,
-              paddingBottom: 80,
-            }}
-            showsVerticalScrollIndicator={false}
           />
-        )
-      }
+          <Text style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>
+            {bio.text}
+          </Text>
+        </ScrollView>
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={paddedEntries}
+          key={activeTab}
+          keyExtractor={(item, index) => item?.filmId ? `${activeTab}-${item.filmId}` : `${activeTab}-placeholder-${index}`}
+          ListHeaderComponent={Header}
+          ListFooterComponent={Footer}
+          renderItem={Filmography}
+          numColumns={4}
+          columnWrapperStyle={{justifyContent: 'center'}}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          style={{
+            width: maxRowWidth,
+            alignSelf: 'center'
+          }}
+          contentContainerStyle={{
+            paddingHorizontal: spacing / 2,
+            paddingBottom: 80,
+          }}
+          showsVerticalScrollIndicator={false}
+          onEndReached={() => setShowPagination(true)}
+          onEndReachedThreshold={0.2}
+        />
+      )}
     </View>
   );
-}
+};
 
 export default CelebrityTabs
 
