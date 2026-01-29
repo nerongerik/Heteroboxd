@@ -20,14 +20,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    [AllowAnonymous] //anyone can register
+    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest Request)
     {
         _logger.LogInformation($"Register endpoint hit with Email: {Request.Email}");
         try
         {
-            await _service.Register(Request);
-            return Ok();
+            var Response = await _service.Register(Request);
+            return Ok(Response);
         }
         catch (ArgumentException)
         {
@@ -40,7 +40,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    [AllowAnonymous] //anyone can login
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest Request)
     {
         _logger.LogInformation($"Login endpoint hit with Email: {Request.Email} and Password: {Request.Password}");
@@ -56,7 +56,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
-    [AllowAnonymous] //if the user is logging out anyways, no need for jwt to be valid
+    [AllowAnonymous]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest LogoutRequest)
     {
         _logger.LogInformation($"Logout endpoint hit with User: {LogoutRequest.UserId}");
@@ -72,7 +72,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    [AllowAnonymous] //by definition, this function serves to give new jwts in place of expired ones
+    [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest RefreshRequest)
     {
         _logger.LogInformation($"Refresh endpoint hit with Refresh Token: {RefreshRequest.Token}");

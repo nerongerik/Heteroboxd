@@ -1,6 +1,5 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
-using System.Linq;
 using System.Text.Json;
 
 namespace Heteroboxd.Integrations

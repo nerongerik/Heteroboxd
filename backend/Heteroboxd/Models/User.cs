@@ -28,6 +28,7 @@ namespace Heteroboxd.Models
 
         public User()
         {
+            PictureUrl = "";
             Tier = Tier.Free;
             TierExpiry = null;
             IsPatron = false;
@@ -46,12 +47,11 @@ namespace Heteroboxd.Models
             WatchedFilms = new List<UserWatchedFilm>();
         }
 
-        public User(string Name, string Email, string? PictureUrl, string? Bio, string Gender) : this()
+        public User(string Name, string Email, string? Bio, string Gender) : this()
         {
             this.UserName = Email;
             this.Email = Email;
             this.Name = Name;
-            this.PictureUrl = PictureUrl ?? "";
             this.Bio = Bio;
             this.Gender = Gender == "male" ? Enums.Gender.Male : Enums.Gender.Female;
         }
