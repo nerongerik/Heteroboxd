@@ -5,7 +5,8 @@ namespace Heteroboxd.Integrations
 {
     public interface IR2Handler
     {
-        Task<(string PresignedUrl, string ImgPath)> GeneratePresignedUrl(Guid UserId, string FileExtension);
+        Task<(string PresignedUrl, string ImgPath)> GeneratePresignedUrl(Guid UserId);
+        Task DeleteByUser(Guid UserId);
     }
 
     public class R2Handler : IR2Handler
@@ -31,9 +32,9 @@ namespace Heteroboxd.Integrations
             _config = config;
         }
 
-        public async Task<(string PresignedUrl, string ImgPath)> GeneratePresignedUrl(Guid UserId, string FileExtension)
+        public async Task<(string PresignedUrl, string ImgPath)> GeneratePresignedUrl(Guid UserId)
         {
-            string Key = $"{UserId}{FileExtension}";
+            string Key = $"{UserId}.png";
 
             var Request = new GetPreSignedUrlRequest
             {
@@ -41,7 +42,7 @@ namespace Heteroboxd.Integrations
                 Key = Key,
                 Expires = DateTime.UtcNow.AddMinutes(15),
                 Verb = HttpVerb.PUT,
-                ContentType = GetContentType(FileExtension)
+                ContentType = "image/png"
             };
 
             var PresignedUrl = await _client.GetPreSignedURLAsync(Request);
@@ -50,16 +51,21 @@ namespace Heteroboxd.Integrations
             return (PresignedUrl, ImgPath);
         }
 
-        public string GetContentType(string FileExtension)
+        public async Task DeleteByUser(Guid UserId)
         {
-            return FileExtension.ToLower() switch
+            try
             {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".gif" => "image/gif",
-                ".webp" => "image/webp",
-                _ => "application/octet-stream",
-            };
+                var Request = new DeleteObjectRequest
+                {
+                    BucketName = _config["R2:BucketName"],
+                    Key = $"{UserId}.png"
+                };
+                await _client.DeleteObjectAsync(Request);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to delete object {UserId}.png: {e.Message}");
+            }
         }
     }
 }

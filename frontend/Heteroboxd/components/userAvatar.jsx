@@ -12,12 +12,8 @@ export const UserAvatar = ({ pictureUrl, style }) => {
         setResolvedUrl(null);
         return;
       }
-
-      // FUTURE: If `pictureUrl` is actually a storage key, resolve here:
-      // const signedUrl = await fetchSignedUrl(pictureUrl)
-      // if (isMounted) setResolvedUrl(signedUrl);
-
-      setResolvedUrl(pictureUrl); //functional placeholder, you will delete this once azure blob storage presigned urls are configured
+      const cacheBuster = `?v=${new Date().getTime()}`;
+      setResolvedUrl(pictureUrl + cacheBuster);
     };
 
     resolveImage();

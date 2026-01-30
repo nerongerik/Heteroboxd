@@ -9,6 +9,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import * as auth from '../../../helpers/auth'
 import { BaseUrl } from '../../../constants/api'
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 const ProfileEdit = () => {
 
@@ -20,9 +21,10 @@ const ProfileEdit = () => {
   const [data, setData] = useState(null); //user's initial data
 
   //new data -> not all can be null at once for request to pass
-  const [name, setName] = useState(null);
-  const [bio, setBio] = useState(null);
-  const [profileUri, setProfileUri] = useState(null);
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+  const [profileChanged, setProfileChanged] = useState(false)
+  const [profileUri, setProfileUri] = useState("");
 
   const [response, setResponse] = useState(-1); //for loading and popups
   const [message, setMessage] = useState(''); //error message
@@ -62,20 +64,33 @@ const ProfileEdit = () => {
         Alert.alert('Permission required', 'Permission to access media library is required to change profile picture.');
         return;
       }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        quality: 0.7,
+        quality: 1,
         allowsEditing: true,
-        aspect: [1,1],
+        aspect: [1, 1],
       });
+
+      setResponse(0)
       if (!result.canceled) {
         const uri = result.assets?.[0]?.uri ?? result.uri;
-        if (uri) setProfileUri(uri);
+        if (uri) {
+          //resize to 150x150px
+          const manipResult = await ImageManipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 150, height: 150 } }],
+            { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+          );
+          setProfileChanged(true);
+          setProfileUri(manipResult.uri);
+        }
       }
+      setResponse(-1)
     } catch (e) {
-      console.warn('Image pick error', e);
+      console.warn('image pick error', e);
     }
-  }
+  };
 
   const handleEdit = async () => {
     const vS = await isValidSession();
@@ -84,14 +99,16 @@ const ProfileEdit = () => {
       setResponse(401);
       return;
     }
+
     setResponse(0);
+
     const jwt = await auth.getJwt();
     const res = await fetch(`${BaseUrl.api}/users`, {
       method: 'PUT',
       body: JSON.stringify({
         UserId: userId,
         Name: name,
-        PictureUrl: profileUri,
+        GeneratePresign: profileChanged,
         Bio: bio
       }),
       headers: {
@@ -99,9 +116,28 @@ const ProfileEdit = () => {
         'Content-Type': 'application/json'
       }
     });
-    if (res.status === 200) {
-      setResponse(200);
-      router.replace(`/profile/${userId}`);
+    if (res.ok) {
+      //upload to R2
+      const json = await res.json()
+      if (json.presignedUrl && profileChanged) {
+        const response = await fetch(profileUri);
+        const blob = await response.blob();
+        const picRes = await fetch(json.presignedUrl, {
+          method: 'PUT',
+          body: blob,
+          headers: { 'Content-Type': 'image/png' }
+        })
+        if (picRes.status === 200) {
+          setResponse(200);
+          router.replace(`/profile/${userId}`);
+        } else {
+          setMessage(`There was an error updating your profile picture: ${picRes.status}\nTry again later.`);
+          setResponse(picRes.status)
+        }
+      } else {
+        setResponse(200);
+        router.replace(`/profile/${userId}`);
+      }
     } else if (res.status === 404) {
       setMessage("The user you are trying to edit no longer exists.");
       setResponse(404);

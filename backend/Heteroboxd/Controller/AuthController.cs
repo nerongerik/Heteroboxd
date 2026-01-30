@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
         try
         {
             var Response = await _service.Register(Request);
-            return Ok(Response);
+            return Ok(new { PresignedUrl = Response });
         }
         catch (ArgumentException)
         {

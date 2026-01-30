@@ -97,26 +97,29 @@ const Register = () => {
           Gender: gender === 0 ? "male" : "female",
         }),
       });
-      if (res.status === 200) {
+      if (res.ok) {
         //upload to R2
         const json = await res.json()
-        console.log(json)
-        if (json && profilePicture) {
+        if (json.presignedUrl && profilePicture) {
           const file = profilePicture[0];
           const response = await fetch(file.uri);
           const blob = await response.blob();
-          const picRes = await fetch(json, {
+          const picRes = await fetch(json.presignedUrl, {
             method: 'PUT',
             body: blob,
             headers: { 'Content-Type': file.mimeType || 'image/jpeg' }
           })
           if (picRes.status === 200) {
             setMessage("You have successfully joined the Heteroboxd community! We sent you an e-mail verification message needed to proceed.");
+            setResponse(200);
           } else {
             setMessage(`You have successfully joined the Heteroboxd community, but there was a problem uploading your profile picture: ${picRes.status}\nYou can always update your profile picture at a later time and try again. We sent you an e-mail verification message needed to proceed.`);
+            setResponse(200);
           }
+        } else {
+          setMessage("You have successfully joined the Heteroboxd community! We sent you an e-mail verification message needed to proceed.");
+          setResponse(200);
         }
-        setResponse(200);
       } else if (res.status === 400) {
         setMessage(`The email address ${email} is already in use.`);
         setResponse(400);

@@ -69,7 +69,7 @@ namespace Heteroboxd.Service
             string? PresignedUrl = null;
             if (!string.IsNullOrEmpty(Request.PictureExtension))
             {
-                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id, Request.PictureExtension);
+                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id);
 
                 User.PictureUrl = ImgPath;
                 await _userManager.UpdateAsync(User);

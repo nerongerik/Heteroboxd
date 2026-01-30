@@ -227,8 +227,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"PUT User endpoint hit with UserId: {Request.UserId}");
             try
             {
-                await _service.UpdateUser(Request);
-                return Ok();
+                var Response = await _service.UpdateUser(Request);
+                return Ok(new { PresignedUrl = Response });
             }
             catch (KeyNotFoundException)
             {
