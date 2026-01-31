@@ -114,6 +114,7 @@ builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddHostedService<RefreshPurgeService>();
 builder.Services.AddHostedService<NotificationPurgeService>();
 builder.Services.AddHostedService<UserPurgeService>();
+builder.Services.AddHostedService<FlagPurgeService>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();
