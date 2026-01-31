@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models;
+﻿using Heteroboxd.Integrations;
+using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 using Microsoft.AspNetCore.Identity;
@@ -19,7 +20,7 @@ namespace Heteroboxd.Service
         Task<Dictionary<double, int>> GetUserRatings(string UserId);
         Task<List<UserInfoResponse>> SearchUsers(string SearchName);
         Task ReportUserEfCore7Async(string UserId);
-        Task UpdateUser(UpdateUserRequest UserUpdate);
+        Task<string?> UpdateUser(UpdateUserRequest UserUpdate);
         Task VerifyUser(string UserId, string Token);
         Task UpdateWatchlist(string UserId, int FilmId);
         Task<Dictionary<string, object?>> UpdateFavorites(string UserId, int? FilmId, int Index);
@@ -39,8 +40,9 @@ namespace Heteroboxd.Service
         private readonly UserManager<User> _userManager;
         private readonly ILogger<UserService> _logger;
         private readonly INotificationService _notificationService;
+        private readonly IR2Handler _r2Handler;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IUserListRepository listRepo, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger, INotificationService notificationService)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IUserListRepository listRepo, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger, INotificationService notificationService, IR2Handler r2Handler)
         {
             _repo = repo;
             _filmRepo = filmRepo;
@@ -50,6 +52,7 @@ namespace Heteroboxd.Service
             _userManager = userManager;
             _logger = logger;
             _notificationService = notificationService;
+            _r2Handler = r2Handler;
         }
 
         public async Task<UserInfoResponse?> GetUser(string UserId)
@@ -281,19 +284,31 @@ namespace Heteroboxd.Service
             return Users.Select(u => new UserInfoResponse(u)).ToList();
         }
 
-        public async Task UpdateUser(UpdateUserRequest UserUpdate)
+        public async Task<string?> UpdateUser(UpdateUserRequest UserUpdate)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserUpdate.UserId)); //no need for rigorous id-checking, as users are requires to be logged in to update their profile
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserUpdate.UserId));
             if (User == null)
             {
-                _logger.LogError($"Failed to update User with Id: {UserUpdate.UserId}; not found"); //should never happen
+                _logger.LogError($"Failed to update User with Id: {UserUpdate.UserId}; not found");
                 throw new KeyNotFoundException();
             }
-            User.Name = UserUpdate.Name ?? User.Name;
-            User.Bio = UserUpdate.Bio ?? User.Bio;
-            User.PictureUrl = UserUpdate.PictureUrl ?? User.PictureUrl;
+            User.Name = string.IsNullOrEmpty(UserUpdate.Name) ? User.Name : UserUpdate.Name;
+            User.Bio = string.IsNullOrEmpty(UserUpdate.Bio) ? User.Bio : UserUpdate.Bio;
+
+            string? PresignedUrl = null;
+            if (UserUpdate.GeneratePresign)
+            {
+                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id);
+
+                User.PictureUrl = ImgPath;
+
+                PresignedUrl = Url;
+            }
+
             _repo.Update(User);
             await _repo.SaveChangesAsync();
+
+            return PresignedUrl;
         }
 
         public async Task VerifyUser(string UserId, string Token)
@@ -567,6 +582,9 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Failed to find User with Id: {UserId}");
                 throw new KeyNotFoundException();
             }
+
+            await _r2Handler.DeleteByUser(User.Id);
+
             _repo.Delete(User);
             await _repo.SaveChangesAsync();
             await _authService.RevokeAllUserTokens(User.Id);

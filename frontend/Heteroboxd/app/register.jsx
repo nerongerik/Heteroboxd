@@ -16,8 +16,9 @@ const Register = () => {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
+  const [profilePicture, setProfilePicture] = useState(null);
   const [profileUri, setProfileUri] = useState("");
-  const [gender, setGender] = useState(-1); //0 for male, 1 for female
+  const [gender, setGender] = useState(-1); //0 - male, 1 - female
   const [response, setResponse] = useState(-1);
   const [message, setMessage] = useState("");
   const [popupVisible, setPopupVisible] = useState(false);
@@ -38,6 +39,7 @@ const Register = () => {
         aspect: [1,1],
       });
       if (!result.canceled) {
+        setProfilePicture(result.assets);
         const uri = result.assets?.[0]?.uri ?? result.uri;
         if (uri) setProfileUri(uri);
       }
@@ -46,24 +48,78 @@ const Register = () => {
     }
   }
 
+  const getFileExtension = (uri) => {
+    const filename = uri.split('/').pop().split('?')[0];
+    const parts = filename.split('.');
+    
+    if (parts.length > 1) {
+      return '.' + parts.pop().toLowerCase();
+    }
+    return '.jpg';
+  }
+
   async function handleRegister() {
     setResponse(0);
+
+    //filename extension extraction
+    let fileExtension = null;
+    if (profilePicture && profilePicture.length > 0) {
+      const file = profilePicture[0];
+      if (file.fileName) {
+        fileExtension = getFileExtension(file.fileName);
+      } else if (file.uri) {
+        fileExtension = getFileExtension(file.uri);
+      } else if (file.mimeType) {
+        const mimeToExt = {
+          'image/jpeg': '.jpg',
+          'image/jpg': '.jpg',
+          'image/png': '.png',
+          'image/gif': '.gif',
+          'image/webp': '.webp'
+        };
+        fileExtension = mimeToExt[file.mimeType] || '.jpg';
+      }
+    }
+
     try {
       const res = await fetch(`${BaseUrl.api}/auth/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify({
           Name: name,
           Email: email,
           Password: password,
-          PictureUrl: profileUri,
+          PictureExtension: fileExtension,
           Bio: bio,
           Gender: gender === 0 ? "male" : "female",
         }),
       });
-      if (res.status === 200) {
-        setMessage("You have successfully joined the Heteroboxd community! We sent you an e-mail verification message needed to proceed.");
-        setResponse(200);
+      if (res.ok) {
+        //upload to R2
+        const json = await res.json()
+        if (json.presignedUrl && profilePicture) {
+          const file = profilePicture[0];
+          const response = await fetch(file.uri);
+          const blob = await response.blob();
+          const picRes = await fetch(json.presignedUrl, {
+            method: 'PUT',
+            body: blob,
+            headers: { 'Content-Type': file.mimeType || 'image/jpeg' }
+          })
+          if (picRes.status === 200) {
+            setMessage("You have successfully joined the Heteroboxd community! We sent you an e-mail verification message needed to proceed.");
+            setResponse(200);
+          } else {
+            setMessage(`You have successfully joined the Heteroboxd community, but there was a problem uploading your profile picture: ${picRes.status}\nYou can always update your profile picture at a later time and try again. We sent you an e-mail verification message needed to proceed.`);
+            setResponse(200);
+          }
+        } else {
+          setMessage("You have successfully joined the Heteroboxd community! We sent you an e-mail verification message needed to proceed.");
+          setResponse(200);
+        }
       } else if (res.status === 400) {
         setMessage(`The email address ${email} is already in use.`);
         setResponse(400);

@@ -107,10 +107,13 @@ builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config["TMDB:AccessToken"]}");
 });
 
+builder.Services.AddScoped<IR2Handler, R2Handler>();
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 builder.Services.AddHostedService<RefreshPurgeService>();
 builder.Services.AddHostedService<NotificationPurgeService>();
+builder.Services.AddHostedService<UserPurgeService>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();

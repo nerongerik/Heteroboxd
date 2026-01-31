@@ -1,4 +1,5 @@
 ﻿using Heteroboxd.Data;
+using Heteroboxd.Integrations;
 using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
@@ -13,7 +14,7 @@ namespace Heteroboxd.Service
 {
     public interface IAuthService
     {
-        Task Register(RegisterRequest Request);
+        Task<string?> Register(RegisterRequest Request);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
         Task<bool> Logout(string RefreshToken, string UserId);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string RefreshToken);
@@ -29,20 +30,22 @@ namespace Heteroboxd.Service
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _config;
         private readonly IRefreshTokenRepository _refreshRepo;
+        private readonly IR2Handler _r2Handler;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<AuthService> _logger;
 
-        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, IEmailSender emailSender, ILogger<AuthService> logger)
+        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, IR2Handler r2Handler, IEmailSender emailSender, ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
             _refreshRepo = refreshTokenRepo;
+            _r2Handler = r2Handler;
             _emailSender = emailSender;
             _logger = logger;
         }
 
-        public async Task Register(RegisterRequest Request)
+        public async Task<string?> Register(RegisterRequest Request)
         {
             var ExistingUser = await _userManager.FindByEmailAsync(Request.Email);
             if (ExistingUser != null)
@@ -51,7 +54,7 @@ namespace Heteroboxd.Service
                 throw new ArgumentException();
             }
 
-            var User = new User(Request.Name, Request.Email, Request.PictureUrl, Request.Bio, Request.Gender);
+            var User = new User(Request.Name, Request.Email, Request.Bio, Request.Gender);
             User.Watchlist = new Watchlist(User.Id);
             User.Favorites = new UserFavorites(User.Id);
 
@@ -61,6 +64,19 @@ namespace Heteroboxd.Service
                 _logger.LogError($"Failed to register User with Email: {Request.Email}; Internal Server Error.");
                 throw new Exception();
             }
+
+            //generate presigned url (if picture uploaded)
+            string? PresignedUrl = null;
+            if (!string.IsNullOrEmpty(Request.PictureExtension))
+            {
+                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id);
+
+                User.PictureUrl = ImgPath;
+                await _userManager.UpdateAsync(User);
+
+                PresignedUrl = Url;
+            }
+
 
             var Token = await _userManager.GenerateEmailConfirmationTokenAsync(User);
             var ConfirmUrl = $"{_config["Frontend:BaseUrl"]}/verify?userId={User.Id}&token={Uri.EscapeDataString(Token)}";
@@ -74,6 +90,8 @@ namespace Heteroboxd.Service
                     </body>
                 </html>";
             await _emailSender.SendEmailAsync(User.Email!, "Verify Your Account", Message);
+
+            return PresignedUrl;
         }
 
         public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)

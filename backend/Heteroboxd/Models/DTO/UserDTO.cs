@@ -70,7 +70,7 @@
     {
         public string UserId { get; set; }
         public string? Name { get; set; }
-        public string? PictureUrl { get; set; }
+        public bool GeneratePresign { get; set; }
         public string? Bio { get; set; }
     }
 
