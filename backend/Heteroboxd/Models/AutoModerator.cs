@@ -13,7 +13,7 @@
         public const int GoslingianForgiveness = -500;
 
         //rule 4: blasphemy
-        public const int BlasphemyPerTerm = 50000;
+        public const int BlasphemyPerTerm = 5000;
 
         //rule 5: one-liners and low quality
         public const int VeryShortReview = 750;
