@@ -1,5 +1,4 @@
-﻿using Heteroboxd.Data;
-using Heteroboxd.Integrations;
+﻿using Heteroboxd.Integrations;
 using Heteroboxd.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
