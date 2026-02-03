@@ -26,7 +26,6 @@ namespace Heteroboxd.Models
         [JsonIgnore]
         public ICollection<Review> Reviews { get; set; }
         public int WatchCount { get; set; }
-        public int FavoriteCount { get; set; }
 
         [JsonIgnore]
         public ICollection<UserWatchedFilm> WatchedBy { get; set; }
@@ -49,7 +48,6 @@ namespace Heteroboxd.Models
             this.CastAndCrew = new List<CelebrityCredit>();
             this.Reviews = new List<Review>();
             this.WatchCount = 0;
-            this.FavoriteCount = 0;
             this.WatchedBy = new List<UserWatchedFilm>();
         }
     }

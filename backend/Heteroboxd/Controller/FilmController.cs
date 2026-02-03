@@ -54,63 +54,15 @@ namespace Heteroboxd.Controller
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> ExploreFilms(int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetFilms(int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
         {
-            _logger.LogInformation("GET Explore films endpoint hit.");
+            _logger.LogInformation("GET Films endpoint hit.");
             try
             {
-                var FilmPage = await _service.ExploreFilms(Page, PageSize);
-                return Ok(FilmPage);
+                var Result = await _service.GetFilms(Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Result);
             }
             catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("popular/heteroboxd")]
-        [AllowAnonymous]
-        public async Task<IActionResult> PopularOnHeteroboxd(int Page = 1, int PageSize = 20)
-        {
-            _logger.LogInformation("GET Popular on Heteroboxd films endpoint hit.");
-            try
-            {
-                var FilmPage = await _service.PopularFilms(Page, PageSize);
-                return Ok(FilmPage);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("year/{Year}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetFilmsByYear(int Year, int Page = 1, int PageSize = 20)
-        {
-            _logger.LogInformation($"GET Films by Year endpoint hit for: {Year}");
-            try
-            {
-                var YearsFilms = await _service.GetFilmsByYear(Year, Page, PageSize);
-                return Ok(YearsFilms);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("genre/{Genre}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetFilmsByGenre(string Genre, int Page = 1, int PageSize = 20)
-        {
-            _logger.LogInformation($"GET by Genre enpoint hit for: {Genre}");
-            try
-            {
-                var Results = await _service.GetFilmsByGenre(Genre, Page, PageSize);
-                return Ok(Results);
-            }
-            catch             
             {
                 return StatusCode(500);
             }

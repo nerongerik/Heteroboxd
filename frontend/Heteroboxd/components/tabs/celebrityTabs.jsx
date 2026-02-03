@@ -4,7 +4,6 @@ import { Colors } from "../../constants/colors";
 import {Headshot} from '../headshot';
 import {Poster} from '../poster';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as sort from '../../helpers/sort';
 import PaginationBar from '../paginationBar';
 
 const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFilmPress, onPageChange,active, refreshing, onRefresh, pageSize}) => {
@@ -12,9 +11,6 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
   const [showPagination, setShowPagination] = useState(false);
   const { width } = useWindowDimensions();
   const listRef = useRef(null);
-
-  const [sortBy, setSortBy] = useState("watchCount");
-  const [sortDirection, setSortDirection] = useState("desc");
 
   const seen = 0;
 
@@ -37,15 +33,9 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
     }
   }, [activeTab, starred, directed, wrote, produced, composed]);
 
-  const sortedFilms = useMemo(() => {
-    return [...currentData.films].sort(
-      sort.compareFilms({ sortBy, direction: sortDirection })
-    );
-  }, [currentData.films, sortBy, sortDirection]);
-
   const paddedEntries = useMemo(() => {
     if (activeTab === "bio") return [];
-    const padded = [...sortedFilms];
+    const padded = [...currentData.films];
     const remainder = padded.length % 4;
     if (remainder !== 0) {
       const placeholdersToAdd = 4 - remainder;
@@ -54,7 +44,7 @@ const CelebrityTabs = ({bio, starred, directed, wrote, produced, composed, onFil
       }
     }
     return padded;
-  }, [sortedFilms, activeTab]);
+  }, [currentData?.films, activeTab]);
 
   const totalPages = Math.ceil(currentData.totalCount / pageSize);
 

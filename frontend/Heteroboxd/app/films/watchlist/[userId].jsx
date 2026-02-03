@@ -1,32 +1,63 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Text } from 'react-native'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Text, Animated } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { Colors } from '../../../constants/colors'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import * as auth from '../../../helpers/auth'
 import { BaseUrl } from '../../../constants/api'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import PaginationBar from '../../../components/paginationBar'
 import { Poster } from '../../../components/poster'
+import SlidingMenu from '../../../components/slidingMenu'
+import FilterSort from '../../../components/filterSort'
+import { Ionicons } from '@expo/vector-icons'
+
+const PAGE_SIZE = 24
 
 const Watchlist = () => {
   const { userId } = useLocalSearchParams()
   const { user, isValidSession } = useAuth()
 
   const router = useRouter()
+  const navigation = useNavigation()
   const { width } = useWindowDimensions()
 
   const [result, setResult] = useState(-1)
   const [message, setMessage] = useState('')
-
-  const pageSize = 48
 
   const [page, setPage] = useState(1)
   const [entries, setEntries] = useState([])
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [showPagination, setShowPagination] = useState(false)
+
+  const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
+  const [currentSort, setCurrentSort] = useState({field: 'DATE ADDED', desc: true})
+
+  const [menuShown, setMenuShown] = useState(false)
+  const slideAnim = useState(new Animated.Value(0))[0]
+  const listRef = useRef(null)
+
+  const openMenu = () => {
+    setMenuShown(true)
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start()
+  }
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown(false))
+  }
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0],
+  })
 
   const loadWatchlistPage = async (pageNumber) => {
     try {
@@ -40,16 +71,13 @@ const Watchlist = () => {
       setIsLoading(true)
 
       const jwt = await auth.getJwt()
-      const res = await fetch(
-        `${BaseUrl.api}/users/watchlist/${userId}?Page=${pageNumber}&PageSize=${pageSize}`,
-        {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      )
+      const res = await fetch(`${BaseUrl.api}/users/watchlist/${userId}?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+      })
 
       if (res.status === 200) {
         const json = await res.json()
@@ -71,7 +99,25 @@ const Watchlist = () => {
   useEffect(() => {
     setPage(1)
     loadWatchlistPage(1)
+  }, [currentFilter, currentSort])
+
+  useEffect(() => {
+    setPage(1)
+    loadWatchlistPage(1)
   }, [userId])
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Watchlist',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title},
+      headerRight: () => (
+        <Pressable onPress={openMenu} style={{marginRight: 15}}>
+          <Ionicons name="options" size={24} color={Colors.text_title} />
+        </Pressable>
+      ),
+    })
+  })
 
   const handleDelete = async (filmId) => {
     const vS = await isValidSession();
@@ -94,7 +140,7 @@ const Watchlist = () => {
     }
   }
 
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   const widescreen = useMemo(
     () => width > 1000,
@@ -132,6 +178,7 @@ const Watchlist = () => {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={listRef}
         data={paddedEntries}
         keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
         numColumns={4}
@@ -221,6 +268,24 @@ const Watchlist = () => {
             : router.replace('/')
         }
       />
+
+      <SlidingMenu 
+        menuShown={menuShown} 
+        closeMenu={() => {closeMenu()}} 
+        translateY={translateY} 
+        widescreen={widescreen} 
+        width={width}
+      >
+        <FilterSort
+          key={`${currentFilter.field}-${currentSort.field}`}
+          context={'watchlist'}
+          currentFilter={currentFilter}
+          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
+          currentSort={currentSort}
+          onSortChange={(newSort) => setCurrentSort(newSort)}
+        />
+      </SlidingMenu>
+
     </View>
   )
 }

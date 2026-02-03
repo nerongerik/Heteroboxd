@@ -25,10 +25,8 @@ const About = () => {
           What is Heteroboxd?
         </Text>
         <Text style={styles.text}>
-          Heteroboxd is a social film discovery app for reactionaries, political extremists, and religious
-          fundamentalists (normal movie-lovers from 30 years ago). It was designed to be an open-source
-          alternative to
-          <Text style={{ fontStyle: "italic" }}> *certain* </Text>proprietary platforms that
+          Heteroboxd is a free-speech, social film discovery platofrm. It was designed to be an open-source
+          alternative to<Text style={{ fontStyle: "italic" }}> certain </Text>proprietary platforms that
           have become overrun with progressive propaganda and censorship.
         </Text>
     
@@ -95,7 +93,7 @@ const About = () => {
         </Text>
         <Text style={styles.text}>
           Heteroboxd is open source and free to use for all, and the (many) expenses are currently covered by the developer.
-          If you'd like to support the project, please consider supporting the cause with <Link style={styles.link} href='sponsor'>a donation</Link>.
+          If you'd like to support the project, please consider making <Link style={styles.link} href='sponsor'>a donation</Link>.
         </Text>
     
         <View style={styles.divider} />

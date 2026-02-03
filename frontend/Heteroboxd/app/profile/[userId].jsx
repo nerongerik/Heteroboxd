@@ -51,7 +51,7 @@ const Profile = () => {
 
   //searchbar
   const [menuShown2, setMenuShown2] = useState(false);
-  const slideAnim2 = useState(new Animated.Value(0))[0]; //sliding animation prep
+  const slideAnim2 = useState(new Animated.Value(0))[0];
   const [favIndex, setFavIndex] = useState(-1);
   const [searchResults, setSearchResults] = useState(null);
 

@@ -39,14 +39,15 @@ namespace Heteroboxd.Controller
             }
         }
 
+        //TODO - change to allow for filtering and sorting similar to get films for explore
         [HttpGet("watchlist/{UserId}")]
         [Authorize]
-        public async Task<IActionResult> GetUserWatchlist(string UserId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetUserWatchlist(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE ADDED", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GET Watchlist endpoint hit for User: {UserId}");
             try
             {
-                var Response = await _service.GetWatchlist(UserId, Page, PageSize);
+                var Response = await _service.GetWatchlist(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Response);
             }
             catch

@@ -63,7 +63,7 @@ const Film = () => {
         setFilm({
           id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: format.parseCountry(json.country, Platform.OS), genres: json.genres,
           tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
-          releaseYear: json.releaseYear, favCount: json.favoriteCount, watchCount: json.watchCount,
+          releaseYear: json.releaseYear, watchCount: json.watchCount,
           collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
         });
         setResult(200);
@@ -319,17 +319,19 @@ const Film = () => {
             </View>
             <View>
               <Text style={[styles.subtitle, { fontSize: widescreen ? 20 : 14 }]}>DIRECTED BY</Text>
-              {directors.map((director, index) => (
-                <React.Fragment key={director.celebrityId}>
-                  <Link
-                    href={`/celebrity/${director.celebrityId}?t=directed`}
-                    style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}
-                  >
-                    {director.celebrityName}
-                  </Link>
-                  {index < directors.length - 1 && ', '}
-                </React.Fragment>
-              ))}
+              <Text style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
+                {directors.map((director, index) => (
+                  <React.Fragment key={director.celebrityId}>
+                    <Link
+                      href={`/celebrity/${director.celebrityId}?t=directed`}
+                      style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}
+                    >
+                      {director.celebrityName}
+                    </Link>
+                    {index < directors.length - 1 && <Text>, </Text>}
+                  </React.Fragment>
+                ))}
+              </Text>
             </View>
             
             <Text style={[styles.text, { fontSize: widescreen ? 20 : 14 }]}>
@@ -359,7 +361,7 @@ const Film = () => {
             <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 10}}>
               {
                 film.genres.map((genre, i) => (
-                  <Pressable key={i} onPress={() => router.push(`films/explore?type=genre&subtype=${genre}`)} style={[{backgroundColor: Colors.button, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
+                  <Pressable key={i} onPress={() => router.push(`films/explore?filter=genre&value=${genre}`)} style={[{backgroundColor: Colors.button, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
                     <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>{genre}</Text>
                   </Pressable>
                 ))

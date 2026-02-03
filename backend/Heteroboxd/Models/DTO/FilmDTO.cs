@@ -13,7 +13,6 @@
         public string? BackdropUrl { get; set; }
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
-        public int FavoriteCount { get; set; }
         public int WatchCount { get; set; }
         public Dictionary<int, string>? Collection { get; set; }
         public int ReviewCount { get; set; }
@@ -32,7 +31,6 @@
             this.BackdropUrl = Film.BackdropUrl;
             this.Length = Film.Length;
             this.ReleaseYear = Film.ReleaseYear;
-            this.FavoriteCount = Film.FavoriteCount;
             this.WatchCount = Film.WatchCount;
             this.Collection = Film.Collection;
             this.ReviewCount = Film.Reviews.Count();

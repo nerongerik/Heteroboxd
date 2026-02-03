@@ -8,10 +8,7 @@ namespace Heteroboxd.Service
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<Trending>> GetTrending();
-        Task<PagedResponse<FilmInfoResponse>> ExploreFilms(int Page, int PageSize);
-        Task<PagedResponse<FilmInfoResponse>> PopularFilms(int Page, int PageSize);
-        Task<PagedResponse<FilmInfoResponse>> GetFilmsByYear(int Year, int Page, int PageSize);
-        Task<PagedResponse<FilmInfoResponse>> GetFilmsByGenre(string Genre, int Page, int PageSize);
+        Task<PagedResponse<FilmInfoResponse>> GetFilms(int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
         Task<List<FilmInfoResponse>> SearchFilms(string Search);
@@ -42,47 +39,9 @@ namespace Heteroboxd.Service
             return new FilmInfoResponse(Film, true);
         }
 
-        public async Task<PagedResponse<FilmInfoResponse>> ExploreFilms(int Page, int PageSize)
+        public async Task<PagedResponse<FilmInfoResponse>> GetFilms(int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var (Films, TotalCount) = await _repo.ExploreAsync(Page, PageSize);
-            return new PagedResponse<FilmInfoResponse>
-            {
-                TotalCount = TotalCount,
-                Page = Page,
-                PageSize = PageSize,
-                Items = Films.Select(f => new FilmInfoResponse(f)).ToList()
-            };
-        }
-
-        public async Task<PagedResponse<FilmInfoResponse>> PopularFilms(int Page, int PageSize)
-        {
-            var (Films, TotalCount) = await _repo.PopularAsync(Page, PageSize);
-            return new PagedResponse<FilmInfoResponse>
-            {
-                TotalCount = TotalCount,
-                Page = Page,
-                PageSize = PageSize,
-                Items = Films.Select(f => new FilmInfoResponse(f)).ToList()
-            };
-        }
-
-        public async Task<PagedResponse<FilmInfoResponse>> GetFilmsByYear(int Year, int Page, int PageSize)
-        {
-            var (Films, TotalCount) = await _repo.GetByYearAsync(Year, Page, PageSize);
-
-            return new PagedResponse<FilmInfoResponse>
-            {
-                TotalCount = TotalCount,
-                Page = Page,
-                PageSize = PageSize,
-                Items = Films.Select(f => new FilmInfoResponse(f)).ToList()
-            };
-        }
-
-        public async Task<PagedResponse<FilmInfoResponse>> GetFilmsByGenre(string Genre, int Page, int PageSize)
-        {
-            var (Films, TotalCount) = await _repo.GetByGenreAsync(Genre, Page, PageSize);
-
+            var (Films, TotalCount) = await _repo.GetFilmsAsync(Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<FilmInfoResponse>
             {
                 TotalCount = TotalCount,
