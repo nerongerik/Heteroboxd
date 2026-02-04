@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl, Animated } from 'react-native'
 import { Colors } from '../../constants/colors'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { BaseUrl } from '../../constants/api'
 import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
@@ -11,8 +11,11 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
+import SlidingMenu from '../../components/slidingMenu'
+import FilterSort from '../../components/filterSort'
+import { Ionicons } from '@expo/vector-icons'
 
-const PAGE_SIZE = 48
+const PAGE_SIZE = 24
 
 const List = () => {
   const { listId } = useLocalSearchParams()
@@ -35,6 +38,32 @@ const List = () => {
   const [likeCount, setLikeCount] = useState(0)
   const [iLiked, setILiked] = useState(false)
   const [descCollapsed, setDescCollapsed] = useState(true)
+
+  const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
+  const [currentSort, setCurrentSort] = useState({field: 'POSITION', desc: false})
+
+  const [menuShown2, setMenuShown2] = useState(false)
+  const slideAnim2 = useState(new Animated.Value(0))[0]
+  const listRef = useRef(null)
+  const openMenu2 = () => {
+    setMenuShown2(true)
+    Animated.timing(slideAnim2, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start()
+  }
+  const closeMenu2 = () => {
+    Animated.timing(slideAnim2, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown2(false))
+  }
+  const translateY2 = slideAnim2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0],
+  })
 
   const loadBaseList = async () => {
     try {
@@ -60,7 +89,7 @@ const List = () => {
     try {
       setIsLoading(true)
       const res = await fetch(
-        `${BaseUrl.api}/lists/entries/${baseList.id}?Page=${pageNumber}&PageSize=${PAGE_SIZE}`
+        `${BaseUrl.api}/lists/entries/${baseList.id}?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       )
       if (res.status === 200) {
         const json = await res.json()
@@ -103,6 +132,11 @@ const List = () => {
   useEffect(() => {
     setPage(1)
     loadListPage(1)
+  }, [currentFilter, currentSort])
+
+  useEffect(() => {
+    setPage(1)
+    loadListPage(1)
   }, [baseList])
 
   useEffect(() => {
@@ -115,6 +149,15 @@ const List = () => {
       headerTitle: `${baseList.authorName}'s list`,
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
+      headerRight: () => {
+        if (baseList && !baseList.ranked) {
+          return (
+            <Pressable onPress={openMenu2} style={{marginRight: 15}}>
+              <Ionicons name="options" size={24} color={Colors.text_title} />
+            </Pressable>
+          )
+        }
+      },
     });
   }, [baseList])
 
@@ -276,6 +319,7 @@ const List = () => {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={listRef}
         data={paddedEntries}
         keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
         numColumns={4}
@@ -307,6 +351,27 @@ const List = () => {
             : router.replace('/')
         }
       />
+
+      {
+        baseList && !baseList.ranked && (
+          <SlidingMenu 
+            menuShown={menuShown2} 
+            closeMenu={closeMenu2} 
+            translateY={translateY2} 
+            widescreen={widescreen} 
+            width={width}
+          >
+            <FilterSort
+              key={`${currentFilter.field}-${currentSort.field}`}
+              context={'list'}
+              currentFilter={currentFilter}
+              onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu2()}}
+              currentSort={currentSort}
+              onSortChange={(newSort) => setCurrentSort(newSort)}
+            />
+          </SlidingMenu>
+        )
+      }
     </View>
   )
 }

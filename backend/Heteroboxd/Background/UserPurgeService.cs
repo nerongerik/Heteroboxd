@@ -57,14 +57,21 @@ namespace Heteroboxd.Background
 
                     var CutoffDate = DateTime.UtcNow.AddHours(-24);
 
-                    var UnverifiedUsers = await _manager.Users
+                    var UnverifiedIds = await _manager.Users
                         .Where(u => !u.EmailConfirmed && u.DateJoined < CutoffDate)
+                        .Select(u => u.Id)
                         .ToListAsync(CancellationToken);
 
-                    foreach (var u in UnverifiedUsers)
+                    if (UnverifiedIds.Any())
                     {
-                        await _r2Handler.DeleteByUser(u.Id);
-                        await _manager.DeleteAsync(u);
+                        await _manager.Users
+                            .Where(u => UnverifiedIds.Contains(u.Id))
+                            .ExecuteDeleteAsync(CancellationToken);
+
+                        foreach (var id in UnverifiedIds)
+                        {
+                            await _r2Handler.DeleteByUser(id);
+                        }
                     }
 
                     _logger.LogInformation("User purge completed successfully.");

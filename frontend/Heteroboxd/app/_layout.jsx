@@ -83,14 +83,6 @@ const RootLayout = () => {
             headerTitleStyle: {color: Colors.text_title},
           }}
         />
-        <Stack.Screen 
-          name="lists/film/[filmId]" 
-          options={{
-            headerTitle: 'Featuring lists',
-            headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title},
-          }}
-        />
       </Stack>
     </AuthProvider>
   )

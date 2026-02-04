@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, TouchableOpacity, RefreshControl } from 'react-native'
+import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, TouchableOpacity, RefreshControl, Animated } from 'react-native'
 import { Colors } from '../../../constants/colors'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import PaginationBar from '../../../components/paginationBar';
 import LoadingResponse from '../../../components/loadingResponse';
 import Popup from '../../../components/popup';
@@ -12,8 +12,11 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { useAuth } from '../../../hooks/useAuth';
 import Author from '../../../components/author';
 import * as format from '../../../helpers/format';
+import SlidingMenu from '../../../components/slidingMenu';
+import FilterSort from '../../../components/filterSort';
+import { Ionicons } from '@expo/vector-icons';
 
-const pageSize = 40
+const PAGE_SIZE = 24
 
 const UsersLists = () => {
 
@@ -38,11 +41,37 @@ const UsersLists = () => {
   const [result, setResult] = useState(-1)
   const [message, setMessage] = useState('')
 
-  const loadListsPage = async (page) => {
+  const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
+  const [currentSort, setCurrentSort] = useState({field: 'DATE CREATED', desc: true})
+  const listRef = useRef(null);
+
+  const [menuShown, setMenuShown] = useState(false);
+  const slideAnim = useState(new Animated.Value(0))[0];
+  const openMenu = () => {
+    setMenuShown(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown(false));
+  };
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0], //slide from bottom
+  });
+
+  const loadListsPage = async (pageNumber) => {
     try {
       setIsLoading(true);
 
-      const res = await fetch(`${BaseUrl.api}/lists/user/${userId}?Page=${page}&PageSize=${pageSize}`, {
+      const res = await fetch(`${BaseUrl.api}/lists/user/${userId}?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
         method: 'GET',
         headers: {
           Accept: 'application/json'
@@ -69,6 +98,11 @@ const UsersLists = () => {
   };
 
   useEffect(() => {
+    setPage(1);
+    loadListsPage(1);
+  }, [currentFilter, currentSort])
+
+  useEffect(() => {
     setPage(1)
     loadListsPage(1)
   }, [userId])
@@ -91,18 +125,25 @@ const UsersLists = () => {
         headerTitleStyle: {color: Colors.text_title},
       });
     }
-    if (user && user.userId === userId) {
-      navigation.setOptions({
-        headerRight: () => (
-          <TouchableOpacity onPress={() => router.push('/list/create')}>
-            <AntDesign name="plus" size={24} color={Colors.text_title} />
-          </TouchableOpacity>
-        )
-      });
-    }
+    navigation.setOptions({
+      headerRight: () => (
+        <>
+          {
+            user && user.userId === userId && (
+              <TouchableOpacity onPress={() => router.push('/list/create')}>
+                <AntDesign name="plus" size={24} color={Colors.text_title} />
+              </TouchableOpacity>
+            )
+          }
+          <Pressable onPress={openMenu} style={{marginRight: 15, marginLeft: user && user.userId === userId ? 15 : 0}}>
+            <Ionicons name="options" size={24} color={Colors.text_title} />
+          </Pressable>
+        </>
+      )
+    });
   }, [username, userId, user]);
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
   const spacing = useMemo(() => widescreen ? 30 : 5, [widescreen]);
   const maxRowWidth = useMemo(() => widescreen ? 800 : width * 0.9, [widescreen]);
@@ -126,8 +167,14 @@ const UsersLists = () => {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={listRef}
         data={lists}
         keyExtractor={(item) => item.id.toString()}
+        ListEmptyComponent={() => {
+          if (!isLoading) {
+            return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no lists matching this criteria...</Text>
+          }
+        }}
         renderItem={({ item }) => (
           <View style={[styles.card, { marginBottom: spacing * 1.25 }]}>
             {AuthorSection}
@@ -188,6 +235,17 @@ const UsersLists = () => {
             </Pressable>
           </View>
         )}
+        ListFooterComponent={() => (
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            visible={showPagination}
+            onPagePress={(num) => {
+              setPage(num)
+              loadListsPage(num)
+            }}
+          />
+        )}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
@@ -205,16 +263,6 @@ const UsersLists = () => {
         onEndReachedThreshold={0.2}
       />
 
-      <PaginationBar
-        page={page}
-        totalPages={totalPages}
-        visible={showPagination}
-        onPagePress={(num) => {
-          setPage(num)
-          loadListsPage(num)
-        }}
-      />
-
       <LoadingResponse visible={isLoading} />
       <Popup
         visible={[401, 404, 500].includes(result)}
@@ -223,6 +271,18 @@ const UsersLists = () => {
           result === 500 ? router.replace('/contact') : router.replace('/')
         }
       />
+
+      <SlidingMenu menuShown={menuShown} closeMenu={() => {closeMenu()}} translateY={translateY} widescreen={widescreen} width={width}>
+        <FilterSort
+          key={`${currentFilter.field}-${currentSort.field}`}
+          context={'userLists'}
+          currentFilter={currentFilter}
+          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
+          currentSort={currentSort}
+          onSortChange={(newSort) => setCurrentSort(newSort)}
+        />
+      </SlidingMenu>
+
     </View>
   )
 }

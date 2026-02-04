@@ -13,7 +13,7 @@ namespace Heteroboxd.Repository
         Task<List<Trending>> GetTrendingAsync();
         Task<(List<Film> Films, int TotalCount)> GetFilmsAsync(int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
-        Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
+        Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<List<Film>> SearchAsync(string Title);
         Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta);
@@ -128,28 +128,64 @@ namespace Heteroboxd.Repository
             return (Films, TotalCount);
         }
 
-        public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
+        public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var UwQuery = _context.UserWatchedFilms
-                .Where(uw => uw.UserId == UserId)
-                .OrderByDescending(uw => uw.DateWatched);
+                .Where(uwf => uwf.UserId == UserId)
+                .Join(_context.Films, uwf => uwf.FilmId, f => f.Id, (uwf, f) => new { Uwf = uwf, Film = f });
+
+            //filtering
+            switch (Filter.ToLower())
+            {
+                case "genre":
+                    UwQuery = UwQuery.Where(x => x.Film.Genres.Contains(FilterValue!));
+                    break;
+                case "year":
+                    UwQuery = UwQuery.Where(x => x.Film.ReleaseYear == int.Parse(FilterValue!));
+                    break;
+                case "country":
+                    var FilteredIds = await _context.Films
+                        .FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue)
+                        .Select(f => f.Id)
+                        .ToListAsync();
+                    UwQuery = UwQuery.Where(x => FilteredIds.Contains(x.Film.Id));
+                    break;
+                default:
+                    //error fallback
+                    break;
+            }
+
+            //sorting
+            switch (Sort.ToLower())
+            {
+                case "date watched":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Uwf.DateWatched) : UwQuery.OrderBy(x => x.Uwf.DateWatched);
+                    break;
+                case "popularity":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.WatchCount) : UwQuery.OrderBy(x => x.Film.WatchCount);
+                    break;
+                case "length":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.Length) : UwQuery.OrderBy(x => x.Film.Length);
+                    break;
+                case "release date":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.ReleaseYear) : UwQuery.OrderBy(x => x.Film.ReleaseYear);
+                    break;
+                case "average rating":
+                    //todo
+                    break;
+                default:
+                    //error fallback
+                    UwQuery = UwQuery.OrderByDescending(x => x.Uwf.DateWatched);
+                    break;
+            }
 
             var TotalCount = await UwQuery.CountAsync();
-
-            var PagedFilmIds = await UwQuery
+            var Uwfs = await UwQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(uw => uw.FilmId)
+                .Select(x => x.Film)
                 .ToListAsync();
-
-            var Films = await _context.Films
-                .Where(f => PagedFilmIds.Contains(f.Id))
-                .ToListAsync();
-
-            var FilmsById = Films.ToDictionary(f => f.Id);
-            var OrderedFilms = PagedFilmIds.Select(id => FilmsById[id]).ToList();
-
-            return (OrderedFilms, TotalCount);
+            return (Uwfs, TotalCount);
         }
 
         public async Task<Dictionary<double, int>> GetRatingsAsync(int FilmId) =>

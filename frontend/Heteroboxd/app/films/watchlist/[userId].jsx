@@ -117,7 +117,11 @@ const Watchlist = () => {
         </Pressable>
       ),
     })
-  })
+  }, [])
+
+  useEffect(() => {
+    setCurrentSort({field: 'DATE ADDED', desc: true})
+  }, [currentFilter.field])
 
   const handleDelete = async (filmId) => {
     const vS = await isValidSession();
@@ -182,6 +186,7 @@ const Watchlist = () => {
         data={paddedEntries}
         keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
         numColumns={4}
+        ListEmptyComponent={<Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Your Watchlist lies empty...</Text>}
         ListHeaderComponent={
             <>
             {

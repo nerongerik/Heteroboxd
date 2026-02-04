@@ -9,7 +9,7 @@ namespace Heteroboxd.Service
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<Trending>> GetTrending();
         Task<PagedResponse<FilmInfoResponse>> GetFilms(int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize);
+        Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
         Task<List<FilmInfoResponse>> SearchFilms(string Search);
     }
@@ -51,7 +51,7 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize)
+        public async Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             if (!Guid.TryParse(UserId, out var Id))
             {
@@ -59,8 +59,7 @@ namespace Heteroboxd.Service
                 throw new ArgumentException();
             }
 
-            var (Films, TotalCount) = await _repo.GetByUserAsync(Id, Page, PageSize);
-
+            var (Films, TotalCount) = await _repo.GetByUserAsync(Id, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<FilmInfoResponse>
             {
                 TotalCount = TotalCount,

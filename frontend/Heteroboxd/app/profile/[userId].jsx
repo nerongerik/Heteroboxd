@@ -116,7 +116,7 @@ const Profile = () => {
     // --- FETCH RECENTS ---
     setRecentResult(0);
     try {
-      const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=1&PageSize=8`);
+      const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=1&PageSize=8&Filter=ALL&Sort=${"DATE WATCHED"}&Desc=true&FilterValue=${null}`);
       if (res.status === 200) {
         const json = await res.json();
         setRecent(json.items);

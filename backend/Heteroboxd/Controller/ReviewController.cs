@@ -62,13 +62,17 @@ namespace Heteroboxd.Controller
 
         [HttpGet("film-reviews/{FilmId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetReviewsByFilm(int FilmId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetReviewsByFilm(int FilmId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GET Reviews by Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Reviews = await _service.GetReviewsByFilm(FilmId, Page, PageSize);
+                var Reviews = await _service.GetReviewsByFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Reviews);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch
             {
@@ -94,12 +98,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("user-reviews/{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetReviewsByAuthor(string UserId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetReviewsByAuthor(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GET Reviews by Author endpoint hit for UserId: {UserId}");
             try
             {
-                var Reviews = await _service.GetReviewsByAuthor(UserId, Page, PageSize);
+                var Reviews = await _service.GetReviewsByAuthor(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Reviews);
             }
             catch

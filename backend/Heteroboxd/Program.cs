@@ -115,6 +115,7 @@ builder.Services.AddHostedService<RefreshPurgeService>();
 builder.Services.AddHostedService<NotificationPurgeService>();
 builder.Services.AddHostedService<UserPurgeService>();
 builder.Services.AddHostedService<FlagPurgeService>();
+builder.Services.AddHostedService<ListPurgeService>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();

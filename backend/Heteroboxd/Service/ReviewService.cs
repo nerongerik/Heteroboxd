@@ -8,9 +8,9 @@ namespace Heteroboxd.Service
     {
         Task<ReviewInfoResponse?> GetReview(string ReviewId);
         Task<ReviewInfoResponse> GetReviewByUserFilm(string UserId, int FilmId);
-        Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, int Page, int PageSize);
+        Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<ReviewInfoResponse>> GetTopReviewsForFilm(int FilmId, int Top);
-        Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize);
+        Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta);
         Task ToggleNotificationsEfCore7(string ReviewId);
         Task ReportReviewEfCore7(string ReviewId);
@@ -48,12 +48,20 @@ namespace Heteroboxd.Service
             return new ReviewInfoResponse(Review);
         }
 
-        public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, int Page, int PageSize)
+        public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
+            if (UserId == null && Filter.ToLower() == "friends") throw new KeyNotFoundException();
+
+            List<Guid>? UsersFriends = null;
+            if (UserId != null && Filter.ToLower() == "friends")
+            {
+                UsersFriends = (await _userRepo.GetUserRelationshipsAsync(Guid.Parse(UserId)))?.Following.Select(u => u.Id).ToList();
+            }
+
             var Film = await _filmRepo.LightweightFetcher(FilmId);
             if (Film == null) throw new KeyNotFoundException();
 
-            var (Reviews, TotalCount) = await _repo.GetByFilmAsync(FilmId, Page, PageSize);
+            var (Reviews, TotalCount) = await _repo.GetByFilmAsync(FilmId, UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
             var AuthorIds = Reviews
                 .Select(r => r.AuthorId)
                 .Distinct()
@@ -95,12 +103,12 @@ namespace Heteroboxd.Service
                 .ToList();
         }
 
-        public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize)
+        public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
             if (Author == null) throw new KeyNotFoundException();
 
-            var (Reviews, TotalCount) = await _repo.GetByAuthorAsync(Author.Id, Page, PageSize);
+            var (Reviews, TotalCount) = await _repo.GetByAuthorAsync(Author.Id, Page, PageSize, Filter, Sort, Desc, FilterValue);
 
             var FilmIds = Reviews
                 .Select(r => r.FilmId)

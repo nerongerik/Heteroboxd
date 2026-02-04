@@ -42,12 +42,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("entries/{UserListId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetListEntries(string UserListId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetListEntries(string UserListId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
         {
             _logger.LogInformation($"GET ListEntries endpoint hit for ListId: {UserListId}");
             try
             {
-                var Response = await _service.GetListEntries(UserListId, Page, PageSize);
+                var Response = await _service.GetListEntries(UserListId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Response);
             }
             catch
@@ -74,12 +74,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("user/{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GET Lists by Author endpoint hit for User: {UserId}");
             try
             {
-                var UsersLists = await _service.GetListsByUser(UserId, Page, PageSize);
+                var UsersLists = await _service.GetListsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(UsersLists);
             }
             catch (KeyNotFoundException)
@@ -114,12 +114,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("featuring-film/{FilmId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetListsFeaturingFilm(int FilmId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetListsFeaturingFilm(int FilmId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GET Lists featuring Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var FilmsLists = await _service.GetListsFeaturingFilm(FilmId, Page, PageSize);
+                var FilmsLists = await _service.GetListsFeaturingFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(FilmsLists);
             }
             catch (KeyNotFoundException)

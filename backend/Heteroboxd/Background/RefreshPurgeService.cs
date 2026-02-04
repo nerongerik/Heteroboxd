@@ -53,11 +53,9 @@ namespace Heteroboxd.Background
                 {
                     HeteroboxdContext _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
 
-                    List<RefreshToken> Expired = await _context.RefreshTokens
+                    await _context.RefreshTokens
                         .Where(r => r.Used || r.Revoked || r.Expires < DateTime.UtcNow)
-                        .ToListAsync(CancellationToken);
-                    _context.RefreshTokens.RemoveRange(Expired);
-                    await _context.SaveChangesAsync(CancellationToken);
+                        .ExecuteDeleteAsync(CancellationToken);
 
                     _logger.LogInformation("Refresh Token purge completed successfully.");
                 }

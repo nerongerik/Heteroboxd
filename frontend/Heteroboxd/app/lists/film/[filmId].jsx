@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, RefreshControl } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useEffect, useMemo, useState } from 'react'
+import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, RefreshControl, Animated } from 'react-native'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { Colors } from '../../../constants/colors'
 import { BaseUrl } from '../../../constants/api'
 import PaginationBar from '../../../components/paginationBar'
@@ -10,12 +10,21 @@ import { Poster } from '../../../components/poster'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import Author from '../../../components/author'
 import * as format from '../../../helpers/format'
+import { useAuth } from '../../../hooks/useAuth'
+import SlidingMenu from '../../../components/slidingMenu';
+import FilterSort from '../../../components/filterSort';
+import { Ionicons } from '@expo/vector-icons';
 
-const pageSize = 40
+const PAGE_SIZE = 24
 
 const FilmsLists = () => {
+  const { user, isValidSession } = useAuth();
+
   const { filmId } = useLocalSearchParams()
+
+  const navigation = useNavigation()
   const router = useRouter()
+
   const { width } = useWindowDimensions()
 
   const [lists, setLists] = useState([])
@@ -28,15 +37,39 @@ const FilmsLists = () => {
   const [result, setResult] = useState(-1)
   const [message, setMessage] = useState('')
 
+  const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
+  const [currentSort, setCurrentSort] = useState({field: 'POPULARITY', desc: true})
+  const listRef = useRef(null);
+
+  const [menuShown, setMenuShown] = useState(false);
+  const slideAnim = useState(new Animated.Value(0))[0];
+  const openMenu = () => {
+    setMenuShown(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown(false));
+  };
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0], //slide from bottom
+  });
+
   const loadListsPage = async (pageNumber) => {
     try {
       setIsLoading(true)
 
-      const res = await fetch(`${BaseUrl.api}/lists/featuring-film/${filmId}?Page=${pageNumber}&PageSize=${pageSize}`, {
+      const res = await fetch(`${BaseUrl.api}/lists/featuring-film/${filmId}?UserId=${user?.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
         method: 'GET',
-        headers: {
-          Accept: 'application/json'
-        }
+        headers: {Accept: 'application/json'}
       })
 
       if (res.status === 200) {
@@ -60,11 +93,33 @@ const FilmsLists = () => {
   }
 
   useEffect(() => {
+    setPage(1);
+    loadListsPage(1);
+  }, [currentFilter, currentSort])
+
+  useEffect(() => {
     setPage(1)
     loadListsPage(1)
   }, [filmId])
 
-  const totalPages = Math.ceil(totalCount / pageSize)
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Featuring lists',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title},
+      headerRight: () => (
+        <Pressable onPress={openMenu} style={{marginRight: 15}}>
+          <Ionicons name="options" size={24} color={Colors.text_title} />
+        </Pressable>
+      ),
+    });
+  }, [])
+
+  useEffect(() => {
+    setCurrentSort({field: 'POPULARITY', desc: true})
+  }, [currentFilter.field])
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   const widescreen = useMemo(
     () => Platform.OS === 'web' && width > 1000,
@@ -91,8 +146,14 @@ const FilmsLists = () => {
   return (
     <View style={styles.container}>
       <FlatList
+        ref={listRef}
         data={lists}
         keyExtractor={(item) => item.id.toString()}
+        ListEmptyComponent={() => {
+          if (!isLoading) {
+            return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no lists matching this criteria...</Text>
+          }
+        }}
         renderItem={({ item }) => (
           <View style={[styles.card, { marginBottom: spacing * 1.25 }]}>
             <View style={{marginLeft: 5, marginBottom: -5}}>
@@ -163,6 +224,17 @@ const FilmsLists = () => {
             </Pressable>
           </View>
         )}
+        ListFooterComponent={() => (
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            visible={showPagination}
+            onPagePress={(num) => {
+              setPage(num)
+              loadListsPage(num)
+            }}
+          />
+        )}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
@@ -180,16 +252,6 @@ const FilmsLists = () => {
         onEndReachedThreshold={0.2}
       />
 
-      <PaginationBar
-        page={page}
-        totalPages={totalPages}
-        visible={showPagination}
-        onPagePress={(num) => {
-          setPage(num)
-          loadListsPage(num)
-        }}
-      />
-
       <LoadingResponse visible={isLoading} />
       <Popup
         visible={[401, 404, 500].includes(result)}
@@ -198,6 +260,18 @@ const FilmsLists = () => {
           result === 500 ? router.replace('/contact') : router.replace('/')
         }
       />
+
+      <SlidingMenu menuShown={menuShown} closeMenu={() => {closeMenu()}} translateY={translateY} widescreen={widescreen} width={width}>
+        <FilterSort
+          key={`${currentFilter.field}-${currentSort.field}`}
+          context={'filmLists'}
+          currentFilter={currentFilter}
+          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
+          currentSort={currentSort}
+          onSortChange={(newSort) => setCurrentSort(newSort)}
+        />
+      </SlidingMenu>
+
     </View>
   )
 }

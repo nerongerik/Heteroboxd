@@ -70,12 +70,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("user/{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUsersWatchedFilms(string UserId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetUsersWatchedFilms(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE WATCHED", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GET UWF hit with UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Result = await _service.GetUsersWatchedFilms(UserId, Page, PageSize);
+                var Result = await _service.GetUsersWatchedFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Result);
             }
             catch (ArgumentException)

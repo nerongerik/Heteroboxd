@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models;
+﻿using FirebaseAdmin.Auth;
+using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 
@@ -7,11 +8,11 @@ namespace Heteroboxd.Service
     public interface IUserListService
     {
         Task<UserListInfoResponse> GetList(string ListId);
-        Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, int Page, int PageSize);
+        Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId);
-        Task<PagedResponse<UserListInfoResponse>> GetListsByUser(string UserId, int Page, int PageSize);
+        Task<PagedResponse<UserListInfoResponse>> GetListsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<DelimitedListInfoResponse>> GetDelimitedLists(string UserId, int FilmId);
-        Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, int Page, int PageSize);
+        Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetListsFeaturingFilmCount(int FilmId);
         Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search);
         Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
@@ -46,9 +47,9 @@ namespace Heteroboxd.Service
             return new UserListInfoResponse(List, Author, 0);
         }
 
-        public async Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, int Page, int PageSize)
+        public async Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var (Entries, TotalCount) = await _repo.GetEntriesByIdAsync(Guid.Parse(ListId), Page, PageSize);
+            var (Entries, TotalCount) = await _repo.GetEntriesByIdAsync(Guid.Parse(ListId), Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<ListEntryInfoResponse>
             {
                 TotalCount = TotalCount,
@@ -64,9 +65,9 @@ namespace Heteroboxd.Service
             return Entries.Select(le => new ListEntryInfoResponse(le)).ToList();
         }
 
-        public async Task<PagedResponse<UserListInfoResponse>> GetListsByUser(string UserId, int Page, int PageSize)
+        public async Task<PagedResponse<UserListInfoResponse>> GetListsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var (Lists, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize);
+            var (Lists, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
             var Author = await _userRepo.GetByIdAsync(Guid.Parse(UserId));
             if (Author == null) throw new KeyNotFoundException();
             return new PagedResponse<UserListInfoResponse>
@@ -98,9 +99,17 @@ namespace Heteroboxd.Service
             return Response;
         }
         
-        public async Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, int Page, int PageSize)
+        public async Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var (Lists, TotalCount) = await _repo.GetFeaturingFilmAsync(FilmId, Page, PageSize);
+            if (UserId == null && Filter.ToLower() == "friends") throw new KeyNotFoundException();
+
+            List<Guid>? UsersFriends = null;
+            if (UserId != null && Filter.ToLower() == "friends")
+            {
+                UsersFriends = (await _userRepo.GetUserRelationshipsAsync(Guid.Parse(UserId)))?.Following.Select(u => u.Id).ToList();
+            }
+
+            var (Lists, TotalCount) = await _repo.GetFeaturingFilmAsync(FilmId, UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
             var AuthorIds = Lists
                 .Select(l => l.AuthorId)
                 .Distinct()
