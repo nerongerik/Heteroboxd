@@ -7,7 +7,7 @@ import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 24
 
 const Celebrity = () => {
 

@@ -90,7 +90,7 @@ namespace Heteroboxd.Repository
                     FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.ReleaseYear) : FilmsQuery.OrderBy(f => f.ReleaseYear);
                     break;
                 case "average rating":
-                    //todo
+                    FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => _context.Reviews.Where(r => r.FilmId == f.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(f => f.WatchCount) : FilmsQuery.OrderBy(f => _context.Reviews.Where(r => r.FilmId == f.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(f => f.WatchCount);
                     break;
                 default:
                     //error fallback
@@ -171,7 +171,7 @@ namespace Heteroboxd.Repository
                     UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.ReleaseYear) : UwQuery.OrderBy(x => x.Film.ReleaseYear);
                     break;
                 case "average rating":
-                    //todo
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : UwQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
                     break;
                 default:
                     //error fallback

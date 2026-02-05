@@ -207,7 +207,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
       {
         context === 'filmReviews' && (
           <Text style={{textAlign: 'center', paddingHorizontal: 20, marginTop: -20, fontSize: 16, color: Colors.text_placeholder, fontStyle: 'italic', fontWeight: '600'}}>
-            NOTE: Reviews that have been flagged for breaking community guidelines by the AutoModerator will appear on the bottom regardless of your filter/sort criteria.
+            NOTE: Reviews flagged for violating community guidelines will appear on the bottom regardless of your filter/sort criteria.
           </Text>
         )
       }

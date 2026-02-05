@@ -4,7 +4,6 @@ import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
 import './browser.css'
-import ListOptionsButton from '../components/optionButtons/listOptionsButton'
 
 const RootLayout = () => {
   return (
@@ -67,13 +66,6 @@ const RootLayout = () => {
             headerTitleAlign: 'center',
             headerTitleStyle: {color: Colors.text_title},
           }}
-        />
-        <Stack.Screen 
-          name="list/[listId]"
-          options={({ route }) => ({
-            headerRight: () => <ListOptionsButton listId={route.params?.listId} />,
-            headerTitle: '',
-          })}
         />
         <Stack.Screen 
           name="likes/[userId]"

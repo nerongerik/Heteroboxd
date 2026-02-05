@@ -11,6 +11,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
+import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
 import SlidingMenu from '../../components/slidingMenu'
 import FilterSort from '../../components/filterSort'
 import { Ionicons } from '@expo/vector-icons'
@@ -150,11 +151,17 @@ const List = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
       headerRight: () => {
-        if (baseList && !baseList.ranked) {
+        if (baseList) {
           return (
-            <Pressable onPress={openMenu2} style={{marginRight: 15}}>
-              <Ionicons name="options" size={24} color={Colors.text_title} />
-            </Pressable>
+            <>
+              <ListOptionsButton listId={baseList.id} />
+              {
+                baseList.ranked && 
+                <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: 15}}>
+                  <Ionicons name="options" size={24} color={Colors.text_title} />
+                </Pressable>
+              }
+            </>
           )
         }
       },
