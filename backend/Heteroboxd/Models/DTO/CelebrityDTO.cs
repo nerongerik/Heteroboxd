@@ -7,24 +7,16 @@
         public string CelebrityName { get; set; }
         public string? CelebrityDescription { get; set; }
         public string? CelebrityPictureUrl { get; set; }
+        public List<string>? Roles { get; set; } //Enum.ToString() for all the Roles appearing in their credits
 
-        public CelebrityInfoResponse(Celebrity Celebrity)
+        public CelebrityInfoResponse(Celebrity Celebrity, List<string>? Roles = null)
         {
             this.CelebrityId = Celebrity.Id;
             this.CelebrityName = Celebrity.Name;
             this.CelebrityDescription = Celebrity.Description;
             this.CelebrityPictureUrl = Celebrity.PictureUrl;
+            this.Roles = Roles;
         }
-    }
-
-    public class CelebrityDelimitedResponse
-    {
-        public CelebrityInfoResponse BaseCeleb { get; set; }
-        public PagedResponse<FilmInfoResponse> Starred { get; set; }
-        public PagedResponse<FilmInfoResponse> Directed { get; set; }
-        public PagedResponse<FilmInfoResponse> Produced { get; set; }
-        public PagedResponse<FilmInfoResponse> Wrote { get; set; }
-        public PagedResponse<FilmInfoResponse> Composed { get; set; }
     }
 
     public class CelebrityCreditInfoResponse

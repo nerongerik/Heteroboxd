@@ -1,5 +1,4 @@
-﻿using Heteroboxd.Models.DTO;
-using Heteroboxd.Service;
+﻿using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,17 +19,33 @@ namespace Heteroboxd.Controller
 
         [HttpGet("{CelebrityId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCelebrity(int CelebrityId, int StarredPage = 1, int DirectedPage = 1, int ProducedPage = 1, int WrotePage = 1, int ComposedPage = 1, int PageSize = 20)
+        public async Task<IActionResult> GetCelebrity(int CelebrityId)
         {
             _logger.LogInformation($"GET Celebrity endpoint hit for {CelebrityId}");
             try
             {
-                var Celebrity = await _service.GetCelebrity(CelebrityId, StarredPage, DirectedPage, ProducedPage, WrotePage, ComposedPage, PageSize);
+                var Celebrity = await _service.GetCelebrity(CelebrityId);
                 return Ok(Celebrity);
             }
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("{CelebrityId}/credits")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetCredits(int CelebrityId, int Page = 1, int PageSize = 20, string Filter = "Starred", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
+        {
+            _logger.LogInformation($"GET Credits endpoint hit for {CelebrityId}");
+            try
+            {
+                var Response = await _service.GetCreditsDelimited(CelebrityId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
             }
             catch
             {
