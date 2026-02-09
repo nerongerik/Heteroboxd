@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { StyleSheet, Text, useWindowDimensions, View, Pressable, FlatList, RefreshControl } from 'react-native'
+import { StyleSheet, Text, useWindowDimensions, View, Pressable, FlatList, RefreshControl, Animated } from 'react-native'
 import { BaseUrl } from '../../constants/api';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Colors } from '../../constants/colors';
@@ -7,12 +7,16 @@ import { Poster } from '../../components/poster';
 import PaginationBar from '../../components/paginationBar';
 import LoadingResponse from '../../components/loadingResponse';
 import Popup from '../../components/popup';
-import * as format from '../../helpers/format';
+import SlidingMenu from '../../components/slidingMenu';
+import FilterSort from '../../components/filterSort';
+import { Ionicons } from '@expo/vector-icons';
 
-const PAGE_SIZE = 48
+const PAGE_SIZE = 24
 
 const Explore = () => {
-  const { type, subtype } = useLocalSearchParams();
+  const { filter, value } = useLocalSearchParams(); //instant routing sort
+  const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
+  const [currentSort, setCurrentSort] = useState({field: 'RELEASE DATE', desc: true})
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -30,11 +34,32 @@ const Explore = () => {
 
   const listRef = useRef(null);
 
-  const loadExplorePage = async (pageNumber) => {
-    if (!type || !subtype) return;
+  const [menuShown, setMenuShown] = useState(false);
+  const slideAnim = useState(new Animated.Value(0))[0];
+  const openMenu = () => {
+    setMenuShown(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown(false));
+  };
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0], //slide from bottom
+  });
+
+  const loadPage = async (pageNumber) => {
     try {
       setIsLoading(true)
-      const res = await fetch(`${BaseUrl.api}/films/${type}/${subtype}?Page=${pageNumber}&PageSize=${PAGE_SIZE}`, {
+      const res = await fetch(`${BaseUrl.api}/films?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
         method: 'GET',
         headers: {'Accept': 'application/json'}
       })
@@ -55,52 +80,36 @@ const Explore = () => {
     }
   }
 
-  const defaultFallback = async (pageNumber) => {
-    try {
-      setIsLoading(true);
-      const res = await fetch(`${BaseUrl.api}/films?Page=${pageNumber}&PageSize=${PAGE_SIZE}`, {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-      });
-      if (res.status === 200) {
-        const json = await res.json();
-        setPage(json.page);
-        setTotalCount(json.totalCount);
-        setFilms(json.items);
-      } else {
-        setResult(res.status);
-        setMessage('Loading error! Try reloading Heteroboxd.');
-      }
-    } catch {
-      setResult(500);
-      setMessage('Network error! Check your internet connection.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadPage = async (pageNumber) => {
-    const valid = format.isValidFormatExplore(type, subtype);
-    if (valid) {
-      await loadExplorePage(pageNumber);
-    } else {
-      await defaultFallback(pageNumber);
-    }
-  };
+  useEffect(() => {
+    if (!filter || !value) return;
+    setCurrentFilter({field: filter, value: value});
+  }, [filter, value])
 
   useEffect(() => {
     setPage(1);
     loadPage(1);
-  }, [type, subtype])
+  }, [currentFilter, currentSort])
 
   useEffect(() => {
-    if (!subtype) return;
     navigation.setOptions({
-      headerTitle: subtype,
+      headerTitle: 'Explore',
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
+      headerRight: () => (
+        <Pressable onPress={openMenu} style={{marginRight: 15}}>
+          <Ionicons name="options" size={24} color={Colors.text_title} />
+        </Pressable>
+      ),
     });
-  })
+  }, [])
+
+  useEffect(() => {
+    if (currentFilter.field === 'POPULAR' || currentFilter.field === 'YEAR') {
+      setCurrentSort({field: 'POPULARITY', desc: true})
+    } else if (currentFilter.field === 'ALL' || currentFilter.field === 'GENRE' || currentFilter.field === 'COUNTRY') {
+      setCurrentSort({field: 'RELEASE DATE', desc: true})
+    }
+  }, [currentFilter.field])
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
   const widescreen = useMemo(() => width > 1000, [width])
@@ -184,7 +193,9 @@ const Explore = () => {
         numColumns={4}
         ListHeaderComponent={renderHeader}
         renderItem={renderContent}
-        ListEmptyComponent={<Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no films matching this criteria...</Text>}
+        ListEmptyComponent={() => {
+          if (!isLoading) return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no films matching this criteria...</Text>
+        }}
         ListFooterComponent={renderFooter}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={() => loadPage(page)} />
@@ -214,6 +225,18 @@ const Explore = () => {
             : router.replace('/')
         }
       />
+
+      <SlidingMenu menuShown={menuShown} closeMenu={() => {closeMenu()}} translateY={translateY} widescreen={widescreen} width={width}>
+        <FilterSort
+          key={`${currentFilter.field}-${currentSort.field}`}
+          context={'explore'}
+          currentFilter={currentFilter}
+          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
+          currentSort={currentSort}
+          onSortChange={(newSort) => setCurrentSort(newSort)}
+        />
+      </SlidingMenu>
+
     </View>
   )
 }

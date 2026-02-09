@@ -12,8 +12,7 @@ export const UserAvatar = ({ pictureUrl, style }) => {
         setResolvedUrl(null);
         return;
       }
-      const cacheBuster = `?v=${new Date().getTime()}`;
-      setResolvedUrl(pictureUrl + cacheBuster);
+      setResolvedUrl(pictureUrl);
     };
 
     resolveImage();

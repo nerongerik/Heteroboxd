@@ -4,7 +4,6 @@ import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
 import './browser.css'
-import ListOptionsButton from '../components/optionButtons/listOptionsButton'
 
 const RootLayout = () => {
   return (
@@ -69,24 +68,9 @@ const RootLayout = () => {
           }}
         />
         <Stack.Screen 
-          name="list/[listId]"
-          options={({ route }) => ({
-            headerRight: () => <ListOptionsButton listId={route.params?.listId} />,
-            headerTitle: '',
-          })}
-        />
-        <Stack.Screen 
           name="likes/[userId]"
           options={{
             headerTitle: 'Likes',
-            headerTitleAlign: 'center',
-            headerTitleStyle: {color: Colors.text_title},
-          }}
-        />
-        <Stack.Screen 
-          name="lists/film/[filmId]" 
-          options={{
-            headerTitle: 'Featuring lists',
             headerTitleAlign: 'center',
             headerTitleStyle: {color: Colors.text_title},
           }}

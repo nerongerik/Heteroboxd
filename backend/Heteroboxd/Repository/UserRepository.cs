@@ -11,7 +11,7 @@ namespace Heteroboxd.Repository
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
         Task<List<User>> SearchAsync(string Search);
 
-        Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize);
+        Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
@@ -92,20 +92,67 @@ namespace Heteroboxd.Repository
                 .ToListAsync();
         }
 
-        public async Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize)
+        public async Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var WatchlistId = await _context.Watchlists
-                .Include(wl => wl.Films)
                 .Where(wl => wl.UserId == UserId)
                 .Select(wl => wl.Id)
                 .FirstOrDefaultAsync();
+
             var EntriesQuery = _context.WatchlistEntries
                 .Where(wle => wle.WatchlistId == WatchlistId)
-                .OrderByDescending(le => le.DateAdded);
+                .Join(_context.Films, wle => wle.FilmId, f => f.Id, (wle, f) => new { Entry = wle, Film = f });
+
+            //filtering
+            switch (Filter.ToLower())
+            {
+                case "genre":
+                    EntriesQuery = EntriesQuery.Where(x => x.Film.Genres.Contains(FilterValue!));
+                    break;
+                case "year":
+                    EntriesQuery = EntriesQuery.Where(x => x.Film.ReleaseYear == int.Parse(FilterValue!));
+                    break;
+                case "country":
+                    var FilteredIds = await _context.Films
+                        .FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue)
+                        .Select(f => f.Id)
+                        .ToListAsync();
+                    EntriesQuery = EntriesQuery.Where(x => FilteredIds.Contains(x.Film.Id));
+                    break;
+                default:
+                    //error fallback
+                    break;
+            }
+
+            //sorting
+            switch (Sort.ToLower())
+            {
+                case "date added":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.DateAdded) : EntriesQuery.OrderBy(x => x.Entry.DateAdded);
+                    break;
+                case "popularity":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
+                    break;
+                case "length":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
+                    break;
+                case "release date":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.ReleaseYear) : EntriesQuery.OrderBy(x => x.Film.ReleaseYear);
+                    break;
+                case "average rating":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                    break;
+                default:
+                    //error fallback
+                    EntriesQuery = EntriesQuery.OrderByDescending(x => x.Entry.DateAdded);
+                    break;
+            }
+
             var TotalCount = await EntriesQuery.CountAsync();
             var Entries = await EntriesQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
+                .Select(x => x.Entry)
                 .ToListAsync();
             return (Entries, TotalCount);
         }

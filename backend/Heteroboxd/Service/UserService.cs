@@ -9,7 +9,7 @@ namespace Heteroboxd.Service
     public interface IUserService
     {
         Task<UserInfoResponse?> GetUser(string UserId);
-        Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize); //for viewing
+        Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue); //for viewing
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId); //for checking if a film is in the watchlist (quick lookup)
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<RelationshipsDelimitedResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
@@ -71,9 +71,9 @@ namespace Heteroboxd.Service
             return new UserInfoResponse(User);
         }
 
-        public async Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize)
+        public async Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var (WatchlistPage, TotalCount) = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId), Page, PageSize);
+            var (WatchlistPage, TotalCount) = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<WatchlistEntryInfoResponse>
             {
                 TotalCount = TotalCount,
@@ -210,14 +210,14 @@ namespace Heteroboxd.Service
                 if (!Authors.TryGetValue(r.AuthorId, out var Author) || !Films.TryGetValue(r.FilmId, out var Film))
                     throw new KeyNotFoundException();
                 return new ReviewInfoResponse(r, Author, Film);
-            }).ToList();
+            }).OrderByDescending(r => r.LikeCount).ToList();
 
             var AllLikedLists = _likedLists.LikedLists.Select(ul =>
             {
                 if (!Authors.TryGetValue(ul.AuthorId, out var Author))
                     throw new KeyNotFoundException();
                 return new UserListInfoResponse(ul, Author, 4);
-            }).ToList();
+            }).OrderByDescending(l => l.LikeCount).ToList();
 
             return new LikesDelimitedResponse
             {
@@ -371,70 +371,34 @@ namespace Heteroboxd.Service
 
             if (UserFavorites.Film1 != null && UserFavorites.Film1 == FilmId)
             {
-                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film1.Value, -1);
                 UserFavorites.Film1 = null;
             }
             if (UserFavorites.Film2 != null && UserFavorites.Film2 == FilmId)
             {
-                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film2.Value, -1);
                 UserFavorites.Film2 = null;
             }
             if (UserFavorites.Film3 != null && UserFavorites.Film3 == FilmId)
             {
-                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film3.Value, -1);
                 UserFavorites.Film3 = null;
             }
             if (UserFavorites.Film4 != null && UserFavorites.Film4 == FilmId)
             {
-                await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film4.Value, -1);
                 UserFavorites.Film4 = null;
             }
 
             switch (Index)
             {
                 case 1:
-                    if (UserFavorites.Film1 != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film1.Value, -1);
-                    } 
                     UserFavorites.Film1 = FilmId;
-                    if (FilmId != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
-                    }
                     break;
                 case 2:
-                    if (UserFavorites.Film2 != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film2.Value, -1);
-                    }
                     UserFavorites.Film2 = FilmId;
-                    if (FilmId != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
-                    }
                     break;
                 case 3:
-                    if (UserFavorites.Film3 != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film3.Value, -1);
-                    }
                     UserFavorites.Film3 = FilmId;
-                    if (FilmId != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
-                    }
                     break;
                 case 4:
-                    if (UserFavorites.Film4 != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(UserFavorites.Film4.Value, -1);
-                    }
                     UserFavorites.Film4 = FilmId;
-                    if (FilmId != null)
-                    {
-                        await _filmRepo.UpdateFilmFavoriteCountEfCore7Async(FilmId.Value, 1);
-                    }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

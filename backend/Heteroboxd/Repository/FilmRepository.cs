@@ -2,7 +2,6 @@
 using Heteroboxd.Models;
 using Heteroboxd.Models.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 
 namespace Heteroboxd.Repository
 {
@@ -12,15 +11,11 @@ namespace Heteroboxd.Repository
         Task<Film?> LightweightFetcher(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
         Task<List<Trending>> GetTrendingAsync();
-        Task<(List<Film> Films, int TotalCount)> ExploreAsync(int Page, int PageSize);
-        Task<(List<Film> Films, int TotalCount)> PopularAsync(int Page, int PageSize);
-        Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize);
-        Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize);
+        Task<(List<Film> Films, int TotalCount)> GetFilmsAsync(int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
-        Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
+        Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<List<Film>> SearchAsync(string Title);
-        Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta);
         Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta);
     }
 
@@ -60,65 +55,60 @@ namespace Heteroboxd.Repository
                 .OrderBy(t => t.Rank)
                 .ToListAsync();
 
-        public async Task<(List<Film> Films, int TotalCount)> ExploreAsync(int Page, int PageSize)
+        public async Task<(List<Film> Films, int TotalCount)> GetFilmsAsync(int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var ExploreQuery = _context.Films
-                .OrderByDescending(f => f.ReleaseYear).ThenByDescending(f => f.WatchCount).ThenByDescending(f => f.FavoriteCount);
-
-            var TotalCount = await ExploreQuery.CountAsync();
-
-            var Films = await ExploreQuery
+            var FilmsQuery = _context.Films.AsQueryable();
+            //filtering
+            switch (Filter.ToLower())
+            {
+                case "genre":
+                    FilmsQuery = FilmsQuery.Where(f => f.Genres.Contains(FilterValue!));
+                    break;
+                case "year":
+                    FilmsQuery = FilmsQuery.Where(f => f.ReleaseYear == int.Parse(FilterValue!));
+                    break;
+                case "popular":
+                    FilmsQuery = FilmsQuery.Where(f => f.WatchCount > 0);
+                    break;
+                case "country":
+                    FilmsQuery = _context.Films.FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue!).AsQueryable();
+                    break;
+                default:
+                    //error fallback
+                    break;
+            }
+            //sorting
+            switch (Sort.ToLower())
+            {
+                case "popularity":
+                    FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount) : FilmsQuery.OrderBy(f => f.WatchCount);
+                    break;
+                case "length":
+                    FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Length) : FilmsQuery.OrderBy(f => f.Length);
+                    break;
+                case "release date":
+                    FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.ReleaseYear) : FilmsQuery.OrderBy(f => f.ReleaseYear);
+                    break;
+                case "average rating":
+                    FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => _context.Reviews.Where(r => r.FilmId == f.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(f => f.WatchCount) : FilmsQuery.OrderBy(f => _context.Reviews.Where(r => r.FilmId == f.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(f => f.WatchCount);
+                    break;
+                default:
+                    //error fallback
+                    if (Filter.ToLower() == "popular" || Filter.ToLower() == "year")
+                    {
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount) : FilmsQuery.OrderBy(f => f.WatchCount);
+                    }
+                    else
+                    {
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.ReleaseYear) : FilmsQuery.OrderBy(f => f.ReleaseYear);
+                    }
+                    break;
+            }
+            var TotalCount = await FilmsQuery.CountAsync();
+            var Films = await FilmsQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
-
-            return (Films, TotalCount);
-        }
-
-        public async Task<(List<Film> Films, int TotalCount)> PopularAsync(int Page, int PageSize)
-        {
-            var PopularQuery = _context.Films
-                .OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.FavoriteCount);
-
-            var TotalCount = await PopularQuery.CountAsync();
-
-            var Films = await PopularQuery
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            return (Films, TotalCount);
-        }
-
-        public async Task<(List<Film> Films, int TotalCount)> GetByYearAsync(int Year, int Page, int PageSize)
-        {
-            var YearQuery = _context.Films
-                .Where(f => f.ReleaseYear == Year)
-                .OrderByDescending(f => f.FavoriteCount);
-
-            var TotalCount = await YearQuery.CountAsync();
-
-            var Films = await YearQuery
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            return (Films, TotalCount);
-        }
-
-        public async Task<(List<Film> Films, int TotalCount)> GetByGenreAsync(string Genre, int Page, int PageSize)
-        {
-            var GenreQuery = _context.Films
-                .Where(f => f.Genres.Contains(Genre))
-                .OrderByDescending(f => f.ReleaseYear).ThenByDescending(f => f.FavoriteCount);
-
-            var TotalCount = await GenreQuery.CountAsync();
-
-            var Films = await GenreQuery
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
             return (Films, TotalCount);
         }
 
@@ -126,8 +116,7 @@ namespace Heteroboxd.Repository
         {
             var CelebQuery = _context.Films
                 .Include(f => f.CastAndCrew)
-                .Where(f => f.CastAndCrew.Any(c => c.CelebrityId == CelebrityId))
-                .OrderByDescending(f => f.FavoriteCount);
+                .Where(f => f.CastAndCrew.Any(c => c.CelebrityId == CelebrityId));
 
             var TotalCount = await CelebQuery.CountAsync();
 
@@ -139,28 +128,64 @@ namespace Heteroboxd.Repository
             return (Films, TotalCount);
         }
 
-        public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
+        public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var UwQuery = _context.UserWatchedFilms
-                .Where(uw => uw.UserId == UserId)
-                .OrderByDescending(uw => uw.DateWatched);
+                .Where(uwf => uwf.UserId == UserId)
+                .Join(_context.Films, uwf => uwf.FilmId, f => f.Id, (uwf, f) => new { Uwf = uwf, Film = f });
+
+            //filtering
+            switch (Filter.ToLower())
+            {
+                case "genre":
+                    UwQuery = UwQuery.Where(x => x.Film.Genres.Contains(FilterValue!));
+                    break;
+                case "year":
+                    UwQuery = UwQuery.Where(x => x.Film.ReleaseYear == int.Parse(FilterValue!));
+                    break;
+                case "country":
+                    var FilteredIds = await _context.Films
+                        .FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue)
+                        .Select(f => f.Id)
+                        .ToListAsync();
+                    UwQuery = UwQuery.Where(x => FilteredIds.Contains(x.Film.Id));
+                    break;
+                default:
+                    //error fallback
+                    break;
+            }
+
+            //sorting
+            switch (Sort.ToLower())
+            {
+                case "date watched":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Uwf.DateWatched) : UwQuery.OrderBy(x => x.Uwf.DateWatched);
+                    break;
+                case "popularity":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.WatchCount) : UwQuery.OrderBy(x => x.Film.WatchCount);
+                    break;
+                case "length":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.Length) : UwQuery.OrderBy(x => x.Film.Length);
+                    break;
+                case "release date":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.ReleaseYear) : UwQuery.OrderBy(x => x.Film.ReleaseYear);
+                    break;
+                case "average rating":
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : UwQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                    break;
+                default:
+                    //error fallback
+                    UwQuery = UwQuery.OrderByDescending(x => x.Uwf.DateWatched);
+                    break;
+            }
 
             var TotalCount = await UwQuery.CountAsync();
-
-            var PagedFilmIds = await UwQuery
+            var Uwfs = await UwQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(uw => uw.FilmId)
+                .Select(x => x.Film)
                 .ToListAsync();
-
-            var Films = await _context.Films
-                .Where(f => PagedFilmIds.Contains(f.Id))
-                .ToListAsync();
-
-            var FilmsById = Films.ToDictionary(f => f.Id);
-            var OrderedFilms = PagedFilmIds.Select(id => FilmsById[id]).ToList();
-
-            return (OrderedFilms, TotalCount);
+            return (Uwfs, TotalCount);
         }
 
         public async Task<Dictionary<double, int>> GetRatingsAsync(int FilmId) =>
@@ -186,18 +211,6 @@ namespace Heteroboxd.Repository
                 .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Search))
                 .ThenByDescending(f => f.WatchCount)
                 .ToListAsync();
-        }
-
-        public async Task UpdateFilmFavoriteCountEfCore7Async(int FilmId, int Delta) //increments/decrements favorite count
-        {
-            var Rows = await _context.Films
-                .Where(f => f.Id == FilmId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    f => f.FavoriteCount,
-                    f => f.FavoriteCount + Delta
-                ));
-            //if (Rows == 0) throw new KeyNotFoundException();
-            //this throw would prevent deleted films from being tossed out of User's Favorites, which we WANT
         }
 
         public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta) //increments/decrements watch count

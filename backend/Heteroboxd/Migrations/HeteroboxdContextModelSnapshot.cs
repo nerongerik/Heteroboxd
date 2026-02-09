@@ -134,9 +134,6 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<int>("FavoriteCount")
-                        .HasColumnType("integer");
-
                     b.PrimitiveCollection<string[]>("Genres")
                         .IsRequired()
                         .HasColumnType("text[]");

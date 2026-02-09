@@ -1,19 +1,15 @@
 ﻿using Heteroboxd.Data;
-using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Background
 {
-    public class FlagPurgeService : BackgroundService
+    public class ListPurgeService : BackgroundService
     {
-
-        private readonly int Treshold = 25000;
-
-        private readonly ILogger<FlagPurgeService> _logger;
+        private readonly ILogger<ListPurgeService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly TimeSpan _scheduledTime = new TimeSpan(15, 0, 0);
 
-        public FlagPurgeService(ILogger<FlagPurgeService> logger, IServiceScopeFactory scopeFactory)
+        public ListPurgeService(ILogger<ListPurgeService> logger, IServiceScopeFactory scopeFactory)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
@@ -21,7 +17,7 @@ namespace Heteroboxd.Background
 
         protected override async Task ExecuteAsync(CancellationToken CancellationToken)
         {
-            _logger.LogInformation("Flag Purging Service started.");
+            _logger.LogInformation("List Purging Service started.");
             while (!CancellationToken.IsCancellationRequested)
             {
                 TimeSpan Delay = CalculateDelay();
@@ -29,7 +25,7 @@ namespace Heteroboxd.Background
 
                 await Task.Delay(Delay, CancellationToken);
 
-                if (!CancellationToken.IsCancellationRequested) await ExecuteFlagPurge(CancellationToken);
+                if (!CancellationToken.IsCancellationRequested) await ExecuteListPurge(CancellationToken);
             }
         }
 
@@ -46,7 +42,7 @@ namespace Heteroboxd.Background
             return NextRun - Now;
         }
 
-        private async Task ExecuteFlagPurge(CancellationToken CancellationToken)
+        private async Task ExecuteListPurge(CancellationToken CancellationToken)
         {
             try
             {
@@ -56,16 +52,20 @@ namespace Heteroboxd.Background
                 {
                     HeteroboxdContext _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
 
-                    await _context.Reviews.Where(r => r.Flags >= Treshold).ExecuteDeleteAsync(CancellationToken);
-                    await _context.Comments.Where(c => c.Flags >= Treshold / 10).ExecuteDeleteAsync(CancellationToken);
-                    await _context.Users.Where(u => u.Flags >= Treshold / 100).ExecuteDeleteAsync(CancellationToken);
+                    await _context.ListEntries
+                        .Where(le => !_context.Films.Any(f => f.Id == le.FilmId))
+                        .ExecuteDeleteAsync(CancellationToken);
 
-                    _logger.LogInformation("Flag purge completed successfully.");
+                    await _context.UserLists
+                        .Where(ul => !_context.ListEntries.Any(le => le.UserListId == ul.Id))
+                        .ExecuteDeleteAsync(CancellationToken);
+
+                    _logger.LogInformation("List purge completed successfully.");
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error occurred while executing flag purge.");
+                _logger.LogError(e, "Error occurred while executing list purge.");
             }
         }
     }

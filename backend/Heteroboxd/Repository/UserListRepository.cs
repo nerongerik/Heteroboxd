@@ -7,11 +7,11 @@ namespace Heteroboxd.Repository
     public interface IUserListRepository
     {
         Task<UserList?> GetByIdAsync(Guid ListId);
-        Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize); //view
+        Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue); //view
         Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId); //update
-        Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
+        Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<UserList>> GetLightweightAsync(Guid UserId);
-        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize);
+        Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetFeaturingFilmCountAsync(int FilmId);
         Task<List<UserList>> SearchAsync(string Search);
         void Create(UserList UserList);
@@ -37,19 +37,47 @@ namespace Heteroboxd.Repository
             await _context.UserLists
                 .FirstOrDefaultAsync(ul => ul.Id == ListId);
 
-        public async Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize)
+        public async Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var EntryQuery = _context.ListEntries
+            var EntriesQuery = _context.ListEntries
                 .Where(le => le.UserListId == ListId)
-                .OrderBy(le => le.Position);
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { Entry = le, Film = f });
 
-            var TotalCount = await EntryQuery.CountAsync();
+            //filtering - lists are defined by Users, and thus cannot be filtered by arbitrary properties
 
-            var Entries = await EntryQuery
+            //sorting
+            switch (Sort.ToLower())
+            {
+                case "position":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
+                    break;
+                case "date added":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.DateAdded) : EntriesQuery.OrderBy(x => x.Entry.DateAdded);
+                    break;
+                case "popularity":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
+                    break;
+                case "length":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
+                    break;
+                case "release date":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.ReleaseYear) : EntriesQuery.OrderBy(x => x.Film.ReleaseYear);
+                    break;
+                case "average rating":
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                    break;
+                default:
+                    //error fallback
+                    EntriesQuery = EntriesQuery.OrderBy(x => x.Entry.Position);
+                    break;
+            }
+
+            var TotalCount = await EntriesQuery.CountAsync();
+            var Entries = await EntriesQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
+                .Select(x => x.Entry)
                 .ToListAsync();
-
             return (Entries, TotalCount);
         }
 
@@ -59,20 +87,38 @@ namespace Heteroboxd.Repository
                 .OrderBy(le => le.Position)
                 .ToListAsync();
 
-        public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
+        public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var UserQuery = _context.UserLists
                 .Include(ul => ul.Films)
                 .Where(ul => ul.AuthorId == UserId)
-                .OrderByDescending(f => f.DateCreated);
+                .AsQueryable();
+
+            //filtering - querying by User already filters out enough
+
+            //sorting
+            switch (Sort.ToLower())
+            {
+                case "popularity":
+                    UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.LikeCount) : UserQuery.OrderBy(ul => ul.LikeCount);
+                    break;
+                case "date created":
+                    UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.DateCreated) : UserQuery.OrderBy(ul => ul.DateCreated);
+                    break;
+                case "size":
+                    UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.Films.Count) : UserQuery.OrderBy(ul => ul.Films.Count);
+                    break;
+                default:
+                    //error handling
+                    UserQuery = UserQuery.OrderByDescending(ul => ul.DateCreated);
+                    break;
+            }
 
             var TotalCount = await UserQuery.CountAsync();
-
             var Lists = await UserQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
-
             return (Lists, TotalCount);
         }
 
@@ -81,20 +127,47 @@ namespace Heteroboxd.Repository
                 .Where(ul => ul.AuthorId == UserId)
                 .ToListAsync();
 
-        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, int Page, int PageSize)
+        public async Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var FilmQuery = _context.UserLists
                 .Include(ul => ul.Films)
                 .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
-                .OrderByDescending(f => f.DateCreated);
+                .AsQueryable();
+
+            //filtering
+            switch (Filter.ToLower())
+            {
+                case "friends":
+                    FilmQuery = FilmQuery.Where(ul => UsersFriends!.Contains(ul.AuthorId));
+                    break;
+                default:
+                    //error handling
+                    break;
+            }
+
+            //sorting
+            switch (Sort.ToLower())
+            {
+                case "popularity":
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(ul => ul.LikeCount) : FilmQuery.OrderBy(ul => ul.LikeCount);
+                    break;
+                case "date created":
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(ul => ul.DateCreated) : FilmQuery.OrderBy(ul => ul.DateCreated);
+                    break;
+                case "size":
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(ul => ul.Films.Count) : FilmQuery.OrderBy(ul => ul.Films.Count);
+                    break;
+                default:
+                    //error handling
+                    FilmQuery = FilmQuery.OrderByDescending(ul => ul.LikeCount);
+                    break;
+            }
 
             var TotalCount = await FilmQuery.CountAsync();
-
             var Lists = await FilmQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
-
             return (Lists, TotalCount);
         }
 
