@@ -42,12 +42,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("entries/{UserListId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetListEntries(string UserListId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
+        public async Task<IActionResult> GetListEntries(string UserListId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
         {
             _logger.LogInformation($"GET ListEntries endpoint hit for ListId: {UserListId}");
             try
             {
-                var Response = await _service.GetListEntries(UserListId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                var Response = await _service.GetListEntries(UserListId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Response);
             }
             catch

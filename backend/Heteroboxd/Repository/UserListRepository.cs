@@ -7,7 +7,7 @@ namespace Heteroboxd.Repository
     public interface IUserListRepository
     {
         Task<UserList?> GetByIdAsync(Guid ListId);
-        Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue); //view
+        Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue); //view
         Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId); //update
         Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<UserList>> GetLightweightAsync(Guid UserId);
@@ -37,48 +37,102 @@ namespace Heteroboxd.Repository
             await _context.UserLists
                 .FirstOrDefaultAsync(ul => ul.Id == ListId);
 
-        public async Task<(List<ListEntry> ListEntries, int TotalCount)> GetEntriesByIdAsync(Guid ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var EntriesQuery = _context.ListEntries
+            if (UserId == null)
+            {
+                var EntriesQuery = _context.ListEntries
                 .Where(le => le.UserListId == ListId)
                 .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { Entry = le, Film = f });
 
-            //filtering - lists are defined by Users, and thus cannot be filtered by arbitrary properties
+                //filtering - lists are defined by Users, and thus cannot be filtered by arbitrary properties
 
-            //sorting
-            switch (Sort.ToLower())
-            {
-                case "position":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
-                    break;
-                case "date added":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.DateAdded) : EntriesQuery.OrderBy(x => x.Entry.DateAdded);
-                    break;
-                case "popularity":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
-                    break;
-                case "length":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
-                    break;
-                case "release date":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.ReleaseYear) : EntriesQuery.OrderBy(x => x.Film.ReleaseYear);
-                    break;
-                case "average rating":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
-                    break;
-                default:
-                    //error fallback
-                    EntriesQuery = EntriesQuery.OrderBy(x => x.Entry.Position);
-                    break;
+                //sorting
+                switch (Sort.ToLower())
+                {
+                    case "position":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
+                        break;
+                    case "date added":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.DateAdded) : EntriesQuery.OrderBy(x => x.Entry.DateAdded);
+                        break;
+                    case "popularity":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
+                        break;
+                    case "length":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
+                        break;
+                    case "release date":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.ReleaseYear) : EntriesQuery.OrderBy(x => x.Film.ReleaseYear);
+                        break;
+                    case "average rating":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                        break;
+                    default:
+                        //error fallback
+                        EntriesQuery = EntriesQuery.OrderBy(x => x.Entry.Position);
+                        break;
+                }
+
+                var TotalCount = await EntriesQuery.CountAsync();
+                var Entries = await EntriesQuery
+                    .Skip((Page - 1) * PageSize)
+                    .Take(PageSize)
+                    .Select(x => x.Entry)
+                    .ToListAsync();
+                return (Entries, TotalCount, null, null);
             }
+            else
+            {
+                var EntriesQuery = _context.ListEntries
+                    .Where(le => le.UserListId == ListId)
+                    .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { Entry = le, Film = f })
+                    .GroupJoin(_context.UserWatchedFilms.Where(uwf => uwf.UserId == UserId),
+                        x => x.Film.Id,
+                        uwf => uwf.FilmId,
+                        (x, uwfs) => new { x.Entry, x.Film, Uwfs = uwfs })
+                    .SelectMany(x => x.Uwfs.DefaultIfEmpty(),
+                        (x, uwf) => new { x.Entry, x.Film, Uwf = uwf })
+                    .AsQueryable();
 
-            var TotalCount = await EntriesQuery.CountAsync();
-            var Entries = await EntriesQuery
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .Select(x => x.Entry)
-                .ToListAsync();
-            return (Entries, TotalCount);
+                //filtering - lists are defined by Users, and thus cannot be filtered by arbitrary properties
+
+                //sorting
+                switch (Sort.ToLower())
+                {
+                    case "position":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
+                        break;
+                    case "date added":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.DateAdded) : EntriesQuery.OrderBy(x => x.Entry.DateAdded);
+                        break;
+                    case "popularity":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
+                        break;
+                    case "length":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
+                        break;
+                    case "release date":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.ReleaseYear) : EntriesQuery.OrderBy(x => x.Film.ReleaseYear);
+                        break;
+                    case "average rating":
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                        break;
+                    default:
+                        //error fallback
+                        EntriesQuery = EntriesQuery.OrderBy(x => x.Entry.Position);
+                        break;
+                }
+
+                var TotalCount = await EntriesQuery.CountAsync();
+                var SeenCount = await EntriesQuery.Where(x => x.Uwf != null).CountAsync();
+                var JoinResult = await EntriesQuery
+                    .Skip((Page - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToListAsync();
+
+                return (JoinResult.Select(x => x.Entry).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount);
+            }
         }
 
         public async Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId) =>

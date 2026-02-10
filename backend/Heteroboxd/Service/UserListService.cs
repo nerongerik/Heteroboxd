@@ -8,7 +8,7 @@ namespace Heteroboxd.Service
     public interface IUserListService
     {
         Task<UserListInfoResponse> GetList(string ListId);
-        Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId);
         Task<PagedResponse<UserListInfoResponse>> GetListsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<DelimitedListInfoResponse>> GetDelimitedLists(string UserId, int FilmId);
@@ -47,16 +47,32 @@ namespace Heteroboxd.Service
             return new UserListInfoResponse(List, Author, 0);
         }
 
-        public async Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var (Entries, TotalCount) = await _repo.GetEntriesByIdAsync(Guid.Parse(ListId), Page, PageSize, Filter, Sort, Desc, FilterValue);
-            return new PagedResponse<ListEntryInfoResponse>
+            if (UserId == null)
             {
-                TotalCount = TotalCount,
-                Page = Page,
-                PageSize = PageSize,
-                Items = Entries.Select(le => new ListEntryInfoResponse(le)).ToList()
-            };
+                var (Entries, TotalCount, _, _) = await _repo.GetEntriesByIdAsync(Guid.Parse(ListId), null, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return new PagedResponse<ListEntryInfoResponse>
+                {
+                    TotalCount = TotalCount,
+                    Page = Page,
+                    PageSize = PageSize,
+                    Items = Entries.Select(le => new ListEntryInfoResponse(le)).ToList()
+                };
+            }
+            else
+            {
+                var (Entries, TotalCount, Seen, SeenCount) = await _repo.GetEntriesByIdAsync(Guid.Parse(ListId), Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return new PagedResponse<ListEntryInfoResponse>
+                {
+                    TotalCount = TotalCount,
+                    Page = Page,
+                    PageSize = PageSize,
+                    Items = Entries.Select(le => new ListEntryInfoResponse(le)).ToList(),
+                    Seen = Seen.Select(uwf => uwf.FilmId).ToList(),
+                    SeenCount = SeenCount!.Value
+                };
+            }
         }
 
         public async Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId)

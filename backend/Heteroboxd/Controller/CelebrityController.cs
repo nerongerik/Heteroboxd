@@ -39,12 +39,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet("{CelebrityId}/credits")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCredits(int CelebrityId, int Page = 1, int PageSize = 20, string Filter = "Starred", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
+        public async Task<IActionResult> GetCredits(int CelebrityId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "Starred", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GET Credits endpoint hit for {CelebrityId}");
             try
             {
-                var Response = await _service.GetCreditsDelimited(CelebrityId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                var Response = await _service.GetCreditsDelimited(CelebrityId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Response);
             }
             catch

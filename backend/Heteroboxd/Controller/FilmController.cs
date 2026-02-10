@@ -54,12 +54,12 @@ namespace Heteroboxd.Controller
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetFilms(int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
+        public async Task<IActionResult> GetFilms(string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation("GET Films endpoint hit.");
             try
             {
-                var Result = await _service.GetFilms(Page, PageSize, Filter, Sort, Desc, FilterValue);
+                var Result = await _service.GetFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Result);
             }
             catch

@@ -30,11 +30,14 @@ const List = () => {
 
   const [baseList, setBaseList] = useState(null)
   const [entries, setEntries] = useState([])
-
+  const [seenFilms, setSeenFilms] = useState([]);
+  const [seenCount, setSeenCount] = useState(0);
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [showPagination, setShowPagination] = useState(false)
+
+  const [fadeSeen, setFadeSeen] = useState(true);
 
   const [likeCount, setLikeCount] = useState(0)
   const [iLiked, setILiked] = useState(false)
@@ -89,14 +92,17 @@ const List = () => {
     if (!baseList) return
     try {
       setIsLoading(true)
-      const res = await fetch(
-        `${BaseUrl.api}/lists/entries/${baseList.id}?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-      )
+      const url = user
+        ? `${BaseUrl.api}/lists/entries/${baseList.id}?UserId=${user.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+        : `${BaseUrl.api}/lists/entries/${baseList.id}?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      const res = await fetch(url)
       if (res.status === 200) {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
         setEntries(json.items)
+        setSeenFilms(json.seen)
+        setSeenCount(json.seenCount)
       } else {
         setResult(res.status)
         setMessage('Loading error! Try reloading Heteroboxd.')
@@ -157,8 +163,8 @@ const List = () => {
               <ListOptionsButton listId={baseList.id} />
               {
                 baseList.ranked && 
-                <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: 15}}>
-                  <Ionicons name="options" size={24} color={Colors.text_title} />
+                <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
+                  <Ionicons name="options" size={24} color={Colors.text} />
                 </Pressable>
               }
             </>
@@ -237,6 +243,19 @@ const List = () => {
         </Pressable>
         <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{totalCount} entries</Text>
       </View>
+      {
+        user && !isLoading ? (
+        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+          <View />
+          <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'right', paddingTop: 5}}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
+              <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {Math.floor(seenCount / totalCount * 100)}% seen</Text>
+            </View>
+          </Pressable>
+        </View>
+        ) : <View />
+      }
       <View style={{ height: 20 }} />
     </View>
   )
@@ -253,6 +272,7 @@ const List = () => {
         />
       );
     }
+    const isSeen = fadeSeen && (seenFilms?.includes(item.filmId) ?? false)
     return (
       <Pressable
         onPress={() => router.push(`/film/${item.filmId}`)}
@@ -265,7 +285,8 @@ const List = () => {
             height: posterHeight,
             borderRadius: 6,
             borderWidth: 2,
-            borderColor: Colors.border_color,
+            borderColor: isSeen ? Colors.heteroboxd : Colors.border_color,
+            opacity: isSeen ? 0.3 : 1
           }}
         />
         {baseList?.ranked && (

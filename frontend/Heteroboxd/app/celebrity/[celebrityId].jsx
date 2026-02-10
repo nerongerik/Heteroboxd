@@ -9,6 +9,7 @@ import { BaseUrl } from '../../constants/api';
 import SlidingMenu from '../../components/slidingMenu';
 import FilterSort from '../../components/filterSort';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../hooks/useAuth';
 
 const PAGE_SIZE = 24;
 
@@ -31,12 +32,18 @@ const ROLE_TO_FILTER_MAP = {
 };
 
 const Celebrity = () => {
+  const { user } = useAuth();
+
   const { celebrityId, t } = useLocalSearchParams();
   
   const [bio, setBio] = useState(null);
   const [availableRoles, setAvailableRoles] = useState([]);
   const [currentTabData, setCurrentTabData] = useState({ films: [], totalCount: 0, page: 1 });
-  
+  const [seenFilms, setSeenFilms] = useState([]);
+  const [seenCount, setSeenCount] = useState(0);
+
+  const [fadeSeen, setFadeSeen] = useState(true);
+
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -121,13 +128,13 @@ const Celebrity = () => {
 
     setRefreshing(true);
     try {
-      const res = await fetch(
-        `${BaseUrl.api}/celebrities/${celebrityId}/credits?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${roleEnum}&Sort=${currentSort.field}&Desc=${currentSort.desc}`,
-        {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        }
-      );
+      const url = user
+        ? `${BaseUrl.api}/celebrities/${celebrityId}/credits?UserId=${user.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${roleEnum}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+        : `${BaseUrl.api}/celebrities/${celebrityId}/credits?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${roleEnum}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
       
       if (res.status === 200) {
         const json = await res.json();
@@ -136,6 +143,8 @@ const Celebrity = () => {
           totalCount: json.totalCount,
           page: json.page
         });
+        setSeenFilms(json.seen)
+        setSeenCount(json.seenCount)
         setResult(200);
       } else if (res.status === 404) {
         setResult(404);
@@ -214,8 +223,8 @@ const Celebrity = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: { color: Colors.text_title },
       headerRight: () => (
-        <Pressable onPress={openMenu} style={{ marginRight: 15 }}>
-          <Ionicons name="options" size={24} color={Colors.text_title} />
+        <Pressable onPress={openMenu} style={{ marginRight: widescreen ? 15 : null }}>
+          <Ionicons name="options" size={24} color={Colors.text} />
         </Pressable>
       ),
     });
@@ -236,6 +245,11 @@ const Celebrity = () => {
         refreshing={refreshing}
         onRefresh={handleRefresh}
         pageSize={PAGE_SIZE}
+        showSeen={user}
+        flipShowSeen={() => setFadeSeen(prev => !prev)}
+        seenFilms={seenFilms}
+        seenCount={seenCount}
+        fadeSeen={fadeSeen}
       />
 
       <Popup 
