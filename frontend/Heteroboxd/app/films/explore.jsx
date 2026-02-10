@@ -10,10 +10,14 @@ import Popup from '../../components/popup';
 import SlidingMenu from '../../components/slidingMenu';
 import FilterSort from '../../components/filterSort';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../hooks/useAuth';
+import {MaterialCommunityIcons} from '@expo/vector-icons';
 
 const PAGE_SIZE = 24
 
 const Explore = () => {
+  const { user } = useAuth()
+
   const { filter, value } = useLocalSearchParams(); //instant routing sort
   const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
   const [currentSort, setCurrentSort] = useState({field: 'RELEASE DATE', desc: true})
@@ -24,10 +28,14 @@ const Explore = () => {
   const { width } = useWindowDimensions();
 
   const [films, setFilms] = useState([]);
+  const [seenFilms, setSeenFilms] = useState([]);
+  const [seenCount, setSeenCount] = useState(0);
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [showPagination, setShowPagination] = useState(false)
+
+  const [fadeSeen, setFadeSeen] = useState(true);
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
@@ -59,7 +67,10 @@ const Explore = () => {
   const loadPage = async (pageNumber) => {
     try {
       setIsLoading(true)
-      const res = await fetch(`${BaseUrl.api}/films?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
+      const url = user
+        ? `${BaseUrl.api}/films?UserId=${user.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+        : `${BaseUrl.api}/films?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+        const res = await fetch(url, {
         method: 'GET',
         headers: {'Accept': 'application/json'}
       })
@@ -68,6 +79,8 @@ const Explore = () => {
         setPage(json.page)
         setTotalCount(json.totalCount)
         setFilms(json.items)
+        setSeenFilms(json.seen)
+        setSeenCount(json.seenCount)
       } else {
         setResult(res.status)
         setMessage('Loading error! Try reloading Heteroboxd.')
@@ -96,8 +109,8 @@ const Explore = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
       headerRight: () => (
-        <Pressable onPress={openMenu} style={{marginRight: 15}}>
-          <Ionicons name="options" size={24} color={Colors.text_title} />
+        <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
+          <Ionicons name="options" size={24} color={Colors.text} />
         </Pressable>
       ),
     });
@@ -131,10 +144,28 @@ const Explore = () => {
   }, [films]);
 
   const renderHeader = () => (
-    <View style={{ width: maxRowWidth, alignSelf: 'center' }}>
-      <Text style={{paddingRight: 10, color: Colors.text, fontSize: widescreen ? 16 : 13}}>Exploring {totalCount} films</Text>
-      <View style={{ height: 20 }} />
-    </View>
+    <>
+      {
+        !isLoading && (
+          <View style={{ width: maxRowWidth, alignSelf: 'center' }}>
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10}}>
+              <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>Exploring {totalCount} films</Text>
+              {
+                user ? (
+                  <Pressable onPress={() => setFadeSeen(prev => !prev)}>
+                    <View style={{ padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                      <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
+                      <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {Math.floor(seenCount / totalCount * 100)}% seen</Text>
+                    </View>
+                  </Pressable>
+                ) : <View />
+              }
+            </View>
+            <View style={{ height: 20 }} />
+          </View>
+        )
+      }
+    </>
   )
 
   const renderContent = ({item}) => {
@@ -149,6 +180,7 @@ const Explore = () => {
         />
       );
     }
+    const isSeen = fadeSeen && (seenFilms?.includes(item.filmId) ?? false)
     return (
       <Pressable
         onPress={() => router.push(`/film/${item.filmId}`)}
@@ -161,7 +193,8 @@ const Explore = () => {
             height: posterHeight,
             borderRadius: 6,
             borderWidth: 2,
-            borderColor: Colors.border_color,
+            borderColor: isSeen ? Colors.heteroboxd : Colors.border_color,
+            opacity: isSeen ? 0.3 : 1
           }}
         />
       </Pressable>

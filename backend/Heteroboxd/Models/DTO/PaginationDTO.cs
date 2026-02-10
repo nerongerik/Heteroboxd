@@ -6,5 +6,7 @@
         public int Page { get; set; }
         public int PageSize { get; set; }
         public List<T> Items { get; set; }
+        public List<int>? Seen { get; set; }
+        public int? SeenCount { get; set; }
     }
 }

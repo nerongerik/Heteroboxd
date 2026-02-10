@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Text, Animated } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Text, Animated, Platform } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { Colors } from '../../../constants/colors'
 import { useEffect, useMemo, useState, useRef } from 'react'
@@ -112,8 +112,8 @@ const Watchlist = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
       headerRight: () => (
-        <Pressable onPress={openMenu} style={{marginRight: 15}}>
-          <Ionicons name="options" size={24} color={Colors.text_title} />
+        <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
+          <Ionicons name="options" size={24} color={Colors.text} />
         </Pressable>
       ),
     })
@@ -193,7 +193,7 @@ const Watchlist = () => {
               user && user.userId == userId && 
                 <>
                 <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13, textAlign: 'center'}}>
-                  Tip: to remove a film from your watchlist quickly, you can just press and hold on it's poster!
+                  Tip: to remove a film from your watchlist quickly, just press and hold on it's poster!
                 </Text>
                 <View style={{height: 35}} />
                 </>

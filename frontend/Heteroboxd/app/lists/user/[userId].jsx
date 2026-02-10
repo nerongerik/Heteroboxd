@@ -135,8 +135,8 @@ const UsersLists = () => {
               </TouchableOpacity>
             )
           }
-          <Pressable onPress={openMenu} style={{marginRight: 15, marginLeft: user && user.userId === userId ? 15 : 0}}>
-            <Ionicons name="options" size={24} color={Colors.text_title} />
+          <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null, marginLeft: user && user.userId === userId ? 15 : 0}}>
+            <Ionicons name="options" size={24} color={Colors.text} />
           </Pressable>
         </>
       )

@@ -95,8 +95,8 @@ const UserWatchedFilms = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
       headerRight: () => (
-        <Pressable onPress={openMenu} style={{marginRight: 15}}>
-          <Ionicons name="options" size={24} color={Colors.text_title} />
+        <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
+          <Ionicons name="options" size={24} color={Colors.text} />
         </Pressable>
       ),
     })
