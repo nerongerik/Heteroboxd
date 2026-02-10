@@ -162,7 +162,7 @@ const List = () => {
             <>
               <ListOptionsButton listId={baseList.id} />
               {
-                baseList.ranked && 
+                !baseList.ranked && 
                 <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
                   <Ionicons name="options" size={24} color={Colors.text} />
                 </Pressable>
