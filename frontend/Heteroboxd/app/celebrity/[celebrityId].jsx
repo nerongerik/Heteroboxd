@@ -172,14 +172,6 @@ const Celebrity = () => {
     loadCredits(currentFilter, pageNumber);
   };
 
-  const handleRefresh = () => {
-    if (currentFilter === 'Bio') {
-      loadBio();
-    } else {
-      loadCredits(currentFilter, currentTabData.page);
-    }
-  };
-
   // Load bio on mount
   useEffect(() => {
     if (!bio) {
@@ -242,8 +234,6 @@ const Celebrity = () => {
         onTabChange={handleTabChange}
         onFilmPress={(filmId) => router.push(`/film/${filmId}`)}
         onPageChange={handlePageChange}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
         pageSize={PAGE_SIZE}
         showSeen={user}
         flipShowSeen={() => setFadeSeen(prev => !prev)}

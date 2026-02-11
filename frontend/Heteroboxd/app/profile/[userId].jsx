@@ -1,4 +1,4 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Animated, RefreshControl, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator, FlatList } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Animated, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator, FlatList } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
@@ -22,7 +22,6 @@ const Profile = () => {
   const { userId } = useLocalSearchParams();
   const { user, isValidSession } = useAuth();
 
-  const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
   const [pronoun, setPronoun] = useState(["he", "him", "his"])
   const [result, setResult] = useState(-1);
@@ -57,9 +56,7 @@ const Profile = () => {
 
 
   const loadProfileData = async () => {
-    setRefreshing(true);
-
-    // --- FETCH PROFILE ---
+    //fetch profile
     setResult(0);
     try {
       const res = await fetch(`${BaseUrl.api}/users/${userId}`);
@@ -88,7 +85,7 @@ const Profile = () => {
       setData({})
     }
 
-    // --- FETCH FAVORITES ---
+    //fetch favorites
     setFavoritesResult(0);
     try {
       const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`, {
@@ -113,7 +110,7 @@ const Profile = () => {
       setResult(500);
     }
 
-    // --- FETCH RECENTS ---
+    //fetch recents
     setRecentResult(0);
     try {
       const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=1&PageSize=8&Filter=ALL&Sort=${"DATE WATCHED"}&Desc=true&FilterValue=${null}`);
@@ -132,8 +129,6 @@ const Profile = () => {
       setError("Unable to connect to Heteroboxd. Please check your internet connection!");
       setResult(500);
     }
-
-    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -367,9 +362,6 @@ const Profile = () => {
   return (
     <View style={styles.container}>
       <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={loadProfileData} />
-        }
         contentContainerStyle={{
           padding: 5,
           minWidth: widescreen ? 1000 : 'auto',

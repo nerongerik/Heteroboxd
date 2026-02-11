@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, RefreshControl, Animated } from 'react-native'
+import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, Animated } from 'react-native'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { Colors } from '../../../constants/colors'
@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 const PAGE_SIZE = 24
 
 const FilmsLists = () => {
-  const { user, isValidSession } = useAuth();
+  const { user } = useAuth();
 
   const { filmId } = useLocalSearchParams()
 
@@ -235,12 +235,6 @@ const FilmsLists = () => {
             }}
           />
         )}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={() => loadListsPage(page)}
-          />
-        }
         contentContainerStyle={{
           width: maxRowWidth,
           paddingBottom: 80,

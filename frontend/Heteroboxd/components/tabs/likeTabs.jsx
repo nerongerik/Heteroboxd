@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions, TouchableOpacity, FlatList, Pressable, RefreshControl } from 'react-native'
+import { StyleSheet, Text, View, useWindowDimensions, TouchableOpacity, FlatList, Pressable } from 'react-native'
 import { Colors } from '../../constants/colors';
 import Author from '../author';
 import Stars from '../stars';
@@ -9,7 +9,7 @@ import * as format from '../../helpers/format';
 import {Poster} from '../poster';
 import PaginationBar from '../paginationBar';
 
-const LikeTabs = ({reviews, lists, refreshing, onRefresh, onPageChange, router, pageSize }) => {
+const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
   const [activeTab, setActiveTab] = useState("reviews");
   const [showPagination, setShowPagination] = useState(false);
   const { width } = useWindowDimensions();
@@ -193,9 +193,6 @@ const LikeTabs = ({reviews, lists, refreshing, onRefresh, onPageChange, router, 
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
         ListEmptyComponent={<Text style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</Text>}
         ListFooterComponent={Footer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
         style={{
           width: maxRowWidth,
           alignSelf: 'center'

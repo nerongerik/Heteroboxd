@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { StyleSheet, Text, useWindowDimensions, View, Pressable, FlatList, RefreshControl, Animated } from 'react-native'
+import { StyleSheet, Text, useWindowDimensions, View, Pressable, FlatList, Animated } from 'react-native'
 import { BaseUrl } from '../../constants/api';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Colors } from '../../constants/colors';
@@ -12,6 +12,7 @@ import FilterSort from '../../components/filterSort';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
+import * as format from '../../helpers/format'
 
 const PAGE_SIZE = 24
 
@@ -155,7 +156,7 @@ const Explore = () => {
                   <Pressable onPress={() => setFadeSeen(prev => !prev)}>
                     <View style={{ padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                       <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-                      <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {Math.floor(seenCount / totalCount * 100)}% seen</Text>
+                      <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, totalCount)}% seen</Text>
                     </View>
                   </Pressable>
                 ) : <View />
@@ -230,9 +231,6 @@ const Explore = () => {
           if (!isLoading) return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no films matching this criteria...</Text>
         }}
         ListFooterComponent={renderFooter}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={() => loadPage(page)} />
-        }
         style={{
           alignSelf: 'center'
         }}

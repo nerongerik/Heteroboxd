@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, RefreshControl, Animated } from 'react-native'
+import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, Animated } from 'react-native'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { Colors } from '../../../constants/colors'
@@ -210,12 +210,6 @@ const UserReviews = () => {
             }}
           />
         )}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={() => loadReviewsPage(page)}
-          />
-        }
         contentContainerStyle={{
           width: maxRowWidth,
           paddingBottom: 80,

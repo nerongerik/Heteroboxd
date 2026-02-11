@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView, RefreshControl } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Headshot } from '../headshot';
 import { Poster } from '../poster';
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import PaginationBar from '../paginationBar';
+import * as format from '../../helpers/format'
 
 const CelebrityTabs = ({ 
   bio, 
@@ -13,9 +14,7 @@ const CelebrityTabs = ({
   activeTab, 
   onTabChange, 
   onFilmPress, 
-  onPageChange, 
-  refreshing, 
-  onRefresh, 
+  onPageChange,
   pageSize,
   showSeen,
   flipShowSeen,
@@ -78,7 +77,7 @@ const CelebrityTabs = ({
               <Pressable onPress={flipShowSeen}>
                 <View style={{ padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-                  <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {Math.floor(seenCount / currentTabData?.totalCount * 100)}% seen</Text>
+                  <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}>{format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</Text>
                 </View>
               </Pressable>
             ) : <View />
@@ -192,9 +191,6 @@ const CelebrityTabs = ({
           style={{ alignSelf: 'center', marginBottom: 50 }} 
           contentContainerStyle={{ width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start' }} 
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
         >
           <Headshot
             pictureUrl={bio.url}
@@ -225,9 +221,6 @@ const CelebrityTabs = ({
           renderItem={Filmography}
           numColumns={4}
           columnWrapperStyle={{ justifyContent: 'center' }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
           style={{
             width: maxRowWidth,
             alignSelf: 'center'
