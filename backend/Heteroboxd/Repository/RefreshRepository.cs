@@ -6,6 +6,7 @@ namespace Heteroboxd.Repository
 {
     public interface IRefreshTokenRepository
     {
+        Task<List<Country>> GetCountriesAsync();
         Task AddAsync(RefreshToken Token);
         Task<RefreshToken?> GetValidTokenAsync(string Token);
         Task<List<RefreshToken>> GetActiveTokensByUserAsync(Guid UserId);
@@ -19,6 +20,12 @@ namespace Heteroboxd.Repository
         public RefreshTokenRepository(HeteroboxdContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<Country>> GetCountriesAsync()
+        {
+            //there is 0 justification for this method to be here, but I ain't making a whole separate repo for one method bruh
+            return await _context.Countries.ToListAsync();
         }
 
         public async Task AddAsync(RefreshToken Token)

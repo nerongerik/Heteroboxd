@@ -1,10 +1,13 @@
-import { Pressable, StyleSheet, Text, View, ScrollView } from 'react-native'
+import { Pressable, StyleSheet, Text, View, ScrollView, Platform } from 'react-native'
 import { useState } from 'react'
 import { Colors } from '../constants/colors'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import * as format from '../helpers/format'
+import { useCountries } from '../hooks/useCountries'
 
 const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSortChange}) => {
   const [expandedFilter, setExpandedFilter] = useState(null)
+  const countries = useCountries();
 
   const filterOptions = {
     explore: ['ALL', 'GENRE', 'YEAR', 'POPULAR', 'COUNTRY'],
@@ -30,7 +33,6 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     filmReviews: ['POPULARITY', 'DATE CREATED', 'RATING']
   }
 
-  //tMDB genre names
   const genres = [
     'Action', 'Adventure', 'Animation', 'Comedy', 'Crime', 
     'Documentary', 'Drama', 'Family', 'Fantasy', 'History',
@@ -38,38 +40,8 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     'TV Movie', 'Thriller', 'War', 'Western'
   ]
 
-  //generate years from 1888 onward
   const currentYear = new Date().getFullYear()
   const years = Array.from({length: currentYear - 1888 + 1}, (_, i) => currentYear - i)
-
-  //countries placeholder (for when we sync it from tmdb)
-  const countries = [
-    "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR",
-    "AS", "AT", "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE",
-    "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ",
-    "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD",
-    "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR",
-    "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM",
-    "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI",
-    "FJ", "FK", "FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF",
-    "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS",
-    "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU",
-    "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
-    "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN",
-    "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK",
-    "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "ME",
-    "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ",
-    "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA",
-    "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU",
-    "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM",
-    "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS",
-    "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI",
-    "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV",
-    "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK",
-    "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ", "UA",
-    "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI",
-    "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"
-  ].sort();
 
   const handleFilterSelect = (filterField) => {
     if (filterField === 'ALL' || filterField === 'POPULAR' || filterField === 'FRIENDS') {
@@ -102,10 +74,40 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
       case 'YEAR':
         return years
       case 'COUNTRY':
-        return countries
+        return countries // ← Already loaded
       default:
         return []
     }
+  }
+
+  const renderValueOption = (value, filterField) => {
+    // For countries, render with flag
+    if (filterField === 'COUNTRY') {
+      const flagCode = format.formatCountry(value.code, Platform.OS === 'web' ? 'web' : 'native');
+      
+      if (Platform.OS === 'web' && flagCode) {
+        return (
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <img 
+              src={`https://flagcdn.com/24x18/${flagCode}.png`}
+              style={{ marginRight: 6, width: 20, height: 15 }}
+              alt=""
+            />
+            <Text style={{fontSize: 12, color: Colors.text_title}}>{value.name}</Text>
+          </View>
+        );
+      } else if (flagCode) {
+        return (
+          <Text style={{fontSize: 12, color: Colors.text_title}}>
+            {flagCode} {value.name}
+          </Text>
+        );
+      }
+      return <Text style={{fontSize: 12, color: Colors.text_title}}>{value.name}</Text>;
+    }
+    
+    // For other values (genre, year)
+    return <Text style={{fontSize: 12, color: Colors.text_title}}>{value}</Text>;
   }
 
   const renderFilterButton = (item) => {
@@ -148,22 +150,24 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
               nestedScrollEnabled={true}
               showsVerticalScrollIndicator={false}
             >
-              {getValueOptions(item).map((value) => {
-                const isValueSelected = isSelected && currentFilter.value === value.toString()
+              {getValueOptions(item).map((value, index) => {
+                const displayValue = item === 'COUNTRY' ? value.name : value.toString();
+                const storedValue = item === 'COUNTRY' ? value.code : value.toString();
+                const isValueSelected = isSelected && currentFilter.value === storedValue;
+                
                 return (
                   <Pressable
-                    key={value}
-                    onPress={() => handleValueSelect(item, value.toString())}
+                    key={item === 'COUNTRY' ? value.code : value}
+                    onPress={() => handleValueSelect(item, storedValue)}
                     style={[
                       {paddingVertical: 12, paddingHorizontal: 12}
                     ]}
                   >
-                    <Text style={[
-                      {fontSize: 12, color: Colors.text_title, fontWeight: '400'},
+                    <View style={[
                       isValueSelected && {color: Colors.heteroboxd}
                     ]}>
-                      {value}
-                    </Text>
+                      {renderValueOption(value, item)}
+                    </View>
                   </Pressable>
                 )
               })}

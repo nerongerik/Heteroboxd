@@ -25,6 +25,7 @@ namespace Heteroboxd.Data
         public DbSet<UserWatchedFilm> UserWatchedFilms { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Trending> Trendings { get; set; }
+        public DbSet<Country> Countries { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -279,6 +280,12 @@ namespace Heteroboxd.Data
             modelBuilder.Entity<Trending>(entity =>
             {
                 entity.HasKey(t => t.FilmId);
+            });
+
+            // Country
+            modelBuilder.Entity<Country>(entity =>
+            {
+                entity.HasKey(c => c.Code);
             });
         }
     }

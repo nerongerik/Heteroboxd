@@ -8,6 +8,7 @@ namespace Heteroboxd.Integrations
         Task<TMDBInfoResponse> FilmDetailsCall(int? TmdbId);
         Task<TMDBCollectionResponse> CollectionDetailsCall(int? TmdbId);
         Task<TMDBCelebrityResponse> CelebrityDetailsCall(int? TmdbId);
+        Task<List<TMDBCountryResponse>> CountryConfigurationCall();
     }
     public class TMDBClient : ITMDBClient
     {
@@ -101,6 +102,24 @@ namespace Heteroboxd.Integrations
 
                 var Json = await Response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<TMDBCelebrityResponse>(Json)!;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"{ex}");
+                throw;
+            }
+        }
+
+        public async Task<List<TMDBCountryResponse>> CountryConfigurationCall()
+        {
+            _logger.LogInformation($"Calling the GET /configuration/ endpoint for Countries");
+            try
+            {
+                var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/configuration/countries?language=en-US");
+                Response.EnsureSuccessStatusCode();
+
+                var Json = await Response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<List<TMDBCountryResponse>>(Json)!;
             }
             catch (Exception ex)
             {

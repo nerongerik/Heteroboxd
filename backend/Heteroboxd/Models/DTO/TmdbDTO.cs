@@ -68,6 +68,13 @@
         public string? profile_path { get; set; }
     }
 
+    public class TMDBCountryResponse
+    {
+        public string? iso_3166_1 { get; set; }
+        public string? english_name { get; set; }
+        public string? native_name { get; set; }
+    }
+
     /*
     HELPER CLASSES FOR TMDB INTEGRATION 
     */

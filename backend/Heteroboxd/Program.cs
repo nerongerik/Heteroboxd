@@ -116,6 +116,7 @@ builder.Services.AddHostedService<NotificationPurgeService>();
 builder.Services.AddHostedService<UserPurgeService>();
 builder.Services.AddHostedService<FlagPurgeService>();
 builder.Services.AddHostedService<ListPurgeService>();
+builder.Services.AddHostedService<CountrySyncService>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();
@@ -204,6 +205,26 @@ catch (Exception ex)
 }
 
 Console.WriteLine("=== IMPORT FINISHED ===");
+return;
+*/
+/*
+using var Scope = app.Services.CreateScope();
+var TmdbClient = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
+var HeteroboxdContext = Scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
+
+Console.WriteLine("=== DOWNLOAD STARTED ===");
+try
+{
+    var Response = await TmdbClient.CountryConfigurationCall();
+    var Countries = Response.Select(r => new Country(r.english_name!, r.iso_3166_1!)).ToList();
+    HeteroboxdContext.Countries.AddRange(Countries);
+    await HeteroboxdContext.SaveChangesAsync();
+    Console.WriteLine("=== IMPORT FINISHED ===");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"FAILED: {ex.Message}");
+}
 return;
 */
 

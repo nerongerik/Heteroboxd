@@ -49,3 +49,9 @@ export function parseCountry(country, platform) {
     );
   });
 }
+
+export function formatCountry(code, platform) {
+  if (!code || code.length === 0 || code.toUpperCase() === 'XX') return null;
+  if (platform === 'web') return code.toLowerCase();
+  else return code.replace(/./g, char => String.fromCodePoint(127397 + char.charCodeAt(0)));
+}
