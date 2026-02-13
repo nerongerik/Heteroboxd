@@ -38,7 +38,7 @@ namespace Heteroboxd.Models
             this.Country = Country;
             this.Tagline = Tagline;
             this.Synopsis = Synopsis;
-            this.Genres = new List<string>(); //to be filled during sync
+            this.Genres = new List<string>();
             this.PosterUrl = string.IsNullOrEmpty(PosterUrl) ? "noposter" : PosterUrl;
             this.BackdropUrl = string.IsNullOrEmpty(BackdropUrl) ? null : BackdropUrl;
             this.Length = Length;
