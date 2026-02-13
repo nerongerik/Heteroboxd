@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, RefreshControl, useWindowDimensions, Platform, Pressable, FlatList } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, useWindowDimensions, Platform, Pressable, FlatList } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
@@ -21,7 +21,7 @@ import Histogram from '../../components/histogram';
 import { Snackbar } from 'react-native-paper';
 import { UserAvatar } from '../../components/userAvatar';
 
-const topCount = 3;
+const TOP_COUNT = 3;
 
 const Film = () => {
   const { user, isValidSession } = useAuth(); //logged in user
@@ -41,8 +41,6 @@ const Film = () => {
   const router = useRouter();
   const {width} = useWindowDimensions();
 
-  const [refreshing, setRefreshing] = useState(false);
-
   const [snack, setSnack] = useState(false);
   const snackRef = useRef(false);
 
@@ -50,7 +48,6 @@ const Film = () => {
   const [message, setMessage] = useState('');
 
   const loadFilmPage = async () => {
-    setRefreshing(true);
     try {
       const vS = await isValidSession();
       //fetch film
@@ -122,7 +119,6 @@ const Film = () => {
       setMessage("Network error - Please check your internet connection!");
       setResult(500);
     } finally {
-      setRefreshing(false);
     }
   }
 
@@ -209,7 +205,7 @@ const Film = () => {
     if (!film) return;
     (async () => {
       try {
-        const res = await fetch(`${BaseUrl.api}/reviews/${film.id}/top/${topCount}`, {
+        const res = await fetch(`${BaseUrl.api}/reviews/${film.id}/top/${TOP_COUNT}`, {
           method: 'GET',
           headers: {'Accept': 'application/json'}
         });
@@ -292,9 +288,6 @@ const Film = () => {
   return (
     <View style={styles.container}>
       <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={loadFilmPage} />
-        }
         contentContainerStyle={{
           padding: 5,
           paddingTop: 0,

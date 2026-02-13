@@ -115,6 +115,23 @@ namespace Heteroboxd.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("Heteroboxd.Models.Country", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastSync")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("Countries");
+                });
+
             modelBuilder.Entity("Heteroboxd.Models.Film", b =>
                 {
                     b.Property<int>("Id")

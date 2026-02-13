@@ -2,7 +2,6 @@
 using Heteroboxd.Models;
 using Heteroboxd.Models.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace Heteroboxd.Repository
 {

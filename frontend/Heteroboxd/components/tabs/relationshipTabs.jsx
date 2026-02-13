@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform, useWindowDimensions, Pressable, RefreshControl } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Platform, useWindowDimensions, Pressable } from "react-native";
 import { UserAvatar } from "../userAvatar";
 import { Colors } from "../../constants/colors";
 import GlowingText from "../glowingText";
@@ -7,7 +7,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from '@expo/vector-icons/Feather';
 import PaginationBar from '../paginationBar'
 
-const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, refreshing, onRefresh, pageSize }) => {
+const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, pageSize }) => {
 
   const [activeTab, setActiveTab] = useState(active);
   const [showPagination, setShowPagination] = useState(false);
@@ -95,9 +95,6 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
           </View>
         )}
         ListFooterComponent={Footer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
         contentContainerStyle={{
           width: Platform.OS === "web" ? Math.min(width, 1000) : "100%",
           alignSelf: Platform.OS === "web" ? "center" : "stretch",

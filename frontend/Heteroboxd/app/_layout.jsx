@@ -4,8 +4,11 @@ import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
 import './browser.css'
+import { useCountrySync } from '../hooks/useCountrySync'
 
 const RootLayout = () => {
+  useCountrySync(); //fire and forget
+
   return (
     <AuthProvider>
       <Stack

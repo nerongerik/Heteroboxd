@@ -20,6 +20,7 @@ const Notifications = () => {
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [showPagination, setShowPagination] = useState(false)
 
   const router = useRouter()
@@ -28,13 +29,14 @@ const Notifications = () => {
   const [response, setResponse] = useState(-1)
   const [message, setMessage] = useState("")
 
-  const loadNotifsPage = async (pageNumber) => {
+  const loadNotifsPage = async (pageNumber, fromRefresh = false) => {
     const vS = await isValidSession()
     if (!user || !vS) {
       router.replace('/login')
       return
     }
     try {
+      if (fromRefresh) setIsRefreshing(false);
       setIsLoading(true);
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/notifications/${user.userId}?Page=${pageNumber}&PageSize=${PAGE_SIZE}`, {
@@ -214,7 +216,13 @@ const Notifications = () => {
         ListEmptyComponent={<Text style={{padding: 15, textAlign: 'center', fontSize: 16, color: Colors.text}}>You have no notifications.</Text>}
         ListFooterComponent={renderFooter}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={() => loadNotifsPage(page)} />
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setIsRefreshing(true)
+              loadNotifsPage(page, true)
+            }} 
+          />
         }
         style={{
           alignSelf: 'center'

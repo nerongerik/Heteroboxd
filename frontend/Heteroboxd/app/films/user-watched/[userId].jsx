@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Animated, Text } from 'react-native'
+import { Platform, StyleSheet, useWindowDimensions, View, FlatList, Pressable, Animated, Text } from 'react-native'
 import { Colors } from '../../../constants/colors';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { BaseUrl } from '../../../constants/api';
@@ -182,12 +182,6 @@ const UserWatchedFilms = () => {
             }}
           />
         )}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={() => loadUserWatchedPage(page)}
-          />
-        }
         style={{
           alignSelf: 'center'
         }}

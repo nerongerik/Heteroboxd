@@ -142,8 +142,6 @@ const Relationships = () => {
         onRemoveFollower={(followerId) => handleRemoveFollower(followerId)}
         onPageChange={loadPage}
         active={t}
-        refreshing={refreshing}
-        onRefresh={() => loadData()}
         pageSize={PAGE_SIZE}
       />
 
@@ -151,7 +149,7 @@ const Relationships = () => {
         result === 500 ? router.replace('/contact') : router.back();
       }}/>
 
-      <LoadingResponse visible={result === 0} />
+      <LoadingResponse visible={result === 0 || refreshing} />
 
     </View>
   );

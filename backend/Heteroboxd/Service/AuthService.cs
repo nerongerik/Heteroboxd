@@ -1,5 +1,4 @@
-﻿using Heteroboxd.Data;
-using Heteroboxd.Integrations;
+﻿using Heteroboxd.Integrations;
 using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
@@ -14,6 +13,7 @@ namespace Heteroboxd.Service
 {
     public interface IAuthService
     {
+        Task<List<CountryInfoResponse>> FrontendCountrySync(string? LastSync);
         Task<string?> Register(RegisterRequest Request);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
         Task<bool> Logout(string RefreshToken, string UserId);
@@ -43,6 +43,17 @@ namespace Heteroboxd.Service
             _r2Handler = r2Handler;
             _emailSender = emailSender;
             _logger = logger;
+        }
+
+        public async Task<List<CountryInfoResponse>> FrontendCountrySync(string? LastSync)
+        {
+            var Countries = await _refreshRepo.GetCountriesAsync();
+
+            if (LastSync == null) return Countries.Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("dd/MM/yyyy HH:mm") }).ToList();
+            if (!DateTime.TryParse(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
+            if (Countries.First().LastSync < LastSyncDate) throw new ArgumentException();
+
+            return Countries.Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("dd/MM/yyyy HH:mm") }).ToList();
         }
 
         public async Task<string?> Register(RegisterRequest Request)

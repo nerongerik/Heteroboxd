@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native'
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import LikeTabs from '../../components/tabs/likeTabs';
 import Popup from '../../components/popup';
@@ -81,8 +81,6 @@ const UserLikes = () => {
       <LikeTabs
         reviews={reviews}
         lists={lists}
-        refreshing={refreshing}
-        onRefresh={() => loadData()}
         onPageChange={loadPage}
         router={router}
         pageSize={PAGE_SIZE}

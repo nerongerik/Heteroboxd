@@ -32,6 +32,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="Data\SerializedFilms\" />
+	  <Folder Include="Data\SerializedCredits\" />
+	  <Folder Include="Data\SerializedCelebs\" />
 	  <Folder Include="Data\SerializedCredits\" />
 	  <Folder Include="Data\SerializedCelebs\" />
 	  <Folder Include="Data\SerializedFilms\" />

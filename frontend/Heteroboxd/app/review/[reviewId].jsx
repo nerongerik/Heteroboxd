@@ -1,14 +1,4 @@
-import { 
-  StyleSheet, 
-  Text, 
-  useWindowDimensions, 
-  View, 
-  FlatList, 
-  Pressable, 
-  Platform,
-  RefreshControl,
-  ActivityIndicator
-} from 'react-native'
+import { StyleSheet, Text, useWindowDimensions, View, FlatList, Pressable, Platform, ActivityIndicator } from 'react-native'
 import { Colors } from '../../constants/colors'
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth'
@@ -489,12 +479,6 @@ const ReviewWithComments = () => {
         renderItem={renderCommentItem}
         ListEmptyComponent={renderEmptyComments}
         ListFooterComponent={renderFooter}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoadingComments}
-            onRefresh={() => loadCommentsPage(page)}
-          />
-        }
         contentContainerStyle={{
           flexGrow: 1,
           paddingBottom: 100,

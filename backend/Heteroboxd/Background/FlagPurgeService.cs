@@ -1,5 +1,4 @@
 ﻿using Heteroboxd.Data;
-using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Background

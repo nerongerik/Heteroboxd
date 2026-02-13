@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, RefreshControl, Text, Animated, Platform } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, Animated } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { Colors } from '../../../constants/colors'
 import { useEffect, useMemo, useState, useRef } from 'react'
@@ -240,12 +240,6 @@ const Watchlist = () => {
               setPage(num)
               loadWatchlistPage(num)
             }}
-          />
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={() => loadWatchlistPage(page)}
           />
         }
         style={{

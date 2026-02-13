@@ -1,10 +1,7 @@
-﻿using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/auth")]
@@ -17,6 +14,26 @@ public class AuthController : ControllerBase
     {
         _service = service;
         _logger = logger;
+    }
+
+    [HttpGet("country")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Countries(string? LastSync = null)
+    {
+        _logger.LogInformation($"GET Countries endpoint hit.");
+        try
+        {
+            var Response = await _service.FrontendCountrySync(LastSync);
+            return Ok(Response);
+        }
+        catch (ArgumentException)
+        {
+            return BadRequest();
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
     }
 
     [HttpPost("register")]

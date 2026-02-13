@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, RefreshControl, Animated } from 'react-native'
+import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, Animated } from 'react-native'
 import { Colors } from '../../constants/colors'
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { BaseUrl } from '../../constants/api'
@@ -250,7 +250,7 @@ const List = () => {
           <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'right', paddingTop: 5}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-              <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {Math.floor(seenCount / totalCount * 100)}% seen</Text>
+              <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, totalCount)}% seen</Text>
             </View>
           </Pressable>
         </View>
@@ -354,9 +354,6 @@ const List = () => {
         ListHeaderComponent={renderHeader}
         renderItem={renderContent}
         ListFooterComponent={renderFooter}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={() => loadListPage(page)} />
-        }
         style={{
           alignSelf: 'center'
         }}

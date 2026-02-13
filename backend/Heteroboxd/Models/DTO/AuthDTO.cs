@@ -1,5 +1,12 @@
 ﻿namespace Heteroboxd.Models.DTO
 {
+    public class CountryInfoResponse
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+        public string LastSync { get; set; }
+    }
+
     public class RegisterRequest()
     {
         public string Name { get; set; }
