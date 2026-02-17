@@ -117,6 +117,7 @@ builder.Services.AddHostedService<UserPurgeService>();
 builder.Services.AddHostedService<FlagPurgeService>();
 builder.Services.AddHostedService<ListPurgeService>();
 builder.Services.AddHostedService<CountrySyncService>();
+builder.Services.AddHostedService<FilmSyncService>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();

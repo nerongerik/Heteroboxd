@@ -5,7 +5,7 @@
         public int FilmId { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
-        public Dictionary<string, string> Country { get; set; }
+        public List<string> Country { get; set; }
         public List<string> Genres { get; set; }
         public string Tagline { get; set; }
         public string Synopsis { get; set; }
@@ -23,7 +23,7 @@
             this.FilmId = Film.Id;
             this.Title = Film.Title;
             this.OriginalTitle = Film.OriginalTitle;
-            this.Country = Film.Country;
+            this.Country = Film.Country.ToList();
             this.Genres = Film.Genres.ToList();
             this.Tagline = Film.Tagline;
             this.Synopsis = Film.Synopsis;

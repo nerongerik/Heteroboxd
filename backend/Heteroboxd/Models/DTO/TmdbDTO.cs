@@ -76,6 +76,24 @@
     }
 
     /*
+    TMDB CHANGELOGS 
+    */
+
+    public class TMDBChangesResponse
+    {
+        public List<ChangedObject> results { get; set; }
+        public int page { get; set; }
+        public int total_pages { get; set; }
+        public int total_results { get; set; }
+    }
+
+    public class ChangedObject
+    {
+        public int id { get; set; }
+        public bool? adult { get; set; }
+    }
+
+    /*
     HELPER CLASSES FOR TMDB INTEGRATION 
     */
 

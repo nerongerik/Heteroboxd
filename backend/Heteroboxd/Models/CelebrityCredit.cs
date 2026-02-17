@@ -8,12 +8,12 @@ namespace Heteroboxd.Models
         [Key]
         public Guid Id { get; set; }
         public int CelebrityId { get; set; }
-        public string CelebrityName { get; set; } //easier display without extra joins
-        public string? CelebrityPictureUrl { get; set; } //easier display without extra joins
+        public string CelebrityName { get; set; }
+        public string? CelebrityPictureUrl { get; set; }
         public int FilmId { get; set; }
         public Role Role { get; set; }
-        public string? Character { get; set; } //for actors only
-        public int? Order { get; set; } //for ordering cast list
+        public string? Character { get; set; }
+        public int? Order { get; set; }
 
         public CelebrityCredit(int CelebrityId, string CelebrityName, string? CelebrityPictureUrl, int FilmId, Role Role, string? Character, int? Order)
         {

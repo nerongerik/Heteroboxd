@@ -113,11 +113,7 @@ namespace Heteroboxd.Repository
                     EntriesQuery = EntriesQuery.Where(x => x.Film.ReleaseYear == int.Parse(FilterValue!));
                     break;
                 case "country":
-                    var FilteredIds = await _context.Films
-                        .FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue)
-                        .Select(f => f.Id)
-                        .ToListAsync();
-                    EntriesQuery = EntriesQuery.Where(x => FilteredIds.Contains(x.Film.Id));
+                    EntriesQuery = EntriesQuery.Where(x => x.Film.Country.Contains(FilterValue!));
                     break;
                 default:
                     //error fallback
