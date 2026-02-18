@@ -6,10 +6,10 @@ namespace Heteroboxd.Models
     public class Film
     {
         [Key]
-        public int Id { get; set; } //unique
+        public int Id { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
-        public Dictionary<string, string> Country { get; set; }
+        public ICollection<string> Country { get; set; }
         public string Tagline { get; set; }
         public string Synopsis { get; set; }
         public ICollection<string> Genres { get; set; }
@@ -18,7 +18,7 @@ namespace Heteroboxd.Models
         public int Length { get; set; }
         public int ReleaseYear { get; set; }
         public Dictionary<int, string> Collection { get; set; }
-        public DateTime LastSync { get; set; } //if LastSync < tMDB's last update, resync
+        public DateTime LastSync { get; set; }
 
         [JsonIgnore]
         public ICollection<CelebrityCredit> CastAndCrew { get; set; }
@@ -30,12 +30,12 @@ namespace Heteroboxd.Models
         [JsonIgnore]
         public ICollection<UserWatchedFilm> WatchedBy { get; set; }
 
-        public Film(int Id, string Title, string? OriginalTitle, Dictionary<string, string> Country, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear)
+        public Film(int Id, string Title, string? OriginalTitle, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, int ReleaseYear)
         {
             this.Id = Id;
             this.Title = Title;
             this.OriginalTitle = OriginalTitle;
-            this.Country = Country;
+            this.Country = new List<string>();
             this.Tagline = Tagline;
             this.Synopsis = Synopsis;
             this.Genres = new List<string>();
@@ -49,6 +49,22 @@ namespace Heteroboxd.Models
             this.Reviews = new List<Review>();
             this.WatchCount = 0;
             this.WatchedBy = new List<UserWatchedFilm>();
+        }
+
+        public void UpdateFields(Film Film)
+        {
+            this.Title = Film.Title;
+            this.OriginalTitle = Film.OriginalTitle;
+            this.Country = Film.Country;
+            this.Tagline = Film.Tagline;
+            this.Synopsis = Film.Synopsis;
+            this.Genres = Film.Genres;
+            this.PosterUrl = string.IsNullOrEmpty(Film.PosterUrl) ? "noposter" : Film.PosterUrl;
+            this.BackdropUrl = string.IsNullOrEmpty(Film.BackdropUrl) ? null : Film.BackdropUrl;
+            this.Length = Film.Length;
+            this.ReleaseYear = Film.ReleaseYear;
+            this.Collection = Film.Collection;
+            this.LastSync = DateTime.UtcNow;
         }
     }
 }

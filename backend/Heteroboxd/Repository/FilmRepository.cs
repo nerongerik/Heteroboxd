@@ -73,7 +73,7 @@ namespace Heteroboxd.Repository
                         FilmsQuery = FilmsQuery.Where(f => f.WatchCount > 0);
                         break;
                     case "country":
-                        FilmsQuery = _context.Films.FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue!).AsQueryable();
+                        FilmsQuery = FilmsQuery.Where(f => f.Country.Contains(FilterValue!));
                         break;
                     default:
                         //error fallback
@@ -132,8 +132,7 @@ namespace Heteroboxd.Repository
                         FilmsQuery = FilmsQuery.Where(x => x.Film.WatchCount > 0);
                         break;
                     case "country":
-                        var CountryFilms = _context.Films.FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue!);
-                        FilmsQuery = FilmsQuery.Where(x => CountryFilms.Select(cf => cf.Id).Contains(x.Film.Id));
+                        FilmsQuery = FilmsQuery.Where(x => x.Film.Country.Contains(FilterValue!));
                         break;
                     default:
                         //error fallback
@@ -208,11 +207,7 @@ namespace Heteroboxd.Repository
                     UwQuery = UwQuery.Where(x => x.Film.ReleaseYear == int.Parse(FilterValue!));
                     break;
                 case "country":
-                    var FilteredIds = await _context.Films
-                        .FromSqlRaw(@"SELECT * FROM ""Films"" WHERE EXISTS (SELECT 1 FROM jsonb_each_text(""Country"") WHERE value = {0})", FilterValue)
-                        .Select(f => f.Id)
-                        .ToListAsync();
-                    UwQuery = UwQuery.Where(x => FilteredIds.Contains(x.Film.Id));
+                    UwQuery = UwQuery.Where(x => x.Film.Country.Contains(FilterValue!));
                     break;
                 default:
                     //error fallback

@@ -8,7 +8,7 @@ namespace Heteroboxd.Background
     {
         private readonly ILogger<NotificationPurgeService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _scheduledTime = new TimeSpan(15, 0, 0);
+        private readonly TimeSpan _scheduledTime = new TimeSpan(14, 0, 0);
 
         public NotificationPurgeService(ILogger<NotificationPurgeService> logger, IServiceScopeFactory scopeFactory)
         {

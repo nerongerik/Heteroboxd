@@ -24,5 +24,13 @@ namespace Heteroboxd.Models
             this.LastSync = DateTime.UtcNow;
             this.Credits = new List<CelebrityCredit>();
         }
+
+        public void UpdateFields(Celebrity Celebrity)
+        {
+            this.Name = Celebrity.Name;
+            this.Description = Celebrity.Description;
+            this.PictureUrl = Celebrity.PictureUrl;
+            this.LastSync = DateTime.UtcNow;
+        }
     }
 }

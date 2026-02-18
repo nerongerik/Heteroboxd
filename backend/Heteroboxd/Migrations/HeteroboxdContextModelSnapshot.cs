@@ -147,9 +147,9 @@ namespace Heteroboxd.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<string>("Country")
+                    b.PrimitiveCollection<string[]>("Country")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("text[]");
 
                     b.PrimitiveCollection<string[]>("Genres")
                         .IsRequired()

@@ -111,11 +111,14 @@ builder.Services.AddScoped<IR2Handler, R2Handler>();
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
+builder.Services.AddHostedService<TrendingSyncService>();
 builder.Services.AddHostedService<RefreshPurgeService>();
 builder.Services.AddHostedService<NotificationPurgeService>();
 builder.Services.AddHostedService<UserPurgeService>();
 builder.Services.AddHostedService<FlagPurgeService>();
 builder.Services.AddHostedService<ListPurgeService>();
+builder.Services.AddHostedService<FilmSyncService>();
+builder.Services.AddHostedService<CelebritySyncService>();
 builder.Services.AddHostedService<CountrySyncService>();
 
 // --- CONTROLLERS ---

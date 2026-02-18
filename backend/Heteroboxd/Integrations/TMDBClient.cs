@@ -9,6 +9,8 @@ namespace Heteroboxd.Integrations
         Task<TMDBCollectionResponse> CollectionDetailsCall(int? TmdbId);
         Task<TMDBCelebrityResponse> CelebrityDetailsCall(int? TmdbId);
         Task<List<TMDBCountryResponse>> CountryConfigurationCall();
+        Task<TMDBChangesResponse> ChangesListCall(string Path, int Page);
+        Task<TMDBTrendingResponse> TrendingFilmsCall();
     }
     public class TMDBClient : ITMDBClient
     {
@@ -120,6 +122,42 @@ namespace Heteroboxd.Integrations
 
                 var Json = await Response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<List<TMDBCountryResponse>>(Json)!;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"{ex}");
+                throw;
+            }
+        }
+
+        public async Task<TMDBChangesResponse> ChangesListCall(string Path, int Page)
+        {
+            _logger.LogInformation($"Calling the GET /changes/ endpoint for {Path} at Page: {Page}");
+            try
+            {
+                var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/{Path}/changes?page={Page}");
+                Response.EnsureSuccessStatusCode();
+
+                var Json = await Response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<TMDBChangesResponse>(Json)!;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"{ex}");
+                throw;
+            }
+        }
+
+        public async Task<TMDBTrendingResponse> TrendingFilmsCall()
+        {
+            _logger.LogInformation("Calling the GET /trending/ endpoint");
+            try
+            {
+                var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/movie/popular");
+                Response.EnsureSuccessStatusCode();
+
+                var Json = await Response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<TMDBTrendingResponse>(Json)!;
             }
             catch (Exception ex)
             {

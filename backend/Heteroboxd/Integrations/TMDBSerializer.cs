@@ -9,9 +9,12 @@ namespace Heteroboxd.Integrations
     public interface ITMDBSerializer
     {
         Task ParseResponse(TMDBInfoResponse Response);
+        Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseResponseInMemory(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs);
         Task ParseCollection(int TmdbId, Film Film);
         Task<Film> ParseFilm(TMDBInfoResponse Response);
+        Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseFilmInMemory(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs);
         Task ParseCreditsResponse(Credits? Credits, int FilmId);
+        Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsResponseInMemory(Credits? Credits, int FilmId, List<Celebrity> ExistingCelebs);
         Celebrity ParseCelebrity(TMDBCelebrityResponse CelebrityResponse);
         string FormUrls(string? Path);
         Task Serialize<T>(T Object, string Path);
@@ -45,6 +48,17 @@ namespace Heteroboxd.Integrations
             {
                 throw new IOException($"FAILED TO SERIALIZE {Film.Id}.json");
             }
+        }
+
+        public async Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseResponseInMemory(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs)
+        {
+            if (Response.id == null) throw new ArgumentException("tMDB mustn't be null!");
+            var (Film, Celebrities, Credits) = await ParseFilmInMemory(Response, ExistingCelebs);
+            if (Response.belongs_to_collection != null && Response.belongs_to_collection.id != null)
+            {
+                await ParseCollection(Response.belongs_to_collection.id.Value, Film);
+            }
+            return (Film, Celebrities, Credits);
         }
 
         public async Task ParseCollection(int TmdbId, Film Film)
@@ -81,29 +95,22 @@ namespace Heteroboxd.Integrations
         {
             string Title = Response.title ?? Response.original_title!;
             string? OriginalTitle = Response.title == null ? null : Response.original_title;
-            Dictionary<string, string> Country = new Dictionary<string, string>();
-            foreach (ProductionCountry pc in Response.production_countries ?? new List<ProductionCountry>())
-            {
-                if (pc.name?.ToLower() == "kosovo" || pc.name?.ToLower() == "serbia and montenegro" || pc.name?.ToLower() == "yugoslavia")
-                {
-                    Country["Serbia"] = "RS";
-                } else
-                {
-                    Country[pc.name ?? "UNKNOWN"] = pc.iso_3166_1 ?? "XX";
-                }
-            }
             string Tagline = Response.tagline ?? "";
             string Synopsis = Response.overview ?? "[no overview available for this feature]";
             string? PosterUrl = FormUrls(Response.poster_path);
             string? BackdropUrl = FormUrls(Response.backdrop_path);
             int Length = Response.runtime ?? 0;
-            int.TryParse(Response.release_date?.Substring(0, 4), out int ReleaseYear);
+            int.TryParse((Response.release_date ?? "").AsSpan(0, Math.Min((Response.release_date ?? "").Length, 4)), out int ReleaseYear);
             int TmdbId = Response.id ?? throw new Exception("TMDB response missing ID");
 
-            Film Film = new Film(TmdbId, Title, OriginalTitle, Country, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear);
+            Film Film = new Film(TmdbId, Title, OriginalTitle, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear);
             foreach (var Genre in Response.genres ?? new List<Genre>())
             {
                 Film.Genres.Add(Genre.name!);
+            }
+            foreach (ProductionCountry pc in Response.production_countries ?? new List<ProductionCountry>())
+            {
+                Film.Country.Add(pc.iso_3166_1 ?? "XX");
             }
 
             await ParseCreditsResponse(Response.credits, Film.Id);
@@ -111,10 +118,35 @@ namespace Heteroboxd.Integrations
             return Film;
         }
 
+        public async Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseFilmInMemory(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs)
+        {
+            string Title = Response.title ?? Response.original_title!;
+            string? OriginalTitle = Response.title == null ? null : Response.original_title;
+            string Tagline = Response.tagline ?? "";
+            string Synopsis = Response.overview ?? "[no overview available for this feature]";
+            string? PosterUrl = FormUrls(Response.poster_path);
+            string? BackdropUrl = FormUrls(Response.backdrop_path);
+            int Length = Response.runtime ?? 0;
+            int.TryParse((Response.release_date ?? "").AsSpan(0, Math.Min((Response.release_date ?? "").Length, 4)), out int ReleaseYear);
+            int TmdbId = Response.id ?? throw new Exception("TMDB response missing ID");
+
+            Film Film = new Film(TmdbId, Title, OriginalTitle, Tagline, Synopsis, PosterUrl, BackdropUrl, Length, ReleaseYear);
+            foreach (var Genre in Response.genres ?? new List<Genre>())
+            {
+                Film.Genres.Add(Genre.name!);
+            }
+            foreach (ProductionCountry pc in Response.production_countries ?? new List<ProductionCountry>())
+            {
+                Film.Country.Add(pc.iso_3166_1 ?? "XX");
+            }
+
+            var (Celebrities, Credits) = await ParseCreditsResponseInMemory(Response.credits, Film.Id, ExistingCelebs);
+
+            return (Film, Celebrities, Credits);
+        }
+
         public async Task ParseCreditsResponse(Credits? Credits, int FilmId)
         {
-            List<CelebrityCredit> CelebrityCredits = new List<CelebrityCredit>();
-
             if (Credits == null) return;
 
             //cast
@@ -217,6 +249,107 @@ namespace Heteroboxd.Integrations
                     throw new IOException($"FAILED TO SERIALIZE Credit for {Celebrity.Id} in Film {FilmId}");
                 }
             }
+        }
+
+        public async Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsResponseInMemory(Credits? Credits, int FilmId, List<Celebrity> ExistingCelebs)
+        {
+            if (Credits == null) return (new List<Celebrity>(), new List<CelebrityCredit>());
+
+            List<Celebrity> Celebrities = new List<Celebrity>();
+            List<CelebrityCredit> CelebrityCredits = new List<CelebrityCredit>();
+            var ExistingCelebsById = ExistingCelebs.ToDictionary(c => c.Id);
+            var FetchedThisRun = new HashSet<int>();
+
+            //cast
+            foreach (CastMember Actor in Credits.cast ?? new List<CastMember>())
+            {
+                if (Actor?.id == null) continue;
+                if (ExistingCelebsById.TryGetValue(Actor.id.Value, out Celebrity? AlreadyFetched))
+                {
+                    CelebrityCredits.Add(new CelebrityCredit(AlreadyFetched.Id, AlreadyFetched.Name, AlreadyFetched.PictureUrl, FilmId, Role.Actor, Actor.character ?? "Unnamed Role", Actor.order ?? 50));
+                    continue;
+                }
+                //fetch from TMDB with 3 retries
+                int Attempt = 0;
+                bool Success = false;
+                TMDBCelebrityResponse Response = null!;
+                while (Attempt < 3 && !Success)
+                {
+                    Attempt++;
+                    try
+                    {
+                        Response = await _tmdbClient.CelebrityDetailsCall(Actor.id);
+                        Success = true;
+                    }
+                    catch
+                    {
+                        await Task.Delay(1000 * Attempt); //exponential backoff to avoid rate limits
+                        continue;
+                    }
+                }
+                if (Response == null) continue;
+
+                Celebrity Celebrity = ParseCelebrity(Response);
+                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, Celebrity.Name, Celebrity.PictureUrl, FilmId, Role.Actor, Actor.character ?? "Unnamed Role", Actor.order ?? 50);
+                if (FetchedThisRun.Add(Celebrity.Id)) Celebrities.Add(Celebrity);
+                CelebrityCredits.Add(Credit);
+            }
+            //crew
+            foreach (CrewMember Crewer in Credits.crew ?? new List<CrewMember>())
+            {
+                if (Crewer?.id == null) continue;
+                if (ExistingCelebsById.TryGetValue(Crewer.id.Value, out Celebrity? AlreadyFetched))
+                {
+                    Role AdditionalRole = Crewer.job?.ToLower() switch
+                    {
+                        "director" => Role.Director,
+                        "producer" => Role.Producer,
+                        "screenplay" => Role.Writer,
+                        "writer" => Role.Writer,
+                        "story" => Role.Writer,
+                        "original music composer" => Role.Composer,
+                        _ => throw new InvalidOperationException($"Unexpected job type: {Crewer.job}")
+                    };
+                    CelebrityCredits.Add(new CelebrityCredit(AlreadyFetched.Id, AlreadyFetched.Name, AlreadyFetched.PictureUrl, FilmId, AdditionalRole, null, null));
+                    continue;
+                }
+                //fetch from TMDB with 3 retries
+                int Attempt = 0;
+                bool Success = false;
+                TMDBCelebrityResponse Response = null!;
+                while (Attempt < 3 && !Success)
+                {
+                    Attempt++;
+                    try
+                    {
+                        Response = await _tmdbClient.CelebrityDetailsCall(Crewer.id);
+                        Success = true;
+                    }
+                    catch
+                    {
+                        await Task.Delay(1000 * Attempt); //exponential backoff to avoid rate limits
+                        continue;
+                    }
+                }
+                if (Response == null) continue;
+
+                Role CrewRole = Crewer.job?.ToLower() switch
+                {
+                    "director" => Role.Director,
+                    "producer" => Role.Producer,
+                    "screenplay" => Role.Writer,
+                    "writer" => Role.Writer,
+                    "story" => Role.Writer,
+                    "original music composer" => Role.Composer,
+                    _ => throw new InvalidOperationException($"Unexpected job type: {Crewer.job}")
+                };
+
+                Celebrity Celebrity = ParseCelebrity(Response);
+                CelebrityCredit Credit = new CelebrityCredit(Celebrity.Id, Celebrity.Name, Celebrity.PictureUrl, FilmId, CrewRole, null, null);
+                if (FetchedThisRun.Add(Celebrity.Id)) Celebrities.Add(Celebrity);
+                CelebrityCredits.Add(Credit);
+            }
+            return (Celebrities, CelebrityCredits);
         }
 
         public Celebrity ParseCelebrity(TMDBCelebrityResponse CelebrityResponse)
