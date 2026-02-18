@@ -84,8 +84,12 @@ namespace Heteroboxd.Background
                     var ExistingFilms = await _context.Films
                         .Where(f => UpdatedFilms.Contains(f.Id))
                         .ToListAsync(CancellationToken);
+
+                    int Counter = 0;
+                    int Total = UpdatedFilms.Count;
                     foreach (int uf in UpdatedFilms)
                     {
+                        _logger.LogInformation($"\n== PROCESSING FILM {Counter}/{Total} ==\n");
                         try
                         {
                             var Details = await _client.FilmDetailsCall(uf);
@@ -121,6 +125,10 @@ namespace Heteroboxd.Background
                         {
                             _logger.LogError(e, $"Error processing film with TMDB ID {uf}.");
                             continue; //silent fail
+                        }
+                        finally
+                        {
+                            Counter++;
                         }
                     }
 
