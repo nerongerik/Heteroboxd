@@ -71,6 +71,14 @@ const RootLayout = () => {
           }}
         />
         <Stack.Screen 
+          name="search" 
+          options={{
+            headerTitle: 'Search',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {color: Colors.text_title},
+          }}
+        />
+        <Stack.Screen 
           name="likes/[userId]"
           options={{
             headerTitle: 'Likes',

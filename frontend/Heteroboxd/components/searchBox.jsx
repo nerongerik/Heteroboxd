@@ -36,7 +36,7 @@ const SearchBox = ({ placeholder, context, onSelected }) => {
       setResult(500);
       setSnack(true);
     }
-    setQuery(null); //reset query
+    setQuery(''); //reset query
   }
 
   const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
@@ -53,8 +53,8 @@ const SearchBox = ({ placeholder, context, onSelected }) => {
             placeholderTextColor={Colors.text_placeholder}
           />
           <TouchableOpacity
-            style={[{backgroundColor: Colors._heteroboxd, padding: 10, borderTopRightRadius: 10, borderBottomRightRadius: 10}, (!query) && {opacity: 0.5}]}
-            disabled={!query}
+            style={[{backgroundColor: Colors._heteroboxd, padding: 10, borderTopRightRadius: 10, borderBottomRightRadius: 10}, (query.length === 0) && {opacity: 0.5}]}
+            disabled={query.length === 0}
             onPress={handleSearch}
           >
             <Fontisto name="search" size={widescreen ? 24 : 22} color={Colors.text_button} />
