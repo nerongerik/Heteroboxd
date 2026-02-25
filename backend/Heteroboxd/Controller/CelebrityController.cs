@@ -24,8 +24,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Celebrity endpoint hit for {CelebrityId}");
             try
             {
-                var Celebrity = await _service.GetCelebrity(CelebrityId);
-                return Ok(Celebrity);
+                var Response = await _service.GetCelebrity(CelebrityId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -55,13 +55,13 @@ namespace Heteroboxd.Controller
 
         [HttpGet("search")]
         [AllowAnonymous]
-        public async Task<IActionResult> SearchCelebrities([FromQuery] string Search)
+        public async Task<IActionResult> SearchCelebrities(string Search, int Page = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GET Search Celebrities endpoint hit with {Search}");
             try
             {
-                var Celebrities = await _service.SearchCelebrities(Search);
-                return Ok(Celebrities);
+                var Response = await _service.SearchCelebrities(Search, Page, PageSize);
+                return Ok(Response);
             }
             catch
             {

@@ -1,5 +1,4 @@
-﻿using FirebaseAdmin.Auth;
-using Heteroboxd.Models;
+﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 
@@ -14,7 +13,7 @@ namespace Heteroboxd.Service
         Task<List<DelimitedListInfoResponse>> GetDelimitedLists(string UserId, int FilmId);
         Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetListsFeaturingFilmCount(int FilmId);
-        Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search);
+        Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search, int Page, int PageSize);
         Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
         Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries);
         Task UpdateList(UpdateUserListRequest ListRequest);
@@ -158,9 +157,16 @@ namespace Heteroboxd.Service
             return Count;
         }
 
-        public async Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search)
+        public async Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search, int Page, int PageSize)
         {
-            throw new NotImplementedException();
+            var (Results, TotalCount) = await _repo.SearchAsync(Search.ToLower(), Page, PageSize);
+            return new PagedResponse<UserListInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Items = Results.Select(x => new UserListInfoResponse(x.Ul, x.A, 4)).ToList()
+            };
         }
 
         public async Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId)

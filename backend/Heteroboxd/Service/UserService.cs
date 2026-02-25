@@ -18,7 +18,7 @@ namespace Heteroboxd.Service
         Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
         Task<List<FriendFilmResponse>> GetFriendsForFilm(string UserId, int FilmId);
         Task<Dictionary<double, int>> GetUserRatings(string UserId);
-        Task<List<UserInfoResponse>> SearchUsers(string SearchName);
+        Task<PagedResponse<UserInfoResponse>> SearchUsers(string Search, int Page, int PageSize);
         Task ReportUserEfCore7Async(string UserId);
         Task<string?> UpdateUser(UpdateUserRequest UserUpdate);
         Task VerifyUser(string UserId, string Token);
@@ -278,10 +278,16 @@ namespace Heteroboxd.Service
             return Ratings;
         }
 
-        public async Task<List<UserInfoResponse>> SearchUsers(string SearchName)
+        public async Task<PagedResponse<UserInfoResponse>> SearchUsers(string Search, int Page, int PageSize)
         {
-            var Users = await _repo.SearchAsync(SearchName.ToLower());
-            return Users.Select(u => new UserInfoResponse(u)).ToList();
+            var (Result, TotalCount) = await _repo.SearchAsync(Search.ToLower(), Page, PageSize);
+            return new PagedResponse<UserInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Items = Result.Select(u => new UserInfoResponse(u)).ToList()
+            };
         }
 
         public async Task<string?> UpdateUser(UpdateUserRequest UserUpdate)

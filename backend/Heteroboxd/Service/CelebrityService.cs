@@ -9,7 +9,7 @@ namespace Heteroboxd.Service
     {
         Task<CelebrityInfoResponse> GetCelebrity(int CelebrityId);
         Task<PagedResponse<FilmInfoResponse>> GetCreditsDelimited(int CelebrityId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search);
+        Task<PagedResponse<CelebrityInfoResponse>> SearchCelebrities(string Search, int Page, int PageSize);
     }
 
     public class CelebrityService : ICelebrityService
@@ -62,10 +62,16 @@ namespace Heteroboxd.Service
             }
         }
 
-        public async Task<List<CelebrityInfoResponse>> SearchCelebrities(string Search)
+        public async Task<PagedResponse<CelebrityInfoResponse>> SearchCelebrities(string Search, int Page, int PageSize)
         {
-            var SearchResults = await _repo.SearchAsync(Search.ToLower());
-            return SearchResults.Select(c => new CelebrityInfoResponse(c)).ToList();
+            var (Results, TotalCount) = await _repo.SearchAsync(Search.ToLower(), Page, PageSize);
+            return new PagedResponse<CelebrityInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Items = Results.Select(c => new CelebrityInfoResponse(c)).ToList()
+            };
         }
     }
 }

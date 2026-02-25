@@ -9,7 +9,7 @@ namespace Heteroboxd.Repository
         Task<User?> GetByIdAsync(Guid Id);
         Task<List<User>> GetByIdsAsync(IReadOnlyCollection<Guid> Ids);
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
-        Task<List<User>> SearchAsync(string Search);
+        Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
 
         Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
@@ -77,7 +77,7 @@ namespace Heteroboxd.Repository
                 .Select(g => new { Rating = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Rating, x => x.Count);
 
-        public async Task<List<User>> SearchAsync(string Search)
+        public async Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
             var Query = _context.Users.AsQueryable();
 
@@ -87,9 +87,13 @@ namespace Heteroboxd.Repository
                     EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3f);
             }
 
-            return await Query
+            int TotalCount = await Query.CountAsync();
+            var Results = await Query
                 .OrderByDescending(u => EF.Functions.TrigramsSimilarity(u.Name, Search))
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
+            return (Results, TotalCount);
         }
 
         public async Task<(List<WatchlistEntry> Entries, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)

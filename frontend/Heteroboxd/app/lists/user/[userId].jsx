@@ -172,7 +172,7 @@ const UsersLists = () => {
         keyExtractor={(item) => item.id.toString()}
         ListEmptyComponent={() => {
           if (!isLoading) {
-            return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no lists matching this criteria...</Text>
+            return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to show here...</Text>
           }
         }}
         renderItem={({ item }) => (

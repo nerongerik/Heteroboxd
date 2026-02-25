@@ -7,7 +7,7 @@ import LoadingResponse from '../../components/loadingResponse';
 import { Colors } from '../../constants/colors';
 import { BaseUrl } from '../../constants/api';
 
-const PAGE_SIZE = 32
+const PAGE_SIZE = 20
 
 const UserLikes = () => {
   const {userId} = useLocalSearchParams();
@@ -17,12 +17,12 @@ const UserLikes = () => {
 
   const [result, setResult] = useState(-1);
   const [message, setMessage] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
 
   const loadData = async (pages = {}) => {
-    setRefreshing(true);
+    setLoading(true);
     try {
       const params = new URLSearchParams({
         ReviewsPage: pages.reviews || 1,
@@ -59,7 +59,7 @@ const UserLikes = () => {
       setResult(500);
       setMessage('Network error! Check your internet connection.');
     } finally {
-      setRefreshing(false);
+      setLoading(false);
     }
   };
 
@@ -90,7 +90,7 @@ const UserLikes = () => {
         result === 500 ? router.replace('/contact') : router.back();
       }}/>
 
-      <LoadingResponse visible={refreshing} />
+      <LoadingResponse visible={loading} />
 
     </View>
   );

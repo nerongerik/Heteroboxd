@@ -9,7 +9,7 @@ namespace Heteroboxd.Repository
     {
         Task<Celebrity?> GetByIdAsync(int Id);
         Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetCreditsAsync(int CelebrityId, Guid? UserId, int Page, int PageSize, Role Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<Celebrity>> SearchAsync(string Search);
+        Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
     }
 
     public class CelebrityRepository : ICelebrityRepository
@@ -117,7 +117,7 @@ namespace Heteroboxd.Repository
             }
         }
 
-        public async Task<List<Celebrity>> SearchAsync(string Search)
+        public async Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
             var Query = _context.Celebrities.AsQueryable();
 
@@ -127,9 +127,13 @@ namespace Heteroboxd.Repository
                     EF.Functions.TrigramsSimilarity(c.Name, Search) > 0.3f);
             }
 
-            return await Query
+            int TotalCount = await Query.CountAsync();
+            var Results = await Query
                 .OrderByDescending(c => EF.Functions.TrigramsSimilarity(c.Name, Search))
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
+            return (Results, TotalCount);
         }
 
     }

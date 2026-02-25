@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
 {
+    public record SearchResponse(UserList Ul, User A);
+
     public interface IUserListRepository
     {
         Task<UserList?> GetByIdAsync(Guid ListId);
@@ -13,7 +15,7 @@ namespace Heteroboxd.Repository
         Task<List<UserList>> GetLightweightAsync(Guid UserId);
         Task<(List<UserList> Lists, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetFeaturingFilmCountAsync(int FilmId);
-        Task<List<UserList>> SearchAsync(string Search);
+        Task<(List<SearchResponse> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
         void Create(UserList UserList);
         void CreateEntry(ListEntry ListEntry);
         void Update(UserList UserList);
@@ -231,19 +233,29 @@ namespace Heteroboxd.Repository
                 .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
                 .CountAsync();
 
-        public async Task<List<UserList>> SearchAsync(string Search)
+        public async Task<(List<SearchResponse> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.UserLists.AsQueryable();
+            var Query = _context.UserLists
+                .Include(ul => ul.Films)
+                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(Search))
             {
-                Query = Query.Where(ul =>
-                    EF.Functions.TrigramsSimilarity(ul.Name, Search) > 0.3f);
+                Query = Query.Where(x =>
+                    EF.Functions.TrigramsSimilarity(x.ul.Name, Search) > 0.3f);
             }
 
-            return await Query
-                .OrderByDescending(ul => EF.Functions.TrigramsSimilarity(ul.Name, Search))
+            int TotalCount = await Query.CountAsync();
+
+            var Results = await Query
+                .OrderByDescending(x => EF.Functions.TrigramsSimilarity(x.ul.Name, Search))
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .Select(x => new SearchResponse(x.ul, x.u))
                 .ToListAsync();
+
+            return (Results, TotalCount);
         }
 
 
