@@ -2,7 +2,7 @@ import { Platform, StyleSheet, Text, TextInput, useWindowDimensions, View, Touch
 import { useAuth } from '../../../hooks/useAuth';
 import * as auth from '../../../helpers/auth';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Colors } from '../../../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { BaseUrl } from '../../../constants/api';
@@ -14,6 +14,9 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import SearchBox from '../../../components/searchBox';
 import SlidingMenu from '../../../components/slidingMenu';
+import PaginationBar from '../../../components/paginationBar';
+
+const PAGE_SIZE = 20
 
 const EditList = () => {
   const { listId } = useLocalSearchParams();
@@ -39,7 +42,8 @@ const EditList = () => {
   const [menuShown, setMenuShown] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
 
-  const [searchResults, setSearchResults] = useState(null);
+  const [searchResults, setSearchResults] = useState({items: [], totalCount: 0, page: 1})
+  const [searchInit, setSearchInit] = useState(true)
 
   const loadList = async () => {
     const vS = await isValidSession();
@@ -190,21 +194,9 @@ const EditList = () => {
   const posterWidth = useMemo(() => widescreen ? 150 : 75, [widescreen]);
   const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth]);
 
-  if (!entries) {
-    return (
-      <View style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        paddingHorizontal: 5,
-        backgroundColor: Colors.background,
-      }}>
-        <LoadingResponse visible={true} />
-      </View>
-    );
-  }
+  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE);
 
-  const Header = () => (
+  const Header = useMemo(() => (
     <>
       <View style={{width: widescreen ? 1000 : width*0.9, alignSelf: 'center',}}>
         <Text style={{color: Colors.text_title, fontSize: widescreen ? 30 : 20, textAlign: 'center', fontWeight: '500', marginBottom: 25}}>Edit List</Text>
@@ -237,32 +229,48 @@ const EditList = () => {
         </Pressable>
       </View>
     </>
-  )
+  ), [listName, desc, ranked, widescreen, width])
 
-  const Render = ({item, index}) => (
-    <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', width: '100%', justifyContent: 'space-between'}}>
-      <View style={[styles.card, {width: widescreen ? '95%' : '90%'}]}>
-        <Poster posterUrl={item.filmPosterUrl} style={{marginRight: 3, borderWidth: 2, borderRadius: 4, borderColor: Colors.border_color, width: posterWidth, height: posterHeight}} other={true} />
-        <View style={{flexShrink: 1, maxWidth: '100%'}}>
-          <Text style={{color: Colors.text_title, fontWeight: '600', fontSize: widescreen ? 24 : 16, textAlign: 'center'}}>
-            {item.filmTitle}
-            <Text style={{color: Colors.text, fontWeight: '400', fontSize: widescreen ? 20 : 12}}> {item.filmYear}</Text>
-          </Text>
+  const Render = useCallback(({ item, index }) => {
+    return (
+      <View style={{flexDirection: 'row', alignSelf: 'center', alignItems: 'center', width: '100%', justifyContent: 'space-between'}}>
+        <View style={[styles.card, {width: widescreen ? '95%' : '90%'}]}>
+          <Poster posterUrl={item.filmPosterUrl} style={{marginRight: 3, borderWidth: 2, borderRadius: 4, borderColor: Colors.border_color, width: posterWidth, height: posterHeight}} other={true} />
+          <View style={{flexShrink: 1, maxWidth: '100%'}}>
+            <Text style={{color: Colors.text_title, fontWeight: '600', fontSize: widescreen ? 24 : 16, textAlign: 'center'}}>
+              {item.filmTitle}
+              <Text style={{color: Colors.text, fontWeight: '400', fontSize: widescreen ? 20 : 12}}> {item.filmYear}</Text>
+            </Text>
+          </View>
+          <View style={{ gap: 5, marginLeft: 3 }}>
+            <Pressable onPress={() => moveItem(index, -1)}>
+              <MaterialIcons name="keyboard-arrow-up" size={28} color={Colors.text_title} />
+            </Pressable>
+            <Pressable onPress={() => moveItem(index, +1)}>
+              <MaterialIcons name="keyboard-arrow-down" size={28} color={Colors.text_title} />
+            </Pressable>
+          </View>
         </View>
-        <View style={{ gap: 5, marginLeft: 3 }}>
-          <Pressable onPress={() => moveItem(index, -1)}>
-            <MaterialIcons name="keyboard-arrow-up" size={28} color={Colors.text_title} />
-          </Pressable>
-          <Pressable onPress={() => moveItem(index, +1)}>
-            <MaterialIcons name="keyboard-arrow-down" size={28} color={Colors.text_title} />
-          </Pressable>
-        </View>
+        <Pressable onPress={() => deleteItem(index)}>
+          <FontAwesome5 name="trash" size={20} color={Colors.text} />
+        </Pressable>
       </View>
-      <Pressable onPress={() => deleteItem(index)}>
-        <FontAwesome5 name="trash" size={20} color={Colors.text} />
-      </Pressable>
-    </View>
-  )
+    )
+  }, [entries, widescreen, posterWidth, posterHeight])
+
+  if (!entries) {
+    return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        paddingHorizontal: 5,
+        backgroundColor: Colors.background,
+      }}>
+        <LoadingResponse visible={true} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -309,49 +317,72 @@ const EditList = () => {
       </Snackbar>
       <Popup visible={popupVisible} message={popupMsg} onClose={() => router.replace('/')} />
 
-      <SlidingMenu menuShown={menuShown} closeMenu={() => {setSearchResults(null); closeMenu();}} translateY={translateY} widescreen={widescreen} width={width}>
-        <SearchBox placeholder={"Search Films..."} context={'films'} onSelected={(json) => setSearchResults(json)} />
-        {
-          (searchResults && searchResults.length > 0) ? (
-            <View style={[styles.entryContainer, {minHeight: height/3, maxHeight: height/3, width: width*0.95}]}>
-            <FlatList
-              data={searchResults}
-              numColumns={1}
-              renderItem={({item, index}) => (
-                <Pressable key={index} onPress={() => {
-                  if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, filmPosterUrl: item.posterUrl, filmTitle: item.title, filmYear: item.releaseYear }]);
-                  setSearchResults(null);
-                  closeMenu();
-                }}>
-                  <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
-                    <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} other={true} />
-                    <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                      <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                        {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
-                      </Text>
-                      <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
-                        item.castAndCrew?.map((d, i) => (
-                          <Text key={i} style={{}}>
-                            {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
-                          </Text>
-                        ))
-                      }</Text>
-                    </View>
+      <SlidingMenu menuShown={menuShown} closeMenu={() => {setSearchResults({items: [], totalCount: 0, page: 1}); setSearchInit(true); closeMenu();}} translateY={translateY} widescreen={widescreen} width={width}>
+        <SearchBox
+          onSelected={(res) => {
+            setSearchResults(res)
+            setSearchInit(false)
+          }}
+          page={searchResults.page}
+          pageSize={PAGE_SIZE}
+        />
+
+        <View style={[
+          styles.entryContainer,
+          {
+            minHeight: searchInit ? 0 : height/3,
+            maxHeight: height/3,
+            width: widescreen ? width*0.5 : width*0.95
+          }
+        ]}>
+          <FlatList
+            data={searchResults.items}
+            numColumns={1}
+            renderItem={({item, index}) => (
+              <Pressable key={index} onPress={() => {
+                if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, filmPosterUrl: item.posterUrl, filmTitle: item.title, filmYear: item.releaseYear }]);
+                setSearchResults({items: [], totalCount: 0, page: 1});
+                setSearchInit(true)
+                closeMenu();
+              }}>
+                <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
+                  <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} other={true} />
+                  <View style={{flexShrink: 1, maxWidth: '100%'}}>
+                    <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+                      {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
+                    </Text>
+                    <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                      item.castAndCrew?.map((d, i) => (
+                        <Text key={i} style={{}}>
+                          {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                        </Text>
+                      ))
+                    }</Text>
                   </View>
-                </Pressable>
-              )}
-              contentContainerStyle={{
-                padding: 20,
-                alignItems: 'flex-start',
-                width: '100%'
-              }}
-              showsVerticalScrollIndicator={false}
-            />
-            </View>
-          ) : (searchResults && searchResults.length === 0) && (
-            <Text style={{padding: 20, alignSelf: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
-          )
-        }
+                </View>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              !searchInit && <Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+            }
+            ListFooterComponent={
+              <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>
+                <PaginationBar
+                  page={searchResults.page}
+                  totalPages={totalPages}
+                  visible={searchResults.totalCount > PAGE_SIZE}
+                  onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
+                />
+              </View>
+            }
+            contentContainerStyle={{
+              padding: 20,
+              alignItems: 'flex-start',
+              width: '100%'
+            }}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
       </SlidingMenu>
     </View>
   )

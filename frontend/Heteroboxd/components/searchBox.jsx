@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react'
-import { KeyboardAvoidingView, StyleSheet, TextInput, View, TouchableOpacity, useWindowDimensions, Platform, ActivityIndicator } from 'react-native'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { KeyboardAvoidingView, StyleSheet, TextInput, View, Pressable, useWindowDimensions, Platform, ActivityIndicator } from 'react-native'
 import { Colors } from '../constants/colors';
 import { Snackbar } from 'react-native-paper';
 import { BaseUrl } from '../constants/api';
 import Fontisto from '@expo/vector-icons/Fontisto';
 
-const SearchBox = ({ placeholder, context, onSelected }) => {
+const SearchBox = ({ onSelected, page, pageSize }) => {
   const [query, setQuery] = useState('');
+  const lastQuery = useRef('');
 
   const [result, setResult] = useState(-1);
   const [snack, setSnack] = useState(false);
@@ -14,17 +15,22 @@ const SearchBox = ({ placeholder, context, onSelected }) => {
 
   const { width } = useWindowDimensions();
 
-  async function handleSearch() {
-    if (!query || query.length === 0) return;
+  useEffect(() => {
+    if (lastQuery.current) handleSearch();
+  }, [page]);
+
+  async function handleSearch(overridePage) {
+    const q = lastQuery.current || query;
+    if (!q || q.length === 0) return;
     try {
       setResult(0);
-      const res = await fetch(`${BaseUrl.api}/${context}/search?Search=${query}`, {
-        method: 'GET',
-        headers: {'Accept': 'application/json'}
-      });
+      const res = await fetch(
+        `${BaseUrl.api}/films/search?Search=${q}&Page=${overridePage ?? page}&PageSize=${pageSize}`,
+        { method: 'GET', headers: { Accept: 'application/json' } }
+      );
       if (res.status === 200) {
         const json = await res.json();
-        onSelected(json);
+        onSelected({items: json.items, totalCount: json.totalCount, page: json.page});
         setResult(200);
       } else {
         setMessage('Something went wrong! Contact Heteroboxd support for more information.');
@@ -36,7 +42,6 @@ const SearchBox = ({ placeholder, context, onSelected }) => {
       setResult(500);
       setSnack(true);
     }
-    setQuery(''); //reset query
   }
 
   const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
@@ -47,18 +52,18 @@ const SearchBox = ({ placeholder, context, onSelected }) => {
         <KeyboardAvoidingView style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
           <TextInput
             style={styles.input}
-            placeholder={placeholder}
+            placeholder="Search films..."
             value={query}
             onChangeText={setQuery}
             placeholderTextColor={Colors.text_placeholder}
           />
-          <TouchableOpacity
-            style={[{backgroundColor: Colors._heteroboxd, padding: 10, borderTopRightRadius: 10, borderBottomRightRadius: 10}, (query.length === 0) && {opacity: 0.5}]}
+          <Pressable
+            style={[{backgroundColor: Colors.heteroboxd, padding: 10, borderTopRightRadius: 10, borderBottomRightRadius: 10}, (query.length === 0) && {opacity: 0.8}]}
             disabled={query.length === 0}
-            onPress={handleSearch}
+            onPress={() => { lastQuery.current = query; setQuery(''); handleSearch(); }}
           >
             <Fontisto name="search" size={widescreen ? 24 : 22} color={Colors.text_button} />
-          </TouchableOpacity>
+          </Pressable>
         </KeyboardAvoidingView>
         {
           result === 0 && (

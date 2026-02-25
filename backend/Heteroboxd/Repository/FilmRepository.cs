@@ -15,7 +15,7 @@ namespace Heteroboxd.Repository
         Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
-        Task<List<Film>> SearchAsync(string Title);
+        Task<(List<Film> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
         Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta);
     }
 
@@ -254,7 +254,7 @@ namespace Heteroboxd.Repository
                 .Select(g => new { Rating = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Rating, x => x.Count);
 
-        public async Task<List<Film>> SearchAsync(string Search)
+        public async Task<(List<Film> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
             var Query = _context.Films.AsQueryable();
 
@@ -265,11 +265,16 @@ namespace Heteroboxd.Repository
                     EF.Functions.TrigramsSimilarity(f.OriginalTitle ?? "", Search) > 0.3f);
             }
 
-            return await Query
+            int TotalCount = await Query.CountAsync();
+            var Results = await Query
                 .Include(f => f.CastAndCrew.Where(cc => cc.Role == Role.Director))
                 .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Search))
                 .ThenByDescending(f => f.WatchCount)
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .ToListAsync();
+
+            return (Results, TotalCount);
         }
 
         public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta) //increments/decrements watch count

@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models;
+﻿using Amazon.Runtime;
+using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 
@@ -11,7 +12,7 @@ namespace Heteroboxd.Service
         Task<PagedResponse<FilmInfoResponse>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
-        Task<List<FilmInfoResponse>> SearchFilms(string Search);
+        Task<PagedResponse<FilmInfoResponse>> SearchFilms(string Search, int Page, int PageSize);
     }
 
     public class FilmService : IFilmService
@@ -91,10 +92,16 @@ namespace Heteroboxd.Service
             return Ratings;
         }
 
-        public async Task<List<FilmInfoResponse>> SearchFilms(string Search)
+        public async Task<PagedResponse<FilmInfoResponse>> SearchFilms(string Search, int Page, int PageSize)
         {
-            var SearchResults = await _repo.SearchAsync(Search.ToLower());
-            return SearchResults.Select(f => new FilmInfoResponse(f, true)).ToList();
+            var (Results, TotalCount) = await _repo.SearchAsync(Search.ToLower(), Page, PageSize);
+            return new PagedResponse<FilmInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Items = Results.Select(f => new FilmInfoResponse(f, true)).ToList()
+            };
         }
     }
 }

@@ -79,8 +79,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Lists by Author endpoint hit for User: {UserId}");
             try
             {
-                var UsersLists = await _service.GetListsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(UsersLists);
+                var Response = await _service.GetListsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -99,8 +99,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Lists of User: {UserId} delimited by Film: {FilmId}");
             try
             {
-                var Result = await _service.GetDelimitedLists(UserId, FilmId);
-                return Ok(Result);
+                var Response = await _service.GetDelimitedLists(UserId, FilmId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -119,8 +119,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Lists featuring Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var FilmsLists = await _service.GetListsFeaturingFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(FilmsLists);
+                var Response = await _service.GetListsFeaturingFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -139,8 +139,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Lists featuring Film COUNT endpoint hit for FilmId: {FilmId}");
             try
             {
-                var Count = await _service.GetListsFeaturingFilmCount(FilmId);
-                return Ok(Count);
+                var Response = await _service.GetListsFeaturingFilmCount(FilmId);
+                return Ok(Response);
             }
             catch
             {
@@ -150,13 +150,13 @@ namespace Heteroboxd.Controller
 
         [HttpGet("search")]
         [AllowAnonymous]
-        public async Task<IActionResult> SearchLists([FromQuery] string Search)
+        public async Task<IActionResult> SearchLists(string Search, int Page = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GET Search Lists endpoint hit with Search Term: {Search}");
             try
             {
-                var SearchResults = await _service.SearchLists(Search);
-                return Ok(SearchResults);
+                var Response = await _service.SearchLists(Search, Page, PageSize);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {

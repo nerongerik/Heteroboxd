@@ -36,6 +36,17 @@ export function parseDateShort(date) {
   return `${month} ${day},\n${year}`;
 }
 
+export function formatTimestamp(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${mins}`;
+}
+
 export function parseCountry(country, platform) {
   if (!country || country.length === 0) return null;
   return Object.keys(country).map(c => {

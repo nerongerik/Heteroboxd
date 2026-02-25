@@ -16,7 +16,7 @@ const Search = () => {
 
   return (
     <View style={styles.container}>
-      <View style={{width: widescreen ? 1000 : width*0.95, marginTop: 10}}>
+      <View style={{flex: 1, width: widescreen ? 1000 : width*0.95, marginTop: 10, alignSelf: 'center'}}>
         <SearchTabs
           widescreen={widescreen}
           router={router}
@@ -29,7 +29,7 @@ const Search = () => {
       <Popup
         visible={![-1, 0, 200].includes(response)}
         message={message}
-        onClose={response === 500 ? router.replace('/contact') : router.replace('/')}
+        onClose={() => response === 500 ? router.replace('/contact') : router.replace('/')}
       />
     </View>
   )

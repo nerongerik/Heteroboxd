@@ -25,8 +25,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET User endpoint hit with UserId: {UserId}");
             try
             {
-                var User = await _service.GetUser(UserId);
-                return User == null ? NotFound() : Ok(User);
+                var Response = await _service.GetUser(UserId);
+                return Response == null ? NotFound() : Ok(Response);
             }
             catch (ArgumentException)
             {
@@ -78,8 +78,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Favorites enpoint hit with UserId: {UserId}");
             try
             {
-                var Favorites = await _service.GetFavorites(UserId);
-                return Ok(Favorites);
+                var Response = await _service.GetFavorites(UserId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -102,8 +102,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Relationships endpoint hit for UserId: {UserId}");
             try
             {
-                var Relationships = await _service.GetRelationships(UserId, FollowersPage, FollowingPage, BlockedPage, PageSize);
-                return Ok(Relationships);
+                var Response = await _service.GetRelationships(UserId, FollowersPage, FollowingPage, BlockedPage, PageSize);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -122,8 +122,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Likes endpoint hit for UserId: {UserId}");
             try
             {
-                var Likes = await _service.GetLikes(UserId, ReviewsPage, ListsPage, PageSize);
-                return Ok(Likes);
+                var Response = await _service.GetLikes(UserId, ReviewsPage, ListsPage, PageSize);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -159,8 +159,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET UWF endpoint hit for: {UserId}, {FilmId}");
             try
             {
-                var UserWatchedFilm = await _service.GetUserWatchedFilm(UserId, FilmId);
-                return UserWatchedFilm == null ? NotFound() : Ok(UserWatchedFilm);
+                var Response = await _service.GetUserWatchedFilm(UserId, FilmId);
+                return Response == null ? NotFound() : Ok(Response);
             }
             catch
             {
@@ -175,8 +175,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Friends interactions with a Film endpoint hit for User: {UserId}; Film: {FilmId}");
             try
             {
-                var Result = await _service.GetFriendsForFilm(UserId, FilmId);
-                return Ok(Result);
+                var Response = await _service.GetFriendsForFilm(UserId, FilmId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -195,8 +195,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET User's Ratings endpoint hit for {UserId}");
             try
             {
-                var Ratings = await _service.GetUserRatings(UserId);
-                return Ok(Ratings);
+                var Response = await _service.GetUserRatings(UserId);
+                return Ok(Response);
             }
             catch
             {
@@ -206,13 +206,13 @@ namespace Heteroboxd.Controller
 
         [HttpGet("search")]
         [AllowAnonymous]
-        public async Task<IActionResult> SearchUsers([FromQuery] string Search)
+        public async Task<IActionResult> SearchUsers(string Search, int Page = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GET Search Users endpoint hit with Search: {Search}");
             try
             {
-                var Results = await _service.SearchUsers(Search);
-                return Ok(Results);
+                var Response = await _service.SearchUsers(Search, Page, PageSize);
+                return Ok(Response);
             }
             catch
             {

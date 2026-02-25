@@ -4,6 +4,7 @@ import { Link, useRouter } from 'expo-router';
 import Password from '../components/password';
 import Popup from '../components/popup';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import LoadingResponse from '../components/loadingResponse';
 import { Colors } from '../constants/colors';
 import { BaseUrl } from '../constants/api';
@@ -102,12 +103,20 @@ const Register = () => {
         const json = await res.json()
         if (json.presignedUrl && profilePicture) {
           const file = profilePicture[0];
-          const response = await fetch(file.uri);
-          const blob = await response.blob();
+
+          // Normalize the URI via ImageManipulator so it's fetchable cross-platform
+          const manipResult = await ImageManipulator.manipulateAsync(
+            file.uri,
+            [{ resize: { width: 150, height: 150 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.PNG }
+          );
+
+          const fetchResponse = await fetch(manipResult.uri);
+          const blob = await fetchResponse.blob();
           const picRes = await fetch(json.presignedUrl, {
             method: 'PUT',
             body: blob,
-            headers: { 'Content-Type': file.mimeType || 'image/jpeg' }
+            headers: { 'Content-Type': 'image/png' }
           })
           if (picRes.status === 200) {
             setMessage("You have successfully joined the Heteroboxd community! We sent you an e-mail verification message needed to proceed.");
@@ -128,7 +137,7 @@ const Register = () => {
         setResponse(500);
       }
     } catch (err) {
-      setMessage("Unable to reach the server. Please try again later.");
+      setMessage(`Unable to reach the server. Please try again later.\n(${err})`);
       setResponse(500);
     }
     setPopupVisible(true);

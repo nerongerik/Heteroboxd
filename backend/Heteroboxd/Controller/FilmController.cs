@@ -23,8 +23,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation("GET Trending endpoint hit.");
             try
             {
-                var Trending = await _service.GetTrending();
-                return Ok(Trending);
+                var Response = await _service.GetTrending();
+                return Ok(Response);
             }
             catch
             {
@@ -39,8 +39,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Film endpoint hit for: {FilmId}");
             try
             {
-                var Film = await _service.GetFilm(FilmId);
-                return Ok(Film);
+                var Response = await _service.GetFilm(FilmId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -59,8 +59,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation("GET Films endpoint hit.");
             try
             {
-                var Result = await _service.GetFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Result);
+                var Response = await _service.GetFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
             }
             catch
             {
@@ -75,8 +75,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET UWF hit with UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Result = await _service.GetUsersWatchedFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Result);
+                var Response = await _service.GetUsersWatchedFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
             }
             catch (ArgumentException)
             {
@@ -95,8 +95,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Film's Ratings endpoint hit for {FilmId}");
             try
             {
-                var Ratings = await _service.GetFilmRatings(FilmId);
-                return Ok(Ratings);
+                var Response = await _service.GetFilmRatings(FilmId);
+                return Ok(Response);
             }
             catch
             {
@@ -106,13 +106,13 @@ namespace Heteroboxd.Controller
 
         [HttpGet("search")]
         [AllowAnonymous]
-        public async Task<IActionResult> SearchFilms([FromQuery] string Search)
+        public async Task<IActionResult> SearchFilms(string Search, int Page = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GET Search Films endpoint hit with: {Search}");
             try
             {
-                var SearchResults = await _service.SearchFilms(Search);
-                return Ok(SearchResults);
+                var Response = await _service.SearchFilms(Search, Page, PageSize);
+                return Ok(Response);
             }
             catch
             {
