@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Heteroboxd.Models.DTO;
+using System.ComponentModel.DataAnnotations;
 
 namespace Heteroboxd.Models
 {
@@ -30,6 +31,13 @@ namespace Heteroboxd.Models
             this.LikeCount = 0;
             this.AuthorId = AuthorId;
             this.FilmId = FilmId;
+        }
+
+        public void UpdateFields(UpdateReviewRequest ReviewRequest)
+        {
+            this.Rating = ReviewRequest.Rating ?? this.Rating;
+            this.Text = ReviewRequest.Text ?? this.Text;
+            this.Spoiler = ReviewRequest.Spoiler ?? this.Spoiler;
         }
     }
 }

@@ -24,8 +24,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Notifications by User endpoint hit for User: {UserId}");
             try
             {
-                var NotificationsPage = await _service.GetNotificationsByUser(UserId, Page, PageSize);
-                return Ok(NotificationsPage);
+                var Response = await _service.GetNotificationsByUser(UserId, Page, PageSize);
+                return Ok(Response);
             }
             catch
             {
@@ -40,8 +40,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET number of new notifications endpoint hit for User: {UserId}");
             try
             {
-                var Count = await _service.AnyNewNotifications(UserId);
-                return Ok(Count);
+                var Response = await _service.AnyNewNotifications(UserId);
+                return Ok(Response);
             }
             catch
             {

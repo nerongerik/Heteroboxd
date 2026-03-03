@@ -1,6 +1,4 @@
-﻿using Amazon.Runtime;
-using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 
 namespace Heteroboxd.Service
@@ -8,7 +6,7 @@ namespace Heteroboxd.Service
     public interface  IFilmService
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
-        Task<List<Trending>> GetTrending();
+        Task<List<TrendingInfoResponse>> GetTrending(string? LastSync);
         Task<PagedResponse<FilmInfoResponse>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
@@ -26,8 +24,21 @@ namespace Heteroboxd.Service
             _logger = logger;
         }
 
-        public async Task<List<Trending>> GetTrending() =>
-            await _repo.GetTrendingAsync();
+        public async Task<List<TrendingInfoResponse>> GetTrending(string? LastSync)
+        {
+            var Trending = await _repo.GetTrendingAsync();
+            if (!Trending.Any()) return new List<TrendingInfoResponse>();
+
+            if (LastSync != null)
+            {
+                if (!DateTime.TryParse(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
+                if (Trending.Max(c => c.LastSync) <= LastSyncDate) throw new ArgumentException();
+            }
+
+            return Trending
+                .Select(t => new TrendingInfoResponse { FilmId = t.FilmId, Title = t.Title, FilmPosterUrl = t.PosterUrl, Rank = t.Rank, LastSync = t.LastSync.ToString("dd/MM/yyyy HH:mm") })
+                .ToList();
+        }
 
         public async Task<FilmInfoResponse?> GetFilm(int FilmId)
         {

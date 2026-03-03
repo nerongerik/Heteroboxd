@@ -9,6 +9,7 @@ namespace Heteroboxd.Models
         public string Title { get; set; }
         public string PosterUrl { get; set; }
         public int Rank { get; set; }
+        public DateTime LastSync { get; set; }
 
         public Trending() { }
         public Trending(Film Film, int Rank)
@@ -17,6 +18,7 @@ namespace Heteroboxd.Models
             this.Title = Film.Title;
             this.PosterUrl = Film.PosterUrl;
             this.Rank = Rank;
+            this.LastSync = DateTime.UtcNow;
         }
     }
 }

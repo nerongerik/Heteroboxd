@@ -115,6 +115,30 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("determine-relationship/{UserId}/{TargetId}")]
+        [Authorize]
+        public async Task<IActionResult> DetermineUserRelationships(string UserId, string TargetId)
+        {
+            _logger.LogInformation($"GET determine relationship endpoint hit for UserId: {UserId}");
+            try
+            {
+                var Response = await _service.DetermineRelationship(UserId, TargetId);
+                return Ok(Response);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("user-likes/{UserId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserLikes(string UserId, int ReviewsPage = 1, int ListsPage = 1, int PageSize = 32)

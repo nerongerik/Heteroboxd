@@ -339,6 +339,9 @@ namespace Heteroboxd.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FilmId"));
 
+                    b.Property<DateTime>("LastSync")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PosterUrl")
                         .IsRequired()
                         .HasColumnType("text");

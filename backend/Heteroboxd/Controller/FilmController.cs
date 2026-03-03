@@ -18,12 +18,12 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("trending")]
-        public async Task<IActionResult> GetTrendingFilms()
+        public async Task<IActionResult> GetTrendingFilms(string? LastSync = null)
         {
             _logger.LogInformation("GET Trending endpoint hit.");
             try
             {
-                var Response = await _service.GetTrending();
+                var Response = await _service.GetTrending(LastSync);
                 return Ok(Response);
             }
             catch

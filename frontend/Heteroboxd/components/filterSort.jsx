@@ -7,7 +7,7 @@ import { useCountries } from '../hooks/useCountries'
 
 const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSortChange}) => {
   const [expandedFilter, setExpandedFilter] = useState(null)
-  const countries = useCountries();
+  const { countries } = useCountries();
 
   const filterOptions = {
     explore: ['ALL', 'GENRE', 'YEAR', 'POPULAR', 'COUNTRY'],
@@ -17,6 +17,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     celebrity: ['ALL'],
     userLists: ['ALL'],
     filmLists: ['ALL', 'FRIENDS'],
+    exploreLists: ['ALL', 'FRIENDS'],
     userReviews: ['ALL'],
     filmReviews: ['ALL', 'FRIENDS']
   }
@@ -29,6 +30,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     celebrity: ['POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'], 
     userLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
     filmLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
+    exploreLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
     userReviews: ['POPULARITY', 'DATE CREATED', 'RATING'],
     filmReviews: ['POPULARITY', 'DATE CREATED', 'RATING']
   }

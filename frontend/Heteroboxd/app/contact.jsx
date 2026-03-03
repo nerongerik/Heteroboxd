@@ -38,7 +38,7 @@ const Contact = () => {
         <Text style={styles.text}>
           Please keep in mind that Heteroboxd isn't a commercial entity, and the response times from our volunteers may vary.
           We should get back to you within 24 hours. In the meantime, feel free to check out our
-          <Link style={[styles.link, {fontSize: 16}]} href='about'> FAQ</Link> for more information.
+          <Link style={[styles.link, {fontSize: 16}]} href='https://www.heteroboxd.com/about'> FAQ</Link> for more information.
         </Text>
       </ScrollView>
     </View>

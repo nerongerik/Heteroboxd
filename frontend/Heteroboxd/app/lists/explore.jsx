@@ -1,44 +1,42 @@
-import { StyleSheet, Text, View, Platform, useWindowDimensions, FlatList, Pressable, Animated } from 'react-native'
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import { StyleSheet, Text, View, useWindowDimensions, FlatList, Pressable, Animated } from 'react-native'
+import { useNavigation, useRouter } from 'expo-router'
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { Colors } from '../../../constants/colors'
-import { BaseUrl } from '../../../constants/api'
-import PaginationBar from '../../../components/paginationBar'
-import LoadingResponse from '../../../components/loadingResponse'
-import Popup from '../../../components/popup'
-import { Poster } from '../../../components/poster'
+import { Colors } from '../../constants/colors'
+import { BaseUrl } from '../../constants/api'
+import PaginationBar from '../../components/paginationBar'
+import LoadingResponse from '../../components/loadingResponse'
+import Popup from '../../components/popup'
+import { Poster } from '../../components/poster'
 import Fontisto from '@expo/vector-icons/Fontisto'
-import Author from '../../../components/author'
-import * as format from '../../../helpers/format'
-import { useAuth } from '../../../hooks/useAuth'
-import SlidingMenu from '../../../components/slidingMenu';
-import FilterSort from '../../../components/filterSort';
+import Author from '../../components/author'
+import * as format from '../../helpers/format'
+import { useAuth } from '../../hooks/useAuth'
+import SlidingMenu from '../../components/slidingMenu';
+import FilterSort from '../../components/filterSort';
 import { Ionicons } from '@expo/vector-icons';
 
 const PAGE_SIZE = 24
 
-const FilmsLists = () => {
-  const { user } = useAuth();
-
-  const { filmId } = useLocalSearchParams()
-
-  const navigation = useNavigation()
-  const router = useRouter()
-
-  const { width } = useWindowDimensions()
-
-  const [lists, setLists] = useState([])
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-
-  const [showPagination, setShowPagination] = useState(false)
-
-  const [result, setResult] = useState(-1)
-  const [message, setMessage] = useState('')
+const ExploreLists = () => {
+  const { user } = useAuth()
 
   const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
   const [currentSort, setCurrentSort] = useState({field: 'POPULARITY', desc: true})
+
+  const router = useRouter();
+  const navigation = useNavigation();
+
+  const { width } = useWindowDimensions();
+
+  const [lists, setLists] = useState([]);
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [showPagination, setShowPagination] = useState(false)
+
+  const [result, setResult] = useState(-1);
+  const [message, setMessage] = useState('');
+
   const listRef = useRef(null);
 
   const [menuShown, setMenuShown] = useState(false);
@@ -63,26 +61,24 @@ const FilmsLists = () => {
     outputRange: [300, 0], //slide from bottom
   });
 
-  const loadListsPage = async (pageNumber) => {
+  const loadPage = async (pageNumber) => {
     try {
       setIsLoading(true)
-
-      const res = await fetch(`${BaseUrl.api}/lists/featuring-film/${filmId}?UserId=${user?.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
+      const url = user
+        ? `${BaseUrl.api}/lists?UserId=${user.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+        : `${BaseUrl.api}/lists?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      const res = await fetch(url, {
         method: 'GET',
-        headers: {Accept: 'application/json'}
+        headers: {'Accept': 'application/json'}
       })
-
       if (res.status === 200) {
         const json = await res.json()
         setPage(json.page)
         setTotalCount(json.totalCount)
         setLists(json.items)
-      } else if (res.status === 404) {
-        setResult(404)
-        setMessage("This film doesn't exist anymore!")
       } else {
-        setResult(500)
-        setMessage('Something went wrong! Contact Heteroboxd support.')
+        setResult(res.status)
+        setMessage('Loading error! Try reloading Heteroboxd.')
       }
     } catch {
       setResult(500)
@@ -92,19 +88,21 @@ const FilmsLists = () => {
     }
   }
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const widescreen = useMemo(() => width > 1000, [width]);
+  const spacing = useMemo(() => widescreen ? 30 : 5, [widescreen]);
+  const maxRowWidth = useMemo(() => widescreen ? 800 : width * 0.9, [widescreen]);
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
+  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect ratio
+
   useEffect(() => {
     setPage(1);
-    loadListsPage(1);
+    loadPage(1);
   }, [currentFilter, currentSort])
 
   useEffect(() => {
-    setPage(1)
-    loadListsPage(1)
-  }, [filmId])
-
-  useEffect(() => {
     navigation.setOptions({
-      headerTitle: 'Featuring lists',
+      headerTitle: 'Featured Lists',
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
       headerRight: () => (
@@ -113,23 +111,7 @@ const FilmsLists = () => {
         </Pressable>
       ),
     });
-  }, [])
-
-  useEffect(() => {
-    setCurrentSort({field: 'POPULARITY', desc: true})
-  }, [currentFilter.field])
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
-
-  const widescreen = useMemo(
-    () => Platform.OS === 'web' && width > 1000,
-    [width]
-  )
-
-  const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
-  const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
-  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
+  }, [widescreen])
 
   return (
     <View style={styles.container}>
@@ -139,7 +121,7 @@ const FilmsLists = () => {
         keyExtractor={(item) => item.id.toString()}
         ListEmptyComponent={() => {
           if (!isLoading) {
-            return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no lists matching this criteria...</Text>
+            return <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here...</Text>
           }
         }}
         renderItem={({ item }) => (
@@ -258,7 +240,7 @@ const FilmsLists = () => {
   )
 }
 
-export default FilmsLists
+export default ExploreLists
 
 const styles = StyleSheet.create({
   container: {
