@@ -48,12 +48,17 @@ namespace Heteroboxd.Service
         public async Task<List<CountryInfoResponse>> FrontendCountrySync(string? LastSync)
         {
             var Countries = await _refreshRepo.GetCountriesAsync();
+            if (!Countries.Any()) return new List<CountryInfoResponse>();
 
-            if (LastSync == null) return Countries.Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("dd/MM/yyyy HH:mm") }).ToList();
-            if (!DateTime.TryParse(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
-            if (Countries.First().LastSync < LastSyncDate) throw new ArgumentException();
+            if (LastSync != null)
+            {
+                if (!DateTime.TryParse(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
+                if (Countries.Max(c => c.LastSync) <= LastSyncDate) throw new ArgumentException();
+            }
 
-            return Countries.Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("dd/MM/yyyy HH:mm") }).ToList();
+            return Countries
+                .Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("dd/MM/yyyy HH:mm") })
+                .ToList();
         }
 
         public async Task<string?> Register(RegisterRequest Request)

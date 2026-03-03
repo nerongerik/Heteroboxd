@@ -14,7 +14,7 @@ async function setItem(key, value) {
   else await SecureStore.setItemAsync(key, value);
 }
 
-export function useCountrySync() {
+export function useTrendingSync() {
   const syncInProgress = useRef(false);
 
   useEffect(() => {
@@ -23,10 +23,10 @@ export function useCountrySync() {
       syncInProgress.current = true;
 
       try {
-        const lastSync = await getItem('countryLastSync') || null;
+        const lastSync = await getItem('trendingLastSync') || null;
 
         const res = await fetch(
-          `${BaseUrl.api}/auth/country${lastSync ? `?LastSync=${encodeURIComponent(lastSync)}` : ''}`,
+          `${BaseUrl.api}/films/trending${lastSync ? `?LastSync=${encodeURIComponent(lastSync)}` : ''}`,
           { headers: { 'Accept': 'application/json' } }
         );
 
@@ -34,19 +34,18 @@ export function useCountrySync() {
 
         if (res.status === 200) {
           const json = await res.json();
-
           const lastSyncValue = json[0]?.LastSync ?? json[0]?.lastSync ?? null;
 
-          if (lastSyncValue) await setItem('countryLastSync', lastSyncValue);
+          if (lastSyncValue) await setItem('trendingLastSync', lastSyncValue);
 
-          await setItem('countries', JSON.stringify(json));
+          await setItem('trending', JSON.stringify(json));
 
-          emitStorageUpdate('countries');
+          emitStorageUpdate('trending');
         } else {
-          console.warn(`${res.status}: failed to sync countries`);
+          console.warn(`${res.status}: failed to sync trending`);
         }
       } catch (error) {
-        console.warn('Country sync error: ', error);
+        console.warn('Trending sync error: ', error);
       } finally {
         syncInProgress.current = false;
       }

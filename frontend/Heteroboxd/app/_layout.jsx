@@ -5,13 +5,15 @@ import { AuthProvider } from '../contexts/authContext'
 import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
 import './browser.css'
 import { useCountrySync } from '../hooks/useCountrySync'
+import { useTrendingSync } from '../hooks/useTrendingSync'
 
 const RootLayout = () => {
   useCountrySync(); //fire and forget
+  useTrendingSync(); //fire and forget
 
   return (
     <AuthProvider>
-      <Stack
+      <Stack initialRouteName='index'
         screenOptions={{
           headerStyle: styles.headerStyle,
           headerTintColor: Colors.text,
@@ -19,7 +21,6 @@ const RootLayout = () => {
           title: '',
         }}
       >
-        <Stack.Screen name='index' options={{ headerShown: false }} />
         <Stack.Screen name='login' options={{ headerShown: false }} />
         <Stack.Screen name='register' options={{ headerShown: false }} />
         <Stack.Screen 
@@ -96,7 +97,7 @@ export default RootLayout
 const styles = StyleSheet.create({
   headerStyle: {
     backgroundColor: Colors.background,
-    elevation: 0, // android
-    shadowOpacity: 0, // ios
+    elevation: 0, //android
+    shadowOpacity: 0, //ios
   },
 })

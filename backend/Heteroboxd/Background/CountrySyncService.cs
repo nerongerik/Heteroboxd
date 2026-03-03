@@ -54,7 +54,7 @@ namespace Heteroboxd.Background
                 using (var _scope = _scopeFactory.CreateScope())
                 {
                     HeteroboxdContext _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
-                    ITMDBClient _client = _scope.ServiceProvider.GetRequiredService<TMDBClient>();
+                    ITMDBClient _client = _scope.ServiceProvider.GetRequiredService<ITMDBClient>();
 
                     List<TMDBCountryResponse> Response = await _client.CountryConfigurationCall();
                     List<Country> Countries = Response.Select(r => new Country(r.english_name!, r.iso_3166_1!)).ToList();

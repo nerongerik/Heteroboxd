@@ -29,34 +29,17 @@ namespace Heteroboxd.Service
 
         public async Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize)
         {
-            Review? Review = await _reviewRepo.GetByIdAsync(Guid.Parse(ReviewId));
+            var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(ReviewId));
             if (Review == null) throw new KeyNotFoundException();
 
-            var (Comments, TotalCount) = await _repo.GetByReviewAsync(Review.Id, Page, PageSize);
-
-            var AuthorIds = Comments
-                .Select(c => c.AuthorId)
-                .Distinct()
-                .ToList();
-            var Authors = await _userRepo.GetByIdsAsync(AuthorIds);
-
-            var AuthorLookup = Authors.ToDictionary(a => a.Id);
-
-            var CommentResponses = new List<CommentInfoResponse>();
-
-            foreach (Comment c in Comments)
-            {
-                if (!AuthorLookup.TryGetValue(c.AuthorId, out var Author))
-                    continue;
-                CommentResponses.Add(new CommentInfoResponse(c, Author));
-            }
+            var (Responses, TotalCount) = await _repo.GetByReviewAsync(Review.Id, Page, PageSize);
 
             return new PagedResponse<CommentInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Items = CommentResponses
+                Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined)).ToList()
             };
         }
 

@@ -6,6 +6,7 @@ namespace Heteroboxd.Service
 {
     public interface IUserListService
     {
+        Task<PagedResponse<UserListInfoResponse>> GetLists(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserListInfoResponse> GetList(string ListId);
         Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId);
@@ -34,6 +35,26 @@ namespace Heteroboxd.Service
             _repo = repo;
             _userRepo = userRepo;
             _filmRepo = filmRepo;
+        }
+
+        public async Task<PagedResponse<UserListInfoResponse>> GetLists(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        {
+            if (UserId == null && Filter.ToLower() == "friends") throw new KeyNotFoundException();
+
+            List<Guid>? UsersFriends = null;
+            if (UserId != null && Filter.ToLower() == "friends")
+            {
+                UsersFriends = (await _userRepo.GetUserRelationshipsAsync(Guid.Parse(UserId)))?.Following.Select(u => u.Id).ToList();
+            }
+
+            var (Responses, TotalCount) = await _repo.GetListsAsync(UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
+            return new PagedResponse<UserListInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Items = Responses.Select(x => new UserListInfoResponse(x.Item, x.Joined, 4)).ToList()
+            };
         }
 
         public async Task<UserListInfoResponse> GetList(string ListId)
@@ -124,30 +145,13 @@ namespace Heteroboxd.Service
                 UsersFriends = (await _userRepo.GetUserRelationshipsAsync(Guid.Parse(UserId)))?.Following.Select(u => u.Id).ToList();
             }
 
-            var (Lists, TotalCount) = await _repo.GetFeaturingFilmAsync(FilmId, UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
-            var AuthorIds = Lists
-                .Select(l => l.AuthorId)
-                .Distinct()
-                .ToList();
-            var Authors = await _userRepo.GetByIdsAsync(AuthorIds);
-
-            var AuthorLookup = Authors.ToDictionary(a => a.Id);
-
-            var ListResponses = new List<UserListInfoResponse>();
-
-            foreach (UserList ul in Lists)
-            {
-                if (!AuthorLookup.TryGetValue(ul.AuthorId, out var Author))
-                    continue;
-                ListResponses.Add(new UserListInfoResponse(ul, Author, 4));
-            }
-
+            var (Responses, TotalCount) = await _repo.GetFeaturingFilmAsync(FilmId, UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<UserListInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Items = ListResponses
+                Items = Responses.Select(x => new UserListInfoResponse(x.Item, x.Joined, 4)).ToList()
             };
         }
 
@@ -165,7 +169,7 @@ namespace Heteroboxd.Service
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Items = Results.Select(x => new UserListInfoResponse(x.Ul, x.A, 4)).ToList()
+                Items = Results.Select(x => new UserListInfoResponse(x.Item, x.Joined, 4)).ToList()
             };
         }
 

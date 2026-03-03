@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
@@ -7,7 +8,7 @@ namespace Heteroboxd.Repository
     public interface ICommentRepository
     {
         Task<Comment?> GetByIdAsync(Guid CommentId);
-        Task<(List<Comment> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize);
+        Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize);
         Task ReportEfCore7Async(Guid CommentId);
         void Create(Comment Comment);
         void Delete(Comment Comment);
@@ -27,20 +28,21 @@ namespace Heteroboxd.Repository
             await _context.Comments
                 .FirstOrDefaultAsync(c => c.Id == CommentId);
 
-        public async Task<(List<Comment> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize)
+        public async Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize)
         {
             var ReviewQuery = _context.Comments
                 .Where(c => c.ReviewId == ReviewId)
-                .OrderBy(c => c.Date);
+                .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
+                .OrderBy(x => x.c.Date);
 
             var TotalCount = await ReviewQuery.CountAsync();
-
-            var Comments = await ReviewQuery
+            var Responses = await ReviewQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
+                .Select(x => new JoinResponse<Comment, User> { Item = x.c, Joined = x.u })
                 .ToListAsync();
 
-            return (Comments, TotalCount);
+            return (Responses, TotalCount);
         }
 
         public async Task ReportEfCore7Async(Guid CommentId) //increments the flag count of a review

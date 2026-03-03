@@ -13,6 +13,7 @@ namespace Heteroboxd.Service
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId); //for checking if a film is in the watchlist (quick lookup)
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<RelationshipsDelimitedResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
+        Task<string> DetermineRelationship(string UserId, string TargetId);
         Task<LikesDelimitedResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType); //ObjectType: "review", "comment", "list"
         Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
@@ -189,6 +190,23 @@ namespace Heteroboxd.Service
                 Following = PaginateItems(AllFollowing, FollowingPage, PageSize),
                 Followers = PaginateItems(AllFollowers, FollowersPage, PageSize),
                 Blocked = PaginateItems(AllBlocked, BlockedPage, PageSize)
+            };
+        }
+
+        public async Task<string> DetermineRelationship(string UserId, string TargetId)
+        {
+            if (!Guid.TryParse(UserId, out var UId) || !Guid.TryParse(TargetId, out var TId)) throw new ArgumentException();
+
+            var Status = await _repo.GetRelationshipStatusAsync(UId, TId);
+
+            if (Status == null) throw new KeyNotFoundException();
+
+            return Status switch
+            {
+                { IsBlocked: true } => "blocked",
+                { IsFollowing: true } => "following",
+                { IsFollower: true } => "followed",
+                _ => "none"
             };
         }
 

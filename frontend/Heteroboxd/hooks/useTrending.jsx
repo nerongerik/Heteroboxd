@@ -8,28 +8,27 @@ async function getItem(key) {
   return await SecureStore.getItemAsync(key);
 }
 
-export function useCountries() {
-  const [countries, setCountries] = useState([]);
+export function useTrending() {
+  const [trending, setTrending] = useState([]);
 
   const load = async () => {
     try {
-      const stored = await getItem('countries');
+      const stored = await getItem('trending');
       if (stored) {
-        setCountries(JSON.parse(stored));
+        setTrending(JSON.parse(stored));
       }
     } catch (error) {
-      console.warn('Failed to load countries: ', error);
-      setCountries([]);
+      console.warn('Failed to load trending: ', error);
+      setTrending([]);
     }
   };
 
   useEffect(() => {
     load();
+    const unsub = onStorageUpdate('trending', load);
 
-    const unsub = onStorageUpdate('countries', load);
-    
     return unsub;
   }, []);
 
-  return { countries };
+  return { trending };
 }

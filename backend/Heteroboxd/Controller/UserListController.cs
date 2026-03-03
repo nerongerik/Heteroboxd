@@ -20,6 +20,22 @@ namespace Heteroboxd.Controller
             _userService = userService;
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetLists(string? UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
+        {
+            _logger.LogInformation("GET Lists endpoint hit.");
+            try
+            {
+                var Response = await _service.GetLists(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("{UserListId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetList(string UserListId)

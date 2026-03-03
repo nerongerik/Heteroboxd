@@ -46,6 +46,7 @@ const Profile = () => {
 
   const [blocked, setBlocked] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [followLabel, setFollowLabel] = useState('FOLLOW'); // 'FOLLOW', 'FOLLOW BACK', 'UNFOLLOW'
 
   //context menu
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
@@ -140,23 +141,33 @@ const Profile = () => {
     if (!user || user.userId === userId) return;
     (async () => {
       try {
-        const res = await fetch(`${BaseUrl.api}/users/user-relationships/${user.userId}`, {method: "GET"});
+        const jwt = await auth.getJwt()
+        const res = await fetch(`${BaseUrl.api}/users/determine-relationship/${user.userId}/${userId}`, {
+          method: "GET",
+          headers: {'Authorization': `Bearer ${jwt}`}
+        });
         if (!loaded) return;
-        
+
         if (res.status === 200) {
-          const json = await res.json();
-          const blockedSet = new Set(json['blocked'].map(uir => uir.id));
-          if (blockedSet.has(userId)) {
+          const relationship = await res.text();
+          const trimmed = relationship.replace(/^"|"$/g, '').trim().toLowerCase();
+          if (trimmed === 'blocked') {
             setBlocked(true);
-            return;
+          } else if (trimmed === 'following') {
+            setFollowing(true);
+            setFollowLabel('UNFOLLOW');
+          } else if (trimmed === 'followed') {
+            setFollowing(false);
+            setFollowLabel('FOLLOW BACK');
+          } else {
+            setFollowing(false);
+            setFollowLabel('FOLLOW');
           }
-          const followingSet = new Set(json['following'].map(uir => uir.id));
-          if (followingSet.has(userId)) setFollowing(true);
         } else {
-          console.log('Failed to determine if the user follows account; falling back to false.');
+          console.log('Failed to determine relationship; falling back to none.');
         }
       } catch {
-        console.log('Failed to determine if the user follows account; falling back to false.');
+        console.log('Network error determining relationship; falling back to none.');
       }
     })();
 
@@ -228,7 +239,13 @@ const Profile = () => {
       setVisible(true);
       return;
     }
-    setFollowing(!following); //hope for happy path, change the look for the user on front regardless
+    if (following) {
+      setFollowing(false);
+      setFollowLabel(followLabel === 'UNFOLLOW' ? 'FOLLOW' : followLabel);
+    } else {
+      setFollowing(true);
+      setFollowLabel('UNFOLLOW');
+    }
     const jwt = await auth.getJwt();
     await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=follow-unfollow`, {
       method: 'PUT',
@@ -271,7 +288,7 @@ const Profile = () => {
   const updateFavorites = async (filmId, index) => {
     try {
       const vS = await isValidSession();
-      if (!user || !isOwnProfile || !isValidSession) {
+      if (!user || !isOwnProfile || !vS) {
         setSnackbarMessage(`Session expired! Try logging in again.`);
         setVisible(true);
       }
@@ -336,6 +353,9 @@ const Profile = () => {
 
   const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE);
 
+  // Derive button color from followLabel
+  const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.button_reject : Colors.button_confirm;
+
 
   if (blocked) {
     return (
@@ -387,62 +407,35 @@ const Profile = () => {
               )
             }
             {!isOwnProfile && (
-              following ? (
-                  <Pressable
-                    onPress={handleFollow}
-                    style={{
-                      backgroundColor: 'transparent',
-                      borderWidth: 3,
-                      borderColor: Colors.button_reject,
-                      borderRadius: 3,
-                      paddingVertical: widescreen ? 8 : 6,
-                      paddingHorizontal: widescreen ? 8 : 6,
-                      justifyContent: 'center',
-                      alignSelf: 'center',
-                      position: 'absolute',
-                      right: Platform.OS === 'web' && width < 500 ? -85 : (widescreen ? -120 : -100)
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (widescreen ? 16 : (width > 350 ? 14 : 10)),
-                        fontWeight: '700',
-                        color: Colors.button_reject,
-                        textAlign: 'center',
-                      }}
-                    >
-                      UNFOLLOW
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={handleFollow}
-                    style={{
-                      backgroundColor: 'transparent',
-                      borderWidth: 3,
-                      borderColor: Colors.button_confirm,
-                      borderRadius: 3,
-                      paddingVertical: widescreen ? 8 : 6,
-                      paddingHorizontal: widescreen ? 8 : 6,
-                      justifyContent: 'center',
-                      alignSelf: 'center',
-                      position: 'absolute',
-                      right: Platform.OS === 'web' && width < 500 ? -75 : (widescreen ? -100 : -85)
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: Platform.OS === 'web' && width < 500 ? 10 : (widescreen ? 16 : (width > 350 ? 14 : 10)),
-                        fontWeight: '700',
-                        color: Colors.button_confirm,
-                        textAlign: 'center',
-                      }}
-                    >
-                      FOLLOW
-                    </Text>
-                  </Pressable>
-                )
-              )}
+              <Pressable
+                onPress={handleFollow}
+                style={{
+                  backgroundColor: 'transparent',
+                  borderWidth: 3,
+                  borderColor: followButtonColor,
+                  borderRadius: 3,
+                  paddingVertical: widescreen ? 8 : 6,
+                  paddingHorizontal: widescreen ? 8 : 6,
+                  justifyContent: 'center',
+                  alignSelf: 'center',
+                  position: 'absolute',
+                  right: Platform.OS === 'web' && width < 500
+                    ? -85
+                    : (widescreen ? -120 : -100)
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: Platform.OS === 'web' && width < 500 ? 10 : (widescreen ? 16 : (width > 350 ? 12 : 10)),
+                    fontWeight: '700',
+                    color: followButtonColor,
+                    textAlign: 'center',
+                  }}
+                >
+                  {followLabel}
+                </Text>
+              </Pressable>
+            )}
           </View>
 
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>

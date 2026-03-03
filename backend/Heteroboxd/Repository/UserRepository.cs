@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
 {
+    public record RelationshipStatus(bool IsBlocked, bool IsFollowing, bool IsFollower);
+
     public interface IUserRepository
     {
         Task<User?> GetByIdAsync(Guid Id);
@@ -16,6 +18,7 @@ namespace Heteroboxd.Repository
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
         Task<User?> GetUserRelationshipsAsync(Guid UserId);
+        Task<RelationshipStatus?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
         Task<User?> GetUserLikedReviewsAsync(Guid UserId);
         Task<User?> GetUserLikedListsAsync(Guid UserId);
         Task ReportUserEfCore7Async(Guid UserId);
@@ -203,6 +206,16 @@ namespace Heteroboxd.Repository
                 .Include(u => u.Followers)
                 .Include(u => u.Blocked)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
+
+        public async Task<RelationshipStatus?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId) =>
+            await _context.Users
+                .Where(u => u.Id == UserId)
+                .Select(u => new RelationshipStatus(
+                    u.Blocked.Any(b => b.Id == TargetId),
+                    u.Following.Any(f => f.Id == TargetId),
+                    u.Followers.Any(f => f.Id == TargetId)
+                ))
+                .FirstOrDefaultAsync();
 
         public async Task<User?> GetUserLikedReviewsAsync(Guid UserId) =>
             await _context.Users

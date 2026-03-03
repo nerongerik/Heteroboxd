@@ -72,4 +72,13 @@
             this.TimesWatched = UWF.TimesWatched;
         }
     }
+
+    public class TrendingInfoResponse
+    {
+        public int FilmId { get; set; }
+        public string Title { get; set; }
+        public string FilmPosterUrl { get; set; }
+        public int Rank { get; set; }
+        public string LastSync { get; set; }
+    }
 }

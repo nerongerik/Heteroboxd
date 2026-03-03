@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,26 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetReviews(string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
+        {
+            _logger.LogInformation($"GET Reviews endpoint hit");
+            try
+            {
+                var Response = await _service.GetReviews(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("{ReviewId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetReview(string ReviewId)
@@ -27,8 +48,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Review endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                var Review = await _service.GetReview(ReviewId);
-                return Ok(Review);
+                var Response = await _service.GetReview(ReviewId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -47,8 +68,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Review by UserFilm endpoint hit for UserId: {UserId}, FilmId: {FilmId}");
             try
             {
-                var Review = await _service.GetReviewByUserFilm(UserId, FilmId);
-                return Ok(Review);
+                var Response = await _service.GetReviewByUserFilm(UserId, FilmId);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -67,8 +88,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Reviews by Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Reviews = await _service.GetReviewsByFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Reviews);
+                var Response = await _service.GetReviewsByFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -87,8 +108,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Top Reviews For Film endpoint hit for {FilmId}");
             try
             {
-                var Result = await _service.GetTopReviewsForFilm(FilmId, Top);
-                return Ok(Result);
+                var Response = await _service.GetTopReviewsForFilm(FilmId, Top);
+                return Ok(Response);
             }
             catch
             {
@@ -103,8 +124,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GET Reviews by Author endpoint hit for UserId: {UserId}");
             try
             {
-                var Reviews = await _service.GetReviewsByAuthor(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Reviews);
+                var Response = await _service.GetReviewsByAuthor(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                return Ok(Response);
             }
             catch
             {
@@ -119,8 +140,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"POST Review endpoint hit for User: {ReviewRequest.AuthorId} and Film: {ReviewRequest.FilmId}");
             try
             {
-                var Review = await _service.AddReview(ReviewRequest);
-                return Ok(Review);
+                var Response = await _service.AddReview(ReviewRequest);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {
@@ -139,8 +160,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"PUT Review endpoint hit for ReviewId: {ReviewRequest.ReviewId}");
             try
             {
-                var Review = await _service.UpdateReview(ReviewRequest);
-                return Ok(Review);
+                var Response = await _service.UpdateReview(ReviewRequest);
+                return Ok(Response);
             }
             catch (KeyNotFoundException)
             {

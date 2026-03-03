@@ -71,7 +71,7 @@ const Explore = () => {
       const url = user
         ? `${BaseUrl.api}/films?UserId=${user.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
         : `${BaseUrl.api}/films?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-        const res = await fetch(url, {
+      const res = await fetch(url, {
         method: 'GET',
         headers: {'Accept': 'application/json'}
       })
