@@ -175,11 +175,6 @@ namespace Heteroboxd.Service
             await _refreshRepo.SaveChangesAsync();
         }
 
-        /*
-        while the JWT is quite comprehensive, and extremely useful in reducing the amount of backend calls needed
-        for the logged in user, the UserInfoResponse DTO will still be fully necessary for displaying the data of OTHER
-        users on the platform, as well as the common-changing attributes such as counts
-        */
         private string GenerateJwt(User User)
         {
             try
@@ -191,8 +186,7 @@ namespace Heteroboxd.Service
                 new Claim(JwtRegisteredClaimNames.Email, User.Email!),
                 new Claim("name", User.Name!),
                 new Claim("pictureUrl", User.PictureUrl!),
-                new Claim("tier", User.Tier.ToString()),
-                new Claim("patron", User.IsPatron.ToString()),
+                new Claim("admin", User.IsAdmin.ToString()),
             };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);

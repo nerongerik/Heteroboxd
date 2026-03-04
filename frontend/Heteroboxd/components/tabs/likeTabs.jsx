@@ -66,8 +66,7 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
           userId={item.authorId}
           url={item.authorProfilePictureUrl}
           username={item.authorName}
-          tier={item.authorTier}
-          patron={item.authorPatron}
+          admin={item.admin}
           router={router}
           widescreen={width > 1000}
         />
@@ -114,8 +113,7 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
           userId={item.authorId}
           url={item.authorProfilePictureUrl}
           username={item.authorName}
-          tier={item.authorTier}
-          patron={item.authorPatron}
+          admin={item.admin}
           router={router}
           widescreen={width > 1000}
         />

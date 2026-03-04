@@ -1,14 +1,12 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Animated, Platform, useWindowDimensions, Pressable, Modal, ActivityIndicator, FlatList } from 'react-native';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Animated, Platform, useWindowDimensions, Pressable, ActivityIndicator, FlatList } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/colors';
 import { useEffect, useState, useMemo } from 'react';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { UserAvatar } from '../../components/userAvatar';
 import { BaseUrl } from '../../constants/api';
 import Popup from '../../components/popup';
 import LoadingResponse from '../../components/loadingResponse';
-import GlowingText from '../../components/glowingText';
 import { Poster } from '../../components/poster';
 import { Snackbar } from 'react-native-paper';
 import * as auth from '../../helpers/auth';
@@ -26,7 +24,6 @@ const Profile = () => {
   const { user, isValidSession } = useAuth();
 
   const [data, setData] = useState(null);
-  const [pronoun, setPronoun] = useState(["he", "him", "his"])
   const [result, setResult] = useState(-1);
   const [error, setError] = useState("");
   const [ratings, setRatings] = useState({});
@@ -48,10 +45,6 @@ const Profile = () => {
   const [following, setFollowing] = useState(false);
   const [followLabel, setFollowLabel] = useState('FOLLOW'); // 'FOLLOW', 'FOLLOW BACK', 'UNFOLLOW'
 
-  //context menu
-  const [contextMenuVisible, setContextMenuVisible] = useState(false);
-  const [contextMenuMessage, setContextMenuMessage] = useState("");
-
   //searchbar
   const [menuShown2, setMenuShown2] = useState(false);
   const slideAnim2 = useState(new Animated.Value(0))[0];
@@ -68,12 +61,11 @@ const Profile = () => {
       if (res.status === 200) {
         const json = await res.json();
         setData({ 
-          name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, tier: json.tier,
-          expiry: format.parseDate(json.expiry), patron: json.patron, joined: format.parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount,
-          listsCount: json.listsCount, followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
+          name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, admin: json.admin,
+          joined: format.parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount, listsCount: json.listsCount,
+          followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
           reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
         });
-        if (json.gender === 'female' || json.gender === 'Female') setPronoun(['she', 'her', 'hers']);
         setResult(200);
       } else if (res.status === 404) {
         setError("This user no longer exists!");
@@ -258,33 +250,6 @@ const Profile = () => {
     });
   }
 
-  const handlePress = () => {
-    let message = "";
-
-    if (isAdmin) {
-      if (isOwnProfile) {
-        message = "You are a community moderator. If you have any requests or issues, please contact us ";
-      } else {
-        message = "This person is a community moderator. Learn how you can join our moderation team ";
-      }
-    } else if (data.patron) {
-      if (isOwnProfile) {
-        message = "You are 🐐ed — forever. If you're ever feeling generous again, consider further donations ";
-      } else {
-        message = "This person is 🐐ed — forever. Learn how you can join " + pronoun[1] + " ";
-      }
-    } else if (isDonor) {
-      if (isOwnProfile) {
-        message = "Your donor tier expires on " + data?.expiry + ". You can renew your tier ";
-      } else {
-        message = "This person is 🐐ed. Learn how you can join " + pronoun[1] + " ";
-      }
-    }
-
-    setContextMenuMessage(message);
-    setContextMenuVisible(true);
-  };
-
   const updateFavorites = async (filmId, index) => {
     try {
       const vS = await isValidSession();
@@ -338,8 +303,6 @@ const Profile = () => {
 
   const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
   const isOwnProfile = useMemo(() => user?.userId === userId, [user?.userId, userId]);
-  const isDonor = useMemo(() => data?.tier?.toLowerCase() === "donor", [data]);
-  const isAdmin = useMemo(() => data?.tier?.toLowerCase() === 'admin', [data]);
   //minimum spacing between posters
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
   //determine max usable row width:
@@ -353,7 +316,6 @@ const Profile = () => {
 
   const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE);
 
-  // Derive button color from followLabel
   const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.button_reject : Colors.button_confirm;
 
 
@@ -439,29 +401,7 @@ const Profile = () => {
           </View>
 
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            {data.patron && (
-              <Pressable
-                onPress={handlePress}
-                style={{marginBottom: -5}}
-              >
-              <MaterialCommunityIcons name="crown" size={32} color={Colors.heteroboxd}/>
-              </Pressable>
-            )}
-            {isDonor ? (
-              <Pressable
-                onPress={handlePress}
-              >
-                <GlowingText color={Colors.heteroboxd} size={widescreen ? 28 : 25}>{data.name}</GlowingText>
-              </Pressable>
-            ) : isAdmin ? (
-              <Pressable
-                onPress={handlePress}
-              >
-                <GlowingText color={Colors._heteroboxd} size={widescreen ? 28 : 25}>{data.name}</GlowingText>
-              </Pressable>
-            ) : (
-              <Text style={styles.username}>{data.name}</Text>
-            )}
+            <Text style={styles.username}>{data.name}{data.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
           </View>
         </View>
 
@@ -653,41 +593,6 @@ const Profile = () => {
         {snackbarMessage}
       </Snackbar>
 
-      {contextMenuVisible && (
-        <Modal
-          transparent
-          visible={contextMenuVisible}
-          animationType="fade"
-          onRequestClose={() => setContextMenuVisible(false)}
-        >
-          <Pressable
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.5)"
-            }}
-            onPress={() => setContextMenuVisible(false)}
-          >
-            <View style={{
-              backgroundColor: Colors.card,
-              padding: 15,
-              borderRadius: 3,
-              maxWidth: Platform.OS === 'web' ? Math.min(1000, width-50) : width-50,
-            }}>
-              <Text style={{ color: Colors.text, textAlign: 'center', fontSize: 16}}>
-                {contextMenuMessage}
-                { isAdmin ? (
-                  <Link style={styles.link} href={'/contact'}>here</Link>
-                ) : (
-                  <Link style={styles.link} href={'/sponsor'}>here</Link>
-                )}
-                .
-              </Text>
-            </View>
-          </Pressable>
-        </Modal>
-      )}
       <SlidingMenu menuShown={menuShown2} closeMenu={() => {setSearchResults({items: [], totalCount: 0, page: 1}); setSearchInit(true); closeMenu2();}} translateY={translateY2} widescreen={widescreen} width={width}>
         <SearchBox
           onSelected={(res) => {

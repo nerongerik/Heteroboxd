@@ -188,8 +188,7 @@ const FilmsReviews = () => {
                 userId={item.authorId}
                 url={item.authorProfilePictureUrl}
                 username={item.authorName}
-                tier={item.authorTier}
-                patron={item.authorPatron}
+                admin={item.admin}
                 router={router}
                 widescreen={widescreen}
               />

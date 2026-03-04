@@ -406,22 +406,6 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("donate")]
-        [Authorize]
-        public async Task<IActionResult> Donate([FromBody] DonateRequest DonateRequest)
-        {
-            _logger.LogInformation($"PUT Donate endpoint hit for User: {DonateRequest.UserId}, Amount: {DonateRequest.Amount}");
-            try
-            {
-                //await _service.ProcessDonation(DonateRequest);
-                return Ok();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpDelete("{UserId}")]
         [Authorize]
         public async Task<IActionResult> DeleteUser(string UserId)

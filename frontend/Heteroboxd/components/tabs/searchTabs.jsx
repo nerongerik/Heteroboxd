@@ -4,8 +4,6 @@ import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 import { Headshot } from '../headshot'
 import { Colors } from '../../constants/colors'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import GlowingText from '../glowingText'
 import Author from '../author'
 import { Fontisto } from '@expo/vector-icons'
 import * as format from '../../helpers/format'
@@ -171,20 +169,8 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
     <>
       <Pressable style={{paddingVertical: 14, lineHeight: 30, paddingHorizontal: 5}} onPress={() => router.push(`/profile/${item.id}`)}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <UserAvatar pictureUrl={item.pictureUrl} style={[{width: 30, height: 30, borderRadius: 15, borderColor: Colors.border_color, borderWidth: 1.5}, (item.tier !== 'free' && {marginRight: 10})]} />
-          {item.tier === 'free' ? (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <Text style={{ fontSize: 18, marginLeft: 10, color: Colors.text}}>{item.name}</Text>
-              {item.patron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={18} color={Colors.heteroboxd}/>}
-            </View>
-          ) : item.tier === 'admin' ? (
-            <GlowingText color={Colors._heteroboxd} size={18}>{item.name}</GlowingText>
-          ) : (
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <GlowingText color={Colors.heteroboxd} size={18}>{item.name}</GlowingText>
-              {item.patron && <MaterialCommunityIcons style={{paddingLeft: 5}} name="crown" size={18} color={Colors.heteroboxd}/>}
-            </View>
-          )}
+          <UserAvatar pictureUrl={item.pictureUrl} style={{width: 30, height: 30, borderRadius: 15, borderColor: Colors.border_color, borderWidth: 1.5}} />
+          <Text style={{ fontSize: 18, marginLeft: 10, color: Colors.text}}>{item.name}{item.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
         </View>
       </Pressable>
       <View style={{marginVertical: spacing}} />
@@ -198,8 +184,7 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
           userId={item.authorId}
           url={item.authorProfilePictureUrl}
           username={item.authorName}
-          tier={item.authorTier}
-          patron={item.authorPatron}
+          admin={item.admin}
           router={router}
           widescreen={widescreen}
         />

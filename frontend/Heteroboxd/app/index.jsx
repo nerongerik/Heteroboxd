@@ -216,7 +216,7 @@ const Home = () => {
   const navPress = useCallback((path) => {
     setMenuShown(false)
     dropdownRef.current?.close()
-    if (path === '/about') Linking.openURL('https://www.heteroboxd.com/about')
+    if (path === '/about') Linking.openURL(`https://www.heteroboxd.com${path}`)
     else router.push(path)
   }, [router])
 
@@ -364,18 +364,18 @@ const Home = () => {
           </SideNav>
         ) : (
           <View style={{width: 1000, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15}}>
-            <View style={{width: 850, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly'}}>
+            <View style={{width: 850, flexDirection: 'row', alignItems: 'center', justifyContent: user?.userId ? 'space-evenly' : 'flex-start'}}>
               <Pressable onPress={() => navPress(`/films/explore?filter=${'ALL'}&value=${'RELEASE DATE'}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <MaterialIcons name="explore" size={32} color={Colors.text} />
                 </View>
-                <Text style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Explore Films</Text>
+                <Text style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Explore Films </Text>
               </Pressable>
               <Pressable onPress={() => navPress(`/lists/explore?filter=${'ALL'}&value=${'POPULARITY'}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <FontAwesome6 name="ranking-star" size={24} color={Colors.text} />
                 </View>
-                <Text style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Popular Lists</Text>
+                <Text style={{fontSize: 20, fontWeight: '500', color: Colors.text}}> Popular Lists</Text>
               </Pressable>
               {
                 user?.userId && (
@@ -535,8 +535,7 @@ const Home = () => {
                               userId={item.authorId}
                               url={item.authorProfilePictureUrl}
                               username={item.authorName}
-                              tier={item.authorTier}
-                              patron={item.authorPatron}
+                              admin={item.admin}
                               router={router}
                               widescreen={widescreen}
                             />
@@ -606,8 +605,7 @@ const Home = () => {
                             userId={item.authorId}
                             url={item.authorProfilePictureUrl}
                             username={item.authorName}
-                            tier={item.authorTier}
-                            patron={item.authorPatron}
+                            admin={item.admin}
                             router={router}
                             widescreen={widescreen}
                           />

@@ -40,7 +40,6 @@ namespace Heteroboxd.Data
                 b.ToTable("Users");
                 b.HasIndex(u => u.Email).IsUnique();
                 b.Property(u => u.Gender).HasConversion<string>();
-                b.Property(u => u.Tier).HasConversion<string>();
             });
 
             //rename Identity tables so they don't get AspNet* names

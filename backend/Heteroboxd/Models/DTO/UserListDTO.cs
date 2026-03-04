@@ -14,8 +14,7 @@
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
         public string AuthorProfilePictureUrl { get; set; }
-        public string AuthorTier { get; set; }
-        public bool AuthorPatron { get; set; }
+        public bool Admin { get; set; }
 
         public UserListInfoResponse(UserList List, User Author, int Take = -1)
         {
@@ -33,8 +32,7 @@
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
-            this.AuthorPatron = Author.IsPatron;
-            this.AuthorTier = Author.Tier.ToString().ToLower();
+            this.Admin = Author.IsAdmin;
         }
     }
 
