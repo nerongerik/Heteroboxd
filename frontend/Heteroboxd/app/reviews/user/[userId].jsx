@@ -33,8 +33,7 @@ const UserReviews = () => {
 
   const [authorPic, setAuthorPic] = useState('')
   const [authorName, setAuthorName] = useState('')
-  const [authorTier, setAuthorTier] = useState('')
-  const [authorPatron, setAuthorPatron] = useState(false)
+  const [authorAdmin, setAuthorAdmin] = useState(false)
 
   const [showPagination, setShowPagination] = useState(false)
 
@@ -84,11 +83,10 @@ const UserReviews = () => {
         setPage(json.page)
         setTotalCount(json.totalCount)
         setReviews(json.items)
-        if (authorPic === '' || authorName === '' || authorTier === '') {
+        if (authorPic === '' || authorName === '') {
           setAuthorPic(json.items.length > 0 ? json.items[0].authorProfilePictureUrl : null)
           setAuthorName(json.items.length > 0 ? json.items[0].authorName : 'User')
-          setAuthorTier(json.items.length > 0 ? json.items[0].authorTier : 'free')
-          setAuthorPatron(json.items.length > 0 ? json.items[0].authorPatron : false)
+          setAuthorAdmin(json.items.length > 0 ? json.items[0].admin : false)
         }
       } else if (res.status === 404) {
         setResult(404)
@@ -144,12 +142,11 @@ const UserReviews = () => {
       userId={userId}
       url={authorPic}
       username={authorName}
-      tier={authorTier}
-      patron={authorPatron}
+      admin={authorAdmin}
       router={router}
       widescreen={widescreen}
     />,
-  [userId, authorPic, authorName, authorTier, authorPatron, router, widescreen])
+  [userId, authorPic, authorName, authorAdmin, router, widescreen])
 
   return (
     <View style={styles.container}>

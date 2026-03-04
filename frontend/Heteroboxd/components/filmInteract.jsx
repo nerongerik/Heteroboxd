@@ -2,7 +2,6 @@ import { StyleSheet, Text, TouchableOpacity, View, Pressable, ScrollView, useWin
 import { UserAvatar } from './userAvatar'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
-import GlowingText from './glowingText';
 import { useEffect, useState, useRef } from 'react';
 import { Animated } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -530,15 +529,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
 
   return (
     <>
-      { widescreen
-        ? (
-            <GlowingText color={Colors._heteroboxd} div={true}>
-              {button}
-            </GlowingText>
-          )
-        : (
-          button
-        )
+      {
+        button
       }
       <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>

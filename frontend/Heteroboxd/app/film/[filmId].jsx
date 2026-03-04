@@ -561,8 +561,7 @@ const Film = () => {
                       userId={r.authorId}
                       url={r.authorProfilePictureUrl}
                       username={r.authorName}
-                      tier={r.authorTier}
-                      patron={r.authorPatron}
+                      admin={r.admin}
                       router={router}
                       widescreen={widescreen}
                     />

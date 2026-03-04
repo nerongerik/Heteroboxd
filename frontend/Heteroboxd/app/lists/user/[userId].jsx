@@ -24,8 +24,7 @@ const UsersLists = () => {
   const { user } = useAuth();
   const [username, setUsername] = useState(null);
   const [avatar, setAvatar] = useState(null);
-  const [userTier, setUserTier] = useState('free');
-  const [userPatron, setUserPatron] = useState(false);
+  const [admin, setAdmin] = useState(false)
   
   const navigation = useNavigation();
   const router = useRouter()
@@ -110,11 +109,9 @@ const UsersLists = () => {
   useEffect(() => {
     const first = lists[0];
     if (!first) return;
-  
     setUsername(first.authorName);
     setAvatar(first.authorProfilePictureUrl);
-    setUserPatron(first.authorPatron);
-    setUserTier(first.authorTier);
+    setAdmin(first.admin)
   }, [lists]);
 
   useEffect(() => {
@@ -156,13 +153,12 @@ const UsersLists = () => {
         userId={userId}
         url={avatar}
         username={username}
-        tier={userTier}
-        patron={userPatron}
+        admin={admin}
         router={router}
         widescreen={widescreen}
       />
     </View>,
-  [userId, avatar, username, userTier, userPatron, widescreen, router]);
+  [userId, avatar, username, admin, widescreen, router]);
 
   return (
     <View style={styles.container}>

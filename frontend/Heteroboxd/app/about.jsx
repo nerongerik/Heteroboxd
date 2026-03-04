@@ -37,7 +37,7 @@ const About = () => {
           You can access Heteroboxd via any web browser at <Link style={styles.link} href='https://heteroboxd.com'>heteroboxd.com</Link>,
           or download our mobile app from the Google Play Store. The iOS version of the app is already developed, but due to the massive
           costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest and
-          <Link style={styles.link} href='sponsor'> funding.</Link>
+          <Link style={styles.link} href='/sponsor'> funding.</Link>
         </Text>
 
         <Text style={styles.subtitle}>

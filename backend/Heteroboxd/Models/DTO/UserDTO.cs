@@ -7,9 +7,7 @@
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
         public string? Gender { get; set; }
-        public string Tier { get; set; }
-        public string? Expiry { get; set; }
-        public bool Patron { get; set; }
+        public bool Admin { get; set; }
         public string Joined { get; set; }
         public int Flags { get; set; }
         public int WatchlistCount { get; set; }
@@ -28,9 +26,7 @@
             this.PictureUrl = User.PictureUrl;
             this.Bio = User.Bio;
             this.Gender = User.Gender.ToString();
-            this.Tier = User.Tier.ToString().ToLower();
-            this.Expiry = User.TierExpiry != null ? User.TierExpiry?.ToString("dd/MM/yyyy HH:mm")! : null;
-            this.Patron = User.IsPatron;
+            this.Admin = User.IsAdmin;
             this.Joined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
             this.Flags = User.Flags;
             this.WatchlistCount = User.Watchlist != null ? User.Watchlist.Films.Count : 0;
@@ -84,13 +80,6 @@
         public string? ListId { get; set; } //target
         public string? ListName { get; set; } //if list
         public int LikeChange { get; set; } // +1 or -1
-    }
-
-    public class DonateRequest
-    {
-        public string UserId { get; set; }
-        public string Amount { get; set; }
-        public string Date { get; set; }
     }
 
     public class VerifyUserRequest

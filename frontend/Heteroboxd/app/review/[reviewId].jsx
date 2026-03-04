@@ -300,8 +300,7 @@ const ReviewWithComments = () => {
           userId={review?.authorId}
           url={review?.authorProfilePictureUrl}
           username={review?.authorName}
-          tier={review?.authorTier}
-          patron={review?.authorPatron}
+          admin={review?.admin}
           router={router}
           widescreen={widescreen}
         />
@@ -390,8 +389,7 @@ const ReviewWithComments = () => {
               userId={item.authorId}
               url={item.authorProfilePictureUrl}
               username={item.authorName}
-              tier={item.authorTier}
-              patron={item.authorPatron}
+              admin={item.admin}
               router={router}
               widescreen={widescreen}
             />
@@ -400,14 +398,14 @@ const ReviewWithComments = () => {
             user ? (
               <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginRight: 20}}>
                 {
-                  user.tier.toLowerCase() !== 'admin' && user.userId !== item.authorId && (
+                  !user.admin && user.userId !== item.authorId && (
                     <Pressable onPress={() => handleReport(item.id)}>
                       <Octicons name="report" size={widescreen ? 22 : 18} color={Colors.text} />
                     </Pressable>
                   )
                 }
                 {
-                  user.tier.toLowerCase() === 'admin' || user.userId === item.authorId && (
+                  user.admin || user.userId === item.authorId && (
                     <Pressable onPress={() => handleDelete(item.id)}>
                       <MaterialIcons name="delete-forever" size={widescreen ? 24 : 20} color={Colors.text} />
                     </Pressable>

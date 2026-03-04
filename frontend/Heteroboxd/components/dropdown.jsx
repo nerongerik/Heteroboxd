@@ -69,7 +69,7 @@ const Dropdown = forwardRef(({user, notifs, children}, ref) => {
             </>
           ) : (
             <>
-              <FontAwesome name="user-circle" size={24} color={Colors.text} />
+              <FontAwesome name="user-circle" size={32} color={Colors.text} />
               <Text style={{ fontSize: 16, fontWeight: '500', color: Colors.text_title }}>{!menuShown ? ' ▼' : ' ▲'}</Text>
             </>
           )

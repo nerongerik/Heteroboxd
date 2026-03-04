@@ -53,8 +53,7 @@ const Relationships = () => {
             id: uir.id, 
             name: uir.name, 
             pictureUrl: uir.pictureUrl, 
-            tier: uir.tier, 
-            patron: uir.patron
+            admin: uir.admin
           })),
           totalCount: json.followers.totalCount,
           page: json.followers.page
@@ -64,8 +63,7 @@ const Relationships = () => {
             id: uir.id, 
             name: uir.name, 
             pictureUrl: uir.pictureUrl, 
-            tier: uir.tier, 
-            patron: uir.patron
+            admin: uir.admin
           })),
           totalCount: json.following.totalCount,
           page: json.following.page
@@ -76,8 +74,7 @@ const Relationships = () => {
               id: uir.id, 
               name: uir.name, 
               pictureUrl: uir.pictureUrl, 
-              tier: uir.tier, 
-              patron: uir.patron
+              admin: uir.admin
             })),
             totalCount: json.blocked.totalCount,
             page: json.blocked.page

@@ -87,9 +87,7 @@ export function decodeUser(token) {
         name: decoded.name, //changes on edit profile -> refresh in that case
         pictureUrl: decoded.pictureUrl, //changes on edit profile -> refresh in that case
         bio: decoded.bio, //changes on edit profile -> refresh in that case
-        tier: decoded.tier, //changes per donation (or a year after one) -> refresh in that case
-        expiry: decoded.expiry, //changes per donation -> refresh in that case
-        patron: decoded.patron, //changes only once, ever -> refresh in that case
+        admin: decoded.admin.toLowerCase() === 'true',
         joined: decoded.joined //never changes
     };
 }

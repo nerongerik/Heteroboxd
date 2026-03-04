@@ -167,7 +167,7 @@ const ReviewOptionsButton = ({ reviewId }) => {
 
       <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
         {
-          user?.tier.toLowerCase() === 'admin' ? (
+          user?.admin ? (
             <TouchableOpacity style={styles.option} onPress={handleDelete}>
               <Text style={styles.optionText}>Delete w/ Admin Privileges </Text>
               <MaterialIcons name="delete-forever" size={20} color={Colors.text} />

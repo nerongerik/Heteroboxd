@@ -9,8 +9,7 @@
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
         public string AuthorProfilePictureUrl { get; set; }
-        public string AuthorTier { get; set; }
-        public bool AuthorPatrong { get; set; }
+        public bool Admin { get; set; }
         public string ReviewId { get; set; }
 
         public CommentInfoResponse(Comment Comment, User Author)
@@ -22,8 +21,7 @@
             this.AuthorId = Comment.AuthorId.ToString();
             this.AuthorName = Author.Name;
             this.AuthorProfilePictureUrl = Author.PictureUrl;
-            this.AuthorTier = Author.Tier.ToString().ToLower();
-            this.AuthorPatrong = Author.IsPatron;
+            this.Admin = Author.IsAdmin;
             this.ReviewId = Comment.ReviewId.ToString();
         }
     }
