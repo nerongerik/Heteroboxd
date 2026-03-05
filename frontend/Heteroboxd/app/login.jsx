@@ -63,12 +63,9 @@ const Login = () => {
     setVisible(false);
     setResponse(0);
     try {
-      const res = await fetch(`${BaseUrl.api}/auth/forgot-password`, {
+      const res = await fetch(`${BaseUrl.api}/auth/forgot-password?Email=${recovery}`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          Email: recovery
-        })
+        headers: {'Content-Type': 'application/json'}
       });
       if (res.status !== 200) {
         setResponse(500);

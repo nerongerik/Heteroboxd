@@ -37,10 +37,9 @@ export async function refreshToken() {
         const refresh = Platform.OS === 'web' ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
         if (!refresh) return false;
 
-        return await fetch(`${BaseUrl.api}/auth/refresh`, {
+        return await fetch(`${BaseUrl.api}/auth/refresh?Token=${refresh}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ Token: refresh })
+            headers: { "Content-Type": "application/json" }
         }).then(async (res) => {
             if (!res.ok) return false;
             const json = await res.json();
@@ -60,10 +59,9 @@ export async function refreshToken() {
 export async function logout(userId) {
     try {
         const refresh = Platform.OS === "web" ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
-        const res = await fetch(`${BaseUrl.api}/auth/logout`, {
+        const res = await fetch(`${BaseUrl.api}/auth/logout/${userId}?Token=${refresh}`, {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ Token: refresh, UserId: userId })
+            headers: {"Content-Type": "application/json"}
         });
         if (res.status !== 200) {
             console.log('logout failed');

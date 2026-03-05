@@ -22,7 +22,7 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> GetCommentsByReview(string ReviewId, int Page = 1, int PageSize = 20)
         {
-            _logger.LogInformation($"GET Comments by Review endpoint hit for {ReviewId}");
+            _logger.LogInformation($"GetCommentsByReview endpoint hit for {ReviewId}");
             try
             {
                 var ReviewComments = await _service.GetCommentsByReview(ReviewId, Page, PageSize);
@@ -40,9 +40,9 @@ namespace Heteroboxd.Controller
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AddComment([FromBody] CreateCommentRequest CommentRequest)
+        public async Task<IActionResult> AddComment(CreateCommentRequest CommentRequest)
         {
-            _logger.LogInformation($"POST Comment endpoint hit for Review: {CommentRequest.ReviewId} by User: {CommentRequest.AuthorId}");
+            _logger.LogInformation($"AddComment endpoint hit for Review: {CommentRequest.ReviewId} by User: {CommentRequest.AuthorId}");
             try
             {
                 await _service.CreateComment(CommentRequest); //also handles notifs
@@ -58,15 +58,11 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> ReportComment(string CommentId)
         {
-            _logger.LogInformation($"PUT Report Comment endpoint hit for {CommentId}");
+            _logger.LogInformation($"ReportComment endpoint hit for {CommentId}");
             try
             {
                 await _service.ReportCommentEfCore7(CommentId);
                 return Ok();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
             }
             catch (KeyNotFoundException)
             {
@@ -82,7 +78,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> DeleteComment(string CommentId)
         {
-            _logger.LogInformation($"DELETE Comment endpoint hit for {CommentId}");
+            _logger.LogInformation($"DeleteComment endpoint hit for {CommentId}");
             try
             {
                 await _service.DeleteComment(CommentId);

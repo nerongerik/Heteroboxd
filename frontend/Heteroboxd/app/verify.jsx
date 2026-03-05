@@ -16,15 +16,11 @@ const Verify = () => {
 
   async function verifyUser() {
     setResponse(0);
-    fetch(`${BaseUrl.api}/users/verify`, {
+    fetch(`${BaseUrl.api}/users/verify/${userId}?Token=${token}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        UserId: userId,
-        Token: token
-      })
+      }
     }).then((res) => {
       console.log(res);
       if (res.status === 200) {

@@ -23,7 +23,7 @@ namespace Heteroboxd.Service
 
         public async Task<CelebrityInfoResponse> GetCelebrity(int CelebrityId)
         {
-            Celebrity? Celebrity = await _repo.GetByIdAsync(CelebrityId);
+            var Celebrity = await _repo.GetByIdAsync(CelebrityId);
             if (Celebrity == null) throw new KeyNotFoundException();
 
             var Roles = Celebrity.Credits
@@ -56,7 +56,7 @@ namespace Heteroboxd.Service
                     Page = Page,
                     PageSize = PageSize,
                     Items = Films.Select(f => new FilmInfoResponse(f)).ToList(),
-                    Seen = Seen.Select(uwf => uwf.FilmId).ToList(),
+                    Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
                 };
             }

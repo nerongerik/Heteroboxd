@@ -43,11 +43,7 @@ namespace Heteroboxd.Service
         public async Task<FilmInfoResponse?> GetFilm(int FilmId)
         {
             var Film = await _repo.GetByIdAsync(FilmId);
-            if (Film == null)
-            {
-                _logger.LogError($"Found no film with TmdbID: {FilmId}");
-                throw new KeyNotFoundException();
-            }
+            if (Film == null) throw new KeyNotFoundException();
             return new FilmInfoResponse(Film, true);
         }
 
@@ -81,13 +77,7 @@ namespace Heteroboxd.Service
 
         public async Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            if (!Guid.TryParse(UserId, out var Id))
-            {
-                _logger.LogError($"GUID failed to parse {UserId}; malformed.");
-                throw new ArgumentException();
-            }
-
-            var (Films, TotalCount) = await _repo.GetByUserAsync(Id, Page, PageSize, Filter, Sort, Desc, FilterValue);
+            var (Films, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<FilmInfoResponse>
             {
                 TotalCount = TotalCount,

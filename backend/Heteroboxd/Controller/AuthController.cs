@@ -20,10 +20,10 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Countries(string? LastSync = null)
     {
-        _logger.LogInformation($"GET Countries endpoint hit.");
+        _logger.LogInformation($"Countries endpoint hit.");
         try
         {
-            var Response = await _service.FrontendCountrySync(LastSync);
+            var Response = await _service.SyncCountries(LastSync);
             return Ok(Response);
         }
         catch (ArgumentException)
@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest Request)
+    public async Task<IActionResult> Register(RegisterRequest Request)
     {
         _logger.LogInformation($"Register endpoint hit with Email: {Request.Email}");
         try
@@ -58,7 +58,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequest Request)
+    public async Task<IActionResult> Login(LoginRequest Request)
     {
         _logger.LogInformation($"Login endpoint hit with Email: {Request.Email} and Password: {Request.Password}");
         try
@@ -72,14 +72,14 @@ public class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("logout")]
+    [HttpPost("logout/{UserId}")]
     [AllowAnonymous]
-    public async Task<IActionResult> Logout([FromBody] LogoutRequest LogoutRequest)
+    public async Task<IActionResult> Logout(string UserId, string? Token)
     {
-        _logger.LogInformation($"Logout endpoint hit with User: {LogoutRequest.UserId}");
+        _logger.LogInformation($"Logout endpoint hit with User: {UserId}");
         try
         {
-            var Result = await _service.Logout(LogoutRequest.Token, LogoutRequest.UserId);
+            var Result = await _service.Logout(Token, UserId);
             return Result ? Ok() : BadRequest();
         }
         catch
@@ -90,12 +90,12 @@ public class AuthController : ControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest RefreshRequest)
+    public async Task<IActionResult> Refresh(string? Token = null)
     {
-        _logger.LogInformation($"Refresh endpoint hit with Refresh Token: {RefreshRequest.Token}");
+        _logger.LogInformation($"Refresh endpoint hit with Refresh Token: {Token}");
         try
         {
-            var Result = await _service.Refresh(RefreshRequest.Token);
+            var Result = await _service.Refresh(Token);
             return Result.Success ? Ok(new { jwt = Result.Jwt, refresh = Result.RefreshToken!.Token }) : Unauthorized();
         }
         catch
@@ -106,18 +106,18 @@ public class AuthController : ControllerBase
 
     [HttpPost("forgot-password")]
     [AllowAnonymous]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest Request)
+    public async Task<IActionResult> ForgotPassword(string Email)
     {
-        _logger.LogInformation($"Forgot Password endpoint hit for {Request.Email}");
-        await _service.ForgotPassword(Request.Email);
+        _logger.LogInformation($"ForgotPassword endpoint hit for {Email}");
+        await _service.ForgotPassword(Email);
         return Ok(); //prevents user enumeration
     }
 
     [HttpPost("reset-password")]
     [AllowAnonymous]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest Request)
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest Request)
     {
-        _logger.LogInformation($"Reset Password endpoint hit for {Request.UserId}");
+        _logger.LogInformation($"ResetPassword endpoint hit for {Request.UserId}");
         var Success = await _service.ResetPassword(Request);
         return Success ? Ok() : BadRequest();
     }

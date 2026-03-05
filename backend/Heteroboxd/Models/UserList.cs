@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Heteroboxd.Models.DTO;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Heteroboxd.Models
 {
@@ -26,6 +28,14 @@ namespace Heteroboxd.Models
             this.Films = new List<ListEntry>();
             this.LikeCount = 0;
             this.AuthorId = AuthorId;
+        }
+
+        public void UpdateFields(UpdateUserListRequest Request)
+        {
+            this.Name = string.IsNullOrEmpty(Request.Name) ? this.Name : Request.Name;
+            this.Description = string.IsNullOrEmpty(Request.Description) ? this.Description : Request.Description;
+            this.Ranked = Request.Ranked;
+            this.DateCreated = DateTime.UtcNow;
         }
     }
 }

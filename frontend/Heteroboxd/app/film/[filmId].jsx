@@ -1,3 +1,12 @@
+/*
+
+
+vise nista u komponenti ne vraca broj revjuova - ovo ces svakako objediniti sa svim ostalim fetcherima kojima cemo da dobavljamo konsekventne podatke
+nakon sto je bazicni film data sa castom loadovan
+
+
+
+
 import { StyleSheet, Text, View, ScrollView, useWindowDimensions, Platform, Pressable, FlatList } from 'react-native'
 import { useAuth } from '../../hooks/useAuth'
 import { useMemo, useEffect, useState, useRef } from 'react';
@@ -51,7 +60,7 @@ const Film = () => {
     try {
       const vS = await isValidSession();
       //fetch film
-      const fRes = await fetch(`${BaseUrl.api}/films/${Number(filmId)}`, {
+      const fRes = await fetch(`${BaseUrl.api}/films/${filmId}}`, {
         method: "GET",
         headers: {'Accept': 'application/json'}
       });
@@ -61,7 +70,7 @@ const Film = () => {
           id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: format.parseCountry(json.country, Platform.OS), genres: json.genres,
           tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
           releaseYear: json.releaseYear, watchCount: json.watchCount,
-          collection: json.collection, castAndCrew: json.castAndCrew, reviewCount: json.reviewCount
+          collection: json.collection, castAndCrew: json.castAndCrew
         });
         setResult(200);
       } else if (fRes.status === 404) {
@@ -205,13 +214,13 @@ const Film = () => {
     if (!film) return;
     (async () => {
       try {
-        const res = await fetch(`${BaseUrl.api}/reviews/${film.id}/top/${TOP_COUNT}`, {
+        const res = await fetch(`${BaseUrl.api}/reviews/film-reviews/${film.id}?Page=1&PageSize=${TOP_COUNT}&Filter=ALL&Sort=POPULARITY&Desc=${true}`, {
           method: 'GET',
           headers: {'Accept': 'application/json'}
         });
         if (res.status === 200) {
           const json = await res.json();
-          setTopReviews(json);
+          setTopReviews(json.items);
         } else {
           //since top reviews aren't critical infrastructure, there's no need to bother the user with failstates
           console.log('failed to fetch top reviews.');
@@ -429,7 +438,7 @@ const Film = () => {
                       {item.celebrityName}
                     </Text>
                     <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
-                      {`(${item.character?.length === 0 ? 'N.N.' : item.character})`}
+                      {`(${item.character?.length === 0 ? 'N/A' : item.character})`}
                     </Text>
                   </View>
                 </Pressable>
@@ -721,4 +730,4 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     opacity: 0.5,
   },
-})
+})*/

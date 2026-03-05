@@ -10,7 +10,7 @@ namespace Heteroboxd.Repository
     {
         Task<(List<JoinResponse<JoinedReviewFilm, User>> Responses, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Review?> GetByIdAsync(Guid Id);
-        Task<JoinResponse<Review, User>?> GetJoinedByIdAsync(Guid Id);
+        Task<JoinResponse<JoinedReviewFilm, User>?> GetJoinedByIdAsync(Guid Id);
         Task<(List<JoinResponse<Review, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<JoinResponse<Review, User>>> GetTopAsync(int FilmId, int Top);
         Task<(List<JoinResponse<Review, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -81,12 +81,12 @@ namespace Heteroboxd.Repository
             await _context.Reviews
                 .FirstOrDefaultAsync(r => r.Id == Id);
 
-        public async Task<JoinResponse<Review, User>?> GetJoinedByIdAsync(Guid id) =>
+        public async Task<JoinResponse<JoinedReviewFilm, User>?> GetJoinedByIdAsync(Guid Id) =>
             await _context.Reviews
-                .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
-                .Where(x => x.r.Id == id)
-                .Select(x => new JoinResponse<Review, User> { Item = x.r, Joined = x.u })
-                .FirstOrDefaultAsync();
+                .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
+                .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
+                .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
+                .FirstOrDefaultAsync(x => x.Item.Review.Id == Id);
 
         public async Task<(List<JoinResponse<Review, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {

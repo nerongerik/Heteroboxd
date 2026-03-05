@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Repository
@@ -9,6 +10,7 @@ namespace Heteroboxd.Repository
     public interface IUserRepository
     {
         Task<User?> GetByIdAsync(Guid Id);
+        Task<User?> LightweightFetcherAsync(Guid Id);
         Task<List<User>> GetByIdsAsync(IReadOnlyCollection<Guid> Ids);
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
         Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -17,10 +19,10 @@ namespace Heteroboxd.Repository
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
-        Task<User?> GetUserRelationshipsAsync(Guid UserId);
+        Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize);
+        Task<List<Guid>> GetFriendsAsync(Guid UserId);
         Task<RelationshipStatus?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
-        Task<User?> GetUserLikedReviewsAsync(Guid UserId);
-        Task<User?> GetUserLikedListsAsync(Guid UserId);
+        Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinResponse<UserList, User>> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task ReportUserEfCore7Async(Guid UserId);
         Task AddToWatchlist(WatchlistEntry Entry);
         Task RemoveFromWatchlist(WatchlistEntry Entry);
@@ -31,7 +33,7 @@ namespace Heteroboxd.Repository
 
         Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId);
         Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId);
-        Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId);
+        Task<(WatchlistEntry? Entry, Guid WatchlistId)> IsWatchlistedAsync(int FilmId, Guid UserId);
 
         void Update(User User);
         void UpdateFavorites(UserFavorites Favorites);
@@ -53,6 +55,7 @@ namespace Heteroboxd.Repository
 
         public async Task<User?> GetByIdAsync(Guid Id) =>
             await _context.Users
+                .AsSplitQuery()
                 .Include(u => u.Watchlist).ThenInclude(wl => wl!.Films)
                 .Include(u => u.Followers)
                 .Include(u => u.Following)
@@ -62,6 +65,10 @@ namespace Heteroboxd.Repository
                 .Include(u => u.LikedLists)
                 .Include(u => u.LikedReviews)
                 .Include(u => u.WatchedFilms)
+                .FirstOrDefaultAsync(u => u.Id == Id);
+
+        public async Task<User?> LightweightFetcherAsync(Guid Id) =>
+            await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == Id);
 
         public async Task<List<User>> GetByIdsAsync(IReadOnlyCollection<Guid> Ids)
@@ -200,12 +207,44 @@ namespace Heteroboxd.Repository
             return (Friends, Reviews);
         }
 
-        public async Task<User?> GetUserRelationshipsAsync(Guid UserId) =>
+        public async Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize)
+        {
+            var FollowingQuery = _context.Users
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.Following);
+            var FollowersQuery = _context.Users
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.Followers);
+            var BlockedQuery = _context.Users
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.Blocked);
+
+            var FollowingCount = await FollowingQuery.CountAsync();
+            var FollowersCount = await FollowersQuery.CountAsync();
+            var BlockedCount = await BlockedQuery.CountAsync();
+
+            var Following = await FollowingQuery
+                .Skip((FollowingPage - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+            var Followers = await FollowersQuery
+                .Skip((FollowersPage - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+            var Blocked = await BlockedQuery
+                .Skip((BlockedPage - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            return (Following, FollowingCount, Followers, FollowersCount, Blocked, BlockedCount);
+        }
+
+        public async Task<List<Guid>> GetFriendsAsync(Guid UserId) =>
             await _context.Users
-                .Include(u => u.Following)
-                .Include(u => u.Followers)
-                .Include(u => u.Blocked)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.Following)
+                .Select(f => f.Id)
+                .ToListAsync();
 
         public async Task<RelationshipStatus?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId) =>
             await _context.Users
@@ -217,15 +256,38 @@ namespace Heteroboxd.Repository
                 ))
                 .FirstOrDefaultAsync();
 
-        public async Task<User?> GetUserLikedReviewsAsync(Guid UserId) =>
-            await _context.Users
-                .Include(u => u.LikedReviews)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
+        public async Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinResponse<UserList, User>> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize)
+        {
+            var ReviewsQuery = _context.Users
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.LikedReviews)
+                .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
+                .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
+                .OrderByDescending(x => x.r.LikeCount);
 
-        public async Task<User?> GetUserLikedListsAsync(Guid UserId) =>
-            await _context.Users
-                .Include(u => u.LikedLists).ThenInclude(ll => ll.Films)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
+            var ListsQuery = _context.Users
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.LikedLists)
+                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                .OrderByDescending(x => x.ul.LikeCount);
+
+            var ReviewCount = await ReviewsQuery.CountAsync();
+            var ListCount = await ListsQuery.CountAsync();
+
+            var ReviewResponses = await ReviewsQuery
+                .Skip((ReviewsPage - 1) * PageSize)
+                .Take(PageSize)
+                .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
+                .ToListAsync();
+
+            var ListResponses = await ListsQuery
+                .Skip((ListsPage - 1) * PageSize)
+                .Take(PageSize)
+                .Select(x => new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u })
+                .ToListAsync();
+
+            return (ReviewResponses, ReviewCount, ListResponses, ListCount);
+        }
 
         public async Task ReportUserEfCore7Async(Guid UserId)
         {
@@ -343,9 +405,12 @@ namespace Heteroboxd.Repository
             return UserList;
         }
 
-        public async Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId) =>
-            await _context.WatchlistEntries
+        public async Task<(WatchlistEntry? Entry, Guid WatchlistId)> IsWatchlistedAsync(int FilmId, Guid UserId)
+        {
+            var Entry = await _context.WatchlistEntries
                 .FirstOrDefaultAsync(wle => wle.FilmId == FilmId && wle.UserId == UserId);
+            return (Entry, Entry != null ? Entry.WatchlistId : await _context.Watchlists.Where(w => w.UserId == UserId).Select(w => w.Id).FirstOrDefaultAsync());
+        }
 
         public void Update(User User) =>
             _context.Users.Update(User);

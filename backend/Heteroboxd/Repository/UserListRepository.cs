@@ -9,10 +9,10 @@ namespace Heteroboxd.Repository
     {
         Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> GetListsAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserList?> GetByIdAsync(Guid ListId);
-        Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue); //view
-        Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId); //update
+        Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId);
         Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<UserList>> GetLightweightAsync(Guid UserId);
+        Task<List<UserList>> SummarizeListsAsync(Guid UserId);
         Task<(List<JoinResponse<UserList, User>> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetFeaturingFilmCountAsync(int FilmId);
         Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -22,7 +22,7 @@ namespace Heteroboxd.Repository
         Task UpdateLikeCountEfCore7Async(Guid ListId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid ListId);
         void Delete(UserList UserList);
-        void DeleteEntriesByListId(Guid ListId);
+        Task DeleteEntriesByListIdEfCore7Async(Guid ListId);
         Task SaveChangesAsync();
     }
 
@@ -223,9 +223,10 @@ namespace Heteroboxd.Repository
             return (Lists, TotalCount);
         }
 
-        public async Task<List<UserList>> GetLightweightAsync(Guid UserId) =>
+        public async Task<List<UserList>> SummarizeListsAsync(Guid UserId) =>
             await _context.UserLists
                 .Where(ul => ul.AuthorId == UserId)
+                .Include(ul => ul.Films)
                 .ToListAsync();
 
         public async Task<(List<JoinResponse<UserList, User>> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -352,13 +353,10 @@ namespace Heteroboxd.Repository
                 .Remove(UserList);
         }
 
-        public void DeleteEntriesByListId(Guid ListId)
-        {
-            var Entries = _context.ListEntries
-                .Where(le => le.UserListId == ListId);
-            _context.ListEntries
-                .RemoveRange(Entries);
-        }
+        public async Task DeleteEntriesByListIdEfCore7Async(Guid ListId) =>
+            await _context.ListEntries
+                .Where(le => le.UserListId == ListId)
+                .ExecuteDeleteAsync();
 
         public async Task SaveChangesAsync() =>
             await _context.SaveChangesAsync();

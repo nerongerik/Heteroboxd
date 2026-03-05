@@ -19,17 +19,15 @@ namespace Heteroboxd.Service
     public class NotificationService : INotificationService
     {
         private readonly INotificationRepository _repo;
-        private readonly IUserRepository _userRepo;
 
-        public NotificationService(INotificationRepository repo, IUserRepository userRepo)
+        public NotificationService(INotificationRepository repo)
         {
             _repo = repo;
-            _userRepo = userRepo;
         }
 
         public async Task<PagedResponse<NotificationInfoResponse>> GetNotificationsByUser(string UserId, int Page, int PageSize)
         {
-            var (Notifications, TotalCount) = await _repo.GetByUserPagedAsync(Guid.Parse(UserId), Page, PageSize);
+            var (Notifications, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize);
             return new PagedResponse<NotificationInfoResponse>
             {
                 Page = Page,
@@ -44,21 +42,13 @@ namespace Heteroboxd.Service
 
         public async Task AddNotification(string Text, NotificationType Type, Guid UserId)
         {
-            Models.Notification Notification = new Models.Notification(Text, Type, UserId);
+            var Notification = new Models.Notification(Text, Type, UserId);
             _repo.Create(Notification);
             await _repo.SaveChangesAsync();
         }
 
-        public async Task ReadAll(string UserId)
-        {
-            List<Models.Notification> Notifications = await _repo.GetByUserAsync(Guid.Parse(UserId));
-            foreach (var n in Notifications.Where(n => !n.Read))
-            {
-                n.Read = true;
-                _repo.Update(n);
-            }
-            await _repo.SaveChangesAsync();
-        }
+        public async Task ReadAll(string UserId) =>
+            await _repo.MarkAllRead(Guid.Parse(UserId));
 
         public async Task UpdateNotification(string NotificationId)
         {

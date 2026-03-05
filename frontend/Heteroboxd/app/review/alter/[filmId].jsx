@@ -1,3 +1,11 @@
+/*
+
+
+nadji neki drugi nacin da fetchujes film data, bilo iz revjua ili kombinujuci servis pozive ne beku - NECES imati dva fetcha na ovoj stranici!
+
+
+
+
 import { ScrollView, Platform, KeyboardAvoidingView, StyleSheet, Text, useWindowDimensions, View, TouchableOpacity, Pressable } from 'react-native';
 import { useAuth } from '../../../hooks/useAuth';
 import { useEffect, useMemo, useState } from 'react';
@@ -263,4 +271,4 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     marginVertical: 15,
   },
-})
+})*/
