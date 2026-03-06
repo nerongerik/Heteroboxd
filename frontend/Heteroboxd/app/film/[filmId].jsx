@@ -127,31 +127,31 @@ const Film = () => {
   }, [loadBasicData, loadUserData, loadSubsequentData])
 
   useEffect(() => {
-    if (!user || !uwf) return;
-    if (snackRef.current) return;
-    snackRef.current = true;
-    setSnack(true);
-  }, [user, uwf]);
+    if (!user || !uwf) return
+    if (snackRef.current) return
+    snackRef.current = true
+    setSnack(true)
+  }, [user, uwf])
 
   useEffect(() => {
-    snackRef.current = false;
-    setSnack(false);
-  }, [filmId]);
+    snackRef.current = false
+    setSnack(false)
+  }, [filmId])
   
-  const widescreen = useMemo(() => width > 1000, [width]);
-  const actors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film.castAndCrew]);
-  const directors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film.castAndCrew]);
-  const crew = useMemo(() => film.castAndCrew?.filter(credit => !['actor', 'director'].includes(credit.role.toLowerCase())) ?? [], [film.castAndCrew]);
-  const posterWidth = useMemo(() => Math.min(width * 0.3, 225), [width]);
-  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]);
-  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width]);
-  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
-  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth]);
-  const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen]);
-  const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen]);
-  const friendSize = useMemo(() => headshotSize*0.75, [headshotSize]);
-  const backdrop = useMemo(() => <Backdrop backdropUrl={film.backdropUrl} />, [film.backdropUrl]);
+  const widescreen = useMemo(() => width > 1000, [width])
+  const actors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film.castAndCrew])
+  const directors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film.castAndCrew])
+  const crew = useMemo(() => film.castAndCrew?.filter(credit => !['actor', 'director'].includes(credit.role.toLowerCase())) ?? [], [film.castAndCrew])
+  const posterWidth = useMemo(() => Math.min(width * 0.3, 225), [width])
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
+  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
+  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
+  const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen])
+  const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen])
+  const friendSize = useMemo(() => headshotSize*0.75, [headshotSize])
+  const backdrop = useMemo(() => <Backdrop backdropUrl={film.backdropUrl} />, [film.backdropUrl])
 
   if (server.result <= 0) {
     return (
@@ -159,12 +159,11 @@ const Film = () => {
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
-        paddingHorizontal: 5,
         backgroundColor: Colors.background,
       }}>
         <LoadingResponse visible={true} />
       </View>
-    );
+    )
   }
 
   return (

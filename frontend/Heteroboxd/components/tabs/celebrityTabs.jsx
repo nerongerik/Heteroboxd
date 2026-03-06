@@ -1,83 +1,64 @@
-import { useState, useMemo, useRef } from "react";
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Pressable, ScrollView } from "react-native";
-import { Colors } from "../../constants/colors";
-import { Headshot } from '../headshot';
-import { Poster } from '../poster';
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import PaginationBar from '../paginationBar';
+import { useMemo, useRef, useState } from "react"
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 import * as format from '../../helpers/format'
+import { Colors } from "../../constants/colors"
+import { Headshot } from '../headshot'
+import PaginationBar from '../paginationBar'
+import { Poster } from '../poster'
 
-const CelebrityTabs = ({ 
-  bio, 
-  currentTabData, 
-  availableRoles,
-  activeTab, 
-  onTabChange, 
-  onFilmPress, 
-  onPageChange,
-  pageSize,
-  showSeen,
-  flipShowSeen,
-  seenFilms,
-  seenCount,
-  fadeSeen
-}) => {
-  const [showPagination, setShowPagination] = useState(false);
-  const { width } = useWindowDimensions();
-  const listRef = useRef(null);
+const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, seenCount, fadeSeen}) => {
+  const [ showPagination, setShowPagination ] = useState(false)
+  const { width } = useWindowDimensions()
+  const listRef = useRef(null)
 
-  const widescreen = useMemo(() => width > 1000, [width]);
-  const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen]);
-  const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width]);
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
-  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]);
-  const headshotWidth = useMemo(() => widescreen ? posterWidth - 20 : posterWidth + 20, [widescreen, posterWidth]);
-  const headshotHeight = useMemo(() => headshotWidth * 3 / 2, [headshotWidth]);
-
+  const widescreen = useMemo(() => width > 1000, [width])
+  const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
+  const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
+  const headshotWidth = useMemo(() => widescreen ? posterWidth - 20 : posterWidth + 20, [widescreen, posterWidth])
+  const headshotHeight = useMemo(() => headshotWidth * 3 / 2, [headshotWidth])
   const paddedEntries = useMemo(() => {
-    if (activeTab === "Bio") return [];
-    const padded = [...(currentTabData?.films || [])];
-    const remainder = padded.length % 4;
+    if (activeTab === 'Bio') return []
+    const padded = [...(currentTabData?.films || [])]
+    const remainder = padded.length % 4
     if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder;
-      for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null);
+      const toAdd = 4 - remainder
+      for (let i = 0; i < toAdd; i++) {
+        padded.push(null)
       }
     }
-    return padded;
-  }, [currentTabData?.films, activeTab]);
+    return padded
+  }, [activeTab, currentTabData])
 
   const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize);
 
-  const TabButton = ({ title, tabKey, active, onPress }) => (
-    <TouchableOpacity
+  const TabButton = ({ title, active, onPress }) => (
+    <Pressable
       onPress={onPress}
-      style={[
-        styles.tabButton,
-        { flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 10 : 5 },
-        active && styles.activeTabButton
-      ]}
+      style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 10 : 5 }, active && styles.activeTabButton]}
     >
       <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
-    </TouchableOpacity>
-  );
+    </Pressable>
+  )
 
   const Header = () => {
-    if (activeTab === 'Bio') return null;
+    if (activeTab === 'Bio') return null
     return (
       <>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth }}>
-          <View style={{ padding: 5 }}>
-            <Text style={{ color: Colors.text, fontSize: widescreen ? 16 : 13 }}>
+        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth}}>
+          <View style={{padding: 5}}>
+            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>
               {currentTabData?.totalCount || 0} films
             </Text>
           </View>
           {
             showSeen ? (
               <Pressable onPress={flipShowSeen}>
-                <View style={{ padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-                  <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}>{format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</Text>
+                <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+                  <MaterialCommunityIcons name='eye-outline' size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
+                  <Text style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</Text>
                 </View>
               </Pressable>
             ) : <View />
@@ -85,8 +66,8 @@ const CelebrityTabs = ({
         </View>
         <View style={{ height: 20 }} />
       </>
-    );
-  };
+    )
+  }
 
   const Footer = () => (
     <PaginationBar
@@ -94,30 +75,19 @@ const CelebrityTabs = ({
       totalPages={totalPages}
       visible={showPagination}
       onPagePress={(num) => {
-        onPageChange(num);
-        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+        onPageChange(num)
+        listRef.current?.scrollToOffset({ offset: 0, animated: true })
       }}
     />
-  );
+  )
 
   const Filmography = ({ item }) => {
     if (!item) {
-      return (
-        <View
-          style={{
-            width: posterWidth,
-            height: posterHeight,
-            margin: spacing / 2,
-          }}
-        />
-      );
+      return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
     const isSeen = fadeSeen && (seenFilms?.includes(item.filmId) ?? false)
     return (
-      <Pressable
-        onPress={() => onFilmPress(item.filmId)}
-        style={{ margin: spacing / 2 }}
-      >
+      <Pressable onPress={() => onFilmPress(item.filmId)} style={{margin: spacing / 2}}>
         <Poster
           posterUrl={item.posterUrl}
           style={{
@@ -130,66 +100,60 @@ const CelebrityTabs = ({
           }}
         />
       </Pressable>
-    );
-  };
+    )
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={[widescreen && styles.tabRowWeb, !widescreen && styles.tabRowMobile]}>
+    <View style={{flex: 1}}>
+      <View style={widescreen ? styles.tabRowWeb : styles.tabRowMobile}>
         {bio && (
           <TabButton 
-            title="Bio" 
-            tabKey="Bio"
-            active={activeTab === "Bio"} 
-            onPress={() => onTabChange("Bio")} 
+            title='Bio'
+            active={activeTab === 'Bio'} 
+            onPress={() => onTabChange('Bio')} 
           />
         )}
         {availableRoles.includes('Starred') && (
           <TabButton 
-            title="Acted" 
-            tabKey="Starred"
-            active={activeTab === "Starred"} 
-            onPress={() => onTabChange("Starred")} 
+            title='Acted'
+            active={activeTab === 'Starred'} 
+            onPress={() => onTabChange('Starred')} 
           />
         )}
         {availableRoles.includes('Directed') && (
           <TabButton 
-            title="Directed" 
-            tabKey="Directed"
-            active={activeTab === "Directed"} 
-            onPress={() => onTabChange("Directed")} 
+            title='Directed'
+            active={activeTab === 'Directed'} 
+            onPress={() => onTabChange('Directed')} 
           />
         )}
         {availableRoles.includes('Produced') && (
           <TabButton 
-            title="Produced" 
-            tabKey="Produced"
-            active={activeTab === "Produced"} 
-            onPress={() => onTabChange("Produced")} 
+            title='Produced'
+            active={activeTab === 'Produced'} 
+            onPress={() => onTabChange('Produced')} 
           />
         )}
         {availableRoles.includes('Wrote') && (
           <TabButton 
-            title="Wrote" 
-            tabKey="Wrote"
-            active={activeTab === "Wrote"} 
-            onPress={() => onTabChange("Wrote")} 
+            title='Wrote'
+            active={activeTab === 'Wrote'} 
+            onPress={() => onTabChange('Wrote')} 
           />
         )}
         {availableRoles.includes('Composed') && (
           <TabButton 
-            title="Composed" 
-            tabKey="Composed"
-            active={activeTab === "Composed"} 
-            onPress={() => onTabChange("Composed")} 
+            title='Composed'
+            active={activeTab === 'Composed'} 
+            onPress={() => onTabChange('Composed')} 
           />
         )}
       </View>
       
       {activeTab === 'Bio' && bio ? (
         <ScrollView 
-          style={{ alignSelf: 'center', marginBottom: 50 }} 
-          contentContainerStyle={{ width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start' }} 
+          style={{alignSelf: 'center', marginBottom: 50}} 
+          contentContainerStyle={{width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start'}} 
           showsVerticalScrollIndicator={false}
         >
           <Headshot
@@ -204,53 +168,42 @@ const CelebrityTabs = ({
               alignSelf: widescreen ? 'auto' : 'center'
             }}
           />
-          <Text style={{ textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10 }}>
-            {bio.text}
-          </Text>
+          <Text style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</Text>
         </ScrollView>
       ) : (
         <FlatList
           ref={listRef}
           data={paddedEntries}
           key={activeTab}
-          keyExtractor={(item, index) => 
-            item?.filmId ? `${activeTab}-${item.filmId}` : `${activeTab}-placeholder-${index}`
-          }
+          keyExtractor={(item, index) => item?.filmId ? `${activeTab}-${item.filmId}` : `${activeTab}-placeholder-${index}`}
           ListHeaderComponent={Header}
           ListFooterComponent={Footer}
           renderItem={Filmography}
           numColumns={4}
-          columnWrapperStyle={{ justifyContent: 'center' }}
-          style={{
-            width: maxRowWidth,
-            alignSelf: 'center'
-          }}
-          contentContainerStyle={{
-            paddingHorizontal: spacing / 2,
-            paddingBottom: 80,
-          }}
+          columnWrapperStyle={{justifyContent: 'center'}}
+          style={{width: maxRowWidth, alignSelf: 'center'}}
+          contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
           showsVerticalScrollIndicator={false}
           onEndReached={() => setShowPagination(true)}
           onEndReachedThreshold={0.2}
         />
       )}
     </View>
-  );
-};
+  )
+}
 
-export default CelebrityTabs;
+export default CelebrityTabs
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   tabRowMobile: {
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingVertical: 5,
-    justifyContent: "flex-start",
+    justifyContent: 'flex-start',
     width: '100%',
     marginBottom: 20,
   },
   tabRowWeb: {
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingHorizontal: 15,
     paddingVertical: 5,
     marginBottom: 20,
@@ -258,8 +211,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center'
   },
   tabButton: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 6,
   },
   tabText: {
@@ -268,10 +221,10 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.text_title,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   activeTabButton: {
     borderBottomWidth: 2,
     borderColor: Colors.heteroboxd,
-  },
-});
+  }
+})

@@ -420,7 +420,7 @@ const Home = () => {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <Text style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, fontWeight: 'bold', textAlign: 'center'}}>What are we watching today, {<Text style={{color: Colors._heteroboxd}}>{user?.name}</Text> ?? 'stranger'}?</Text>
+        <Text style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, fontWeight: 'bold', textAlign: 'center'}}>What are we watching today, {user?.name || 'stranger'}?</Text>
 
         <Text style={[styles.regionalTitle, { marginBottom: 10, marginTop: widescreen ? 50 : 30 }]}>Trending Globally</Text>
         <View 
