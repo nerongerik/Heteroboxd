@@ -16,7 +16,7 @@ namespace Heteroboxd.Service
         Task<string> DetermineRelationship(string UserId, string TargetId);
         Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType);
-        Task<UserWatchedFilmInfoResponse> GetUserWatchedFilm(string UserId, int FilmId);
+        Task<UserWatchedFilmInfoResponse?> DidUserWatchFilm(string UserId, int FilmId);
         Task<List<DelimitedUserFilmInfoResponse>> GetFriendsForFilm(string UserId, int FilmId);
         Task<Dictionary<double, int>> GetUserRatings(string UserId);
         Task<PagedResponse<UserInfoResponse>> SearchUsers(string Search, int Page, int PageSize);
@@ -208,11 +208,10 @@ namespace Heteroboxd.Service
             }
         }
 
-        public async Task<UserWatchedFilmInfoResponse> GetUserWatchedFilm(string UserId, int FilmId)
+        public async Task<UserWatchedFilmInfoResponse?> DidUserWatchFilm(string UserId, int FilmId)
         {
             var UserWatchedFilm = await _repo.GetUserWatchedFilmAsync(Guid.Parse(UserId), FilmId);
-            if (UserWatchedFilm == null) throw new KeyNotFoundException();
-            return new UserWatchedFilmInfoResponse(UserWatchedFilm);
+            return UserWatchedFilm == null ? null : new UserWatchedFilmInfoResponse(UserWatchedFilm);
         }
 
         public async Task<List<DelimitedUserFilmInfoResponse>> GetFriendsForFilm(string UserId, int FilmId)
@@ -441,10 +440,10 @@ namespace Heteroboxd.Service
                     _repo.DeleteUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();
                     //delete associated review (if any)
-                    var Review = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, Film.Id);
-                    if (Review != null)
+                    var Response = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, Film.Id);
+                    if (Response != null)
                     {
-                        _reviewRepo.Delete(Review);
+                        _reviewRepo.Delete(Response.Review);
                         await _reviewRepo.SaveChangesAsync();
                     }
                     break;

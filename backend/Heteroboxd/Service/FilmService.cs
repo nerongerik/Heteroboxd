@@ -8,7 +8,7 @@ namespace Heteroboxd.Service
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<TrendingInfoResponse>> GetTrending(string? LastSync);
         Task<PagedResponse<FilmInfoResponse>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<FilmInfoResponse>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
         Task<PagedResponse<FilmInfoResponse>> SearchFilms(string Search, int Page, int PageSize);
     }
@@ -75,7 +75,7 @@ namespace Heteroboxd.Service
             }
         }
 
-        public async Task<PagedResponse<FilmInfoResponse>> GetUsersWatchedFilms(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<PagedResponse<FilmInfoResponse>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var (Films, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<FilmInfoResponse>
@@ -87,11 +87,8 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<Dictionary<double, int>> GetFilmRatings(int FilmId)
-        {
-            var Ratings = await _repo.GetRatingsAsync(FilmId);
-            return Ratings;
-        }
+        public async Task<Dictionary<double, int>> GetFilmRatings(int FilmId) => 
+            await _repo.GetRatingsAsync(FilmId);
 
         public async Task<PagedResponse<FilmInfoResponse>> SearchFilms(string Search, int Page, int PageSize)
         {

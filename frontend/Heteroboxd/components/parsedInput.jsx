@@ -18,7 +18,7 @@ const ParsedInput = ({initial, width, onValueChange}) => {
     //if this helper component is updating an existing comment/review instead of making a new one from scratch,
     //firstly display the existing text if any
     if (initial && initial !== '') setText(initial);
-  }, [initial, text])
+  }, [initial])
 
   useEffect(() => {
     onValueChange(text);

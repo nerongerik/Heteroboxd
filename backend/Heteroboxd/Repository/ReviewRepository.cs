@@ -2,6 +2,7 @@
 using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Heteroboxd.Repository
 {
@@ -14,7 +15,7 @@ namespace Heteroboxd.Repository
         Task<(List<JoinResponse<Review, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<JoinResponse<Review, User>>> GetTopAsync(int FilmId, int Top);
         Task<(List<JoinResponse<Review, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<Review?> GetByUserFilmAsync(Guid AuthorId, int FilmId);
+        Task<JoinedReviewFilm?> GetByUserFilmAsync(Guid AuthorId, int FilmId);
         Task UpdateReviewLikeCountEfCore7Async(Guid ReviewId, int Delta);
         Task ToggleNotificationsEfCore7Async(Guid ReviewId);
         Task ReportReviewEfCore7Async(Guid ReviewId);
@@ -83,10 +84,11 @@ namespace Heteroboxd.Repository
 
         public async Task<JoinResponse<JoinedReviewFilm, User>?> GetJoinedByIdAsync(Guid Id) =>
             await _context.Reviews
+                .Where(r => r.Id == Id)
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
                 .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
                 .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
-                .FirstOrDefaultAsync(x => x.Item.Review.Id == Id);
+                .FirstOrDefaultAsync();
 
         public async Task<(List<JoinResponse<Review, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
@@ -178,9 +180,13 @@ namespace Heteroboxd.Repository
             return (Responses, TotalCount);
         }
 
-        public async Task<Review?> GetByUserFilmAsync(Guid AuthorId, int FilmId) =>
-            await _context.Reviews
-                .FirstOrDefaultAsync(r => r.AuthorId == AuthorId && r.FilmId == FilmId);
+        public async Task<JoinedReviewFilm?> GetByUserFilmAsync(Guid AuthorId, int FilmId)
+        {
+            var JoinedReviewFilm = await _context.Reviews
+                .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
+                .FirstOrDefaultAsync(x => x.r.AuthorId == AuthorId && x.r.FilmId == FilmId);
+            return JoinedReviewFilm == null ? null : new JoinedReviewFilm(JoinedReviewFilm.r, JoinedReviewFilm.f);
+        }
 
         public async Task UpdateReviewLikeCountEfCore7Async(Guid ReviewId, int Delta) //increments/decrements like count
         {

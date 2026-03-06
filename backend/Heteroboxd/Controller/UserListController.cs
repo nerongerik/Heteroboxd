@@ -148,22 +148,6 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("featuring-film/{FilmId}/count")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetListsFeaturingFilmCount(int FilmId)
-        {
-            _logger.LogInformation($"GetListsFeaturingFilmCount endpoint hit for FilmId: {FilmId}");
-            try
-            {
-                var Response = await _service.GetListsFeaturingFilmCount(FilmId);
-                return Ok(Response);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<IActionResult> SearchLists(string Search, int Page = 1, int PageSize = 20)

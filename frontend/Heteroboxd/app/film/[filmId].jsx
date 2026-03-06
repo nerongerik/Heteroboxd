@@ -1,139 +1,130 @@
-/*
-
-
-vise nista u komponenti ne vraca broj revjuova - ovo ces svakako objediniti sa svim ostalim fetcherima kojima cemo da dobavljamo konsekventne podatke
-nakon sto je bazicni film data sa castom loadovan
-
-
-
-
-import { StyleSheet, Text, View, ScrollView, useWindowDimensions, Platform, Pressable, FlatList } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Snackbar } from 'react-native-paper'
+import { Link, useLocalSearchParams, useRouter } from 'expo-router'
+import * as auth from '../../helpers/auth'
+import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
-import { useMemo, useEffect, useState, useRef } from 'react';
-import { useLocalSearchParams, useRouter, Link } from 'expo-router';
-import LoadingResponse from '../../components/loadingResponse';
-import { Colors } from '../../constants/colors';
-import { BaseUrl } from '../../constants/api';
-import * as auth from '../../helpers/auth';
-import * as format from '../../helpers/format';
-import Popup from '../../components/popup';
-import { Poster } from '../../components/poster';
-import { Backdrop } from '../../components/backdrop';
-import React from 'react';
-import { Headshot } from '../../components/headshot';
-import FilmInteract from '../../components/filmInteract';
-import FilmDataLoaders from '../../components/filmDataLoaders';
-import Stars from '../../components/stars';
-import ParsedRead from '../../components/parsedRead';
-import Author from '../../components/author';
-import Histogram from '../../components/histogram';
-import { Snackbar } from 'react-native-paper';
-import { UserAvatar } from '../../components/userAvatar';
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
+import Author from '../../components/author'
+import { Backdrop } from '../../components/backdrop'
+import Divider from '../../components/divider'
+import FilmDataLoaders from '../../components/filmDataLoaders'
+import FilmInteract from '../../components/filmInteract'
+import { Headshot } from '../../components/headshot'
+import Histogram from '../../components/histogram'
+import LoadingResponse from '../../components/loadingResponse'
+import ParsedRead from '../../components/parsedRead'
+import Popup from '../../components/popup'
+import { Poster } from '../../components/poster'
+import Stars from '../../components/stars'
+import { UserAvatar } from '../../components/userAvatar'
 
-const TOP_COUNT = 3;
+const TOP_COUNT = 3
 
 const Film = () => {
-  const { user, isValidSession } = useAuth(); //logged in user
-  const [film, setFilm] = useState(null); //basic film data
-  const [uwf, setUwf] = useState(null); //user-related film data -> null if !user
-  const [usersReview, setUsersReview] = useState(null); //displays user's rating in stars
-  const [topReviews, setTopReviews] = useState([]); //top n reviews
-  const [ratings, setRatings] = useState({});
+  const { filmId } = useLocalSearchParams()
+  const { user, isValidSession } = useAuth()
+  const [ film, setFilm ] = useState({ id: null, title: '', originalTitle: '', country: [], genres: [], tagline: '', synopsis: '', posterUrl: '', backdropUrl: '', length: 0, releaseYear: 0, watchCount: 0, collection: {}, castAndCrew: [] })
+  const [ uwf, setUwf ] = useState(null)
+  const [ usersReview, setUsersReview ] = useState(null)
+  const [ topReviews, setTopReviews ] = useState([])
+  const [ reviewCount, setReviewCount ] = useState(0)
+  const [ ratings, setRatings ] = useState({})
+  const [ watchlisted, setWatchlisted ] = useState(false)
+  const [ listsCount, setListsCount ] = useState(0)
+  const [ friends, setFriends ] = useState(null)
+  const router = useRouter()
+  const { width } = useWindowDimensions()
+  const [ snack, setSnack ] = useState(false)
+  const snackRef = useRef(false)
+  const [ server, setServer ] = useState(Response.initial)
 
-  const [watchlisted, setWatchlisted] = useState(null);
-
-  const [listsCount, setListsCount] = useState(0);
-
-  const [friends, setFriends] = useState(null);
-
-  const { filmId } = useLocalSearchParams();
-  const router = useRouter();
-  const {width} = useWindowDimensions();
-
-  const [snack, setSnack] = useState(false);
-  const snackRef = useRef(false);
-
-  const [result, setResult] = useState(-1);
-  const [message, setMessage] = useState('');
-
-  const loadFilmPage = async () => {
+  const loadBasicData = useCallback(async () => {
+    setServer(Response.loading)
     try {
-      const vS = await isValidSession();
-      //fetch film
-      const fRes = await fetch(`${BaseUrl.api}/films/${filmId}}`, {
-        method: "GET",
-        headers: {'Accept': 'application/json'}
-      });
-      if (fRes.status === 200) {
-        const json = await fRes.json();
+      const res = await fetch(`${BaseUrl.api}/films/${filmId}`)
+      if (res.ok) {
+        const json = await res.json()
         setFilm({
-          id: json.filmId, title: json.title, originalTitle: json.originalTitle, country: format.parseCountry(json.country, Platform.OS), genres: json.genres,
-          tagline: json.tagline, synopsis: json.synopsis, posterUrl: json.posterUrl, backdropUrl: json.backdropUrl, length: json.length,
-          releaseYear: json.releaseYear, watchCount: json.watchCount,
-          collection: json.collection, castAndCrew: json.castAndCrew
-        });
-        setResult(200);
-      } else if (fRes.status === 404) {
-        setMessage("This film no longer seems to exist.");
-        setResult(404);
-        setFilm({});
-        return;
+          id: json.film.filmId, title: json.film.title, originalTitle: json.film.originalTitle, country: format.parseCountry(json.film.country, Platform.OS),
+          genres: json.film.genres, tagline: json.film.tagline, synopsis: json.film.synopsis, posterUrl: json.film.posterUrl, backdropUrl: json.film.backdropUrl,
+          length: json.film.length, releaseYear: json.film.releaseYear, watchCount: json.film.watchCount, collection: json.film.collection, castAndCrew: json.film.castAndCrew
+        })
+        setRatings(json.ratings)
+        setServer(Response.ok)
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
       } else {
-        setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-        setResult(500);
-        setFilm({});
-        return;
-      }
-      //fetch uwf
-      if (user && vS) {
-        const jwt = await auth.getJwt();
-        const uwfRes = await fetch(`${BaseUrl.api}/users/uwf/${user.userId}/${Number(filmId)}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${jwt}`
-          }
-        });
-        if (uwfRes.status === 200) { //user HAS watched film before
-          const json2 = await uwfRes.json();
-          setUwf({
-            dateWatched: `Last watched on ${format.parseDate(json2.dateWatched)}`, timesWatched: Number(json2.timesWatched)
-          });
-          //fetch users review if it exists
-          const rewRes = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${Number(filmId)}`, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${jwt}`
-            }
-          });
-          if (rewRes.status === 200) {
-            const json3 = await rewRes.json();
-            setUsersReview(json3);
-          } else {
-            console.log('User never reviewed this film before.');
-          }
-        } else if (uwfRes.status === 404) {
-          console.log("User has never seen this film before.");
-          setUwf(null);
-        } else {
-          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-          setResult(500);
-          setUwf(null);
-        }
-      } else {
-        setUwf(null);
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMessage("Network error - Please check your internet connection!");
-      setResult(500);
-    } finally {
+      setServer(Response.networkError)
     }
-  }
+  }, [filmId])
+  
+  const loadUserData = useCallback(async () => {
+    if (!user || !(await isValidSession())) {
+      console.log('anonymous browsing; not loading user data.')
+      return
+    }
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/${user.userId}/interactions/${filmId}`, {
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.uwf?.dateWatched && json.uwf?.timesWatched) {
+          setUwf({ dateWatched: `Last watched on ${format.parseDate(json.uwf.dateWatched)}`, timesWatched: json.uwf.timesWatched })
+        }
+        if (json.watchlisted) {
+          setWatchlisted(json.watchlisted)
+        }
+        if (json.review?.id?.length > 0) {
+          setUsersReview(json.review)
+        }
+        if (json.friends) {
+          setFriends(json.friends)
+        }
+      } else {
+        console.log('internal server error in loadUserData; debugging...')
+      }
+    } catch {
+      console.log('network error in loadUserData; handled above.')
+    }
+  }, [filmId, user, isValidSession])
+
+  const loadSubsequentData = useCallback(async () => {
+    try {
+      const res = await fetch(`${BaseUrl.api}/films/${filmId}/subsequent?PageSize=${TOP_COUNT}`)
+      if (res.ok) {
+        const json = await res.json()
+        console.log(json.reviews)
+        if (json.reviews?.items?.length > 0) {
+          setTopReviews(json.reviews.items.filter(r => !r.spoiler && r.text?.length > 0))
+        }
+        if (json.reviews?.totalCount > 0) {
+          setReviewCount(json.reviews.totalCount)
+        }
+        if (json.lists > 0) {
+          setListsCount(json.lists)
+        }
+      } else {
+        console.log('internal server error in loadUserData; debugging...')
+      }
+    } catch {
+      console.log('network error in loadSubsequentData; handled above.')
+    }
+  }, [filmId])
 
   useEffect(() => {
-    loadFilmPage();
-  }, [filmId]);
+    loadBasicData()
+    loadUserData()
+    loadSubsequentData()
+  }, [loadBasicData, loadUserData, loadSubsequentData])
 
   useEffect(() => {
     if (!user || !uwf) return;
@@ -146,141 +137,23 @@ const Film = () => {
     snackRef.current = false;
     setSnack(false);
   }, [filmId]);
-
-  useEffect(() => {
-    (async () => {
-      if (!film) return;
-      try {
-        const res = await fetch(`${BaseUrl.api}/films/ratings/${film.id}`, {
-          method: 'GET',
-          headers: {'Accept': 'application/json'}
-        });
-        if (res.status === 200) {
-          const json = await res.json();
-          setRatings(json);
-        } else {
-          console.log(`${res.status}: Failed to fetch ratings; probably threw in earlier load.`);
-        }
-      } catch {
-        console.log('network error when fetching ratings; probably threw in earlier load.');
-      }
-    })();
-  }, [film]);
-
-  useEffect(() => {
-    (async () => {
-      const vS = await isValidSession();
-      if (user && film && vS) {
-        const jwt = await auth.getJwt();
-        const wlRes = await fetch(`${BaseUrl.api}/users/${user.userId}/watchlist/${film.id}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${jwt}`,
-          }
-        });
-        if (wlRes.status === 200) {
-          const json = await wlRes.json();
-          setWatchlisted(json);
-        } else {
-          setWatchlisted(false); //fallback
-        }
-      }
-    })();
-  }, [film, user]);
-
-  useEffect(() => {
-    if (!film) return;
-    (async () => {
-      try {
-        const res = await fetch(`${BaseUrl.api}/lists/featuring-film/${film?.id}/count`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        if (res.status === 200) {
-          const json = await res.json();
-          setListsCount(json);
-        } else {
-          console.log(`${res.status}: Failed to fetch featuring lists count.`);
-        }
-      } catch {
-        console.log(`${res.status}: Possible network error; probably failed earlier.`);
-      }
-    })();
-  }, [film]);
-
-  useEffect(() => {
-    if (!film) return;
-    (async () => {
-      try {
-        const res = await fetch(`${BaseUrl.api}/reviews/film-reviews/${film.id}?Page=1&PageSize=${TOP_COUNT}&Filter=ALL&Sort=POPULARITY&Desc=${true}`, {
-          method: 'GET',
-          headers: {'Accept': 'application/json'}
-        });
-        if (res.status === 200) {
-          const json = await res.json();
-          setTopReviews(json.items);
-        } else {
-          //since top reviews aren't critical infrastructure, there's no need to bother the user with failstates
-          console.log('failed to fetch top reviews.');
-        }
-      } catch {
-        //if there's a network error, previous useEffects will have handled it already
-        console.log('failed to fetch top reviews.');
-      }
-    })();
-  }, [film]);
-
-  useEffect(() => {
-    (async () => {
-      const vS = await isValidSession();
-      if (!user || !vS || !film) return;
-      try {
-        const jwt = await auth.getJwt();
-        const res = await fetch(`${BaseUrl.api}/users/${user.userId}/friends/${film.id}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${jwt}`
-          }
-        });
-        if (res.status === 200) {
-          const json = await res.json();
-          setFriends(json);
-        } else {
-          console.log(`${res.status}: failed to fetch friends' film interactions`);
-        }
-      } catch {
-        console.log('network error; probably caught by a previous useEffect by now');
-      }
-    })();
-  }, [film, user])
   
-  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-
-  //credits parsing
-  const actors = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film]);
-  const directors = useMemo(() => film?.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film]);
-  const crew = useMemo(() => film?.castAndCrew?.filter(credit => !['actor', 'director'].includes(credit.role.toLowerCase())) ?? [], [film]);
-  //poster sizing
+  const widescreen = useMemo(() => width > 1000, [width]);
+  const actors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film.castAndCrew]);
+  const directors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film.castAndCrew]);
+  const crew = useMemo(() => film.castAndCrew?.filter(credit => !['actor', 'director'].includes(credit.role.toLowerCase())) ?? [], [film.castAndCrew]);
   const posterWidth = useMemo(() => Math.min(width * 0.3, 225), [width]);
-  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]); //maintain 2:3 aspect
-  //collection sizing
-  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]); //minimum spacing between posters
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width]); //determines max usable row width:
-  //compute poster width
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth]);
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width]);
   const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
-  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth]); //maintain 2:3 aspect
-  //compute picture dimensions
+  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth]);
   const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen]);
   const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen]);
-  //compute avatar dimensions
   const friendSize = useMemo(() => headshotSize*0.75, [headshotSize]);
-  //cache backdrop
-  const MemoBackdrop = useMemo(() => <Backdrop backdropUrl={film?.backdropUrl} />, [film?.backdropUrl]);
+  const backdrop = useMemo(() => <Backdrop backdropUrl={film.backdropUrl} />, [film.backdropUrl]);
 
-  if (!film) {
+  if (server.result <= 0) {
     return (
       <View style={{
         alignItems: 'center',
@@ -291,43 +164,33 @@ const Film = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
-    )
+    );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, overflow: 'hidden'}}>
       <ScrollView
         contentContainerStyle={{
-          padding: 5,
           paddingTop: 0,
-          minWidth: widescreen ? 1000 : 'auto',
-          maxWidth: widescreen ? 1000 : "100%",
-          width: "100%",
-          alignSelf: "center",
+          width: widescreen ? 1000 : width*0.95,
+          alignSelf: 'center'
         }}
         showsVerticalScrollIndicator={false}
       >
-        {MemoBackdrop}
+        {backdrop}
 
-        <View style={[styles.row, {width: widescreen ? 1000 : "100%"}]}>
+        <View style={{width: '100%', marginTop: -15, paddingHorizontal: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'center'}}>
           <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
             <View>
-              <Text style={[styles.title, { fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33, paddingHorizontal: 1 }]}>{film.title}</Text>
-              {
-                film.originalTitle && film.originalTitle !== film.title
-                  ? (<Text style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</Text>)
-                  : null
-              }
+              <Text style={{fontWeight: '700', color: Colors.text_title, textAlign: 'left', fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33, paddingHorizontal: 1 }}>{film.title}</Text>
+              { film.originalTitle !== film.title && <Text style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</Text> }
             </View>
             <View>
               <Text style={[styles.subtitle, { fontSize: widescreen ? 20 : 14 }]}>DIRECTED BY</Text>
               <Text style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
                 {directors.map((director, index) => (
                   <React.Fragment key={director.celebrityId}>
-                    <Link
-                      href={`/celebrity/${director.celebrityId}?t=directed`}
-                      style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}
-                    >
+                    <Link href={`/celebrity/${director.celebrityId}?t=directed`} style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
                       {director.celebrityName}
                     </Link>
                     {index < directors.length - 1 && <Text>, </Text>}
@@ -336,29 +199,33 @@ const Film = () => {
               </Text>
             </View>
             
-            <Text style={[styles.text, { fontSize: widescreen ? 20 : 14 }]}>
-              {film.releaseYear} • {film.length} min {film?.country?.length > 0 && "• "}
-              {film?.country?.map((c, i) =>
-                Platform.OS === "web" ? (
+            <View style={{flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap'}}>
+              <Text style={[styles.text, {fontSize: widescreen ? 20 : 14}]}>
+                {film.releaseYear > 0 && film.releaseYear}
+                {film.length > 0 && ` • ${film.length} min`}
+                {film.country?.length > 0 && ' • '}
+              </Text>
+              {film.country?.map((c, i) =>
+                Platform.OS === 'web' ? (
                   <img key={i} src={`https://flagcdn.com/24x18/${c}.png`} style={{ marginRight: 6, width: 20, height: 15 }} />
                 ) : (
-                  <Text key={i}>{c} </Text>
+                  <Text key={i} style={[styles.text, {fontSize: widescreen ? 20 : 14}]}>{c} </Text>
                 )
               )}
-            </Text>
-
+            </View>
           </View>
-          <Poster posterUrl={film.posterUrl} style={{ width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color }} />
+          <Poster posterUrl={film.posterUrl} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} />
         </View>
-
-        <View style={[styles.divider, {marginVertical: 15}]} />
+        
+        <Divider marginVertical={15} />
         
         {
-          film.tagline && <Text style={[styles.tag, { fontSize: widescreen ? 20 : 16, marginBottom: 10 }]}>{film.tagline}</Text>
+          film.tagline && <Text style={{fontWeight: '700', color: Colors.text, textAlign: 'left', paddingHorizontal: 10, fontSize: widescreen ? 20 : 16, marginBottom: 10}}>{film.tagline}</Text>
         }
-        <Text style={[styles.text, { fontSize: widescreen ? 18 : 14, paddingHorizontal: 10 }]}>{film.synopsis}</Text>
+        <Text style={[styles.text, {fontSize: widescreen ? 18 : 14, paddingHorizontal: 10}]}>{film.synopsis}</Text>
 
-        { film?.genres && film?.genres.length > 0 && (
+        {
+          film.genres && film.genres.length > 0 &&
           <>
             <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 10}}>
               {
@@ -370,38 +237,38 @@ const Film = () => {
               }
             </View>
           </>
-        )}
+        }
 
-        <View style={[styles.divider, {marginVertical: 15}]} />
+        <Divider marginVertical={15} />
         
-        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Ratings</Text>
+        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Ratings</Text>
         {
           Object.entries(ratings).length > 0 ? (
             <Histogram histogram={ratings} />
           ) : (
             <Text style={{padding: widescreen ? 40 : 30, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
-              There are no ratings for this film yet.
+              This film hasn't been rated yet.
             </Text>
           )
         }
 
-        <View style={styles.divider}></View>
+        <Divider marginVertical={20} />
         
         {
           user ? (
-            <FilmInteract widescreen={widescreen} filmId={film?.id} seen={uwf} watchlisted={watchlisted} review={usersReview}/>
+            <FilmInteract widescreen={widescreen} filmId={film.id} seen={uwf} watchlisted={watchlisted} review={usersReview}/>
           ) : (
-            <Link style={{color: Colors.text_link, fontSize: 16, textAlign: 'center'}} href="/login">Create a Heteroboxd account or log in to interact with this film.</Link>
+            <Link style={{color: Colors.text_link, fontSize: 16, textAlign: 'center'}} href='/login'>Create a Heteroboxd account or log in to interact with this film.</Link>
           )
         }
 
-        <View style={styles.divider}></View>
+        <Divider marginVertical={20} />
 
-        <FilmDataLoaders filmId={film?.id} watchCount={film?.watchCount ?? 0} reviewCount={film?.reviewCount} listsIncluded={listsCount} widescreen={widescreen} />
+        <FilmDataLoaders filmId={film.id} watchCount={film.watchCount ?? 0} reviewCount={reviewCount} listsIncluded={listsCount} widescreen={widescreen} />
         
-        <View style={styles.divider}></View>
+        <Divider marginVertical={20} />
 
-        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Cast</Text>
+        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Cast</Text>
         {
           actors.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
@@ -411,19 +278,13 @@ const Film = () => {
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
-              style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
-              contentContainerStyle={{
-                alignItems: "flex-start",
-                justifyContent: "flex-start"
-              }}
+              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center', paddingBottom: 10}}
+              contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={actors}
               keyExtractor={(item, index) => `${item.celebrityId}-${item.character}-${index}`}
-              renderItem={({item, i}) => (
-                <Pressable
-                  onPress={() => router.push(`/celebrity/${item.celebrityId}?t=starred`)}
-                  style={{ marginRight: i < actors.length - 1 ? 15 : 0 }}
-                >
-                  <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
+              renderItem={({item}) => (
+                <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}?t=starred`)} style={{marginRight: 15}}>
+                  <View style={{width: headshotSize + expansionScaling, alignItems: 'center'}}>
                     <Headshot
                       pictureUrl={item.celebrityPictureUrl}
                       style={{
@@ -434,10 +295,10 @@ const Film = () => {
                         borderColor: Colors.border_color
                       }}
                     />
-                    <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
+                    <Text style={[styles.subtitle, { textAlign: 'center', marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
                       {item.celebrityName}
                     </Text>
-                    <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
+                    <Text style={[styles.text, { textAlign: 'center', fontSize: widescreen ? 14 : 10 }, ]} numberOfLines={1}>
                       {`(${item.character?.length === 0 ? 'N/A' : item.character})`}
                     </Text>
                   </View>
@@ -447,7 +308,7 @@ const Film = () => {
           )
         }
 
-        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Crew</Text>
+        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Crew</Text>
         {
           (directors.length === 0 && crew.length === 0) ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
@@ -457,18 +318,12 @@ const Film = () => {
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
-              style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center", paddingBottom: 10 }}
-              contentContainerStyle={{
-                alignItems: "flex-start",
-                justifyContent: "flex-start"
-              }}
+              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center', paddingBottom: 10}}
+              contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={[...directors, ...crew]}
               keyExtractor={(item, index) => `${item.celebrityId}-${item.role}-${index}`}
               renderItem={({item}) => (
-                <Pressable
-                  onPress={() => router.push(`/celebrity/${item.celebrityId}${item.role.toLowerCase() === 'director' ? '?t=directed' : item.role.toLowerCase() === 'producer' ? '?t=produced' : item.role.toLowerCase() === 'writer' ? '?t=wrote' : item.role.toLowerCase() === 'composer' ? '?t=composed' : ''}`)}
-                  style={{ marginRight: 15 }}
-                >
+                <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}${item.role.toLowerCase() === 'director' ? '?t=directed' : item.role.toLowerCase() === 'producer' ? '?t=produced' : item.role.toLowerCase() === 'writer' ? '?t=wrote' : item.role.toLowerCase() === 'composer' ? '?t=composed' : ''}`)} style={{marginRight: 15}}>
                   <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
                     <Headshot
                       pictureUrl={item.celebrityPictureUrl}
@@ -480,10 +335,10 @@ const Film = () => {
                         borderColor: Colors.border_color
                       }}
                     />
-                    <Text style={[styles.subtitle, { textAlign: "center", marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
+                    <Text style={[styles.subtitle, {textAlign: 'center', marginTop: 5, fontSize: widescreen ? 15 : 11}]} numberOfLines={1}>
                       {item.celebrityName}
                     </Text>
-                    <Text style={[styles.text, { textAlign: "center", fontSize: widescreen ? 15 : 10 }, ]} numberOfLines={1}>
+                    <Text style={[styles.text, {textAlign: 'center', fontSize: widescreen ? 15 : 10 }]} numberOfLines={1}>
                       {`(${item.role})`}
                     </Text>
                   </View>
@@ -496,26 +351,20 @@ const Film = () => {
         {
           friends && friends.length > 0 && (
             <>
-              <View style={styles.divider} />
+              <Divider marginVertical={20} />
 
               <Text style={styles.regionalTitle}>Also watched by...</Text>
 
               <FlatList
                 horizontal
                 showsHorizontalScrollIndicator={widescreen}
-                style={{ width: Math.min(width * 0.95, 1000), alignSelf: "center" }}
-                contentContainerStyle={{
-                  alignItems: "flex-start",
-                  justifyContent: "flex-start",
-                }}
+                style={{ width: Math.min(width * 0.95, 1000), alignSelf: 'center' }}
+                contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
                 data={friends}
                 keyExtractor={(item, index) => `${item.friendId}-${index}`}
-                renderItem={({item, i}) => (
-                  <Pressable
-                    onPress={() => item.reviewId ? router.push(`/review/${item.reviewId}`) : router.push(`/profile/${item.friendId}`)}
-                    style={{ marginRight: i < friends.length - 1 ? 15 : 0 }}
-                  >
-                    <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
+                renderItem={({item}) => (
+                  <Pressable onPress={() => item.reviewId ? router.push(`/review/${item.reviewId}`) : router.push(`/profile/${item.friendId}`)} style={{marginRight: 15}}>
+                    <View style={{width: headshotSize + expansionScaling, alignItems: 'center'}}>
                       <UserAvatar
                         pictureUrl={item.friendProfilePictureUrl}
                         style={{
@@ -527,7 +376,7 @@ const Film = () => {
                         }}
                       />
                       {
-                        item.rating && <Stars size={widescreen ? 18 : 12.5} rating={item.rating} readonly={true} padding={false} align={'center'}/> 
+                        item.rating && <Stars size={widescreen ? 18 : 12.5} rating={item.rating} readonly={true} padding={false} align={'center'} /> 
                       }
                     </View>
                   </Pressable>
@@ -537,15 +386,13 @@ const Film = () => {
           )
         }
 
-        <View style={styles.divider} />
+        <Divider marginVertical={20} />
 
-        <Text style={[styles.regionalTitle, { marginBottom: 10 }]}>Top Reviews</Text>
+        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Top Reviews</Text>
         {
           topReviews.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-              <Text style={[styles.text, {fontSize: widescreen ? 18 : 14, textAlign: 'center'}]}>
-                There are no spoiler-free reviews for this film yet.
-              </Text>
+              <Text style={[styles.text, {fontSize: widescreen ? 18 : 14, textAlign: 'center'}]}>There are no spoiler-free reviews for this film.</Text>
               <Link href={`/review/alter/${film.id}`} style={{fontSize: widescreen ? 18 : 14, color: Colors.text_link, textAlign: 'center'}}>Be the first to write one!</Link>
             </View>
           ) : (
@@ -583,7 +430,7 @@ const Film = () => {
               })}
               <Pressable onPress={() => router.push(`/reviews/film/${film.id}`)}>
                 <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.text_title, textAlign: 'center'}}>
-                  <Text style={{fontWeight: 'bold'}}>SEE ALL ({format.formatCount(film.reviewCount)})</Text> {'➜'}
+                  <Text style={{fontWeight: 'bold'}}>SEE ALL ({format.formatCount(reviewCount)})</Text> {'➜'}
                 </Text>
               </Pressable>
             </>
@@ -592,59 +439,43 @@ const Film = () => {
         
         {film.collection && Object.keys(film.collection).length > 0 && (
           <>
-            <View style={styles.divider}></View>
+            <Divider marginVertical={20} />
             <Text style={styles.regionalTitle}>Related Films</Text>
-            <View 
-              style={{
-                width: colPosterWidth * 4 + spacing * 3,
-                maxWidth: "100%",
-                alignSelf: "center",
-              }}
-            >
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={widescreen}
-              style={{
-                maxWidth: Math.min(width * 0.95, 1000),
-                paddingBottom: 10
-              }}
-              data={Object.entries(film?.collection ?? {})}
-              keyExtractor={([tmdbId], index) => `${tmdbId}-${index}`}
-              renderItem={({ item: [tmdbId, posterLink], index }) => (
-                <Pressable
-                  onPress={() => router.push(`/film/${tmdbId}`)}
-                  style={{
-                    marginRight:
-                      index < Object.entries(film.collection).length - 1
-                        ? spacing
-                        : 0
-                  }}
-                >
-                  <Poster
-                    posterUrl={posterLink}
-                    style={{
-                      width: colPosterWidth,
-                      height: colPosterHeight,
-                      borderRadius: 6,
-                      borderWidth: 2,
-                      borderColor: Colors.border_color
-                    }}
-                  />
-                </Pressable>
-              )}
-            />
+            <View style={{width: colPosterWidth * 4 + spacing * 3, maxWidth: '100%', alignSelf: 'center'}}>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={widescreen}
+                style={{maxWidth: Math.min(width * 0.95, 1000), paddingBottom: 10}}
+                data={Object.entries(film.collection)}
+                keyExtractor={([tmdbId], index) => `${tmdbId}-${index}`}
+                renderItem={({ item: [tmdbId, posterLink], index }) => (
+                  <Pressable onPress={() => router.push(`/film/${tmdbId}`)} style={{marginRight: index < Object.entries(film.collection).length - 1 ? spacing : 0}}>
+                    <Poster
+                      posterUrl={posterLink}
+                      style={{
+                        width: colPosterWidth,
+                        height: colPosterHeight,
+                        borderRadius: 6,
+                        borderWidth: 2,
+                        borderColor: Colors.border_color
+                      }}
+                    />
+                  </Pressable>
+                )}
+              />
             </View>
           </>
         )}
 
-        <Text style={[styles.text, {marginTop: 50, textAlign: 'center', alignSelf: 'center', fontSize: widescreen ? 16 : 12}]}>
-          The metadata for this film was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link>, bearing no endorsment of Heteroboxd whatsoever.
+        <Text style={[styles.text, {marginTop: widescreen ? 250 : 100, textAlign: 'center', alignSelf: 'center', fontSize: widescreen ? 18 : 14}]}>
+          This film's metadata was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link>, bearing no endorsment whatsoever.
         </Text>
       </ScrollView>
 
-      <Popup visible={result === 400 || result === 404 || result === 500} message={message} onClose={() => {
-        result === 500 ? router.replace('/contact') : router.replace('/');
-        }}
+      <Popup
+        visible={[404, 500].includes(server.result)}
+        message={server.message}
+        onClose={() => { server.result === 404 ? router.replace('/') : router.replace('/contact') }}
       />
 
       <Snackbar
@@ -665,7 +496,6 @@ const Film = () => {
       >
         {uwf?.dateWatched}
       </Snackbar>
-
     </View>
   )
 }
@@ -673,61 +503,26 @@ const Film = () => {
 export default Film
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 50,
-    overflow: 'hidden',
-  },
-  row: {
-    marginTop: -15,
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    alignSelf: 'center'
-  },
-  title: {
-    fontWeight: "700",
-    color: Colors.text_title,
-    textAlign: "left"
-  },
-  subtitle: {
-    fontWeight: '900',
+  text: {
+    fontWeight: '350',
     color: Colors.text,
-    textAlign: "left",
+    textAlign: 'left',
+  },
+  link: {
+    color: Colors.text_link,
+    fontWeight: '700',
   },
   regionalTitle: {
-    fontWeight: "500",
+    fontWeight: '500',
     marginBottom: 5,
     marginLeft: 12,
     fontSize: 20,
     color: Colors.text_title,
-    textAlign: "left",
+    textAlign: 'left',
   },
-  text: {
-    fontWeight: "350",
+  subtitle: {
+    fontWeight: '900',
     color: Colors.text,
-    textAlign: "left",
-  },
-  link: {
-    color: Colors.text_link,
-    fontWeight: "700",
-  },
-  tag: {
-    fontWeight: '700',
-    color: Colors.text,
-    textAlign: "left",
-    paddingHorizontal: 10,
-  },
-  divider: {
-    height: 1.5,
-    backgroundColor: Colors.border_color,
-    marginVertical: 20,
-    width: "75%",
-    alignSelf: "center",
-    opacity: 0.5,
-  },
-})*/
+    textAlign: 'left',
+  }
+})

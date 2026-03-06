@@ -134,6 +134,7 @@
         public bool? Admin { get; set; }
         public int FilmId { get; set; }
         public string? FilmTitle { get; set; }
+        public int? FilmReleaseYear { get; set; }
         public string? FilmPosterUrl { get; set; }
 
         public ReviewInfoResponse(Review Review, User Author, Film Film)
@@ -154,6 +155,7 @@
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
+            this.FilmReleaseYear = Film.ReleaseYear;
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
@@ -191,6 +193,7 @@
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
+            this.FilmReleaseYear = Film.ReleaseYear;
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
@@ -208,6 +211,20 @@
             this.AuthorId = Review.AuthorId.ToString();
 
             this.FilmId = Review.FilmId;
+        }
+
+        public ReviewInfoResponse(Film Film)
+        {
+            this.Id = "";
+            this.Text = "";
+            this.Date = "";
+
+            this.AuthorId = "";
+
+            this.FilmId = Film.Id;
+            this.FilmTitle = Film.Title;
+            this.FilmReleaseYear = Film.ReleaseYear;
+            this.FilmPosterUrl = Film.PosterUrl;
         }
     }
 

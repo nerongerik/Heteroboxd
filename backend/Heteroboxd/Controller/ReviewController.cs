@@ -70,10 +70,6 @@ namespace Heteroboxd.Controller
                 var Response = await _service.GetReviewByUserFilm(UserId, FilmId);
                 return Ok(Response);
             }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
             catch
             {
                 return StatusCode(500);

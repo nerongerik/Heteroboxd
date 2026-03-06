@@ -81,6 +81,7 @@ const FilmsReviews = () => {
 
       if (res.status === 200) {
         const json = await res.json()
+        console.log(json)
         setPage(json.page)
         setTotalCount(json.totalCount)
         setReviews(json.items)
@@ -117,14 +118,14 @@ const FilmsReviews = () => {
         const jwt = await auth.getJwt();
         const res = await fetch(`${BaseUrl.api}/users/uwf/${user?.userId}/${filmId}`, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${jwt}`
-          }
+          headers: { 'Authorization': `Bearer ${jwt}` }
         });
-        if (res.status === 200) setUwf(true);
-        else setUwf(false);
-      } catch {
+        if (res.status === 200) {
+          setUwf(true)
+        } else if (res.ok) {
+          setUwf(false)
+        }
+      } catch (e) {
         console.log('Network error!') //probably caught by previous useEffect, no need to break here
       }
     })();
@@ -197,7 +198,7 @@ const FilmsReviews = () => {
             <Pressable onPress={() => router.push(`/review/${item.id}`)}>
               {
                 item.text && item.text.length > 0 ?
-                  canSeeSpoilers || isRevealed(item.id) ? (
+                  !item.spoiler || canSeeSpoilers || isRevealed(item.id) ? (
                     <View style={{marginVertical: 7.5}}>
                       <ParsedRead html={`${item.text.replace(/\n{3,}/g, '\n\n').trim().slice(0, 350)}${item.text.length > 350 ? '...' : ''}`} />
                     </View>

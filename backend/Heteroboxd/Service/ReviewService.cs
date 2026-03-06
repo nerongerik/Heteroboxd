@@ -8,7 +8,7 @@ namespace Heteroboxd.Service
     {
         Task<PagedResponse<ReviewInfoResponse>> GetReviews(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<ReviewInfoResponse?> GetReview(string ReviewId);
-        Task<ReviewInfoResponse> GetReviewByUserFilm(string UserId, int FilmId);
+        Task<ReviewInfoResponse?> GetReviewByUserFilm(string UserId, int FilmId);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta);
@@ -58,11 +58,16 @@ namespace Heteroboxd.Service
             return new ReviewInfoResponse(Response.Item.Review, Response.Joined, Response.Item.Film);
         }
 
-        public async Task<ReviewInfoResponse> GetReviewByUserFilm(string UserId, int FilmId)
+        public async Task<ReviewInfoResponse?> GetReviewByUserFilm(string UserId, int FilmId)
         {
-            var Review = await _repo.GetByUserFilmAsync(Guid.Parse(UserId), FilmId);
-            if (Review == null) throw new KeyNotFoundException();
-            return new ReviewInfoResponse(Review);
+            var Response = await _repo.GetByUserFilmAsync(Guid.Parse(UserId), FilmId);
+            if (Response == null)
+            {
+                var Film = await _filmRepo.LightweightFetcher(FilmId);
+                if (Film == null) return null;
+                return new ReviewInfoResponse(Film);
+            }
+            return new ReviewInfoResponse(Response.Review, Response.Film);
         }
 
         public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)

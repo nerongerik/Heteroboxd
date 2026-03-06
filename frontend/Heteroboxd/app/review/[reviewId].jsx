@@ -130,6 +130,8 @@ const ReviewWithComments = () => {
           });
           if (res.status === 200) {
             setShowText(true);
+          } else if (res.ok) {
+            setShowText(false)
           }
         }
       }

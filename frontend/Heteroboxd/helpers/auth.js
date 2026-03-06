@@ -37,7 +37,7 @@ export async function refreshToken() {
         const refresh = Platform.OS === 'web' ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
         if (!refresh) return false;
 
-        return await fetch(`${BaseUrl.api}/auth/refresh?Token=${refresh}`, {
+        return await fetch(`${BaseUrl.api}/auth/refresh?Token=${encodeURIComponent(refresh)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" }
         }).then(async (res) => {
@@ -59,7 +59,7 @@ export async function refreshToken() {
 export async function logout(userId) {
     try {
         const refresh = Platform.OS === "web" ? localStorage.getItem('refresh') : await SecureStore.getItemAsync("refresh");
-        const res = await fetch(`${BaseUrl.api}/auth/logout/${userId}?Token=${refresh}`, {
+        const res = await fetch(`${BaseUrl.api}/auth/logout/${userId}?Token=${encodeURIComponent(refresh)}`, {
             method: "POST",
             headers: {"Content-Type": "application/json"}
         });

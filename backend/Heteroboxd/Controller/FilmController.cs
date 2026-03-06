@@ -9,11 +9,15 @@ namespace Heteroboxd.Controller
     public class FilmController : ControllerBase
     {
         private readonly IFilmService _service;
+        private readonly IUserListService _userListService;
+        private readonly IReviewService _reviewService;
         private readonly ILogger<FilmController> _logger;
 
-        public FilmController(IFilmService service, ILogger<FilmController> logger)
+        public FilmController(IFilmService service, IUserListService userListService, IReviewService reviewService, ILogger<FilmController> logger)
         {
             _service = service;
+            _userListService = userListService;
+            _reviewService = reviewService;
             _logger = logger;
         }
 
@@ -39,12 +43,35 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GetFilm endpoint hit for: {FilmId}");
             try
             {
-                var Response = await _service.GetFilm(FilmId);
-                return Ok(Response);
+                return Ok(
+                    new {
+                        Film = await _service.GetFilm(FilmId), 
+                        Ratings = await _service.GetFilmRatings(FilmId) 
+                    });
             }
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("{FilmId}/subsequent")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFilmSubsequent(int FilmId, int PageSize = 3)
+        {
+            _logger.LogInformation($"GetFilmSubsequent endpoint hit for: {FilmId}");
+            try
+            {
+                return Ok(
+                    new 
+                    {
+                        Reviews = await _reviewService.GetReviewsByFilm(FilmId, null, 1, PageSize, "ALL", "POPULARITY", true, null), 
+                        Lists = await _userListService.GetListsFeaturingFilmCount(FilmId) 
+                    });
             }
             catch
             {
@@ -70,33 +97,17 @@ namespace Heteroboxd.Controller
 
         [HttpGet("user/{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUsersWatchedFilms(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE WATCHED", bool Desc = true, string? FilterValue = null)
+        public async Task<IActionResult> GetFilmsByUser(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE WATCHED", bool Desc = true, string? FilterValue = null)
         {
-            _logger.LogInformation($"GetUsersWatchedFilms endpoint hit with UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
+            _logger.LogInformation($"GetFilmsByUser endpoint hit with UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Response = await _service.GetUsersWatchedFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                var Response = await _service.GetFilmsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return Ok(Response);
             }
             catch (ArgumentException)
             {
                 return BadRequest();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("ratings/{FilmId}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetFilmRatings(int FilmId)
-        {
-            _logger.LogInformation($"GetFilmRatings endpoint hit for {FilmId}");
-            try
-            {
-                var Response = await _service.GetFilmRatings(FilmId);
-                return Ok(Response);
             }
             catch
             {

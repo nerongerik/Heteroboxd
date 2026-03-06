@@ -10,11 +10,13 @@ namespace Heteroboxd.Controller
     public class UserController : ControllerBase
     {
         private readonly IUserService _service;
+        private readonly IReviewService _reviewService;
         private readonly ILogger<UserController> _logger;
 
-        public UserController(IUserService service, ILogger<UserController> logger)
+        public UserController(IUserService service, IReviewService reviewService, ILogger<UserController> logger)
         {
             _service = service;
+            _reviewService = reviewService;
             _logger = logger;
         }
 
@@ -50,22 +52,6 @@ namespace Heteroboxd.Controller
             try
             {
                 var Response = await _service.GetWatchlist(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("{UserId}/watchlist/{FilmId}")]
-        [Authorize]
-        public async Task<IActionResult> IsFilmWatchlisted(string UserId, int FilmId)
-        {
-            _logger.LogInformation($"IsFilmWatchlisted endpoint hit for User: {UserId}");
-            try
-            {
-                var Response = await _service.IsFilmWatchlisted(UserId, FilmId);
                 return Ok(Response);
             }
             catch
@@ -174,19 +160,21 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("uwf/{UserId}/{FilmId}")]
+        [HttpGet("{UserId}/interactions/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> GetUserWatchedFilm(string UserId, int FilmId)
+        public async Task<IActionResult> GetUserFilmInteractions(string UserId, int FilmId)
         {
-            _logger.LogInformation($"GetUserWatchedFilm endpoint hit for: {UserId}, {FilmId}");
+            _logger.LogInformation($"GetUserFilmInteractions endpoint hit for: {UserId}, {FilmId}");
             try
             {
-                var Response = await _service.GetUserWatchedFilm(UserId, FilmId);
-                return Ok(Response);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
+                return Ok(
+                    new 
+                    { 
+                        Uwf = await _service.DidUserWatchFilm(UserId, FilmId),
+                        Watchlisted = await _service.IsFilmWatchlisted(UserId, FilmId),
+                        Review = await _reviewService.GetReviewByUserFilm(UserId, FilmId),
+                        Friends = await _service.GetFriendsForFilm(UserId, FilmId) 
+                    });
             }
             catch
             {
@@ -194,19 +182,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{UserId}/friends/{FilmId}")]
+        [HttpGet("uwf/{UserId}/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> GetFriendsForFilm(string UserId, int FilmId)
+        public async Task<IActionResult> DidUserWatchFilm(string UserId, int FilmId)
         {
-            _logger.LogInformation($"GetFriendsForFilm endpoint hit for User: {UserId}; Film: {FilmId}");
+            _logger.LogInformation($"DidUserWatchFilm endpoint hit for: {UserId}, {FilmId}");
             try
             {
-                var Response = await _service.GetFriendsForFilm(UserId, FilmId);
+                var Response = await _service.DidUserWatchFilm(UserId, FilmId);
                 return Ok(Response);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {
