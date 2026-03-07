@@ -1,51 +1,41 @@
-import { useMemo, useState, useRef } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions, TouchableOpacity, FlatList, Pressable } from 'react-native'
-import { Colors } from '../../constants/colors';
-import Author from '../author';
-import Stars from '../stars';
-import ParsedRead from '../parsedRead';
-import { Fontisto } from '@expo/vector-icons';
-import * as format from '../../helpers/format';
-import {Poster} from '../poster';
-import PaginationBar from '../paginationBar';
+import { useMemo, useRef, useState } from 'react'
+import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { Fontisto } from '@expo/vector-icons'
+import * as format from '../../helpers/format'
+import { Colors } from '../../constants/colors'
+import Author from '../author'
+import PaginationBar from '../paginationBar'
+import ParsedRead from '../parsedRead'
+import { Poster } from '../poster'
+import Stars from '../stars'
 
 const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
-  const [activeTab, setActiveTab] = useState("reviews");
-  const [showPagination, setShowPagination] = useState(false);
-  const { width } = useWindowDimensions();
-  const listRef = useRef(null);
-
-  const maxRowWidth = useMemo(() => width > 1000 ? 900 : width*0.95, [width]);
-  const spacing = useMemo(() => (width > 1000 ? 30 : 5), [width])
-  const posterWidth = useMemo(
-    () => (maxRowWidth - spacing * 4) / 4,
-    [maxRowWidth, spacing]
-  )
-  const posterHeight = useMemo(
-    () => posterWidth * (3 / 2),
-    [posterWidth]
-  )
+  const [ activeTab, setActiveTab ] = useState('reviews')
+  const [ showPagination, setShowPagination ] = useState(false)
+  const { width } = useWindowDimensions()
+  const listRef = useRef(null)
 
   const currentData = useMemo(() => {
     switch (activeTab) {
       case 'reviews':
-        return reviews;
+        return reviews
       case 'lists':
-        return lists;
+        return lists
       default:
-        return { items: [], totalCount: 0, page: 1 };
+        return { page: 1, items: [], totalCount: 0 }
     }
-  }, [activeTab, reviews, lists]);
-
-  const totalPages = Math.ceil(currentData.totalCount / pageSize);
-
-  const getData = () => currentData.items ?? [];
+  }, [activeTab, reviews, lists])
+  const totalPages = Math.ceil(currentData.totalCount / pageSize)
+  const maxRowWidth = useMemo(() => width > 1000 ? 900 : width*0.95, [width])
+  const spacing = useMemo(() => (width > 1000 ? 30 : 5), [width])
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
   const TabButton = ({ title, active, onPress }) => (
     <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
       <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
     </TouchableOpacity>
-  );
+  )
 
   const Footer = () => (
     <PaginationBar
@@ -54,13 +44,16 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
       visible={showPagination}
       onPagePress={(num) => {
         onPageChange(activeTab, num);
-        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+        listRef.current?.scrollToOffset({
+          offset: 0,
+          animated: true
+        })
       }}
     />
-  );
+  )
 
-  const RenderReview = ({item}) => (
-    <View style={[styles.card, { marginBottom: 5 }]}>
+  const RenderReview = ({ item }) => (
+    <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
@@ -88,26 +81,26 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
             />
           </View>
           {
-            item.text && item.text.length > 0 ?
-              <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-                <ParsedRead html={`${item.text.replace(/\n{2,}/g, '\n').trim().slice(0, 200)}${item.text.length > 200 ? '...' : ''}`} />
-              </View>
+            item.text?.length > 0 ?
+            <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
+              <ParsedRead html={`${item.text.replace(/\n{2,}/g, '\n').trim().slice(0, 200)}${item.text.length > 200 ? '...' : ''}`} />
+            </View>
             :
-              <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-                <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{item.authorName} wrote no review regarding this film.</Text>
-              </View>
+            <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
+              <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{item.authorName} wrote no review regarding this film.</Text>
+            </View>
           }
         </View>
         <View style={styles.statsRow}>
-          <Fontisto name="heart" size={width > 1000 ? 16 : 12} color={Colors.heteroboxd} />
+          <Fontisto name='heart' size={width > 1000 ? 16 : 12} color={Colors.heteroboxd} />
           <Text style={[styles.statText, {fontSize: width > 1000 ? 16 : 12}]}>{format.formatCount(item.likeCount)}</Text>
         </View>
       </Pressable>
     </View>
   )
 
-  const RenderList = ({item}) => (
-    <View style={[styles.card, { marginBottom: 5 }]}>
+  const RenderList = ({ item }) => (
+    <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
@@ -123,15 +116,14 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
                       
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
-            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position);
-            const remainder = paddedFilms.length % 4;
+            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
+            const remainder = paddedFilms.length % 4
             if (remainder !== 0) {
-              const placeholdersToAdd = 4 - remainder;
+              const placeholdersToAdd = 4 - remainder
               for (let i = 0; i < placeholdersToAdd; i++) {
-                paddedFilms.push(null);
+                paddedFilms.push(null)
               }
             }
-                                  
             return paddedFilms.map((film, i) => (
               film ? (
                 <Poster
@@ -140,10 +132,10 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
                   style={{
                     width: posterWidth,
                     height: posterHeight,
-                    marginRight: i % 4 === 3 ? 0 : width > 1000 ? spacing : spacing/2,
+                    marginRight: i % 4 === 3 ? 0 : width > 1000 ? spacing : spacing / 2,
                     borderWidth: 2,
                     borderColor: Colors.border_color,
-                    borderRadius: 6,
+                    borderRadius: 6
                   }}
                 />
               ) : (
@@ -152,24 +144,22 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
                   style={{
                     width: posterWidth,
                     height: posterHeight,
-                    marginRight: i % 4 === 3 ? 0 : width > 1000 ? spacing : spacing/2,
+                    marginRight: i % 4 === 3 ? 0 : width > 1000 ? spacing : spacing / 2
                   }}
                 />
               )
-            ));
+            ))
           })()}
-        </View>
-                        
+        </View>        
         <Text style={[styles.description, {fontSize: width > 1000 ? 18 : 14}]}>
-          {item.description.slice(0, width > 1000 ? 500 : 150)}
+          {item.description?.slice(0, width > 1000 ? 500 : 150)}
           {width > 1000 && item.description.length > 500 && '...'}
           {width <= 1000 && item.description.length > 150 && '...'}
-        </Text>
-                          
+        </Text>         
         <View style={styles.statsRow}>
-          <Fontisto name="nav-icon-list-a" size={width > 1000 ? 18 : 14} color={Colors._heteroboxd} />
+          <Fontisto name='nav-icon-list-a' size={width > 1000 ? 18 : 14} color={Colors._heteroboxd} />
           <Text style={[styles.statText, {color: Colors._heteroboxd, fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </Text>
-          <Fontisto name="heart" size={width > 1000 ? 18 : 14} color={Colors.heteroboxd} />
+          <Fontisto name='heart' size={width > 1000 ? 18 : 14} color={Colors.heteroboxd} />
           <Text style={[styles.statText, {fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.likeCount)}</Text>
         </View>
       </Pressable>
@@ -177,27 +167,21 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
   )
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1}}>
       <View style={[width > 1000 ? styles.wideRow : styles.narrowRow]}>
-        <TabButton title="Reviews" active={activeTab === "reviews"} onPress={() => setActiveTab("reviews")} />
-        <TabButton title="Lists" active={activeTab === "lists"} onPress={() => setActiveTab("lists")} />
+        <TabButton title='Reviews' active={activeTab === 'reviews'} onPress={() => setActiveTab('reviews')} />
+        <TabButton title='Lists' active={activeTab === 'lists'} onPress={() => setActiveTab('lists')} />
       </View>
-
       <FlatList
         ref={listRef}
-        data={getData()}
+        data={currentData.items ?? []}
         key={activeTab}
         keyExtractor={(item) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-${item.listId}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
         ListEmptyComponent={<Text style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</Text>}
         ListFooterComponent={Footer}
-        style={{
-          width: maxRowWidth,
-          alignSelf: 'center'
-        }}
-        contentContainerStyle={{
-          paddingBottom: 80,
-        }}
+        style={{width: maxRowWidth, alignSelf: 'center'}}
+        contentContainerStyle={{paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
         onEndReached={() => setShowPagination(true)}
         onEndReachedThreshold={0.2}
@@ -206,10 +190,9 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
   )
 }
 
-export default LikeTabs;
+export default LikeTabs
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   narrowRow: {
     flexDirection: "row",
     paddingHorizontal: 15,

@@ -144,22 +144,6 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{UserId}/liked/{ObjectId}")]
-        [Authorize]
-        public async Task<IActionResult> IsObjectLiked(string UserId, string ObjectId, string ObjectType)
-        {
-            _logger.LogInformation($"IsObjectLiked endpoint hit for User: {UserId}");
-            try
-            {
-                var Response = await _service.IsObjectLiked(UserId, ObjectId, ObjectType);
-                return Ok(Response);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("{UserId}/interactions/{FilmId}")]
         [Authorize]
         public async Task<IActionResult> GetUserFilmInteractions(string UserId, int FilmId)

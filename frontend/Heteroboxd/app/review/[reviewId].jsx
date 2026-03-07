@@ -138,7 +138,7 @@ const ReviewWithComments = () => {
     })();
   }, [review]);
 
-  useEffect(() => {
+  /*useEffect(() => {
     (async () => {
       const vS = await isValidSession();
       if (!user || !vS) return;
@@ -160,7 +160,7 @@ const ReviewWithComments = () => {
         console.log('Network error');
       }
     })();
-  }, [reviewId]);
+  }, [reviewId]);*/
 
   useEffect(() => {
     if (!review) return;

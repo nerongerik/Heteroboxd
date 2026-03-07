@@ -2,6 +2,7 @@
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Heteroboxd.Controller
 {
@@ -38,13 +39,14 @@ namespace Heteroboxd.Controller
 
         [HttpGet("{UserListId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetList(string UserListId)
+        public async Task<IActionResult> GetList(string UserListId, string? UserId = null)
         {
             _logger.LogInformation($"GetList endpoint hit with ListId: {UserListId}");
             try
             {
-                var Response = await _service.GetList(UserListId);
-                return Ok(Response);
+                return UserId == null
+                    ? Ok(await _service.GetList(UserListId))
+                    : Ok(new { List = await _service.GetList(UserListId), ILiked = await _userService.IsObjectLiked(UserId, UserListId, "list") });
             }
             catch (KeyNotFoundException)
             {

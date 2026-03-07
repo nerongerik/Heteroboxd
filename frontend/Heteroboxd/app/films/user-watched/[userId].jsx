@@ -22,8 +22,8 @@ const UserWatchedFilms = () => {
   const [ server, setServer ] = useState(Response.initial)
   const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0})
   const [ showPagination, setShowPagination ] = useState(false)
-  const [ currentFilter, setCurrentFilter ] = useState({field: 'ALL', value: null})
-  const [ currentSort, setCurrentSort ] = useState({field: 'DATE WATCHED', desc: true})
+  const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
+  const [ currentSort, setCurrentSort ] = useState({ field: 'DATE WATCHED', desc: true })
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
@@ -70,7 +70,7 @@ const UserWatchedFilms = () => {
 
   useEffect(() => {
     loadDataPage(1)
-  }, [userId, currentFilter, currentSort])
+  }, [userId, loadDataPage])
 
   const widescreen = useMemo(() => width > 1000, [width])
 
@@ -131,6 +131,10 @@ const UserWatchedFilms = () => {
       visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
+        listRef.current?.scrollToOffset({
+          offset: 0,
+          animated: true,
+        })
       }}
     />
   )
