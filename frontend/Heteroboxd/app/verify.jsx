@@ -13,7 +13,7 @@ const Verify = () => {
   const verifyUser = useCallback(async () => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/users/verify/${userId}?Token=${token}`, {
+      const res = await fetch(`${BaseUrl.api}/users/verify/${userId}?Token=${encodeURIComponent(token)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       })

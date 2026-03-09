@@ -94,7 +94,6 @@ const Celebrity = () => {
     }
     const role = FILTER_TO_ROLE_MAP[filter]
     if (!role) {
-      setServer(Response.badRequest)
       return
     }
     try {
