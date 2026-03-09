@@ -424,12 +424,7 @@ const Home = () => {
 
         <Text style={[styles.regionalTitle, { marginBottom: 10, marginTop: widescreen ? 50 : 30 }]}>Trending Globally</Text>
         <View 
-          style={{
-            width: colPosterWidth * 4.1 + spacing * 4,
-            maxWidth: "100%",
-            alignSelf: "center",
-          }}
-        >
+          style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
           {!trending || trending.length === 0 ? (
             <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
               <ActivityIndicator size="large" color={Colors.text_link} />

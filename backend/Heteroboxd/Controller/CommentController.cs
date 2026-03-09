@@ -25,12 +25,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GetCommentsByReview endpoint hit for {ReviewId}");
             try
             {
-                var ReviewComments = await _service.GetCommentsByReview(ReviewId, Page, PageSize);
-                return Ok(ReviewComments);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
+                return Ok(await _service.GetCommentsByReview(ReviewId, Page, PageSize));
             }
             catch
             {

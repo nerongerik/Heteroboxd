@@ -30,7 +30,7 @@ namespace Heteroboxd.Service
         public async Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize)
         {
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(ReviewId));
-            if (Review == null) throw new KeyNotFoundException();
+            if (Review == null) return new PagedResponse<CommentInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
 
             var (Responses, TotalCount) = await _repo.GetByReviewAsync(Review.Id, Page, PageSize);
             return new PagedResponse<CommentInfoResponse>

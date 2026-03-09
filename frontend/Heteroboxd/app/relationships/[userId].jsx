@@ -1,135 +1,115 @@
-import { StyleSheet, View } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../hooks/useAuth';
-import { useState, useEffect } from 'react';
-import RelationshipTabs from '../../components/tabs/relationshipTabs';
-import Popup from '../../components/popup';
-import LoadingResponse from '../../components/loadingResponse';
-import { Colors } from '../../constants/colors';
-import { BaseUrl } from '../../constants/api';
-import * as auth from '../../helpers/auth';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { View } from 'react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import * as auth from '../../helpers/auth'
+import { useAuth } from '../../hooks/useAuth'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
+import LoadingResponse from '../../components/loadingResponse'
+import Popup from '../../components/popup'
+import RelationshipTabs from '../../components/tabs/relationshipTabs'
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 20
 
 const Relationships = () => {
+  const { userId, t } = useLocalSearchParams()
+  const { user, isValidSession } = useAuth()
+  const [ followers, setFollowers ] = useState({ page: 1, items: [], totalCount: 0 })
+  const [ following, setFollowing ] = useState({ page: 1, items: [], totalCount: 0 })
+  const [ blocked, setBlocked ] = useState({ page: 1, items: [], totalCount: 0 })
+  const [ server, setServer ] = useState(Response.initial)
+  const router = useRouter()
 
-  const { userId, t } = useLocalSearchParams();
-  const { user, isValidSession } = useAuth();
+  const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
-  const isOwnProfile = user && user.userId === userId;
-
-  const [followers, setFollowers] = useState({ items: [], totalCount: 0, page: 1 });
-  const [following, setFollowing] = useState({ items: [], totalCount: 0, page: 1 });
-  const [blocked, setBlocked] = useState({ items: [], totalCount: 0, page: 1 });
-
-  const [result, setResult] = useState(-1);
-  const [message, setMessage] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const router = useRouter();
-
-  const loadData = async (pages = {}) => {
-    setRefreshing(true);
-    setResult(0);
+  const loadData = useCallback(async (pages = {}) => {
+    setServer(Response.loading)
+    const params = new URLSearchParams({
+      FollowersPage: pages.followers || 1,
+      FollowingPage: pages.following || 1,
+      BlockedPage: pages.blocked || 1,
+      PageSize: PAGE_SIZE
+    })
     try {
-      const params = new URLSearchParams({
-        FollowersPage: pages.followers || 1,
-        FollowingPage: pages.following || 1,
-        BlockedPage: pages.blocked || 1,
-        PageSize: PAGE_SIZE
-      });
-
-      const res = await fetch(`${BaseUrl.api}/users/user-relationships/${userId}?${params}`, {
-        method: "GET",
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (res.status === 200) {
-        const json = await res.json();
+      const res = await fetch(`${BaseUrl.api}/users/user-relationships/${userId}?${params}`)
+      if (res.ok) {
+        const json = await res.json()
         setFollowers({
+          page: json.followers.page,
           items: json.followers.items.map(uir => ({
             id: uir.id, 
             name: uir.name, 
             pictureUrl: uir.pictureUrl, 
             admin: uir.admin
           })),
-          totalCount: json.followers.totalCount,
-          page: json.followers.page
-        });
+          totalCount: json.followers.totalCount
+        })
         setFollowing({
+          page: json.following.page,
           items: json.following.items.map(uir => ({
             id: uir.id, 
             name: uir.name, 
             pictureUrl: uir.pictureUrl, 
             admin: uir.admin
           })),
-          totalCount: json.following.totalCount,
-          page: json.following.page
-        });
+          totalCount: json.following.totalCount
+        })
         if (isOwnProfile) {
           setBlocked({
+            page: json.blocked.page,
             items: json.blocked.items.map(uir => ({
               id: uir.id, 
               name: uir.name, 
               pictureUrl: uir.pictureUrl, 
               admin: uir.admin
             })),
-            totalCount: json.blocked.totalCount,
-            page: json.blocked.page
-          });
+            totalCount: json.blocked.totalCount
+          })
         }
-        setResult(200);
+        setServer(Response.ok)
       } else if (res.status === 404) {
-        setResult(404);
-        setMessage('User not found.');
+        setServer(Response.notFound)
       } else {
-        setResult(500);
-        setMessage('Something went wrong! Contact Heteroboxd support for more information!');
+        setServer(Response.internalServerError)
       }
     } catch {
-      console.log('Failed to fetch relationships.');
-    } finally {
-      setRefreshing(false);
+      setServer(Response.networkError)
     }
-  };
+  }, [userId, isOwnProfile])
 
-  const loadPage = (tab, pageNumber) => {
-    const pages = {
-      followers: tab === 'followers' ? pageNumber : followers.page,
-      following: tab === 'following' ? pageNumber : following.page,
-      blocked: tab === 'blocked' ? pageNumber : blocked.page
-    };
-    loadData(pages);
-  };
+  const loadPage = useCallback((tab, page) => {
+    const pages = { followers: tab === 'followers' ? page : followers.page, following: tab === 'following' ? page : following.page, blocked: tab === 'blocked' ? page : blocked.page }
+    loadData(pages)
+  }, [loadData])
 
-  useEffect(() => {
-    loadData();
-  }, [userId]);
-
-  const handleRemoveFollower = async (followerId) => {
-    const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
+  const handleRemoveFollower = useCallback(async (followerId) => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
     try {
-      const jwt = await auth.getJwt();
+      const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${followerId}?Action=remove-follower`, {
         method: 'PUT',
-        headers: {'Authorization': `Bearer ${jwt}`}
-      });
-      if (res.status === 200) {
-        loadData();
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        loadData()
       } else {
-        router.replace('/contact');
+        setServer(Response.internalServerError)
       }
     } catch {
-      router.replace('/contact');
+      setServer(Response.networkError)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   return (
-    <View style={styles.container}>
-
+    <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <RelationshipTabs
         isMyProfile={isOwnProfile}
         followers={followers}
@@ -142,24 +122,14 @@ const Relationships = () => {
         pageSize={PAGE_SIZE}
       />
 
-      <Popup visible={result === 404 || result === 500} message={message} onClose={() => {
-        result === 500 ? router.replace('/contact') : router.back();
-      }}/>
-
-      <LoadingResponse visible={result === 0 || refreshing} />
-
+      <LoadingResponse visible={server.result <= 0} />
+      <Popup
+        visible={[403, 404, 500].includes(server.result)}
+        message={server.message}
+        onClose={() => { server.result === 403 ? router.replace('/login') : server.result === 404 ? router.back() : router.replace('/contact')}}
+      />
     </View>
-  );
+  )
 }
 
-export default Relationships;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 50,
-  },
-})
+export default Relationships

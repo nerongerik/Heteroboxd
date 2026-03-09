@@ -308,7 +308,7 @@ const CreateList = () => {
   )
 }
 
-export default CreateList;
+export default CreateList
 
 
 const styles = StyleSheet.create({
@@ -367,10 +367,10 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5, //android
+    elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 }, //iOS
+    shadowOffset: { width: 0, height: 2 },
   },
 });

@@ -142,7 +142,7 @@ const List = () => {
         console.log(`${res.status}: list like failed.`)
       }
     } catch {
-      console.log('network error; debugging...')
+      console.log('like list failed; network error.')
     }
   }, [user, iLiked, base, listId])
 
@@ -288,6 +288,10 @@ const List = () => {
       visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
+        listRef.current?.scrollToOffset({
+          offset: 0,
+          animated: true,
+        })
       }}
     />
   )

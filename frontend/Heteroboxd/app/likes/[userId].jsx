@@ -43,7 +43,7 @@ const UserLikes = () => {
   }, [loadData])
 
   useEffect(() => {
-    loadData();
+    loadData()
   }, [userId, loadData])
 
   return (

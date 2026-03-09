@@ -45,6 +45,8 @@ namespace Heteroboxd.Integrations
                 ContentType = "image/png"
             };
 
+            Request.Headers["Cache-Control"] = "no-cache";
+
             var PresignedUrl = await _client.GetPreSignedURLAsync(Request);
             var ImgPath = $"{_config["R2:PublicUrl"]}/{Key}";
 

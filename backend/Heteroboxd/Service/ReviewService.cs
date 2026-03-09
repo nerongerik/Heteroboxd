@@ -7,7 +7,7 @@ namespace Heteroboxd.Service
     public interface IReviewService
     {
         Task<PagedResponse<ReviewInfoResponse>> GetReviews(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<ReviewInfoResponse?> GetReview(string ReviewId);
+        Task<ReviewInfoResponse> GetReview(string ReviewId);
         Task<ReviewInfoResponse?> GetReviewByUserFilm(string UserId, int FilmId);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -51,7 +51,7 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<ReviewInfoResponse?> GetReview(string ReviewId)
+        public async Task<ReviewInfoResponse> GetReview(string ReviewId)
         {
             var Response = await _repo.GetJoinedByIdAsync(Guid.Parse(ReviewId));
             if (Response == null) throw new KeyNotFoundException();
@@ -81,7 +81,7 @@ namespace Heteroboxd.Service
             }
 
             var Film = await _filmRepo.LightweightFetcher(FilmId);
-            if (Film == null) throw new KeyNotFoundException();
+            if (Film == null) return new PagedResponse<ReviewInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
 
             var (Responses, TotalCount) = await _repo.GetByFilmAsync(FilmId, UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<ReviewInfoResponse>
@@ -96,7 +96,7 @@ namespace Heteroboxd.Service
         public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var Author = await _userRepo.LightweightFetcherAsync(Guid.Parse(UserId));
-            if (Author == null) throw new KeyNotFoundException();
+            if (Author == null) return new PagedResponse<ReviewInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
 
             var (Responses, TotalCount) = await _repo.GetByAuthorAsync(Author.Id, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<ReviewInfoResponse>

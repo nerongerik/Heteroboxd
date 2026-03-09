@@ -1,20 +1,14 @@
-import { StyleSheet, Text, View, ScrollView, Platform, useWindowDimensions } from 'react-native'
-import { Link } from 'expo-router';
-import { Colors } from '../constants/colors';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Link } from 'expo-router'
+import { Colors } from '../constants/colors'
 
 const About = () => {
-
-  const { width } = useWindowDimensions();
+  const { width } = useWindowDimensions()
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background, alignContent: 'center', justifyContent: 'center'}}>
       <ScrollView
-        contentContainerStyle={{
-          padding: 15,
-          minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
-          maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%",
-          alignSelf: 'center',
-        }}
+        contentContainerStyle={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>
@@ -96,10 +90,8 @@ const About = () => {
           If you'd like to support the project, please consider making <Link style={styles.link} href='sponsor'>a donation</Link>.
         </Text>
     
-        <View style={styles.divider} />
-    
-        <Text style={[styles.text, {textAlign: "center", fontWeight: "800", marginTop: "5%"}]}>  
-          Heteroboxd - developed by <Link style={[styles.link, {fontWeight: "800"}]} href='https://github.com/nerongerik'>nerongerik</Link>
+        <Text style={[styles.text, {textAlign: 'center', fontWeight: '800', marginTop: 50}]}>  
+          Heteroboxd - developed by <Link style={[styles.link, {fontWeight: '800'}]} href='https://github.com/nerongerik'>nerongerik</Link>
         </Text>
       </ScrollView>
     </View>
@@ -109,14 +101,6 @@ const About = () => {
 export default About
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 15,
-    paddingBottom: 50,
-    backgroundColor: Colors.background,
-    alignContent: 'center',
-    justifyContent: 'center',
-  },
   title: {
     fontSize: 28,
     fontWeight: "700",
@@ -143,13 +127,5 @@ const styles = StyleSheet.create({
   link: {
     color: Colors.text_link,
     fontWeight: "500",
-  },
-  divider: {
-    height: 1.5,
-    backgroundColor: Colors.border_color,
-    marginVertical: 20,
-    width: "75%",
-    alignSelf: "center",
-    opacity: 0.5,
-  },
-});
+  }
+})

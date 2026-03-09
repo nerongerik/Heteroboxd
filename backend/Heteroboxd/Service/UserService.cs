@@ -56,8 +56,7 @@ namespace Heteroboxd.Service
 
         public async Task<UserInfoResponse> GetUser(string UserId)
         {
-            if (!Guid.TryParse(UserId, out var Id)) throw new ArgumentException();
-            var User = await _repo.GetByIdAsync(Id);
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
             return new UserInfoResponse(User);
         }
@@ -157,9 +156,7 @@ namespace Heteroboxd.Service
 
         public async Task<string> DetermineRelationship(string UserId, string TargetId)
         {
-            if (!Guid.TryParse(UserId, out var _uId) || !Guid.TryParse(TargetId, out var _tId)) throw new ArgumentException();
-
-            var Status = await _repo.GetRelationshipStatusAsync(_uId, _tId);
+            var Status = await _repo.GetRelationshipStatusAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
             if (Status == null) throw new KeyNotFoundException();
 
             return Status switch

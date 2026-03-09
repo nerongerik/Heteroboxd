@@ -1,21 +1,25 @@
-import { Platform, StyleSheet } from 'react-native'
+import { Platform } from 'react-native'
 import { Stack } from 'expo-router'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
-import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
-import './browser.css'
 import { useCountrySync } from '../hooks/useCountrySync'
 import { useTrendingSync } from '../hooks/useTrendingSync'
+import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
+import './browser.css'
 
 const RootLayout = () => {
-  useCountrySync(); //fire and forget
-  useTrendingSync(); //fire and forget
+  useCountrySync()
+  useTrendingSync()
 
   return (
     <AuthProvider>
       <Stack initialRouteName='index'
         screenOptions={{
-          headerStyle: styles.headerStyle,
+          headerStyle: {
+            backgroundColor: Colors.background,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
           headerTintColor: Colors.text,
           headerShadowVisible: false,
           title: '',
@@ -37,7 +41,7 @@ const RootLayout = () => {
             headerBackground: () => null,
             headerTitle: '',
             headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
-            }}
+          }}
         />
         <Stack.Screen 
           name="films/watchlist/[userId]" 
@@ -93,11 +97,3 @@ const RootLayout = () => {
 }
 
 export default RootLayout
-
-const styles = StyleSheet.create({
-  headerStyle: {
-    backgroundColor: Colors.background,
-    elevation: 0, //android
-    shadowOpacity: 0, //ios
-  },
-})

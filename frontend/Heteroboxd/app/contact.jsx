@@ -1,24 +1,16 @@
-import { StyleSheet, Text, View, ScrollView, Platform, useWindowDimensions } from 'react-native'
-import { Link } from 'expo-router';
-import * as Linking from 'expo-linking';
-import { Colors } from '../constants/colors';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Link } from 'expo-router'
+import * as Linking from 'expo-linking'
+import { Colors } from '../constants/colors'
+import Divider from '../components/divider'
 
 const Contact = () => {
-
-  const { width } = useWindowDimensions();
+  const { width } = useWindowDimensions()
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
       <ScrollView
-        contentContainerStyle={{
-          padding: 15,
-          minWidth: Platform.OS === 'web' && width > 1000 ? 1000 : 'auto',
-          maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%",
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          alignSelf: 'center'
-        }}
+        contentContainerStyle={{width: width > 1000 ? 1000 : width*0.95, flexGrow: 1, justifyContent: 'center', alignItems: 'center', alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>Contact Heteroboxd</Text>
@@ -30,7 +22,7 @@ const Contact = () => {
           support@heteroboxd.com
         </Text>
 
-        <View style={styles.divider} />
+        <Divider marginVertical={20} />
 
         <Text style={styles.subtitle}>
           Note
@@ -38,7 +30,7 @@ const Contact = () => {
         <Text style={styles.text}>
           Please keep in mind that Heteroboxd isn't a commercial entity, and the response times from our volunteers may vary.
           We should get back to you within 24 hours. In the meantime, feel free to check out our
-          <Link style={[styles.link, {fontSize: 16}]} href='https://www.heteroboxd.com/about'> FAQ</Link> for more information.
+          <Link style={[styles.link, {fontSize: 16}]} href='/about'> FAQ</Link> for more information.
         </Text>
       </ScrollView>
     </View>
@@ -48,12 +40,6 @@ const Contact = () => {
 export default Contact
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingBottom: 50,
-    backgroundColor: Colors.background,
-  },
   title: {
     fontSize: 28,
     fontWeight: "700",
@@ -83,13 +69,5 @@ const styles = StyleSheet.create({
     marginTop: 0,
     fontSize: 18,
     marginBottom: '3%',
-  },
-  divider: {
-    height: 1.5,
-    backgroundColor: Colors.border_color,
-    marginVertical: 20,
-    width: "75%",
-    alignSelf: "center",
-    opacity: 0.5,
-  },
-});
+  }
+})

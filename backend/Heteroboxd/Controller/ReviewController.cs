@@ -42,13 +42,26 @@ namespace Heteroboxd.Controller
 
         [HttpGet("{ReviewId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetReview(string ReviewId)
+        public async Task<IActionResult> GetReview(string ReviewId, string? UserId = null)
         {
             _logger.LogInformation($"GetReview endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                var Response = await _service.GetReview(ReviewId);
-                return Ok(Response);
+                var Review = await _service.GetReview(ReviewId);
+                if (UserId == null)
+                {
+                    return Ok(Review);
+                }
+                else
+                {
+                    return Ok(
+                    new
+                    {
+                        Review,
+                        Uwf = (await _userService.DidUserWatchFilm(UserId, Review.FilmId)) != null,
+                        ILiked = await _userService.IsObjectLiked(UserId, ReviewId, "review")
+                    });
+                }
             }
             catch (KeyNotFoundException)
             {
@@ -83,12 +96,19 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"GetReviewsByFilm endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Response = await _service.GetReviewsByFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
+                if (UserId == null)
+                {
+                    return Ok(await _service.GetReviewsByFilm(FilmId, null, Page, PageSize, Filter, Sort, Desc, FilterValue));
+                }
+                else
+                {
+                    return Ok(
+                    new
+                    {
+                        Reviews = await _service.GetReviewsByFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue),
+                        Uwf = await _userService.DidUserWatchFilm(UserId, FilmId) != null
+                    });
+                }
             }
             catch
             {

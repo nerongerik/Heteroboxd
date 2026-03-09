@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models.DTO;
+﻿using Amazon.S3.Model;
+using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,28 +12,62 @@ namespace Heteroboxd.Controller
     {
         private readonly IUserService _service;
         private readonly IReviewService _reviewService;
+        private readonly IFilmService _filmService;
         private readonly ILogger<UserController> _logger;
 
-        public UserController(IUserService service, IReviewService reviewService, ILogger<UserController> logger)
+        public UserController(IUserService service, IReviewService reviewService, IFilmService filmService, ILogger<UserController> logger)
         {
             _service = service;
             _reviewService = reviewService;
+            _filmService = filmService;
             _logger = logger;
         }
 
         [HttpGet("{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUser(string UserId)
+        public async Task<IActionResult> GetUser(string UserId, bool Inclusive = false, string? VisitorId = null)
         {
             _logger.LogInformation($"GetUser endpoint hit with UserId: {UserId}");
             try
             {
-                var Response = await _service.GetUser(UserId);
-                return Ok(Response);
+                if (Inclusive)
+                {
+                    return Ok(
+                    new
+                    {
+                        Profile = await _service.GetUser(UserId),
+                        Ratings = await _service.GetUserRatings(UserId),
+                        Relationship = VisitorId == null ? "" : await _service.DetermineRelationship(VisitorId, UserId)
+                    });
+                }
+                else
+                {
+                    return Ok(await _service.GetUser(UserId));
+                }
             }
-            catch (ArgumentException)
+            catch (KeyNotFoundException)
             {
-                return BadRequest();
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("{UserId}/subsequent")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserSubsequent(string UserId, int PageSize = 8)
+        {
+            _logger.LogInformation($"GetUserSubsequent endpoint hit with UserId: {UserId}");
+            try
+            {
+                return Ok(
+                new
+                {
+                    Favorites = await _service.GetFavorites(UserId),
+                    Recents = await _filmService.GetFilmsByUser(UserId, 1, PageSize, "ALL", "DATE WATCHED", true, null)
+                });
             }
             catch (KeyNotFoundException)
             {
@@ -60,29 +95,9 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-favorites/{UserId}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetUserFavorites(string UserId)
-        {
-            _logger.LogInformation($"GetUserFavorites enpoint hit with UserId: {UserId}");
-            try
-            {
-                var Response = await _service.GetFavorites(UserId);
-                return Ok(Response);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("user-relationships/{UserId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUserRelationships(string UserId, int FollowersPage = 1, int FollowingPage = 1, int BlockedPage = 1, int PageSize = 50)
+        public async Task<IActionResult> GetUserRelationships(string UserId, int FollowersPage = 1, int FollowingPage = 1, int BlockedPage = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GetUserRelationships endpoint hit for UserId: {UserId}");
             try
@@ -93,30 +108,6 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("determine-relationship/{UserId}/{TargetId}")]
-        [Authorize]
-        public async Task<IActionResult> DetermineUserRelationships(string UserId, string TargetId)
-        {
-            _logger.LogInformation($"DetermineUserRelationships endpoint hit for UserId: {UserId}");
-            try
-            {
-                var Response = await _service.DetermineRelationship(UserId, TargetId);
-                return Ok(Response);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
             }
             catch
             {
@@ -159,38 +150,6 @@ namespace Heteroboxd.Controller
                         Review = await _reviewService.GetReviewByUserFilm(UserId, FilmId),
                         Friends = await _service.GetFriendsForFilm(UserId, FilmId) 
                     });
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("uwf/{UserId}/{FilmId}")]
-        [Authorize]
-        public async Task<IActionResult> DidUserWatchFilm(string UserId, int FilmId)
-        {
-            _logger.LogInformation($"DidUserWatchFilm endpoint hit for: {UserId}, {FilmId}");
-            try
-            {
-                var Response = await _service.DidUserWatchFilm(UserId, FilmId);
-                return Ok(Response);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("ratings/{UserId}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetUserRatings(string UserId)
-        {
-            _logger.LogInformation($"GetUserRatings endpoint hit for {UserId}");
-            try
-            {
-                var Response = await _service.GetUserRatings(UserId);
-                return Ok(Response);
             }
             catch
             {
