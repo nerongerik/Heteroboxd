@@ -27,7 +27,6 @@ const UserReviews = () => {
   const [ data, setData ] = useState({ page: 1, reviews: [], totalCount: 0 })
   const [ author, setAuthor ] = useState({ authorPic: '', authorName: '', authorAdmin: false })
   const [ server, setServer ] = useState(Response.initial)
-  const [ showPagination, setShowPagination ] = useState(false)
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE CREATED', desc: true })
   const listRef = useRef(null)
@@ -153,7 +152,6 @@ const UserReviews = () => {
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
         listRef.current?.scrollToOffset({
@@ -175,8 +173,6 @@ const UserReviews = () => {
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
       <LoadingResponse visible={server.result <= 0} />

@@ -11,13 +11,15 @@ namespace Heteroboxd.Controller
     {
         private readonly IUserService _service;
         private readonly IReviewService _reviewService;
+        private readonly IUserListService _userListService;
         private readonly IFilmService _filmService;
         private readonly ILogger<UserController> _logger;
 
-        public UserController(IUserService service, IReviewService reviewService, IFilmService filmService, ILogger<UserController> logger)
+        public UserController(IUserService service, IReviewService reviewService, IUserListService userListService, IFilmService filmService, ILogger<UserController> logger)
         {
             _service = service;
             _reviewService = reviewService;
+            _userListService = userListService;
             _filmService = filmService;
             _logger = logger;
         }
@@ -149,6 +151,26 @@ namespace Heteroboxd.Controller
                         Review = await _reviewService.GetReviewByUserFilm(UserId, FilmId),
                         Friends = await _service.GetFriendsForFilm(UserId, FilmId) 
                     });
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("friends")]
+        [Authorize]
+        public async Task<IActionResult> GetFriendActivity(string UserId, int Page = 1, int PageSize = 4, string Sort = "DATE CREATED", bool Desc = true)
+        {
+            _logger.LogInformation($"GetFriendActivity endpoint hit for User: {UserId}");
+            try
+            {
+                return Ok(
+                new
+                {
+                    Reviews = await _reviewService.GetReviews(UserId, Page, PageSize, "FRIENDS", Sort, Desc, null),
+                    Lists = await _userListService.GetLists(UserId, Page, PageSize, "FRIENDS", Sort, Desc, null)
+                });
             }
             catch
             {

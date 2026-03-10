@@ -57,7 +57,7 @@ const Register = () => {
           setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
         }
       } else if (res.status === 400) {
-        setServer(Response.badRequest)
+        setServer({ result: 400, message: 'Registration error! This email is already in use.' })
       } else {
         setServer(Response.internalServerError)
       }
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     outlineColor: 'transparent',
   },
   bioInput: { minHeight: 80, textAlignVertical: 'top', padding: 5 },
-  button: { backgroundColor: Colors.button, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10,
+  button: { backgroundColor: Colors.heteroboxd, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10,
             width: '50%', alignSelf: 'center' },
   buttonText: { color: Colors.text_button, fontWeight: '600' },
   footerText: { textAlign: 'center', marginTop: 20, fontSize: 14, color: Colors.text },
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   radioSelected: {
     borderColor: Colors.border_color,
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
   },
   genderText: {
     color: Colors.text_input,

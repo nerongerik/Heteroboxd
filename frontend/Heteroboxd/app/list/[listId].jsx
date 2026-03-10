@@ -28,7 +28,6 @@ const List = () => {
   const [ server, setServer ] = useState(Response.initial)
   const [ base, setBase ] = useState(null)
   const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0, seenFilms: [], seenCount: 0 })
-  const [showPagination, setShowPagination] = useState(false)
   const [ fadeSeen, setFadeSeen ] = useState(true)
   const [ iLiked, setILiked ] = useState(false)
   const [ descCollapsed, setDescCollapsed ] = useState(true)
@@ -121,7 +120,7 @@ const List = () => {
     }
     const delta = iLiked ? -1 : 1
     setILiked(prev => !prev)
-    setData(prev => ({...prev, likeCount: prev.likeCount + delta}))
+    setBase(prev => ({...prev, likeCount: prev.likeCount + delta}))
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/like`, {
@@ -151,9 +150,9 @@ const List = () => {
   }, [loadBaseData])
 
   useEffect(() => {
-    if (!base) return
+    if (!base?.id) return
     loadDataPage(1)
-  }, [base, currentFilter, currentSort])
+  }, [base?.id, currentFilter, currentSort])
 
   const widescreen = useMemo(() => width > 1000, [width])
 
@@ -166,7 +165,7 @@ const List = () => {
       headerRight: () => {
         return (
           <>
-            <ListOptionsButton listId={base.id} />
+            <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} />
             {
               !base.ranked && 
               <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
@@ -285,7 +284,6 @@ const List = () => {
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
         listRef.current?.scrollToOffset({
@@ -327,8 +325,6 @@ const List = () => {
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
       <Popup

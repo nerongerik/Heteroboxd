@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     outlineColor: 'transparent',
   },
   bioInput: { minHeight: 80, textAlignVertical: 'top', padding: 5 },
-  button: { backgroundColor: Colors.button, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10, width: '25%', alignSelf: 'center' },
+  button: { backgroundColor: Colors.heteroboxd, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10, width: '25%', alignSelf: 'center' },
   buttonText: { color: Colors.text_button, fontWeight: '600' },
   footerText: { textAlign: 'center', marginTop: 20, fontSize: 14, color: Colors.text },
   link: { color: Colors.text_link, fontWeight: '600' },

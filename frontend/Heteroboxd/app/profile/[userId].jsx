@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import Foundation from '@expo/vector-icons/Foundation'
 import { Snackbar } from 'react-native-paper'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -15,6 +15,7 @@ import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
 import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
+import ProfileOptionsButton from '../../components/optionButtons/profileOptionsButton'
 import SearchBox from '../../components/searchBox'
 import SlidingMenu from '../../components/slidingMenu'
 import { UserAvatar } from '../../components/userAvatar'
@@ -29,6 +30,7 @@ const Profile = () => {
   const [ server, setServer ] = useState(Response.initial)
   const [ ratings, setRatings ] = useState({})
   const { width, height } = useWindowDimensions()
+  const navigation = useNavigation()
   const router = useRouter()
   const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const [ favorites, setFavorites ] = useState([])
@@ -203,6 +205,14 @@ const Profile = () => {
   }, [loadProfileData])
 
   useEffect(() => {
+    if (!user) return
+    navigation.setOptions({
+      headerTitle: '',
+      headerRight: () => <ProfileOptionsButton userId={userId} blocked={blocked} />
+    })
+  }, [navigation, blocked, user])
+
+  useEffect(() => {
     if (!data) return
     loadFilmData()
   }, [data, loadFilmData])
@@ -215,7 +225,7 @@ const Profile = () => {
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
   const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4.1, [maxRowWidth, spacing])
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
-  const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.button_reject : Colors.button_confirm
+  const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.heteroboxd : Colors._heteroboxd
 
   if (!data) {
     return (
@@ -493,7 +503,6 @@ const Profile = () => {
                 <PaginationBar
                   page={searchResults.page}
                   totalPages={totalPages}
-                  visible={searchResults.totalCount > PAGE_SIZE}
                   onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
                 />
               </View>

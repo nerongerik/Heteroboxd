@@ -1,204 +1,165 @@
-import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { Colors } from '../../constants/colors';
-import { useRouter } from 'expo-router';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { BaseUrl } from '../../constants/api';
-import * as auth from '../../helpers/auth';
-import { Snackbar } from 'react-native-paper';
-import SlidingMenu from '../slidingMenu';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import { Snackbar } from 'react-native-paper'
+import { useRouter } from 'expo-router'
+import * as auth from '../../helpers/auth'
+import { useAuth } from '../../hooks/useAuth'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
+import LoadingResponse from '../loadingResponse'
+import SlidingMenu from '../slidingMenu'
 
-const ListOptionsButton = ({ listId }) => {
-  const { user, isValidSession } = useAuth();
-
-  const [menuShown, setMenuShown] = useState(false);
-  const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
-
-  const router = useRouter();
-
-  const { width } = useWindowDimensions();
-
-  const [baseList, setBaseList] = useState(null);
-  const [notifsOnLocal, setNotifsOnLocal] = useState(true);
-
-  const [snack, setSnack] = useState(false);
-  const [msg, setMsg] = useState('');
-
-  useEffect(() => {
-    (async () => {
-      try {
-         const res = await fetch(`${BaseUrl.api}/lists/${listId}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-         });
-         if (res.status === 200) {
-          const json = await res.json();
-          setBaseList(json);
-          setNotifsOnLocal(json.notificationsOn);
-         }
-      } catch {
-        console.log('Network error!');
-      }
-    })();
-  }, [listId]);
+const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange }) => {
+  const { user, isValidSession } = useAuth()
+  const [ menuShown, setMenuShown ] = useState(false)
+  const slideAnim = useState(new Animated.Value(0))[0]
+  const router = useRouter()
+  const { width } = useWindowDimensions()
+  const [ notifsOnLocal, setNotifsOnLocal ] = useState(true)
+  const [ server, setServer ] = useState(Response.initial)
 
   const openMenu = () => {
-    setMenuShown(true);
+    setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
-
+      useNativeDriver: true
+    }).start()
+  }
   const closeMenu = () => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
-      useNativeDriver: true,
-    }).start(() => setMenuShown(false));
-  };
-
+      useNativeDriver: true
+    }).start(() => setMenuShown(false))
+  }
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [300, 0], //slide from bottom
-  });
+    outputRange: [300, 0]
+  })
 
-  const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
-
-  async function handleDelete() {
-    const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
+  const handleDelete = useCallback(async () => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
     try {
-      const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/lists/${baseList?.id}`, {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/lists/${listId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      });
-      if (res.status === 200) {
-        closeMenu();
-        router.replace(`profile/${user.userId}`);
-      }
-      else {
-        setMsg('Delete failed - please make sure your session is valid, and you are viewing the correct list.');
-        setSnack(true);
-      }
-    } catch {
-      setMsg('Network error. Check your internet connection.');
-      setSnack(true);
-    }
-  }
-
-  async function handleNotifications() {
-    const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
-    try {
-      const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/lists/toggle-notifications/${baseList?.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      });
-      if (res.status === 200) {
-        if (notifsOnLocal) setMsg('You will no longer recieve notifications for this list.');
-        else setMsg('You will now recieve notifications for this list.')
-        setSnack(true);
-        setNotifsOnLocal(prev => !prev);
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer(Response.ok)
+        closeMenu()
+        router.replace(`/`)
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
       } else {
-        setMsg(`${res.status}: Failed to flip notifications.`)
-        setSnack(true);
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMsg(`Network error - check your internet connection.`)
-      setSnack(true);
+      setServer(Response.networkError)
     }
-  }
+  }, [user, router, listId, closeMenu])
 
-  async function handleEdit() {
-    const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
-    if (baseList.authorId !== user.userId) {
-      setMsg("You are not supposed to be seeing this - what did you do?");
-      setSnack(true);
-      return;
+  const handleNotifications = useCallback(async () => {
+    if (user?.userId !== authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
     }
-    closeMenu();
-    router.push(`list/edit/${listId}`);
-  }
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/lists/toggle-notifications/${listId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer({ result: 201, message: notifsOnLocal ? 'You will no longer recieve notifications for this list!' : 'You will now recieve notifications for this list!' })
+        setNotifsOnLocal(prev => !prev)
+        onNotifChange()
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
+      } else {
+        setServer(Response.internalServerError)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, authorId, notifsOnLocal, listId, onNotifChange])
 
-  if (!user || !baseList || (user.userId !== baseList.authorId && user.admin)) {
-    return <View />;
+  const handleEdit = useCallback(async () => {
+    if (user?.userId !== authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    closeMenu()
+    router.push(`list/edit/${listId}`)
+  }, [user, authorId, listId, router, closeMenu])
+
+  useEffect(() => {
+    setNotifsOnLocal(notifsOnInitial)
+  }, [notifsOnInitial])
+
+  const widescreen = useMemo((() => width > 1000), [width])
+
+  if (user?.userId !== authorId) {
+    return <View />
   }
 
   return (
     <View>
       <Pressable onPress={openMenu} style={{zIndex: 1}}>
-        <MaterialIcons name="more-vert" size={24} color={Colors.text} />
+        <MaterialIcons name='more-vert' size={24} color={Colors.text} />
       </Pressable>
+      <SlidingMenu
+        menuShown={menuShown}
+        closeMenu={closeMenu} 
+        translateY={translateY} 
+        widescreen={widescreen} 
+        width={width}
+      >
+        <Pressable style={styles.option} onPress={handleEdit}>
+          <Text style={styles.optionText}>Edit List </Text>
+          <MaterialIcons name="edit" size={20} color={Colors.text} />
+        </Pressable>
+        <Pressable style={styles.option} onPress={handleNotifications}>
+          <Text style={styles.optionText}>{notifsOnLocal ? 'Turn Notifications Off ' : 'Turn Notifications On '}</Text>
+          <MaterialIcons name={notifsOnLocal ? "notifications-off" : 'notifications-active'} size={20} color={Colors.text} />
+        </Pressable>
+        <Pressable style={styles.option} onPress={handleDelete}>
+          <Text style={styles.optionText}>Delete List </Text>
+          <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
+        </Pressable>
 
-      <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
-        {
-          user?.admin ? (
-            <TouchableOpacity style={styles.option} onPress={handleDelete}>
-              <Text style={styles.optionText}>Delete w/ Admin Privileges </Text>
-              <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
-            </TouchableOpacity>
-          ) : (
-            <>
-              <TouchableOpacity style={styles.option} onPress={handleEdit}>
-                <Text style={styles.optionText}>Edit List </Text>
-                <MaterialIcons name="edit" size={20} color={Colors.text} />
-              </TouchableOpacity>
-                {
-                  notifsOnLocal ? (
-                    <TouchableOpacity style={styles.option} onPress={handleNotifications}>
-                      <Text style={styles.optionText}>Turn Notifications Off </Text>
-                      <MaterialIcons name="notifications-off" size={20} color={Colors.text} />
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity style={styles.option} onPress={handleNotifications}>
-                      <Text style={styles.optionText}>Turn Notifications On </Text>
-                      <MaterialIcons name="notifications-active" size={20} color={Colors.text} />
-                    </TouchableOpacity>
-                  )
-                }
-              <TouchableOpacity style={styles.option} onPress={handleDelete}>
-                <Text style={styles.optionText}>Delete List </Text>
-                <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
-              </TouchableOpacity>
-            </>
-          )
-        }
+        <LoadingResponse visible={server.result === 0} />
         <Snackbar
-          visible={snack}
-          onDismiss={() => setSnack(false)}
+          visible={[201, 403, 404, 500].includes(server.result)}
+          onDismiss={() => setServer(Response.initial)}
           duration={3000}
           style={{
             backgroundColor: Colors.card,
-            width: Platform.OS === 'web' && width > 1000 ? width*0.5 : width*0.9,
+            width: widescreen ? width*0.5 : width*0.9,
             alignSelf: 'center',
             borderRadius: 8,
           }}
           action={{
             label: 'OK',
-            onPress: () => setSnack(false),
+            onPress: () => setServer(Response.initial),
             textColor: Colors.text_link
           }}
         >
-          {msg}
+          {server.message}
         </Snackbar>
       </SlidingMenu>
     </View>
-  );
-};
+  )
+}
 
-export default ListOptionsButton;
+export default ListOptionsButton
 
 const styles = StyleSheet.create({
   option: {
@@ -210,5 +171,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     color: Colors.text,
-  },
-});
+  }
+})

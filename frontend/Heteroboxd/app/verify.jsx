@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   button: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     width: "50%",
     padding: 15,
     borderRadius: 10,

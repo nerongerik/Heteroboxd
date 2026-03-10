@@ -32,7 +32,6 @@ const ReviewWithComments = () => {
   const router = useRouter()
   const navigation = useNavigation()
   const [ comments, setComments ] = useState(null)
-  const [ showPagination, setShowPagination ] = useState(false)
   const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const [ server, setServer ] = useState(Response.initial)
   const listRef = useRef(null)
@@ -211,7 +210,7 @@ const ReviewWithComments = () => {
       headerTitle: review.authorName + "'s review",
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title},
-      headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} /> : null
+      headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} /> : null
     })
   }, [navigation, user, review])
 
@@ -282,7 +281,7 @@ const ReviewWithComments = () => {
       
       <Divider marginVertical={10} />
 
-      {user && <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} user={user} />}
+      {user && <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} />}
 
       <Text style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</Text>
     </View>
@@ -313,7 +312,7 @@ const ReviewWithComments = () => {
                   )
                 }
                 {
-                  (user.admin || user.userId === item.authorId) && (
+                  (user.userId === item.authorId) && (
                     <Pressable onPress={() => handleDelete(item.id)}>
                       <MaterialIcons name='delete-forever' size={widescreen ? 24 : 20} color={Colors.text} />
                     </Pressable>
@@ -344,7 +343,6 @@ const ReviewWithComments = () => {
         <PaginationBar
           page={comments?.page}
           totalPages={Math.ceil(comments?.totalCount / PAGE_SIZE)}
-          visible={showPagination}
           onPagePress={(num) => {
             setComments(null)
             loadCommentsDataPage(num)
@@ -390,8 +388,6 @@ const ReviewWithComments = () => {
             contentContainerStyle={{flexGrow: 1, paddingBottom: 100}}
             scrollEnabled={true}
             showsVerticalScrollIndicator={false}
-            onEndReached={() => setShowPagination(true)}
-            onEndReachedThreshold={0.2}
           />
         )
       }

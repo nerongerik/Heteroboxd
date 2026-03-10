@@ -8,7 +8,6 @@ import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 
 const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, seenCount, fadeSeen}) => {
-  const [ showPagination, setShowPagination ] = useState(false)
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
 
@@ -73,7 +72,6 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
     <PaginationBar
       page={currentTabData?.page || 1}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         onPageChange(num)
         listRef.current?.scrollToOffset({ offset: 0, animated: true })
@@ -184,8 +182,6 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
           style={{width: maxRowWidth, alignSelf: 'center'}}
           contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
           showsVerticalScrollIndicator={false}
-          onEndReached={() => setShowPagination(true)}
-          onEndReachedThreshold={0.2}
         />
       )}
     </View>

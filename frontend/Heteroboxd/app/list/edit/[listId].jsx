@@ -359,7 +359,6 @@ const EditList = () => {
                 <PaginationBar
                   page={searchResults.page}
                   totalPages={totalPages}
-                  visible={searchResults.totalCount > PAGE_SIZE}
                   onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
                 />
               </View>

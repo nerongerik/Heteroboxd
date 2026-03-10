@@ -1,33 +1,61 @@
-import { StyleSheet, Text, View, Pressable, FlatList, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native'
-import { useState, useMemo, useRef } from 'react'
-import PaginationBar from '../paginationBar'
-import { Poster } from '../poster'
-import { Headshot } from '../headshot'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { Fontisto } from '@expo/vector-icons'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import * as format from '../../helpers/format'
+import { useSearchHistory } from '../../hooks/useSearchHistory'
+import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import Author from '../author'
-import { Fontisto } from '@expo/vector-icons'
-import * as format from '../../helpers/format'
+import Divider from '../../components/divider'
+import { Headshot } from '../headshot'
+import PaginationBar from '../paginationBar'
+import { Poster } from '../poster'
 import { UserAvatar } from '../userAvatar'
-import {BaseUrl} from '../../constants/api'
-import { useSearchHistory } from '../../hooks/useSearchHistory'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const PAGE_SIZE = 20
 
-const SearchTabs = ({ widescreen, router, onResponseChange }) => {
-  const [query, setQuery] = useState('')
-  const [searching, setSearching] = useState(0) //0 - init, 1 - searching, 2 - resting
-
-  const {width} = useWindowDimensions()
-
-  const { searches: history, saveSearch } = useSearchHistory();
-
-  const [results, setResults] = useState({items: [], totalCount: 0, page: 1})
-
-  const [activeTab, setActiveTab] = useState("films")
-  const [showPagination, setShowPagination] = useState(false)
+const SearchTabs = ({ widescreen, router }) => {
+  const [ query, setQuery ] = useState('')
+  const [ searching, setSearching ] = useState(0) //0 - init, 1 - searching, 2 - resting
+  const { width } = useWindowDimensions()
+  const { searches: history, saveSearch } = useSearchHistory()
+  const [ results, setResults ] = useState({ page: 1, items: [], totalCount: 0 })
+  const [ tab, setTab ] = useState('films')
   const listRef = useRef(null)
 
+  const search = useCallback(async (page, overrides = {}) => {
+    const activeQuery = overrides.query || query
+    const activeTab = overrides.tab || tab
+    setSearching(1)
+    if (page === 1) {
+      saveSearch(activeQuery, activeTab)
+    }
+    try {
+      const res = await fetch(`${BaseUrl.api}/${activeTab}/search?Search=${activeQuery}&Page=${page}&PageSize=${PAGE_SIZE}`)
+      if (res.ok) {
+        const json = await res.json()
+        setResults({ page: json.page, items: json.items, totalCount: json.totalCount })
+      }
+    } finally {
+      setSearching(2)
+    }
+  }, [query, tab])
+
+  const repeatSearch = useCallback((s) => {
+    setTab(s.tab)
+    setQuery(s.query)
+    search(1, { query: s.query, tab: s.tab })
+  }, [search])
+
+  const resetParams = useCallback((tab) => {
+    setTab(tab)
+    setResults({ page: 1, items: [], totalCount: 0 })
+    setQuery('')
+    setSearching(0)
+  }, [])
+
+  const totalPages = Math.ceil(results.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const posterWidth = useMemo(() => widescreen ? 150 : 100, [widescreen])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
@@ -36,77 +64,45 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
   const listPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const listPosterHeight = useMemo(() => listPosterWidth * (3 / 2), [listPosterWidth])
 
-  const totalPages = Math.ceil(results.totalCount / PAGE_SIZE);
-
-  const search = async (page, overrides = {}) => {
-    const activeQuery = overrides.query ?? query;
-    const activeTab_ = overrides.tab ?? activeTab;
-
-    setSearching(1)
-    if (page === 1) saveSearch(activeQuery, activeTab_);
-    try {
-      const res = await fetch(`${BaseUrl.api}/${activeTab_}/search?Search=${activeQuery}&Page=${page}&PageSize=${PAGE_SIZE}`)
-      if (res.status === 200) {
-        const json = await res.json()
-        setResults({items: json.items, totalCount: json.totalCount, page: page})
-      }
-    } catch {
-    } finally {
-      setSearching(2)
-    }
-  }
-
-  const repeatSearch = (s) => {
-    setActiveTab(s.tab)
-    setQuery(s.query)
-    search(1, { query: s.query, tab: s.tab })
-  }
-
-  const resetParams = (tab) => {
-    setActiveTab(tab)
-    setResults({items: [], totalCount: 0, page: 1})
-    setQuery('')
-    setSearching(0)
-  }
-
   const TabButton = ({ title, active, onPress }) => (
     <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
       <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
     </Pressable>
-  );
+  )
 
   const Footer = () => (
     <PaginationBar
       page={results.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         search(num)
-        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+        listRef.current?.scrollToOffset({
+          offset: 0, 
+          animated: true 
+        })
       }}
     />
-  );
+  )
 
-  const RenderItem = ({item}) => {
-    switch (activeTab) {
+  const RenderItem = ({ item }) => {
+    switch (tab) {
       case 'films':
-        return RenderFilm({item})
+        return RenderFilm({ item })
       case 'celebrities':
-        return RenderCeleb({item})
+        return RenderCeleb({ item })
       case 'lists':
-        return RenderList({item})
+        return RenderList({ item })
       case "users":
-        return RenderUser({item})
+        return RenderUser({ item })
       default:
-        onResponseChange(400, 'You cannot search for that.')
         return null
     }
   }
 
-  const RenderFilm = ({item}) => {
+  const RenderFilm = ({ item }) => {
     return (
       <>
-        <Pressable style={{}} onPress={() => router.push(`/film/${item.filmId}`)}>
+        <Pressable onPress={() => router.push(`/film/${item.filmId}`)}>
           <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', padding: 3}}>
             <View>
               <Poster
@@ -123,9 +119,9 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
             </View>
             <View>
               <Text style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text_title, fontWeight: '700'}}>{item.title}</Text>
-              {item.originalTitle && item.title !== item.originalTitle && <Text style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400', fontStyle: 'italic'}}>{item.originalTitle}</Text>}
+              {item.originalTitle !== item.title && <Text style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400', fontStyle: 'italic'}}>{item.originalTitle}</Text>}
               <Text style={{fontSize: widescreen ? 16 : 12, color: Colors.text, fontWeight: '400'}}>
-                {item.releaseYear > 0 && `${item.releaseYear}`}
+                {item.releaseYear || ''}
                 {item.castAndCrew?.length > 0 && item.releaseYear > 0 && ' • '}
                 {item.castAndCrew?.map((director, index) => (
                   `${director.celebrityName}${index < item.castAndCrew?.length - 1 ? ', ' : ''}`
@@ -139,13 +135,13 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
     )
   }
 
-  const RenderCeleb = ({item}) => (
+  const RenderCeleb = ({ item }) => (
     <>
-      <Pressable style={{}} onPress={() => router.push(`/celebrity/${item.celebrityId}`)}>
+      <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}`)}>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', padding: 3}}>
           <View>
             <Headshot
-              pictureUrl={item.celebrityPictureUrl ?? null}
+              pictureUrl={item.celebrityPictureUrl || null}
               style={{
                 width: headshotDim,
                 height: headshotDim,
@@ -165,10 +161,10 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
     </>
   )
 
-  const RenderUser = ({item}) => (
+  const RenderUser = ({ item }) => (
     <>
       <Pressable style={{paddingVertical: 14, lineHeight: 30, paddingHorizontal: 5}} onPress={() => router.push(`/profile/${item.id}`)}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <UserAvatar pictureUrl={item.pictureUrl} style={{width: 30, height: 30, borderRadius: 15, borderColor: Colors.border_color, borderWidth: 1.5}} />
           <Text style={{ fontSize: 18, marginLeft: 10, color: Colors.text}}>{item.name}{item.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
         </View>
@@ -177,8 +173,8 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
     </>
   )
 
-  const RenderList = ({item}) => (
-    <View style={[{ borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 1}, { marginBottom: spacing }]}>
+  const RenderList = ({ item }) => (
+    <View style={{ borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 1, marginBottom: spacing }}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
@@ -191,18 +187,16 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
         <Text style={[{color: Colors.text_title, fontWeight: '500', padding: 10}, {fontSize: widescreen ? 22 : 18}]}>{item.name}</Text>
-            
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
-            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position);
-            const remainder = paddedFilms.length % 4;
+            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
+            const remainder = paddedFilms.length % 4
             if (remainder !== 0) {
-              const placeholdersToAdd = 4 - remainder;
+              const placeholdersToAdd = 4 - remainder
               for (let i = 0; i < placeholdersToAdd; i++) {
-                paddedFilms.push(null);
+                paddedFilms.push(null)
               }
             }
-            
             return paddedFilms.map((film, i) => (
               film ? (
                 <Poster
@@ -214,7 +208,7 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
                     marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing/2,
                     borderWidth: 2,
                     borderColor: Colors.border_color,
-                    borderRadius: 6,
+                    borderRadius: 6
                   }}
                 />
               ) : (
@@ -223,11 +217,11 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
                   style={{
                     width: listPosterWidth,
                     height: listPosterHeight,
-                    marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing/2,
+                    marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing/2
                   }}
                 />
               )
-            ));
+            ))
           })()}
         </View>
                 
@@ -238,9 +232,9 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
         </Text>
           
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6,}}>
-          <Fontisto name="nav-icon-list-a" size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
+          <Fontisto name='nav-icon-list-a' size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
           <Text style={[{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd,}, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </Text>
-          <Fontisto name="heart" size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
+          <Fontisto name='heart' size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
           <Text style={[{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd,}, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</Text>
         </View>
       </Pressable>
@@ -249,11 +243,11 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
 
   return (
     <>
-      <View style={[widescreen ? styles.wideRow : styles.narrowRow]}>
-        <TabButton title="Films" active={activeTab === "films"} onPress={() => resetParams("films")} />
-        <TabButton title="Celebrities" active={activeTab === "celebrities"} onPress={() => resetParams("celebrities")} />
-        <TabButton title="Lists" active={activeTab === "lists"} onPress={() => resetParams("lists")} />
-        <TabButton title="Users" active={activeTab === "users"} onPress={() => resetParams("users")} />
+      <View style={widescreen ? styles.wideRow : styles.narrowRow}>
+        <TabButton title='Films' active={tab === 'films'} onPress={() => resetParams('films')} />
+        <TabButton title='Celebrities' active={tab === 'celebrities'} onPress={() => resetParams('celebrities')} />
+        <TabButton title='Lists' active={tab === 'lists'} onPress={() => resetParams('lists')} />
+        <TabButton title='Users' active={tab === 'users'} onPress={() => resetParams('users')} />
       </View>
 
       <View style={{width: widescreen ? 1000 : null, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 30, alignSelf: 'center', paddingHorizontal: 5}}>
@@ -274,10 +268,10 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
               outlineWidth: 0,
               outlineColor: 'transparent',
             }}
-            placeholder={`Search ${activeTab}...`}
+            placeholder={`Search ${tab}...`}
             value={query}
             onChangeText={setQuery}
-            autoCapitalize="none"
+            autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
           />
           <Pressable
@@ -285,13 +279,13 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
             style={[{backgroundColor: Colors.heteroboxd, padding: 12, borderTopRightRadius: 10, borderBottomRightRadius: 10, borderWidth: 2, borderLeftWidth: 0, borderColor: Colors.border_color, height: 45 + StyleSheet.hairlineWidth, justifyContent: 'center'}, query.length === 0 && {opacity: 0.8}]}
             disabled={query.length === 0}
           >
-            <Fontisto name="search" size={widescreen ? 24 : 18} color={Colors.text_button} />
+            <Fontisto name='search' size={widescreen ? 24 : 18} color={Colors.text_button} />
           </Pressable>
         </View>
         {
           searching !== 0 ? (
             <View style={{width: widescreen ? 100 : null, alignSelf: 'center'}}>
-              <Pressable onPress={() => resetParams(activeTab)}><MaterialIcons name="cancel" size={24} color={Colors.text} /></Pressable>
+              <Pressable onPress={() => resetParams(tab)}><MaterialIcons name="cancel" size={24} color={Colors.text} /></Pressable>
             </View>
           ) : null
         }
@@ -308,35 +302,26 @@ const SearchTabs = ({ widescreen, router, onResponseChange }) => {
                   <Text style={{fontStyle: 'italic', opacity: 0.5}}>{format.formatTimestamp(s.timestamp)}</Text>
                 </Text>
               </Pressable>
-              <View style={[styles.divider, {marginVertical: 20}]} />
+              <Divider marginVertical={20} />
             </View>
           ))
         ) : searching === 1 ? (
-          <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-            <ActivityIndicator size="large" color={Colors.text_link} />
+          <View style={{ width: '100%', alignItems: 'center', paddingVertical: 30 }}>
+            <ActivityIndicator size='large' color={Colors.text_link} />
           </View>
         ) : (
           <FlatList
             ref={listRef}
             data={results.items}
-            key={activeTab}
-            keyExtractor={(_, index) => `${activeTab}-${index}`}
+            key={tab}
+            keyExtractor={(_, index) => `${tab}-${index}`}
             renderItem={RenderItem}
-            ListEmptyComponent={
-              searching === 2 && <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</Text>
-            }
+            ListEmptyComponent={searching === 2 && <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to see here.</Text>}
             ListFooterComponent={Footer}
-            style={{
-              width: '100%',
-              alignSelf: 'center'
-            }}
-            contentContainerStyle={{
-              paddingBottom: 80,
-            }}
+            style={{width: '100%', alignSelf: 'center'}}
+            contentContainerStyle={{paddingBottom: 80}}
             showsVerticalScrollIndicator={false}
             scrollEnabled={true}
-            onEndReached={() => setShowPagination(true)}
-            onEndReachedThreshold={0.2}
           />
         )
       }
@@ -378,13 +363,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 5,
     marginBottom: 20,
-  },
-  divider: {
-    height: 1.5,
-    backgroundColor: Colors.border_color,
-    marginVertical: 20,
-    width: "75%",
-    alignSelf: "center",
-    opacity: 0.5,
-  },
+  }
 })

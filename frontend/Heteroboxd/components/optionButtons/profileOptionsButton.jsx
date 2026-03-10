@@ -1,277 +1,212 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { Colors } from '../../constants/colors';
-import { useRouter, Link } from 'expo-router';
-import Feather from '@expo/vector-icons/Feather';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Entypo from '@expo/vector-icons/Entypo';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Octicons from '@expo/vector-icons/Octicons';
-import { BaseUrl } from '../../constants/api';
-import * as auth from '../../helpers/auth';
-import Popup from '../popup';
-import LoadingResponse from '../loadingResponse';
-import { useFocusEffect } from '@react-navigation/native';
-import SlidingMenu from '../slidingMenu';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import AntDesign from '@expo/vector-icons/AntDesign'
+import Entypo from '@expo/vector-icons/Entypo'
+import Feather from '@expo/vector-icons/Feather'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import Octicons from '@expo/vector-icons/Octicons'
+import { useRouter } from 'expo-router'
+import * as auth from '../../helpers/auth'
+import { useAuth } from '../../hooks/useAuth'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
+import LoadingResponse from '../loadingResponse'
+import Popup from '../popup'
+import SlidingMenu from '../slidingMenu'
 
-const ProfileOptionsButton = ({ userId }) => {
-  const { user, logout, isValidSession } = useAuth();
-  const [other, setOther] = useState(false);
-
-  const [menuShown, setMenuShown] = useState(false);
-  const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
-
-  const [message, setMessage] = useState("");
-  const [result, setResult] = useState(-1);
-
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [reportConfirm, setReportConfirm] = useState(false);
-  const [blockConfirm, setBlockConfirm] = useState(false);
-
-  const [blocked, setBlocked] = useState(false);
-
-  const router = useRouter();
-
-  const { width } = useWindowDimensions();
-
-  useEffect(() => {
-    if (!user) setOther(true);
-    else setOther(user.userId !== userId);
-  }, [userId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!user || !other) return;
-    
-      let isActive = true;
-    
-      (async () => {
-        try {
-          const res = await fetch(`${BaseUrl.api}/users/user-relationships/${user.userId}`);
-          if (!isActive) return;
-        
-          if (res.status === 200) {
-            const json = await res.json();
-            const blockedSet = new Set(json.blocked.map(uir => uir.id));
-            setBlocked(blockedSet.has(userId));
-          }
-        } catch {
-          console.log('failure.');
-        }
-      })();
-    
-      return () => {
-        isActive = false; // clean up so state isn't set after unmount
-      };
-    }, [user, userId, other])
-  );
+const ProfileOptionsButton = ({ userId, blocked }) => {
+  const { user, logout, isValidSession } = useAuth()
+  const [ other, setOther ] = useState(false)
+  const [ menuShown, setMenuShown ] = useState(false)
+  const slideAnim = useState(new Animated.Value(0))[0]
+  const [ server, setServer ] = useState(Response.initial)
+  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
+  const [ blockConfirm, setBlockConfirm ] = useState(false)
+  const [ blockedLocalCopy, setBlockedLocalCopy ] = useState(false)
+  const router = useRouter()
+  const { width } = useWindowDimensions()
 
   const openMenu = () => {
-    setMenuShown(true);
+    setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
-
+      useNativeDriver: true
+    }).start()
+  }
   const closeMenu = () => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
-      useNativeDriver: true,
-    }).start(() => setMenuShown(false));
-  };
-
+      useNativeDriver: true
+    }).start(() => setMenuShown(false))
+  }
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [300, 0], //slide from bottom
-  });
+    outputRange: [300, 0]
+  })
 
-  //button functionalities
-  async function handleLogout() {
-    setResult(0);
-    const vS = await isValidSession();
-    if (!vS) {
-      setMessage("Session invalid - you cannot sign out of your account.")
-      setResult(401);
-      return;
+  const handleLogout = useCallback(async () => {
+    await logout(userId)
+    router.replace('/')
+  }, [userId, logout, router])
+
+  const handleDelete = useCallback(async () => {
+    if (user?.userId !== userId || !(await isValidSession)) {
+      setServer(Response.forbidden)
+      return
     }
-    await logout(userId);
-    router.replace('/');
-  }
-  async function handleDelete() {
-    setResult(0);
-    const vS = await isValidSession();
-    if (!vS) {
-      setMessage("Session invalid - you cannot delete your account.")
-      setResult(401);
-    }
-    else {
-      await fetch(`${BaseUrl.api}/users/${userId}`, {
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/${userId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${await auth.getJwt()}`
-        }
-      }).then(async (res) => {
-        if (res.status === 200) {
-          setResult(200);
-          await handleLogout();
-        } else if (res.status === 400) {
-          setMessage("The request user doesn't belong to our database!");
-          setResult(400);
-        } else if (res.status === 401) {
-          //special case -> since this is astronomically unlikely to occur (and then, only due to stale tokens),
-          //straight up just lie to the user that they are successfully deleted and log them out (empty their storage) lol
-          setResult(-1);
-          await handleLogout();
-        } else if (res.status === 404) {
-          setMessage("This user no longer exists.");
-          setResult(404);
-        } else {
-          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-          setResult(500);
-        }
+        headers: { 'Authorization': `Bearer ${jwt}` }
       })
+      if (res.ok) {
+        setDeleteConfirm(false)
+        handleLogout()
+      } else {
+        console.log('delete failed; internal server error; straight up lying to the user and logging them out lol.')
+        handleLogout()
+      }
+    } catch {
+      console.log('delete failed; network error; straight up lying to the user and logging them out lol.')
+      handleLogout()
     }
-  }
-  async function handleEdit() {
-    const vS = await isValidSession();
-    if (!vS) {
-      setMessage("Session invalid - you cannot edit your account.")
-      setResult(401);
-    } else {
-      router.replace(`/profile/edit/${userId}`);
-    }
-  }
-  async function handleShare() {
-    if (!(isValidSession())) {
-      //fail
-    } else {
-      //todo
-    }
-  }
-  async function handleReport() {
-    const vS = await isValidSession();
-    if (!vS) {
-      setMessage("Session invalid - you cannot report this account.")
-      setResult(401);
-    } else {
-      const jwt = await auth.getJwt();
-      await fetch(`${BaseUrl.api}/users/report/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      }).then((res) => {
-        if (res.status === 200) {
-          setMessage("You have successfully reported this user.");
-          setResult(400); //to make the popup show, who cares lol
-        } else if (res.status === 400 || res.status === 404) {
-          setMessage("The user you are trying to report doesn't seem to exist, or your request was malformed.");
-          setResult(404);
-        } else {
-          setMessage("Something went wrong! Contact Heteroboxd support for more information!");
-          setResult(500);
-        }
-      })
-    }
-  }
-  async function handleBlock() {
-    const vS = await isValidSession();
-    if (!vS) {
-      setMessage("Session invalid - you cannot block this account.")
-      setResult(401);
-    } else {
-      const jwt = await auth.getJwt();
-      await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=block-unblock`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      }).then((res) => {
-        if (res.status === 200) {
-          blocked ? setMessage('You have successfully unblocked this user') : setMessage('You have successfully blocked this user.');
-          setResult(400); //to make the popup show, who cares lol
-          setBlocked(prev => !prev);
-        } else if (res.status === 404) {
-          setMessage("The user you are trying to block no longer exists.");
-          setResult(404);
-        } else {
-          setMessage("Something went wrong. Please contact Heteroboxd support for more information.")
-          setResult(500);
-        }
-      });
-    }
-  }
+  }, [user, userId, handleLogout])
+  
+  const handleEdit = useCallback(() => {
+    router.replace(`/profile/edit/${userId}`)
+  }, [userId, router])
 
-  const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
+  const handleReport = useCallback(async () => {
+    if (user?.userId === userId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/report/${userId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer({ result: 201, message: 'User reported.' })
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
+      } else {
+        setServer(Response.internalServerError)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, userId])
+  
+  const handleBlock = useCallback(async () => {
+    if (user?.userId === userId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=block-unblock`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setBlockConfirm(false)
+        setServer({ result: 202, message: blockedLocalCopy ? 'User unblocked.' : 'User blocked.' })
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
+      } else {
+        setServer(Response.internalServerError)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, userId, blockedLocalCopy])
+
+  useEffect(() => {
+    setBlockedLocalCopy(blocked)
+  }, [blocked])
+
+  useEffect(() => {
+    setOther(user?.userId !== userId)
+  }, [user, userId])
+
+  const widescreen = useMemo((() => width > 1000), [width])
 
   return (
     <View>
       <Pressable onPress={openMenu}>
-        <MaterialIcons name="more-vert" size={24} color={Colors.text} />
+        <MaterialIcons name='more-vert' size={24} color={Colors.text} />
       </Pressable>
-
-      <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
+      <SlidingMenu
+        menuShown={menuShown} 
+        closeMenu={closeMenu} 
+        translateY={translateY} 
+        widescreen={widescreen} 
+        width={width}
+      >
         {other ? (
           <>
-            <TouchableOpacity style={styles.option} onPress={() => {setReportConfirm(true)}}>
-              <Text style={styles.optionText}>Report User  <Octicons name="report" size={18} color={Colors.text} /></Text>
-            </TouchableOpacity>
-            {
-              blocked ? (
-                <TouchableOpacity style={styles.option} onPress={handleBlock}>
-                  <Text style={styles.optionText}>Unblock User  <Entypo name="lock-open" size={18} color={Colors.text} /></Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={styles.option} onPress={handleBlock}>
-                  <Text style={styles.optionText}>Block User  <Entypo name="block" size={18} color={Colors.text} /></Text>
-                </TouchableOpacity>
-              )
-            }
+            <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleReport}>
+              <Text style={styles.optionText}>Report User  </Text>
+              <Octicons name='report' size={18} color={Colors.text} />
+            </Pressable>
+            <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
+              <Text style={styles.optionText}>{blockedLocalCopy ? 'Unblock user  ' : 'Block user  '}</Text>
+              <Entypo name={blockedLocalCopy ? 'lock-open' : 'block'} size={18} color={Colors.text} />
+            </Pressable>
           </>
         ) : (
           <>
-            <TouchableOpacity style={styles.option} onPress={handleShare}>
-              <Text style={styles.optionText}>Share Profile  <Entypo name="share" size={18} color={Colors.text} /></Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={handleEdit}>
-              <Text style={styles.optionText}>Edit Profile  <Feather name="edit" size={18} color={Colors.text} /></Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={handleLogout}>
-              <Text style={styles.optionText}>Sign Out  <FontAwesome name="sign-out" size={18} color={Colors.text} /></Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.option} onPress={() => {setDeleteConfirm(true)}}>
-              <Text style={styles.optionText}>Delete Profile  <AntDesign name="user-delete" size={18} color={Colors.text} /></Text>
-            </TouchableOpacity>
+            <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleEdit}>
+              <Text style={styles.optionText}>Edit Profile  </Text>
+              <Feather name="edit" size={18} color={Colors.text} />
+            </Pressable>
+            <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleLogout}>
+              <Text style={styles.optionText}>Sign Out  </Text>
+              <FontAwesome name="sign-out" size={18} color={Colors.text} />
+            </Pressable>
+            <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => {setDeleteConfirm(true)}}>
+              <Text style={styles.optionText}>Delete Profile  </Text>
+              <AntDesign name="user-delete" size={18} color={Colors.text} />
+            </Pressable>
           </>
         )}
       </SlidingMenu>
+      
+      <LoadingResponse visible={server.result === 0} />
 
-      <Popup visible={result === 400 || result === 401 || result === 404 || result === 500} message={message} onClose={() => {
-          result === 500 ? router.replace('/contact') : router.replace(`/profile/${userId}`);
-        }}
+      <Popup
+        visible={[201, 202, 403, 404, 500].includes(server.result)}
+        message={server.message}
+        onClose={() => server.result === 201 ? setServer(Response.initial) : server.result === 202 ? router.replace('/') : server.result === 403 ? router.replace('/login') : server.result === 404 ? router.replace('/') : router.replace('/contact')}
       />
 
-      <Popup visible={deleteConfirm} message={"This action cannot be undone, and you may be unable to make a new account with the same e-mail until we finish processing the removal request. Are you sure you want to delete your account?"}
-        onClose={() => {setDeleteConfirm(false)}} confirm={true} onConfirm={() => {handleDelete()}}
+      <Popup
+        visible={deleteConfirm}
+        message={'This action cannot be undone, and you may be unable to make a new account with the same email until we finish processing the request. Are you sure you want to delete your account?'}
+        onClose={() => setDeleteConfirm(false)}
+        confirm={true}
+        onConfirm={handleDelete}
       />
 
-      <Popup visible={reportConfirm} message={<Text>Are you sure this user has violated{' '}<Link style={styles.link} href="/guidelines">Heteroboxd community guidelines</Link>?</Text>}
-        onClose={() => {setReportConfirm(false)}} confirm={true} onConfirm={() => {handleReport()}}
+      <Popup
+        visible={blockConfirm} 
+        message={'Are you sure you want to block this user? Interactions will be disabled until you unblock their account.'}
+        onClose={() => setBlockConfirm(false)} 
+        confirm={true} 
+        onConfirm={handleBlock}
       />
-
-      <Popup visible={blockConfirm} message={"Are you sure you want to block this user? Interactions will be disabled unless you unblock this account."}
-        onClose={() => {setBlockConfirm(false)}} confirm={true} onConfirm={() => {handleBlock()}}
-      />
-
-      <LoadingResponse visible={result === 0} />
     </View>
-  );
-};
+  )
+}
 
 export default ProfileOptionsButton;
 
@@ -287,5 +222,5 @@ const styles = StyleSheet.create({
   link: {
     color: Colors.text_link,
     fontWeight: "600",
-  },
-});
+  }
+})

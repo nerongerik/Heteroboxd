@@ -1,3 +1,4 @@
+//new
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Snackbar } from 'react-native-paper'
@@ -171,7 +172,7 @@ const Film = () => {
       <ScrollView
         contentContainerStyle={{
           paddingTop: 0,
-          width: widescreen ? 1000 : width*0.95,
+          width: widescreen ? 1000 : width,
           alignSelf: 'center'
         }}
         showsVerticalScrollIndicator={false}
@@ -218,9 +219,7 @@ const Film = () => {
         
         <Divider marginVertical={15} />
         
-        {
-          film.tagline && <Text style={{fontWeight: '700', color: Colors.text, textAlign: 'left', paddingHorizontal: 10, fontSize: widescreen ? 20 : 16, marginBottom: 10}}>{film.tagline}</Text>
-        }
+        <Text style={{fontWeight: '700', color: Colors.text, textAlign: 'left', paddingHorizontal: 10, fontSize: widescreen ? 20 : 16, marginBottom: film.tagline?.length === 0 ? 0 : 10}}>{film.tagline || ''}</Text>
         <Text style={[styles.text, {fontSize: widescreen ? 18 : 14, paddingHorizontal: 10}]}>{film.synopsis}</Text>
 
         {
@@ -229,7 +228,7 @@ const Film = () => {
             <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 10}}>
               {
                 film.genres.map((genre, i) => (
-                  <Pressable key={i} onPress={() => router.push(`films/explore?filter=genre&value=${genre}`)} style={[{backgroundColor: Colors.button, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
+                  <Pressable key={i} onPress={() => router.push(`films/explore?filter=genre&value=${genre}`)} style={[{backgroundColor: Colors.heteroboxd, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
                     <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>{genre}</Text>
                   </Pressable>
                 ))
@@ -257,13 +256,13 @@ const Film = () => {
           user ? (
             <FilmInteract widescreen={widescreen} filmId={film.id} seen={uwf} watchlisted={watchlisted} review={usersReview}/>
           ) : (
-            <Link style={{color: Colors.text_link, fontSize: 16, textAlign: 'center'}} href='/login'>Create a Heteroboxd account or log in to interact with this film.</Link>
+            <Link style={{color: Colors.text_link, fontSize: 16, paddingHorizontal: 10, textAlign: 'center'}} href='/login'>Create a Heteroboxd account or log in to interact with this film.</Link>
           )
         }
 
         <Divider marginVertical={20} />
 
-        <FilmDataLoaders filmId={film.id} watchCount={film.watchCount ?? 0} reviewCount={reviewCount} listsIncluded={listsCount} widescreen={widescreen} />
+        <FilmDataLoaders filmId={film.id} watchCount={film.watchCount ?? 0} reviewCount={reviewCount} listsIncluded={listsCount} widescreen={widescreen} router={router} />
         
         <Divider marginVertical={20} />
 

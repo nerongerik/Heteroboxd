@@ -1,17 +1,17 @@
-import { useState, memo, useRef } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Colors } from '../constants/colors';
+import { memo, useRef, useState } from 'react'
+import { StyleSheet, Text, TextInput, Pressable, View } from 'react-native'
+import { Colors } from '../constants/colors'
 
-const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth, user }) => {
-  const [text, setText] = useState('');
-  const textInputRef = useRef(null);
+const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth }) => {
+  const [ text, setText ] = useState('')
+  const textInputRef = useRef(null)
 
   const handleSubmit = () => {
     if (text.trim().length > 0 && text.trim().length <= 500) {
-      onSubmit(text);
-      setText('');
+      onSubmit(text)
+      setText('')
     }
-  };
+  }
 
   return (
     <View style={[styles.commentInputContainer, {width: maxRowWidth, alignSelf: 'center'}]}>
@@ -20,31 +20,27 @@ const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth, user }) => {
           ref={textInputRef}
           value={text}
           onChangeText={setText}
-          placeholder="Add a comment…"
+          placeholder='Add a comment…'
           placeholderTextColor={Colors.text_placeholder}
           style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 80 : 60}]}
           multiline={true}
           scrollEnabled={true}
           showsVerticalScrollIndicator={false}
         />
-        <Text style={[
-          styles.counterText,
-          {fontSize: widescreen ? 14 : 12},
-          { color: text.trim().length < 501 ? Colors.text_title : Colors.password_meager }
-        ]}>
+        <Text style={[styles.counterText, {fontSize: widescreen ? 14 : 12}, {color: text.trim().length < 501 ? Colors.text_title : Colors.password_meager}]}>
           {text.trim().length}/500
         </Text>
       </View>
-      <TouchableOpacity
+      <Pressable
         style={(text.trim().length === 0 || text.trim().length > 500) && { opacity: 0.5 }}
         onPress={handleSubmit}
         disabled={text.trim().length === 0 || text.trim().length > 500}
       >
         <Text style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, marginBottom: 10}}>{' ➜'}</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
-  );
-});
+  )
+})
 
 export default CommentInput;
 
@@ -72,5 +68,5 @@ const styles = StyleSheet.create({
     bottom: 5,
     position: 'absolute',
     right: 10
-  },
-});
+  }
+})

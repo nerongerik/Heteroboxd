@@ -149,13 +149,12 @@ namespace Heteroboxd.Service
             {
                 var Key = Convert.FromBase64String(_config["Jwt:Key"]!);
                 var Claims = new List<Claim>
-            {
+                {
                 new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, User.Email!),
                 new Claim("name", User.Name!),
                 new Claim("pictureUrl", User.PictureUrl!),
                 new Claim("admin", User.IsAdmin.ToString()),
-            };
+                };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);
                 var Token = new JwtSecurityToken(

@@ -27,7 +27,6 @@ const ExploreLists = () => {
   const { width } = useWindowDimensions()
   const [ data, setData ] = useState({ page: 1, lists: [], totalCount: 0 })
   const [ server, setServer ] = useState(Response.initial)
-  const [ showPagination, setShowPagination ] = useState(false)
   const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
@@ -166,7 +165,6 @@ const ExploreLists = () => {
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
         listRef.current?.scrollToOffset({
@@ -188,8 +186,6 @@ const ExploreLists = () => {
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
       <LoadingResponse visible={server.result <= 0} />

@@ -49,7 +49,7 @@ const PasswordReset = () => {
         <Pressable
           disabled={!pwValid}
           onPress={handleReset}
-          style={[{backgroundColor: Colors.button, alignSelf: 'center', borderRadius: 3}, (!pwValid) && {opacity: 0.5}]}
+          style={[{backgroundColor: Colors.heteroboxd, alignSelf: 'center', borderRadius: 3}, (!pwValid) && {opacity: 0.5}]}
         >
           <Text style={{color: Colors.text_button, paddingHorizontal: 10, paddingVertical: 5, fontSize: 16}}>Confirm</Text>
         </Pressable>

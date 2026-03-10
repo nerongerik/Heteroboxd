@@ -4,7 +4,6 @@ import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import { useCountrySync } from '../hooks/useCountrySync'
 import { useTrendingSync } from '../hooks/useTrendingSync'
-import ProfileOptionsButton from '../components/optionButtons/profileOptionsButton'
 import './browser.css'
 
 const RootLayout = () => {
@@ -27,12 +26,6 @@ const RootLayout = () => {
       >
         <Stack.Screen name='login' options={{ headerShown: false }} />
         <Stack.Screen name='register' options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="profile/[userId]" 
-          options={({ route }) => ({
-            headerRight: () => <ProfileOptionsButton userId={route.params?.userId} />
-          })}
-        />
         <Stack.Screen
           name='film/[filmId]'
           options={{

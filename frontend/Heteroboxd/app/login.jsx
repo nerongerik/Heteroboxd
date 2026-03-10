@@ -133,7 +133,7 @@ const Login = () => {
                 }}
               />
               <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
-                <Pressable onPress={() => {setRecovery(''); setVisible(false)}} style={[styles.buttonR, { backgroundColor: Colors.button_reject, marginHorizontal: 10 }]}>
+                <Pressable onPress={() => {setRecovery(''); setVisible(false)}} style={[styles.buttonR, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>
                   <Text style={styles.buttonTextR}>Cancel</Text>
                 </Pressable>
                 <Pressable
@@ -141,7 +141,7 @@ const Login = () => {
                   onPress={sendRecovery}
                   style={[
                     styles.buttonR,
-                    { backgroundColor: Colors.button_confirm, marginHorizontal: 10 },
+                    { backgroundColor: Colors._heteroboxd, marginHorizontal: 10 },
                     (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recovery)) && {opacity: 0.5}
                   ]}
                 >
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   button: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   buttonR: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     paddingVertical: 7,
     borderRadius: 3,
     width: 75,

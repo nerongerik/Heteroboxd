@@ -6,7 +6,7 @@ namespace Heteroboxd.Service
 {
     public interface IReviewService
     {
-        Task<PagedResponse<ReviewInfoResponse>> GetReviews(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<ReviewInfoResponse>> GetReviews(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<ReviewInfoResponse> GetReview(string ReviewId);
         Task<ReviewInfoResponse?> GetReviewByUserFilm(string UserId, int FilmId);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -31,12 +31,10 @@ namespace Heteroboxd.Service
             _filmRepo = filmRepo;
         }
 
-        public async Task<PagedResponse<ReviewInfoResponse>> GetReviews(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<PagedResponse<ReviewInfoResponse>> GetReviews(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            if (UserId == null && Filter.ToLower() == "friends") throw new ArgumentException();
-
             List<Guid>? UsersFriends = null;
-            if (UserId != null && Filter.ToLower() == "friends")
+            if (Filter.ToLower() == "friends")
             {
                 UsersFriends = await _userRepo.GetFriendsAsync(Guid.Parse(UserId));
             }

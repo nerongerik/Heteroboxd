@@ -1,12 +1,12 @@
-import { StyleSheet, Modal, Animated, Pressable } from 'react-native'
+import { Animated, Modal, Pressable, StyleSheet } from 'react-native'
 import { Colors } from '../constants/colors'
 
-const SlidingMenu = ({menuShown, closeMenu, translateY, widescreen, width, children}) => {
+const SlidingMenu = ({ menuShown, closeMenu, translateY, widescreen, width, children }) => {
   return (
     <Modal
       transparent
       visible={menuShown}
-      animationType="fade"
+      animationType='fade'
       onRequestClose={closeMenu}
     >
       <Pressable 

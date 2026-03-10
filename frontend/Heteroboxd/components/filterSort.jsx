@@ -1,13 +1,13 @@
-import { Pressable, StyleSheet, Text, View, ScrollView, Platform } from 'react-native'
 import { useState } from 'react'
-import { Colors } from '../constants/colors'
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as format from '../helpers/format'
 import { useCountries } from '../hooks/useCountries'
+import { Colors } from '../constants/colors'
 
 const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSortChange}) => {
-  const [expandedFilter, setExpandedFilter] = useState(null)
-  const { countries } = useCountries();
+  const [ expandedFilter, setExpandedFilter ] = useState(null)
+  const { countries } = useCountries()
 
   const filterOptions = {
     explore: ['ALL', 'GENRE', 'YEAR', 'POPULAR', 'COUNTRY'],
@@ -76,40 +76,36 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
       case 'YEAR':
         return years
       case 'COUNTRY':
-        return countries // ← Already loaded
+        return countries
       default:
         return []
     }
   }
 
   const renderValueOption = (value, filterField) => {
-    // For countries, render with flag
     if (filterField === 'COUNTRY') {
-      const flagCode = format.formatCountry(value.code, Platform.OS === 'web' ? 'web' : 'native');
-      
+      const flagCode = format.formatCountry(value.code, Platform.OS === 'web' ? 'web' : 'native')
       if (Platform.OS === 'web' && flagCode) {
         return (
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <img 
               src={`https://flagcdn.com/24x18/${flagCode}.png`}
               style={{ marginRight: 6, width: 20, height: 15 }}
-              alt=""
+              alt=''
             />
             <Text style={{fontSize: 12, color: Colors.text_title}}>{value.name}</Text>
           </View>
-        );
+        )
       } else if (flagCode) {
         return (
           <Text style={{fontSize: 12, color: Colors.text_title}}>
             {flagCode} {value.name}
           </Text>
-        );
+        )
       }
-      return <Text style={{fontSize: 12, color: Colors.text_title}}>{value.name}</Text>;
+      return <Text style={{fontSize: 12, color: Colors.text_title}}>{value.name}</Text>
     }
-    
-    // For other values (genre, year)
-    return <Text style={{fontSize: 12, color: Colors.text_title}}>{value}</Text>;
+    return <Text style={{fontSize: 12, color: Colors.text_title}}>{value}</Text>
   }
 
   const renderFilterButton = (item) => {
@@ -119,12 +115,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     
     return (
       <View key={item}>
-        <Pressable 
-          onPress={() => handleFilterSelect(item)}
-          style={[
-            {paddingVertical: 12, paddingHorizontal: 5, marginVertical: 0},
-          ]}
-        >
+        <Pressable onPress={() => handleFilterSelect(item)} style={[{paddingVertical: 12, paddingHorizontal: 5, marginVertical: 0}]}>
           <View style={styles.filterRow}>
             <Text style={[
               {fontSize: 14, color: Colors.text, fontWeight: '500'},
@@ -181,7 +172,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{flex: 1}} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
         <Text style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>FILTERS</Text>
         {filterOptions[context].map((item) => renderFilterButton(item))}
@@ -210,13 +201,6 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
           )
         })}
       </View>
-      {
-        context === 'filmReviews' && (
-          <Text style={{textAlign: 'center', paddingHorizontal: 20, marginTop: -20, fontSize: 16, color: Colors.text_placeholder, fontStyle: 'italic', fontWeight: '600'}}>
-            NOTE: Reviews flagged for violating community guidelines will appear on the bottom regardless of your filter/sort criteria.
-          </Text>
-        )
-      }
     </ScrollView>
   )
 }
@@ -224,21 +208,18 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
 export default FilterSort
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     padding: 20,
-    paddingBottom: 35,
+    paddingBottom: 35
   },
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-start'
   },
   sortRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
+    justifyContent: 'flex-start'
+  }
 })

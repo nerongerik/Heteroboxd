@@ -27,7 +27,6 @@ const Explore = () => {
   const [ data, setData ] = useState({ page: 1, films: [], totalCount: 0 })
   const [ seenFilms, setSeenFilms ] = useState([])
   const [ seenCount, setSeenCount ] = useState(0)
-  const [ showPagination, setShowPagination ] = useState(false)
   const [ fadeSeen, setFadeSeen ] = useState(true)
   const [ server, setServer ] = useState(Response.initial)
   const listRef = useRef(null)
@@ -176,7 +175,6 @@ const Explore = () => {
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
         listRef.current?.scrollToOffset({
@@ -202,8 +200,6 @@ const Explore = () => {
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
         columnWrapperStyle={{alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
       <LoadingResponse visible={server.result <= 0} />

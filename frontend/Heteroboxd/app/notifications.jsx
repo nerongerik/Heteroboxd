@@ -19,7 +19,6 @@ const Notifications = () => {
   const [ data, setData ] = useState({ page: 1, notifs: [], totalCount: 0 })
   const [ server, setServer ] = useState(Response.initial)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
-  const [ showPagination, setShowPagination ] = useState(false)
   const router = useRouter()
   const { width } = useWindowDimensions()
 
@@ -159,7 +158,6 @@ const Notifications = () => {
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
       }}
@@ -187,8 +185,6 @@ const Notifications = () => {
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: 10, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
       { data.totalCount > 0 &&

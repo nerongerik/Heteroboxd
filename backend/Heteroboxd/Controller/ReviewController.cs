@@ -20,26 +20,6 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetReviews(string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
-        {
-            _logger.LogInformation($"GetReviews endpoint hit");
-            try
-            {
-                var Response = await _service.GetReviews(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("{ReviewId}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetReview(string ReviewId, string? UserId = null)

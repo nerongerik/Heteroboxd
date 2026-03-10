@@ -26,7 +26,6 @@ const FilmsLists = () => {
   const { width } = useWindowDimensions()
   const [ data, setData ] = useState({ page: 1, lists: [], totalCount: 0 })
   const [ server, setServer ] = useState(Response.initial)
-  const [ showPagination, setShowPagination ] = useState(false)
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'POPULARITY', desc: true })
   const listRef = useRef(null)
@@ -171,7 +170,6 @@ const FilmsLists = () => {
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
         listRef.current?.scrollToOffset({
@@ -193,8 +191,6 @@ const FilmsLists = () => {
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
       <LoadingResponse visible={server.result <= 0} />

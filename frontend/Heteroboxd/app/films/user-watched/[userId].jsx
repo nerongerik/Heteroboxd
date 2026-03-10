@@ -21,7 +21,6 @@ const UserWatchedFilms = () => {
   const { width } = useWindowDimensions()
   const [ server, setServer ] = useState(Response.initial)
   const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0})
-  const [ showPagination, setShowPagination ] = useState(false)
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE WATCHED', desc: true })
   const [ menuShown, setMenuShown ] = useState(false)
@@ -128,7 +127,6 @@ const UserWatchedFilms = () => {
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         loadDataPage(num)
         listRef.current?.scrollToOffset({
@@ -152,8 +150,6 @@ const UserWatchedFilms = () => {
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80, marginTop: 50}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
       <LoadingResponse visible={server.result <= 0} />

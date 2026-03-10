@@ -7,7 +7,6 @@ import { UserAvatar } from '../userAvatar'
 
 const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, pageSize }) => {
   const [ activeTab, setActiveTab ] = useState(active)
-  const [ showPagination, setShowPagination ] = useState(false)
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
 
@@ -37,7 +36,6 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
     <PaginationBar
       page={currentData.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         onPageChange(activeTab, num)
         listRef.current?.scrollToOffset({
@@ -79,8 +77,6 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
         ListFooterComponent={Footer}
         contentContainerStyle={{width: Math.min(width, 1000), alignSelf: width > 1000 ? 'center' : 'stretch', paddingHorizontal: 10, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
     </View>
   )

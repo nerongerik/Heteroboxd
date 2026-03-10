@@ -1,50 +1,42 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
-import { KeyboardAvoidingView, StyleSheet, TextInput, View, Pressable, useWindowDimensions, Platform, ActivityIndicator } from 'react-native'
-import { Colors } from '../constants/colors';
-import { Snackbar } from 'react-native-paper';
-import { BaseUrl } from '../constants/api';
-import Fontisto from '@expo/vector-icons/Fontisto';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { KeyboardAvoidingView, StyleSheet, TextInput, View, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native'
+import { Colors } from '../constants/colors'
+import { Snackbar } from 'react-native-paper'
+import { BaseUrl } from '../constants/api'
+import Fontisto from '@expo/vector-icons/Fontisto'
+import {Response} from '../constants/response'
 
 const SearchBox = ({ onSelected, page, pageSize }) => {
-  const [query, setQuery] = useState('');
-  const lastQuery = useRef('');
-
-  const [result, setResult] = useState(-1);
-  const [snack, setSnack] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const { width } = useWindowDimensions();
+  const [ query, setQuery ] = useState('')
+  const lastQuery = useRef('')
+  const [ server, setServer ] = useState(Response.initial)
+  const { width } = useWindowDimensions()
 
   useEffect(() => {
-    if (lastQuery.current) handleSearch();
-  }, [page]);
+    if (lastQuery.current) handleSearch()
+  }, [page])
 
-  async function handleSearch(overridePage) {
-    const q = lastQuery.current || query;
-    if (!q || q.length === 0) return;
+  const handleSearch = useCallback(async (overridePage) => {
+    const q = lastQuery.current || query
+    if (q?.length === 0) {
+      return
+    }
+    setServer(Response.loading)
     try {
-      setResult(0);
-      const res = await fetch(
-        `${BaseUrl.api}/films/search?Search=${q}&Page=${overridePage ?? page}&PageSize=${pageSize}`,
-        { method: 'GET', headers: { Accept: 'application/json' } }
-      );
-      if (res.status === 200) {
-        const json = await res.json();
-        onSelected({items: json.items, totalCount: json.totalCount, page: json.page});
-        setResult(200);
+      const res = await fetch(`${BaseUrl.api}/films/search?Search=${q}&Page=${overridePage || page}&PageSize=${pageSize}`)
+      if (res.ok) {
+        const json = await res.json()
+        onSelected({ items: json.items, totalCount: json.totalCount, page: json.page })
+        setServer(Response.ok)
       } else {
-        setMessage('Something went wrong! Contact Heteroboxd support for more information.');
-        setResult(500);
-        setSnack(true);
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMessage('Network error! Please check your internet connection.');
-      setResult(500);
-      setSnack(true);
+      setServer(Response.networkError)
     }
-  }
+  }, [lastQuery, query, page, pageSize, onSelected])
 
-  const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
+  const widescreen = useMemo((() => width > 1000), [width])
 
   return (
     <View>
@@ -52,7 +44,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
         <KeyboardAvoidingView style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
           <TextInput
             style={styles.input}
-            placeholder="Search films..."
+            placeholder='Search films...'
             value={query}
             onChangeText={setQuery}
             placeholderTextColor={Colors.text_placeholder}
@@ -60,23 +52,23 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
           <Pressable
             style={[{backgroundColor: Colors.heteroboxd, padding: 10, borderTopRightRadius: 10, borderBottomRightRadius: 10}, (query.length === 0) && {opacity: 0.8}]}
             disabled={query.length === 0}
-            onPress={() => { lastQuery.current = query; setQuery(''); handleSearch(); }}
+            onPress={() => { lastQuery.current = query; setQuery(''); handleSearch() }}
           >
-            <Fontisto name="search" size={widescreen ? 24 : 22} color={Colors.text_button} />
+            <Fontisto name='search' size={widescreen ? 24 : 22} color={Colors.text_button} />
           </Pressable>
         </KeyboardAvoidingView>
         {
-          result === 0 && (
-          <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-            <ActivityIndicator size="large" color={Colors.text_link} />
+          server.result === 0 && (
+          <View style={{width: '100%', alignItems: 'center', paddingVertical: 30}}>
+            <ActivityIndicator size='large' color={Colors.text_link} />
           </View>
           )
         }
       </>
 
       <Snackbar
-        visible={snack}
-        onDismiss={() => setSnack(false)}
+        visible={server.result === 500}
+        onDismiss={() => setServer(Response.initial)}
         duration={3000}
         style={{
           backgroundColor: Colors.card,
@@ -86,13 +78,12 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
         }}
         action={{
           label: 'OK',
-          onPress: () => setSnack(false),
+          onPress: () => setServer(Response.initial),
           textColor: Colors.text_link
         }}
       >
-        {message}
+        {server.message}
       </Snackbar>
-
     </View>
   )
 }

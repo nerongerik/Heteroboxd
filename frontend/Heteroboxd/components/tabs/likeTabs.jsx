@@ -9,9 +9,8 @@ import ParsedRead from '../parsedRead'
 import { Poster } from '../poster'
 import Stars from '../stars'
 
-const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
+const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
   const [ activeTab, setActiveTab ] = useState('reviews')
-  const [ showPagination, setShowPagination ] = useState(false)
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
 
@@ -41,7 +40,6 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
     <PaginationBar
       page={currentData.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
         onPageChange(activeTab, num);
         listRef.current?.scrollToOffset({
@@ -183,8 +181,6 @@ const LikeTabs = ({reviews, lists, onPageChange, router, pageSize }) => {
         style={{width: maxRowWidth, alignSelf: 'center'}}
         contentContainerStyle={{paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
     </View>
   )
