@@ -1,232 +1,197 @@
-import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Animated, Pressable, useWindowDimensions, Platform } from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { Colors } from '../../constants/colors';
-import { useRouter } from 'expo-router';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { BaseUrl } from '../../constants/api';
-import * as auth from '../../helpers/auth';
-import { Snackbar } from 'react-native-paper';
-import { Octicons } from '@expo/vector-icons';
-import SlidingMenu from '../slidingMenu';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Octicons } from '@expo/vector-icons'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import { Snackbar } from 'react-native-paper'
+import { useRouter } from 'expo-router'
+import * as auth from '../../helpers/auth'
+import { useAuth } from '../../hooks/useAuth'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
+import LoadingResponse from '../loadingResponse'
+import SlidingMenu from '../slidingMenu'
 
-const ReviewOptionsButton = ({ reviewId }) => {
-  const { user, isValidSession } = useAuth();
-
-  const [menuShown, setMenuShown] = useState(false);
-  const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
-
-  const router = useRouter();
-
-  const { width } = useWindowDimensions();
-
-  const [review, setReview] = useState(null);
-  const [notifsOnLocal, setNotifsOnLocal] = useState(true);
-
-  const [snack, setSnack] = useState(false);
-  const [msg, setMsg] = useState('');
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      try {
-        const res = await fetch(`${BaseUrl.api}/reviews/${reviewId}`, {
-         method: 'GET',
-         headers: {
-           'Accept': 'application/json'
-         }
-        });
-        if (res.status === 200) {
-         const json = await res.json();
-         setReview(json);
-         setNotifsOnLocal(json.notificationsOn);
-        }
-      } catch {
-        console.log('Network error!');
-      }
-    })();
-  }, [user, reviewId]);
+const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNotifChange }) => {
+  const { user, isValidSession } = useAuth()
+  const [ menuShown, setMenuShown ] = useState(false)
+  const slideAnim = useState(new Animated.Value(0))[0]
+  const router = useRouter()
+  const { width } = useWindowDimensions()
+  const [ notifsOnLocal, setNotifsOnLocal ] = useState(true)
+  const [ server, setServer ] = useState(Response.initial)
 
   const openMenu = () => {
-    setMenuShown(true);
+    setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
-
+      useNativeDriver: true
+    }).start()
+  }
   const closeMenu = () => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
-      useNativeDriver: true,
-    }).start(() => setMenuShown(false));
-  };
-
+      useNativeDriver: true
+    }).start(() => setMenuShown(false))
+  }
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [300, 0], //slide from bottom
-  });
+    outputRange: [300, 0]
+  })
 
-  const widescreen = useMemo((() => Platform.OS === 'web' && width > 1000), [width]);
-
-  async function handleDelete() {
-    const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
+  const handleDelete = useCallback(async () => {
+    if (user?.userId !== authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
     try {
-      const jwt = await auth.getJwt();
+      const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/${reviewId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      });
-      if (res.status === 200) {
-        closeMenu();
-        router.replace(`profile/${user.userId}`);
-      }
-      else {
-        setMsg('Delete failed - please make sure your session is valid, and you are viewing the correct review.');
-        setSnack(true);
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer(Response.ok)
+        closeMenu()
+        router.replace(`/`)
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
+      } else {
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMsg('Network error. Check your internet connection.');
-      setSnack(true);
+      setServer(Response.networkError)
     }
-  }
+  }, [user, authorId, reviewId, closeMenu])
 
-  async function handleNotifications() {
-    const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
+  const handleNotifications = useCallback(async () => {
+    if (user?.userId !== authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
     try {
-      const jwt = await auth.getJwt();
+      const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/toggle-notifications/${reviewId}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${jwt}`
-        }
-      });
-      if (res.status === 200) {
-        if (notifsOnLocal) setMsg('You will no longer recieve notifications for this review.');
-        else setMsg('You will now recieve notifications for this review.')
-        setSnack(true);
-        setNotifsOnLocal(prev => !prev);
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer({ result: 201, message: notifsOnLocal ? 'You will no longer recieve notifications for this review!' : 'You will now recieve notifications for this review!' })
+        setNotifsOnLocal(prev => !prev)
+        onNotifChange()
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
       } else {
-        setMsg(`${res.status}: Failed to flip notifications.`)
-        setSnack(true);
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMsg(`Network error - check your internet connection.`)
-      setSnack(true);
+      setServer(Response.networkError)
     }
-  }
+  }, [user, authorId, notifsOnLocal, reviewId, onNotifChange])
 
-  async function handleEdit() {
-    const vS = await isValidSession();
-    if (!user || !vS) router.replace('/login');
-    if (review?.authorId !== user.userId) {
-      setMsg("You are not supposed to be seeing this - what did you do?");
-      setSnack(true);
-      return;
+  const handleEdit = useCallback(async () => {
+    if (user?.userId !== authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
     }
-    closeMenu();
-    router.push(`review/alter/${review?.filmId}`);
-  }
+    closeMenu()
+    router.push(`review/alter/${filmId}`)
+  }, [user, authorId, filmId, router, closeMenu])
 
-  async function handleReport() {
+  const handleReport = useCallback(async () => {
+    if (user?.userId === authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
     try {
-      const vS = await isValidSession();
-      if (!user || !vS) {
-        setMsg("Session expired! Try logging in again.");
-        setSnack(true);  
-      }
-      const jwt = await auth.getJwt();
+      const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/report/${reviewId}`, {
         method: 'PUT',
-        headers: {'Authorization': `Bearer ${jwt}`}
-      });
-      if (res.status === 200) {
-        setMsg("Review reported.");
-        setSnack(true);
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer({ result: 201, message: 'Review reported.' })
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
       } else {
-        setMsg(`${res.status}: Failed to report review! Try reloading Heteroboxd.`);
-        setSnack(true);
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMsg("Network error! Check your internet connection.");
-      setSnack(true);
+      setServer(Response.networkError)
     }
-  }
+  }, [user, authorId, reviewId])
+
+  useEffect(() => {
+    setNotifsOnLocal(notifsOnInitial)
+  }, [notifsOnInitial])
+
+  const widescreen = useMemo((() => width > 1000), [width])
 
   return (
     <View>
       <Pressable onPress={openMenu} style={{zIndex: 1}}>
-        <MaterialIcons name="more-vert" size={24} color={Colors.text} />
+        <MaterialIcons name='more-vert' size={24} color={Colors.text} />
       </Pressable>
-
-      <SlidingMenu menuShown={menuShown} closeMenu={closeMenu} translateY={translateY} widescreen={widescreen} width={width}>
+      <SlidingMenu
+        menuShown={menuShown} 
+        closeMenu={closeMenu} 
+        translateY={translateY} 
+        widescreen={widescreen} 
+        width={width}
+      >
         {
-          user?.admin ? (
-            <TouchableOpacity style={styles.option} onPress={handleDelete}>
-              <Text style={styles.optionText}>Delete w/ Admin Privileges </Text>
-              <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
-            </TouchableOpacity>
-          ) : user?.userId !== review?.authorId ? (
-            <TouchableOpacity style={styles.option} onPress={handleReport}>
+          user?.userId !== authorId ? (
+            <Pressable style={styles.option} onPress={handleReport}>
               <Text style={styles.optionText}>Report Review </Text>
               <Octicons name="report" size={18} color={Colors.text} />
-            </TouchableOpacity>
+            </Pressable>
           ) : (
             <>
-              <TouchableOpacity style={styles.option} onPress={handleEdit}>
+              <Pressable style={styles.option} onPress={handleEdit}>
                 <Text style={styles.optionText}>Edit Review </Text>
                 <MaterialIcons name="edit" size={20} color={Colors.text} />
-              </TouchableOpacity>
-                {
-                  notifsOnLocal ? (
-                    <TouchableOpacity style={styles.option} onPress={handleNotifications}>
-                      <Text style={styles.optionText}>Turn Notifications Off </Text>
-                      <MaterialIcons name="notifications-off" size={20} color={Colors.text} />
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity style={styles.option} onPress={handleNotifications}>
-                      <Text style={styles.optionText}>Turn Notifications On </Text>
-                      <MaterialIcons name="notifications-active" size={20} color={Colors.text} />
-                    </TouchableOpacity>
-                  )
-                }
-              <TouchableOpacity style={styles.option} onPress={handleDelete}>
+              </Pressable>
+              <Pressable style={styles.option} onPress={handleNotifications}>
+                <Text style={styles.optionText}>{notifsOnLocal ? 'Turn Notifications Off ' : 'Turn Notifications On '}</Text>
+                <MaterialIcons name={notifsOnLocal ? "notifications-off" : 'notifications-active'} size={20} color={Colors.text} />
+              </Pressable>
+              <Pressable style={styles.option} onPress={handleDelete}>
                 <Text style={styles.optionText}>Delete Review </Text>
                 <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
-              </TouchableOpacity>
+              </Pressable>
             </>
           )
         }
+
+        <LoadingResponse visible={server.result === 0} />
         <Snackbar
-          visible={snack}
-          onDismiss={() => setSnack(false)}
+          visible={[201, 403, 404, 500].includes(server.result)}
+          onDismiss={() => setServer(Response.initial)}
           duration={3000}
           style={{
             backgroundColor: Colors.card,
-            width: Platform.OS === 'web' && width > 1000 ? width*0.5 : width*0.9,
+            width: widescreen ? width*0.5 : width*0.9,
             alignSelf: 'center',
             borderRadius: 8,
           }}
           action={{
             label: 'OK',
-            onPress: () => setSnack(false),
+            onPress: () => setServer(Response.initial),
             textColor: Colors.text_link
           }}
         >
-          {msg}
+          {server.message}
         </Snackbar>
       </SlidingMenu>
     </View>
-  );
-};
+  )
+}
 
-export default ReviewOptionsButton;
+export default ReviewOptionsButton
 
 const styles = StyleSheet.create({
   option: {
@@ -239,5 +204,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     color: Colors.text,
-  },
-});
+  }
+})

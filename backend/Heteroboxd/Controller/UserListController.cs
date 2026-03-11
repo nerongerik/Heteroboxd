@@ -2,6 +2,7 @@
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Heteroboxd.Controller
 {
@@ -24,7 +25,7 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> GetLists(string? UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
         {
-            _logger.LogInformation("GET Lists endpoint hit.");
+            _logger.LogInformation("GetLists endpoint hit.");
             try
             {
                 var Response = await _service.GetLists(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
@@ -38,13 +39,14 @@ namespace Heteroboxd.Controller
 
         [HttpGet("{UserListId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetList(string UserListId)
+        public async Task<IActionResult> GetList(string UserListId, string? UserId = null)
         {
-            _logger.LogInformation($"GET List endpoint hit with ListId: {UserListId}");
+            _logger.LogInformation($"GetList endpoint hit with ListId: {UserListId}");
             try
             {
-                var Response = await _service.GetList(UserListId);
-                return Ok(Response);
+                return UserId == null
+                    ? Ok(await _service.GetList(UserListId))
+                    : Ok(new { List = await _service.GetList(UserListId), ILiked = await _userService.IsObjectLiked(UserId, UserListId, "list") });
             }
             catch (KeyNotFoundException)
             {
@@ -60,7 +62,7 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> GetListEntries(string UserListId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
         {
-            _logger.LogInformation($"GET ListEntries endpoint hit for ListId: {UserListId}");
+            _logger.LogInformation($"GetListEntries endpoint hit for ListId: {UserListId}");
             try
             {
                 var Response = await _service.GetListEntries(UserListId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
@@ -76,7 +78,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> PowerGetEntries(string UserListId)
         {
-            _logger.LogInformation($"GET (Power) ListEntries endpoint hit for ListId: {UserListId}");
+            _logger.LogInformation($"PowerGetEntries endpoint hit for ListId: {UserListId}");
             try
             {
                 var Response = await _service.PowerGetEntries(UserListId);
@@ -92,7 +94,7 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
         {
-            _logger.LogInformation($"GET Lists by Author endpoint hit for User: {UserId}");
+            _logger.LogInformation($"GetListsByAuthor endpoint hit for User: {UserId}");
             try
             {
                 var Response = await _service.GetListsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
@@ -112,7 +114,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> GetAuthorsListsDelimitedFilm(string UserId, int FilmId)
         {
-            _logger.LogInformation($"GET Lists of User: {UserId} delimited by Film: {FilmId}");
+            _logger.LogInformation($"GetAuthorsListsDelimitedFilm endpoint hit for User: {UserId} delimited by Film: {FilmId}");
             try
             {
                 var Response = await _service.GetDelimitedLists(UserId, FilmId);
@@ -132,7 +134,7 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> GetListsFeaturingFilm(int FilmId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
         {
-            _logger.LogInformation($"GET Lists featuring Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
+            _logger.LogInformation($"GetListsFeaturingFilm endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
                 var Response = await _service.GetListsFeaturingFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
@@ -148,27 +150,11 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("featuring-film/{FilmId}/count")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetListsFeaturingFilmCount(int FilmId)
-        {
-            _logger.LogInformation($"GET Lists featuring Film COUNT endpoint hit for FilmId: {FilmId}");
-            try
-            {
-                var Response = await _service.GetListsFeaturingFilmCount(FilmId);
-                return Ok(Response);
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<IActionResult> SearchLists(string Search, int Page = 1, int PageSize = 20)
         {
-            _logger.LogInformation($"GET Search Lists endpoint hit with Search Term: {Search}");
+            _logger.LogInformation($"SearchLists endpoint hit with Search Term: {Search}");
             try
             {
                 var Response = await _service.SearchLists(Search, Page, PageSize);
@@ -186,9 +172,9 @@ namespace Heteroboxd.Controller
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AddList([FromBody] CreateUserListRequest ListRequest)
+        public async Task<IActionResult> AddList(CreateUserListRequest ListRequest)
         {
-            _logger.LogInformation($"POST List endpoint hit with AuthorId: {ListRequest.AuthorId}");
+            _logger.LogInformation($"AddList endpoint hit with AuthorId: {ListRequest.AuthorId}");
             try
             {
                 Guid ListId = await _service.AddList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, ListRequest.AuthorId);
@@ -203,9 +189,9 @@ namespace Heteroboxd.Controller
 
         [HttpPut]
         [Authorize]
-        public async Task<IActionResult> UpdateList([FromBody] UpdateUserListRequest ListRequest)
+        public async Task<IActionResult> UpdateList(UpdateUserListRequest ListRequest)
         {
-            _logger.LogInformation($"PUT List endpoint hit for ListId: {ListRequest.ListId}");
+            _logger.LogInformation($"UpdateList endpoint hit for ListId: {ListRequest.ListId}");
             try
             {
                 await _service.UpdateList(ListRequest);
@@ -227,9 +213,9 @@ namespace Heteroboxd.Controller
 
         [HttpPut("update-bulk")]
         [Authorize]
-        public async Task<IActionResult> UpdateListsBulk([FromBody] BulkUpdateRequest Request)
+        public async Task<IActionResult> UpdateListsBulk(UpdateUserListBulkRequest Request)
         {
-            _logger.LogInformation($"PUT (Bulk) Update Lists endpoint hit for FilmId: {Request.FilmId}");
+            _logger.LogInformation($"UpdateListsBulk endpoint hit for FilmId: {Request.FilmId}");
             try
             {
                 await _service.UpdateListsBulk(Request);
@@ -247,9 +233,9 @@ namespace Heteroboxd.Controller
 
         [HttpPut("like")]
         [Authorize]
-        public async Task<IActionResult> UpdateLikes(UpdateLikesRequest Request)
+        public async Task<IActionResult> UpdateLikes(UpdateUserLikesRequest Request)
         {
-            _logger.LogInformation($"PUT UserList likes endpoint hit for {Request.ListId!}");
+            _logger.LogInformation($"UpdateLikes endpoint hit for {Request.ListId!}");
             try
             {
                 await _service.UpdateLikeCountEfCore7(Request.ListId!, Request.LikeChange);
@@ -260,7 +246,7 @@ namespace Heteroboxd.Controller
             {
                 return NotFound();
             }
-            catch (ArgumentException)
+            catch (ArgumentNullException)
             {
                 return BadRequest();
             }
@@ -274,7 +260,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> ToggleNotifications(string UserListId)
         {
-            _logger.LogInformation($"PUT Toggle Notifications endpoint hit for ListId: {UserListId}");
+            _logger.LogInformation($"ToggleNotifications endpoint hit for ListId: {UserListId}");
             try
             {
                 await _service.ToggleNotificationsEfCore7(UserListId);
@@ -283,10 +269,6 @@ namespace Heteroboxd.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
             }
             catch
             {
@@ -298,7 +280,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> DeleteList(string UserListId)
         {
-            _logger.LogInformation($"DELETE List endpoint hit for ListId: {UserListId}");
+            _logger.LogInformation($"DeleteList endpoint hit for ListId: {UserListId}");
             try
             {
                 await _service.DeleteList(UserListId);

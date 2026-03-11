@@ -1,35 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import { onStorageUpdate } from './storageEvents';
+import { useEffect, useState } from 'react'
+import { Platform } from 'react-native'
+import * as SecureStore from 'expo-secure-store'
+import { onStorageUpdate } from './storageEvents'
 
-async function getItem(key) {
-  if (Platform.OS === 'web') return localStorage.getItem(key);
-  return await SecureStore.getItemAsync(key);
+const getItem = async (key) => {
+  if (Platform.OS === 'web') return localStorage.getItem(key)
+  return await SecureStore.getItemAsync(key)
 }
 
-export function useCountries() {
-  const [countries, setCountries] = useState([]);
-
+export const useCountries = () => {
+  const [ countries, setCountries ] = useState([])
   const load = async () => {
     try {
-      const stored = await getItem('countries');
+      const stored = await getItem('countries')
       if (stored) {
-        setCountries(JSON.parse(stored));
+        setCountries(JSON.parse(stored))
       }
     } catch (error) {
-      console.warn('Failed to load countries: ', error);
-      setCountries([]);
+      console.warn('Failed to load countries: ', error)
+      setCountries([])
     }
-  };
-
+  }
   useEffect(() => {
-    load();
-
-    const unsub = onStorageUpdate('countries', load);
-    
-    return unsub;
-  }, []);
-
-  return { countries };
+    load()
+    const unsub = onStorageUpdate('countries', load)
+    return unsub
+  }, [])
+  return { countries }
 }

@@ -1,12 +1,12 @@
-import { StyleSheet, Modal, Animated, Pressable, View, Image } from 'react-native'
+import { Animated, Image, Modal, Pressable, StyleSheet, View } from 'react-native'
 import { Colors } from '../constants/colors'
 
-const SideNav = ({menuShown, closeMenu, translateX, width, children, footerImage}) => {
+const SideNav = ({ menuShown, closeMenu, translateX, width, children, footerImage }) => {
   return (
     <Modal
       transparent
       visible={menuShown}
-      animationType="fade"
+      animationType='fade'
       onRequestClose={closeMenu}
     >
       <Pressable 
@@ -43,5 +43,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12
-  },
+  }
 })

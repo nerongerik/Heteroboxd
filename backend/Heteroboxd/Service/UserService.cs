@@ -8,16 +8,16 @@ namespace Heteroboxd.Service
 {
     public interface IUserService
     {
-        Task<UserInfoResponse?> GetUser(string UserId);
-        Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue); //for viewing
-        Task<bool> IsFilmWatchlisted(string UserId, int FilmId); //for checking if a film is in the watchlist (quick lookup)
+        Task<UserInfoResponse> GetUser(string UserId);
+        Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
-        Task<RelationshipsDelimitedResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
+        Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
         Task<string> DetermineRelationship(string UserId, string TargetId);
-        Task<LikesDelimitedResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
-        Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType); //ObjectType: "review", "comment", "list"
-        Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId);
-        Task<List<FriendFilmResponse>> GetFriendsForFilm(string UserId, int FilmId);
+        Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
+        Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType);
+        Task<UserWatchedFilmInfoResponse?> DidUserWatchFilm(string UserId, int FilmId);
+        Task<List<DelimitedUserFilmInfoResponse>> GetFriendsForFilm(string UserId, int FilmId);
         Task<Dictionary<double, int>> GetUserRatings(string UserId);
         Task<PagedResponse<UserInfoResponse>> SearchUsers(string Search, int Page, int PageSize);
         Task ReportUserEfCore7Async(string UserId);
@@ -26,7 +26,7 @@ namespace Heteroboxd.Service
         Task UpdateWatchlist(string UserId, int FilmId);
         Task<Dictionary<string, object?>> UpdateFavorites(string UserId, int? FilmId, int Index);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
-        Task UpdateLikes(UpdateLikesRequest LikeRequest);
+        Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
         Task TrackFilm(string UserId, int FilmId, string Action);
         Task DeleteUser(string UserId);
     }
@@ -39,11 +39,10 @@ namespace Heteroboxd.Service
         private readonly IUserListRepository _listRepo;
         private readonly IAuthService _authService;
         private readonly UserManager<User> _userManager;
-        private readonly ILogger<UserService> _logger;
         private readonly INotificationService _notificationService;
         private readonly IR2Handler _r2Handler;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IUserListRepository listRepo, IAuthService authService, UserManager<User> userManager, ILogger<UserService> logger, INotificationService notificationService, IR2Handler r2Handler)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IUserListRepository listRepo, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler)
         {
             _repo = repo;
             _filmRepo = filmRepo;
@@ -51,24 +50,14 @@ namespace Heteroboxd.Service
             _listRepo = listRepo;
             _authService = authService;
             _userManager = userManager;
-            _logger = logger;
             _notificationService = notificationService;
             _r2Handler = r2Handler;
         }
 
-        public async Task<UserInfoResponse?> GetUser(string UserId)
+        public async Task<UserInfoResponse> GetUser(string UserId)
         {
-            if (!Guid.TryParse(UserId, out var Id))
-            {
-                _logger.LogError($"Failed to parse UserId: {UserId}; invalid.");
-                throw new ArgumentException();
-            }
-            var User = await _repo.GetByIdAsync(Id);
-            if (User == null)
-            {
-                _logger.LogError($"User with Id: {UserId} not found.");
-                return null;
-            }
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            if (User == null) throw new KeyNotFoundException();
             return new UserInfoResponse(User);
         }
 
@@ -86,23 +75,14 @@ namespace Heteroboxd.Service
 
         public async Task<bool> IsFilmWatchlisted(string UserId, int FilmId)
         {
-            var ExistingEntry = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
-            return ExistingEntry != null;
+            var (Existing, _) = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
+            return Existing != null;
         }
 
         public async Task<Dictionary<string, object?>> GetFavorites(string UserId)
         {
-            if (!Guid.TryParse(UserId, out var Id))
-            {
-                _logger.LogError($"Failed to parse GUID: {UserId}");
-                throw new ArgumentException();
-            }
-            var Favorites = await _repo.GetUserFavoritesAsync(Id);
-            if (Favorites == null)
-            {
-                _logger.LogError($"Failed to find Favorites of User: {UserId}");
-                throw new KeyNotFoundException();
-            }
+            var Favorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
+            if (Favorites == null) throw new KeyNotFoundException();
 
             object? Film1IR = null;
             object? Film2IR = null;
@@ -111,54 +91,27 @@ namespace Heteroboxd.Service
 
             if (Favorites.Film1 != null)
             {
-                var Film1 = await _filmRepo.GetByIdAsync(Favorites.Film1.Value);
-                if (Film1 != null)
-                {
-                    Film1IR = new FilmInfoResponse(Film1, false);
-                }
-                else
-                {
-                    Film1IR = "error";
-                }
+                var Film1 = await _filmRepo.LightweightFetcher(Favorites.Film1.Value);
+                if (Film1 != null)  Film1IR = new FilmInfoResponse(Film1, false);
+                else Film1IR = "error";
             }
-
             if (Favorites.Film2 != null)
             {
-                var Film2 = await _filmRepo.GetByIdAsync(Favorites.Film2.Value);
-                if (Film2 != null)
-                {
-                    Film2IR = new FilmInfoResponse(Film2, false);
-                }
-                else
-                {
-                    Film2IR = "error";
-                }
+                var Film2 = await _filmRepo.LightweightFetcher(Favorites.Film2.Value);
+                if (Film2 != null) Film2IR = new FilmInfoResponse(Film2, false);
+                else Film2IR = "error";
             }
-
             if (Favorites.Film3 != null)
             {
-                var Film3 = await _filmRepo.GetByIdAsync(Favorites.Film3.Value);
-                if (Film3 != null)
-                {
-                    Film3IR = new FilmInfoResponse(Film3, false);
-                }
-                else
-                {
-                    Film3IR = "error";
-                }
+                var Film3 = await _filmRepo.LightweightFetcher(Favorites.Film3.Value);
+                if (Film3 != null) Film3IR = new FilmInfoResponse(Film3, false);
+                else Film3IR = "error";
             }
-
             if (Favorites.Film4 != null)
             {
-                var Film4 = await _filmRepo.GetByIdAsync(Favorites.Film4.Value);
-                if (Film4 != null)
-                {
-                    Film4IR = new FilmInfoResponse(Film4, false);
-                }
-                else
-                {
-                    Film4IR = "error";
-                }
+                var Film4 = await _filmRepo.LightweightFetcher(Favorites.Film4.Value);
+                if (Film4 != null) Film4IR = new FilmInfoResponse(Film4, false);
+                else Film4IR = "error";
             }
 
             return new Dictionary<string, object?>
@@ -171,34 +124,39 @@ namespace Heteroboxd.Service
         }
 
 
-        public async Task<RelationshipsDelimitedResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize)
+        public async Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize)
         {
-            var _relationshipped = await _repo.GetUserRelationshipsAsync(Guid.Parse(UserId));
+            var (Following, FollowingCount, Followers, FollowersCount, Blocked, BlockedCount) = await _repo.GetUserRelationshipsAsync(Guid.Parse(UserId), FollowingPage, FollowersPage, BlockedPage, PageSize);
 
-            if (_relationshipped == null)
+            return new DelimitedUserRelationshipsInfoResponse
             {
-                _logger.LogError("Failed to fetch all relationships");
-                throw new KeyNotFoundException();
-            }
-
-            var AllFollowing = _relationshipped.Following.Select(u => new UserInfoResponse(u)).ToList();
-            var AllFollowers = _relationshipped.Followers.Select(u => new UserInfoResponse(u)).ToList();
-            var AllBlocked = _relationshipped.Blocked.Select(u => new UserInfoResponse(u)).ToList();
-
-            return new RelationshipsDelimitedResponse
-            {
-                Following = PaginateItems(AllFollowing, FollowingPage, PageSize),
-                Followers = PaginateItems(AllFollowers, FollowersPage, PageSize),
-                Blocked = PaginateItems(AllBlocked, BlockedPage, PageSize)
+                Following = new PagedResponse<UserInfoResponse>
+                {
+                    Items = Following.Select(u => new UserInfoResponse(u)).ToList(),
+                    Page = FollowingPage,
+                    PageSize = PageSize,
+                    TotalCount = FollowingCount
+                },
+                Followers = new PagedResponse<UserInfoResponse>
+                {
+                    Items = Followers.Select(u => new UserInfoResponse(u)).ToList(),
+                    Page = FollowersPage,
+                    PageSize = PageSize,
+                    TotalCount = FollowersCount
+                },
+                Blocked = new PagedResponse<UserInfoResponse>
+                {
+                    Items = Blocked.Select(u => new UserInfoResponse(u)).ToList(),
+                    Page = BlockedPage,
+                    PageSize = PageSize,
+                    TotalCount = BlockedCount
+                }
             };
         }
 
         public async Task<string> DetermineRelationship(string UserId, string TargetId)
         {
-            if (!Guid.TryParse(UserId, out var UId) || !Guid.TryParse(TargetId, out var TId)) throw new ArgumentException();
-
-            var Status = await _repo.GetRelationshipStatusAsync(UId, TId);
-
+            var Status = await _repo.GetRelationshipStatusAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
             if (Status == null) throw new KeyNotFoundException();
 
             return Status switch
@@ -210,37 +168,25 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<LikesDelimitedResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize)
+        public async Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize)
         {
-            var _likedReviews = await _repo.GetUserLikedReviewsAsync(Guid.Parse(UserId));
-            var _likedLists = await _repo.GetUserLikedListsAsync(Guid.Parse(UserId));
-            if (_likedLists == null || _likedReviews == null) throw new KeyNotFoundException();
-
-            var ReviewAuthorIds = _likedReviews.LikedReviews.Select(r => r.AuthorId).ToHashSet();
-            var ListAuthorIds = _likedLists.LikedLists.Select(ul => ul.AuthorId).ToHashSet();
-            var AuthorIds = ReviewAuthorIds.Union(ListAuthorIds).ToList();
-            var FilmIds = _likedReviews.LikedReviews.Select(r => r.FilmId).ToList();
-            var Authors = (await _repo.GetByIdsAsync(AuthorIds)).ToDictionary(a => a.Id);
-            var Films = (await _filmRepo.GetByIdsAsync(FilmIds)).ToDictionary(f => f.Id);
-
-            var AllLikedReviews = _likedReviews.LikedReviews.Select(r =>
+            var (ReviewResponses, ReviewCount, ListResponses, ListCount) = await _repo.GetUserLikedAsync(Guid.Parse(UserId), ReviewsPage, ListsPage, PageSize);
+            return new DelimitedUserLikesInfoResponse
             {
-                if (!Authors.TryGetValue(r.AuthorId, out var Author) || !Films.TryGetValue(r.FilmId, out var Film))
-                    throw new KeyNotFoundException();
-                return new ReviewInfoResponse(r, Author, Film);
-            }).OrderByDescending(r => r.LikeCount).ToList();
-
-            var AllLikedLists = _likedLists.LikedLists.Select(ul =>
-            {
-                if (!Authors.TryGetValue(ul.AuthorId, out var Author))
-                    throw new KeyNotFoundException();
-                return new UserListInfoResponse(ul, Author, 4);
-            }).OrderByDescending(l => l.LikeCount).ToList();
-
-            return new LikesDelimitedResponse
-            {
-                LikedReviews = PaginateItems(AllLikedReviews, ReviewsPage, PageSize),
-                LikedLists = PaginateItems(AllLikedLists, ListsPage, PageSize)
+                LikedReviews = new PagedResponse<ReviewInfoResponse>
+                {
+                    Items = ReviewResponses.Select(x => new ReviewInfoResponse(x.Item.Review, x.Joined, x.Item.Film)).ToList(),
+                    Page = ReviewsPage,
+                    PageSize = PageSize,
+                    TotalCount = ReviewCount
+                },
+                LikedLists = new PagedResponse<UserListInfoResponse>
+                {
+                    Items = ListResponses.Select(x => new UserListInfoResponse(x.Item, x.Joined, 4)).ToList(),
+                    Page = ListsPage,
+                    PageSize = PageSize,
+                    TotalCount = ListCount
+                }
             };
         }
 
@@ -255,23 +201,21 @@ namespace Heteroboxd.Service
                     var LikedList = await _repo.IsListLikedAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
                     return LikedList != null;
                 default:
-                    _logger.LogError($"Unknown ObjectType: {ObjectType}");
                     throw new ArgumentException();
             }
         }
 
-        public async Task<UserWatchedFilmResponse?> GetUserWatchedFilm(string UserId, int FilmId)
+        public async Task<UserWatchedFilmInfoResponse?> DidUserWatchFilm(string UserId, int FilmId)
         {
             var UserWatchedFilm = await _repo.GetUserWatchedFilmAsync(Guid.Parse(UserId), FilmId);
-            return UserWatchedFilm == null ? null : new UserWatchedFilmResponse(UserWatchedFilm);
+            return UserWatchedFilm == null ? null : new UserWatchedFilmInfoResponse(UserWatchedFilm);
         }
 
-        public async Task<List<FriendFilmResponse>> GetFriendsForFilm(string UserId, int FilmId)
+        public async Task<List<DelimitedUserFilmInfoResponse>> GetFriendsForFilm(string UserId, int FilmId)
         {
             var (Friends, Reviews) = await _repo.GetFriendsForFilmAsync(Guid.Parse(UserId), FilmId);
-
             return Friends
-                .Select(f => new FriendFilmResponse
+                .Select(f => new DelimitedUserFilmInfoResponse
                 {
                     FriendId = f.Id.ToString(),
                     FriendProfilePictureUrl = f.PictureUrl,
@@ -310,22 +254,15 @@ namespace Heteroboxd.Service
 
         public async Task<string?> UpdateUser(UpdateUserRequest UserUpdate)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserUpdate.UserId));
-            if (User == null)
-            {
-                _logger.LogError($"Failed to update User with Id: {UserUpdate.UserId}; not found");
-                throw new KeyNotFoundException();
-            }
-            User.Name = string.IsNullOrEmpty(UserUpdate.Name) ? User.Name : UserUpdate.Name;
-            User.Bio = string.IsNullOrEmpty(UserUpdate.Bio) ? User.Bio : UserUpdate.Bio;
+            var User = await _repo.LightweightFetcherAsync(Guid.Parse(UserUpdate.UserId));
+            if (User == null) throw new KeyNotFoundException();
 
+            User.UpdateFields(UserUpdate);
             string? PresignedUrl = null;
             if (UserUpdate.GeneratePresign)
             {
                 var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id);
-
                 User.PictureUrl = ImgPath;
-
                 PresignedUrl = Url;
             }
 
@@ -337,78 +274,41 @@ namespace Heteroboxd.Service
 
         public async Task VerifyUser(string UserId, string Token)
         {
-            Guid Id;
-            if (Guid.TryParse(UserId, out Id))
-            {
-                var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-                if (User == null)
-                {
-                    _logger.LogError($"Failed to verify User with Id: {UserId}; Not Found.");
-                    throw new KeyNotFoundException();
-                }
-                var Result = await _userManager.ConfirmEmailAsync(User, Token);
-                if (!Result.Succeeded)
-                {
-                    _logger.LogError($"Failed to verify User with Id: {UserId}; Token: {Token} expired.");
-                    throw new Exception();
-                }
-            }
-            else
-            {
-                _logger.LogError($"Failed to verify User with Id: {UserId}; Parsing failed.");
-                throw new Exception();
-            }
+            var User = await _repo.LightweightFetcherAsync(Guid.Parse(UserId));
+            if (User == null) throw new KeyNotFoundException();
+
+            var Result = await _userManager.ConfirmEmailAsync(User, Token);
+            if (!Result.Succeeded) throw new Exception();
         }
 
-        public async Task ReportUserEfCore7Async(string UserId)
-        {
-            if (!Guid.TryParse(UserId, out var Id))
-            {
-                _logger.LogError($"GUID failed to parse {UserId}; malformed.");
-                throw new ArgumentException();
-            }
-            await _repo.ReportUserEfCore7Async(Id);
-        }
+        public async Task ReportUserEfCore7Async(string UserId) =>
+            await _repo.ReportUserEfCore7Async(Guid.Parse(UserId));
 
         public async Task UpdateWatchlist(string UserId, int FilmId)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            if (User == null) throw new KeyNotFoundException();
-            var ExistingEntry = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
-            if (ExistingEntry != null)
+            var (Existing, WatchlistId) = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
+            if (Existing != null)
             {
-                await _repo.RemoveFromWatchlist(ExistingEntry);
+                await _repo.RemoveFromWatchlist(Existing);
             }
             else
             {
-                var Film = await _filmRepo.GetByIdAsync(FilmId);
+                var Film = await _filmRepo.LightweightFetcher(FilmId);
                 if (Film == null) throw new KeyNotFoundException();
-                await _repo.AddToWatchlist(new WatchlistEntry(Film.PosterUrl, FilmId, Guid.Parse(UserId), User.Watchlist!.Id));
+                await _repo.AddToWatchlist(new WatchlistEntry(Film.PosterUrl, FilmId, Guid.Parse(UserId), WatchlistId));
             }
             await _repo.SaveChangesAsync();
         }
 
         public async Task<Dictionary<string, object?>> UpdateFavorites(string UserId, int? FilmId, int Index)
         {
-            UserFavorites? UserFavorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
+            var UserFavorites = await _repo.GetUserFavoritesAsync(Guid.Parse(UserId));
             if (UserFavorites == null) throw new KeyNotFoundException();
 
-            if (UserFavorites.Film1 != null && UserFavorites.Film1 == FilmId)
-            {
-                UserFavorites.Film1 = null;
-            }
-            if (UserFavorites.Film2 != null && UserFavorites.Film2 == FilmId)
-            {
-                UserFavorites.Film2 = null;
-            }
-            if (UserFavorites.Film3 != null && UserFavorites.Film3 == FilmId)
-            {
-                UserFavorites.Film3 = null;
-            }
-            if (UserFavorites.Film4 != null && UserFavorites.Film4 == FilmId)
-            {
-                UserFavorites.Film4 = null;
-            }
+            if (UserFavorites.Film1 != null && UserFavorites.Film1 == FilmId) UserFavorites.Film1 = null;
+            if (UserFavorites.Film2 != null && UserFavorites.Film2 == FilmId) UserFavorites.Film2 = null;
+            if (UserFavorites.Film3 != null && UserFavorites.Film3 == FilmId) UserFavorites.Film3 = null;
+            if (UserFavorites.Film4 != null && UserFavorites.Film4 == FilmId) UserFavorites.Film4 = null;
 
             switch (Index)
             {
@@ -430,6 +330,7 @@ namespace Heteroboxd.Service
 
             _repo.UpdateFavorites(UserFavorites);
             await _repo.SaveChangesAsync();
+
             return await GetFavorites(UserId);
         }
 
@@ -439,8 +340,6 @@ namespace Heteroboxd.Service
             {
                 case ("follow-unfollow"):
                     var (SendNotif, UserName) = await _repo.FollowUnfollowAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
-                    _logger.LogInformation("Successfully followed/unfollowed.");
-                    await _repo.SaveChangesAsync();
                     if (SendNotif)
                     {
                         await _notificationService.AddNotification(
@@ -452,18 +351,15 @@ namespace Heteroboxd.Service
                     break;
                 case ("block-unblock"):
                     await _repo.BlockUnblockAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
-                    _logger.LogInformation("Successfully blocked/unblocked.");
-                    await _repo.SaveChangesAsync();
                     break;
                 case ("remove-follower"):
                     await _repo.FollowUnfollowAsync(Guid.Parse(TargetId), Guid.Parse(UserId));
-                    _logger.LogInformation("Successfully added/removed follower.");
-                    await _repo.SaveChangesAsync();
                     break;
             }
+            await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateLikes(UpdateLikesRequest LikeRequest)
+        public async Task UpdateLikes(UpdateUserLikesRequest LikeRequest)
         {
             if (LikeRequest.ReviewId != null)
             {
@@ -503,9 +399,10 @@ namespace Heteroboxd.Service
 
         public async Task TrackFilm(string UserId, int FilmId, string Action)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            var Film = await _filmRepo.GetByIdAsync(FilmId);
-            if (User == null || Film == null) throw new KeyNotFoundException();
+            var User = await _repo.LightweightFetcherAsync(Guid.Parse(UserId));
+            if (User == null) throw new KeyNotFoundException();
+            var Film = await _filmRepo.LightweightFetcher(FilmId);
+            if (Film == null) throw new KeyNotFoundException();
 
             switch (Action)
             {
@@ -519,77 +416,64 @@ namespace Heteroboxd.Service
                     }
                     else
                     {
-                        UserWatchedFilm UserWatchedFilm = new UserWatchedFilm(User.Id, Film.Id);
+                        var UserWatchedFilm = new UserWatchedFilm(User.Id, Film.Id);
                         _repo.CreateUserWatchedFilm(UserWatchedFilm);
                         await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, 1);
                     }
                     //remove film from watchlist
-                    var ExistingEntry = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
-                    if (ExistingEntry != null)
+                    var (Entry, _) = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
+                    if (Entry != null)
                     {
-                        await _repo.RemoveFromWatchlist(ExistingEntry);
+                        await _repo.RemoveFromWatchlist(Entry);
                     }
                     await _repo.SaveChangesAsync();
                     break;
                 case ("unwatched"):
                     var UserUnWatchedFilm = await _repo.GetUserWatchedFilmAsync(User.Id, Film.Id);
-                    if (UserUnWatchedFilm == null)
-                    {
-                        _logger.LogError($"Failed to unwatch UserWatchedFilm for {UserId} -> {FilmId}; UWF not found;");
-                        throw new KeyNotFoundException();
-                    }
+                    if (UserUnWatchedFilm == null) throw new KeyNotFoundException();
                     //decrement watchcount
                     await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, -1);
                     //delete uwf
                     _repo.DeleteUserWatchedFilm(UserUnWatchedFilm);
                     await _repo.SaveChangesAsync();
-                    //delete associated review if any
-                    var Review = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, Film.Id);
-                    if (Review != null)
+                    //delete associated review (if any)
+                    var Response = await _reviewRepo.GetByUserFilmAsync(UserUnWatchedFilm.UserId, Film.Id);
+                    if (Response != null)
                     {
-                        _reviewRepo.Delete(Review);
+                        _reviewRepo.Delete(Response.Review);
                         await _reviewRepo.SaveChangesAsync();
                     }
                     break;
                 default:
-                    _logger.LogError($"Unknown action: {Action}");
                     throw new ArgumentException();
             }
         }
 
         public async Task DeleteUser(string UserId)
         {
-            if (!Guid.TryParse(UserId, out var Id))
-            {
-                _logger.LogError($"GUID failed to parse {UserId}; malformed.");
-                throw new ArgumentException();
-            }
-            var User = await _repo.GetByIdAsync(Id);
-            if (User == null)
-            {
-                _logger.LogError($"Failed to find User with Id: {UserId}");
-                throw new KeyNotFoundException();
-            }
+            if (!Guid.TryParse(UserId, out var Id)) throw new ArgumentException();
+
+            var User = await _repo.LightweightFetcherAsync(Id);
+            if (User == null) throw new KeyNotFoundException();
 
             await _r2Handler.DeleteByUser(User.Id);
 
             _repo.Delete(User);
             await _repo.SaveChangesAsync();
+
             await _authService.RevokeAllUserTokens(User.Id);
         }
 
         private PagedResponse<T> PaginateItems<T>(List<T> Items, int Page, int PageSize)
         {
-            int TotalCount = Items.Count;
             var PagedItems = Items
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToList();
-
             return new PagedResponse<T>
             {
                 Items = PagedItems,
-                TotalCount = TotalCount,
+                TotalCount = Items.Count,
                 Page = Page,
                 PageSize = PageSize
             };

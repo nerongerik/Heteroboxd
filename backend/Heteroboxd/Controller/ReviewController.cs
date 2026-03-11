@@ -1,5 +1,4 @@
-﻿using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,35 +20,28 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetReviews(string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
-        {
-            _logger.LogInformation($"GET Reviews endpoint hit");
-            try
-            {
-                var Response = await _service.GetReviews(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
         [HttpGet("{ReviewId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetReview(string ReviewId)
+        public async Task<IActionResult> GetReview(string ReviewId, string? UserId = null)
         {
-            _logger.LogInformation($"GET Review endpoint hit for ReviewId: {ReviewId}");
+            _logger.LogInformation($"GetReview endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                var Response = await _service.GetReview(ReviewId);
-                return Ok(Response);
+                var Review = await _service.GetReview(ReviewId);
+                if (UserId == null)
+                {
+                    return Ok(Review);
+                }
+                else
+                {
+                    return Ok(
+                    new
+                    {
+                        Review,
+                        Uwf = (await _userService.DidUserWatchFilm(UserId, Review.FilmId)) != null,
+                        ILiked = await _userService.IsObjectLiked(UserId, ReviewId, "review")
+                    });
+                }
             }
             catch (KeyNotFoundException)
             {
@@ -65,15 +57,11 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> GetReviewByUserFilm(string UserId, int FilmId)
         {
-            _logger.LogInformation($"GET Review by UserFilm endpoint hit for UserId: {UserId}, FilmId: {FilmId}");
+            _logger.LogInformation($"GetReviewByUserFilm endpoint hit for UserId: {UserId}, FilmId: {FilmId}");
             try
             {
                 var Response = await _service.GetReviewByUserFilm(UserId, FilmId);
                 return Ok(Response);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {
@@ -85,31 +73,22 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> GetReviewsByFilm(int FilmId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
         {
-            _logger.LogInformation($"GET Reviews by Film endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
+            _logger.LogInformation($"GetReviewsByFilm endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Response = await _service.GetReviewsByFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch
-            {
-                return StatusCode(500);
-            }
-        }
-
-        [HttpGet("{FilmId}/top/{Top}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetTopReviewsForFilm(int FilmId, int Top)
-        {
-            _logger.LogInformation($"GET Top Reviews For Film endpoint hit for {FilmId}");
-            try
-            {
-                var Response = await _service.GetTopReviewsForFilm(FilmId, Top);
-                return Ok(Response);
+                if (UserId == null)
+                {
+                    return Ok(await _service.GetReviewsByFilm(FilmId, null, Page, PageSize, Filter, Sort, Desc, FilterValue));
+                }
+                else
+                {
+                    return Ok(
+                    new
+                    {
+                        Reviews = await _service.GetReviewsByFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue),
+                        Uwf = await _userService.DidUserWatchFilm(UserId, FilmId) != null
+                    });
+                }
             }
             catch
             {
@@ -121,7 +100,7 @@ namespace Heteroboxd.Controller
         [AllowAnonymous]
         public async Task<IActionResult> GetReviewsByAuthor(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
         {
-            _logger.LogInformation($"GET Reviews by Author endpoint hit for UserId: {UserId}");
+            _logger.LogInformation($"GetReviewsByAuthor endpoint hit for UserId: {UserId}");
             try
             {
                 var Response = await _service.GetReviewsByAuthor(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
@@ -135,9 +114,9 @@ namespace Heteroboxd.Controller
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AddReview([FromBody] CreateReviewRequest ReviewRequest)
+        public async Task<IActionResult> AddReview(CreateReviewRequest ReviewRequest)
         {
-            _logger.LogInformation($"POST Review endpoint hit for User: {ReviewRequest.AuthorId} and Film: {ReviewRequest.FilmId}");
+            _logger.LogInformation($"AddReview endpoint hit for User: {ReviewRequest.AuthorId} and Film: {ReviewRequest.FilmId}");
             try
             {
                 var Response = await _service.AddReview(ReviewRequest);
@@ -155,9 +134,9 @@ namespace Heteroboxd.Controller
 
         [HttpPut]
         [Authorize]
-        public async Task<IActionResult> UpdateReview([FromBody] UpdateReviewRequest ReviewRequest)
+        public async Task<IActionResult> UpdateReview(UpdateReviewRequest ReviewRequest)
         {
-            _logger.LogInformation($"PUT Review endpoint hit for ReviewId: {ReviewRequest.ReviewId}");
+            _logger.LogInformation($"UpdateReview endpoint hit for ReviewId: {ReviewRequest.ReviewId}");
             try
             {
                 var Response = await _service.UpdateReview(ReviewRequest);
@@ -175,18 +154,14 @@ namespace Heteroboxd.Controller
 
         [HttpPut("like")]
         [Authorize]
-        public async Task<IActionResult> UpdateLikes(UpdateLikesRequest Request)
+        public async Task<IActionResult> UpdateLikes(UpdateUserLikesRequest Request)
         {
-            _logger.LogInformation($"PUT Review likes endpoint hit for {Request.ReviewId!}");
+            _logger.LogInformation($"UpdateLikes endpoint hit for {Request.ReviewId!}");
             try
             {
                 await _service.UpdateReviewLikeCountEfCore7(Request.ReviewId!, Request.LikeChange);
                 await _userService.UpdateLikes(Request); //also handles notifs
                 return Ok();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
             }
             catch (KeyNotFoundException)
             {
@@ -202,15 +177,11 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> ToggleNotifications(string ReviewId)
         {
-            _logger.LogInformation($"PUT Toggle Notifications endpoint hit for ReviewId: {ReviewId}");
+            _logger.LogInformation($"ToggleNotifications endpoint hit for ReviewId: {ReviewId}");
             try
             {
                 await _service.ToggleNotificationsEfCore7(ReviewId);
                 return Ok();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
             }
             catch (KeyNotFoundException)
             {
@@ -226,15 +197,11 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> ReportReview(string ReviewId)
         {
-            _logger.LogInformation($"PUT Report Review endpoint hit for ReviewId: {ReviewId}");
+            _logger.LogInformation($"ReportReview endpoint hit for ReviewId: {ReviewId}");
             try
             {
                 await _service.ReportReviewEfCore7(ReviewId);
                 return Ok();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
             }
             catch (KeyNotFoundException)
             {
@@ -250,7 +217,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> DeleteReview(string ReviewId)
         {
-            _logger.LogInformation($"DELETE Review endpoint hit for ReviewId: {ReviewId}");
+            _logger.LogInformation($"DeleteReview endpoint hit for ReviewId: {ReviewId}");
             try
             {
                 await _service.DeleteReview(ReviewId);

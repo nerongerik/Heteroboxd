@@ -1,31 +1,27 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, KeyboardAvoidingView, useWindowDimensions, Pressable } from "react-native";
-import { useState } from "react";
-import { Link, useRouter } from "expo-router";
-import Popup from '../components/popup';
-import LoadingResponse from '../components/loadingResponse';
-import { Colors } from "../constants/colors";
-import { BaseUrl } from "../constants/api";
-import { useAuth } from "../hooks/useAuth";
-import Feather from '@expo/vector-icons/Feather';
-import { Platform } from "react-native";
+import { useCallback, useState } from 'react'
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import Feather from '@expo/vector-icons/Feather'
+import { Link, useRouter } from 'expo-router'
+import { useAuth } from '../hooks/useAuth'
+import { BaseUrl } from '../constants/api'
+import { Colors } from '../constants/colors'
+import { Response } from '../constants/response'
+import LoadingResponse from '../components/loadingResponse'
+import Popup from '../components/popup'
 
 const Login = () => {
+  const [ email, setEmail ] = useState('')
+  const [ password, setPassword ] = useState('')
+  const [ server, setServer ] = useState(Response.initial)
+  const [ showPassword, setShowPassword ] = useState(false)
+  const { width } = useWindowDimensions()
+  const router = useRouter()
+  const { login } = useAuth()
+  const [ recovery, setRecovery ] = useState('')
+  const [ visible, setVisible ]= useState(false)
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [response, setResponse] = useState(-1);
-  const [popupVisible, setPopupVisible] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState("");
-  const { width } = useWindowDimensions();
-  const router = useRouter();
-  const { login } = useAuth();
-
-  const [recovery, setRecovery] = useState('');
-  const [visible, setVisible]= useState(false);
-
-  const handleLoginPress = async () => {
-    setResponse(0);
+  const handleLogin = useCallback(async () => {
+    setServer(Response.loading)
     try {
       const res = await fetch(`${BaseUrl.api}/auth/login`, {
         method: 'POST',
@@ -33,110 +29,83 @@ const Login = () => {
         body: JSON.stringify({
           Email: email,
           Password: password
-        }),
-      });
-      if (res.status === 200) {
-        const data = await res.json();
-        await login(data.jwt, data.refresh);
-        setResponse(200);
-        router.replace('/');
-        return;
-      }
-      if (res.status === 401) {
-        setResponse(401);
-        setMessage("The email or password you entered is incorrect.");
-        setPopupVisible(true);
-        return;
-      }
-      setResponse(500);
-      setMessage("Something went wrong! Try again later.");
-      setPopupVisible(true);
-
-    } catch (error) {
-      setResponse(500);
-      setMessage("Unable to reach the server. Please try again later.");
-      setPopupVisible(true);
-    }
-  };
-
-  const sendRecovery = async () => {
-    setVisible(false);
-    setResponse(0);
-    try {
-      const res = await fetch(`${BaseUrl.api}/auth/forgot-password`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          Email: recovery
         })
-      });
-      if (res.status !== 200) {
-        setResponse(500);
-        setMessage("Unable to reach the server. Please try again later.");
-        setPopupVisible(true); 
+      })
+      if (res.ok) {
+        const json = await res.json()
+        await login(json.jwt, json.refresh)
+        setServer(Response.ok)
+        router.replace('/')
+      } else if (res.status === 401) {
+        setServer({ result: 403, message: 'Incorrect credentials! Please make sure you entered the correct email and password.' })
       } else {
-        setResponse(200);
-        setMessage("Recovery e-mail sent! Please check your inbox to continue the password change process.");
-        setPopupVisible(true);
+        setServer(Response.internalServerError)
       }
     } catch {
-      setResponse(500);
-      setMessage("Network error! Check your internet connection.");
-      setPopupVisible(true);
+      setServer(Response.networkError)
     }
-  }
+  }, [email, password])
+
+  const sendRecovery = useCallback(async () => {
+    setVisible(false)
+    setServer(Response.loading)
+    try {
+      const res = await fetch(`${BaseUrl.api}/auth/forgot-password?Email=${recovery}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      if (!res.ok) {
+        setServer(Response.internalServerError)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [recovery])
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding" enabled>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={[styles.form, { maxWidth: Platform.OS === "web" && width > 1000 ? 1000 : "100%" }]}>
-
+    <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
+      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+        <View style={[styles.form, {width: width > 1000 ? 1000 : width*0.95}]}>
           <Text style={styles.title}>Welcome Back</Text>
-
           <TextInput
             style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
+            placeholder='Email'
+            keyboardType='email-address'
             value={email}
             onChangeText={setEmail}
-            autoCapitalize="none"
+            autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
           />
-
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.inputInner}
-              placeholder="Password"
+              placeholder='Password'
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
               placeholderTextColor={Colors.text_placeholder}
             />
-            <TouchableOpacity onPress={() => setShowPassword(prev => !prev)} style={styles.iconBtn}>
-              <Feather name={showPassword ? "eye-off" : "eye"} size={22} color={Colors.text_input} />
-            </TouchableOpacity>
+            <Pressable onPress={() => setShowPassword(prev => !prev)} style={styles.iconBtn}>
+              <Feather name={showPassword ? 'eye-off' : 'eye'} size={22} color={Colors.text_input} />
+            </Pressable>
           </View>
-
-          <TouchableOpacity
+          <Pressable
             style={[styles.button, (email.length === 0 || password.length === 0) && { opacity: 0.5 }]}
-            onPress={handleLoginPress}
+            onPress={handleLogin}
             disabled={email.length === 0 || password.length === 0}>
             <Text style={styles.buttonText}>Log In</Text>
-          </TouchableOpacity>
-
+          </Pressable>
           <Pressable onPress={() => setVisible(true)} style={{marginTop: 10}}>
             <Text style={[styles.footerText, {color: Colors.text_link}]}>Forgot your password?</Text>
           </Pressable>
-
           <Text style={[styles.footerText, {marginTop: 50}]}>
             Don't have an account? <Link href='register' style={styles.link}>Sign up</Link>
           </Text>
         </View>
-
         <Modal
           transparent={true}
           visible={visible}
-          animationType="fade"
+          animationType='fade'
         >
           <View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center'}}>
             <View style={{backgroundColor: Colors.card, padding: 15, borderRadius: 10, alignItems: 'center'}}>
@@ -164,53 +133,38 @@ const Login = () => {
                 }}
               />
               <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
-                <TouchableOpacity onPress={() => {setRecovery(''); setVisible(false)}} style={[styles.buttonR, { backgroundColor: Colors.button_reject, marginHorizontal: 10 }]}>
+                <Pressable onPress={() => {setRecovery(''); setVisible(false)}} style={[styles.buttonR, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>
                   <Text style={styles.buttonTextR}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                </Pressable>
+                <Pressable
                   disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recovery)}
                   onPress={sendRecovery}
                   style={[
                     styles.buttonR,
-                    { backgroundColor: Colors.button_confirm, marginHorizontal: 10 },
+                    { backgroundColor: Colors._heteroboxd, marginHorizontal: 10 },
                     (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recovery)) && {opacity: 0.5}
                   ]}
                 >
                   <Text style={styles.buttonTextR}>Send</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           </View>
         </Modal>
-
         <Popup
-          visible={popupVisible}
-          message={message}
-          onClose={() => {
-            setPopupVisible(false);
-            if (response === 500) router.replace('/contact');
-          }}
+          visible={[403, 500].includes(server.result)}
+          message={server.message}
+          onClose={() => { server.response === 403 ? setServer(Response.initial) : router.replace('/contact') }}
         />
-
-        <LoadingResponse visible={response === 0} />
+        <LoadingResponse visible={server.response <= 0} />
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
   form: {
     width: "100%",
     alignSelf: "center",
@@ -230,7 +184,6 @@ const styles = StyleSheet.create({
     height: 45,
     marginBottom: 15,
     color: Colors.text_input,
-
     outlineStyle: 'none',
     outlineWidth: 0,
     outlineColor: 'transparent',
@@ -248,7 +201,6 @@ const styles = StyleSheet.create({
   inputInner: {
     flex: 1,
     color: Colors.text_input,
-
     outlineStyle: 'none',
     outlineWidth: 0,
     outlineColor: 'transparent',
@@ -258,7 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   button: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -280,7 +232,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   buttonR: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     paddingVertical: 7,
     borderRadius: 3,
     width: 75,
@@ -289,5 +241,5 @@ const styles = StyleSheet.create({
   buttonTextR: {
     color: Colors.text_button,
     fontWeight: '600',
-  },
-});
+  }
+})

@@ -1,20 +1,21 @@
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
-import { StyleSheet, useWindowDimensions, View, FlatList, Pressable, Text, Animated } from 'react-native'
-import { Colors } from '../../constants/colors'
-import { useEffect, useMemo, useState, useRef } from 'react'
-import { BaseUrl } from '../../constants/api'
-import LoadingResponse from '../../components/loadingResponse'
-import Popup from '../../components/popup'
-import PaginationBar from '../../components/paginationBar'
-import { Poster } from '../../components/poster'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
-import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
-import SlidingMenu from '../../components/slidingMenu'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
 import FilterSort from '../../components/filterSort'
-import { Ionicons } from '@expo/vector-icons'
+import LoadingResponse from '../../components/loadingResponse'
+import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
+import PaginationBar from '../../components/paginationBar'
+import Popup from '../../components/popup'
+import { Poster } from '../../components/poster'
+import SlidingMenu from '../../components/slidingMenu'
 
 const PAGE_SIZE = 24
 
@@ -24,31 +25,18 @@ const List = () => {
   const navigation = useNavigation();
   const { width } = useWindowDimensions()
   const { user, isValidSession } = useAuth()
-
-  const [result, setResult] = useState(-1)
-  const [message, setMessage] = useState('')
-
-  const [baseList, setBaseList] = useState(null)
-  const [entries, setEntries] = useState([])
-  const [seenFilms, setSeenFilms] = useState([]);
-  const [seenCount, setSeenCount] = useState(0);
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPagination, setShowPagination] = useState(false)
-
-  const [fadeSeen, setFadeSeen] = useState(true);
-
-  const [likeCount, setLikeCount] = useState(0)
-  const [iLiked, setILiked] = useState(false)
-  const [descCollapsed, setDescCollapsed] = useState(true)
-
-  const [currentFilter, setCurrentFilter] = useState({field: 'ALL', value: null})
-  const [currentSort, setCurrentSort] = useState({field: 'POSITION', desc: false})
-
-  const [menuShown2, setMenuShown2] = useState(false)
+  const [ server, setServer ] = useState(Response.initial)
+  const [ base, setBase ] = useState(null)
+  const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0, seenFilms: [], seenCount: 0 })
+  const [ fadeSeen, setFadeSeen ] = useState(true)
+  const [ iLiked, setILiked ] = useState(false)
+  const [ descCollapsed, setDescCollapsed ] = useState(true)
+  const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
+  const [ currentSort, setCurrentSort ] = useState({ field: 'POSITION', desc: false })
+  const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
+
   const openMenu2 = () => {
     setMenuShown2(true)
     Animated.timing(slideAnim2, {
@@ -69,167 +57,152 @@ const List = () => {
     outputRange: [300, 0],
   })
 
-  const loadBaseList = async () => {
+  const loadBaseData = useCallback(async () => {
+    setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/lists/${listId}`)
-      if (res.status === 200) {
-        const json = await res.json()
-        setBaseList(json)
-        setLikeCount(Number(json.likeCount))
-      } else if (res.status === 404) {
-        setResult(404)
-        setMessage('This list no longer exists!')
+      if (user?.userId) {
+        const res = await fetch(`${BaseUrl.api}/lists/${listId}?UserId=${user.userId}`)
+        if (res.ok) {
+          const json = await res.json()
+          setBase(json.list)
+          setILiked(json.iLiked)
+          setServer(Response.ok)
+        } else if (res.status === 404) {
+          setServer(Response.notFound)
+          setBase({})
+        } else {
+          setServer(Response.internalServerError)
+          setBase({})
+        }
       } else {
-        throw new Error()
+        const res = await fetch(`${BaseUrl.api}/lists/${listId}`)
+        if (res.ok) {
+          const json = await res.json()
+          setBase(json)
+          setServer(Response.ok)
+        } else if (res.status === 404) {
+          setServer(Response.notFound)
+          setBase({})
+        } else {
+          setServer(Response.internalServerError)
+          setBase({})
+        }
       }
     } catch {
-      setResult(500)
-      setMessage('Something went wrong! Contact support.')
+      setServer(Response.networkError)
+      setBase({})
     }
-  }
-
-  const loadListPage = async (pageNumber) => {
-    if (!baseList) return
-    try {
-      setIsLoading(true)
-      const url = user
-        ? `${BaseUrl.api}/lists/entries/${baseList.id}?UserId=${user.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-        : `${BaseUrl.api}/lists/entries/${baseList.id}?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-      const res = await fetch(url)
-      if (res.status === 200) {
-        const json = await res.json()
-        setPage(json.page)
-        setTotalCount(json.totalCount)
-        setEntries(json.items)
-        setSeenFilms(json.seen)
-        setSeenCount(json.seenCount)
-      } else {
-        setResult(res.status)
-        setMessage('Loading error! Try reloading Heteroboxd.')
-      }
-    } catch {
-      setResult(500)
-      setMessage('Network error! Check your connection.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const loadLiked = async () => {
-    const vS = await isValidSession();
-    if (!user || !vS) return
-    try {
-      const jwt = await auth.getJwt()
-      const res = await fetch(
-        `${BaseUrl.api}/users/${user.userId}/liked/${listId}?ObjectType=list`,
-        { headers: { Authorization: `Bearer ${jwt}` } }
-      )
-      const json = await res.json();
-      if (res.status === 200) setILiked(json)
-      else console.log('failed to load iLiked');
-    } catch {
-      console.log('failed to load iLiked');
-    }
-  }
-
-  useEffect(() => {
-    loadBaseList()
-  }, [listId])
-
-  useEffect(() => {
-    setPage(1)
-    loadListPage(1)
-  }, [currentFilter, currentSort])
-
-  useEffect(() => {
-    setPage(1)
-    loadListPage(1)
-  }, [baseList])
-
-  useEffect(() => {
-    loadLiked()
   }, [user, listId])
 
-  useEffect(() => {
-    if (!baseList) return;
-    navigation.setOptions({
-      headerTitle: `${baseList.authorName}'s list`,
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
-      headerRight: () => {
-        if (baseList) {
-          return (
-            <>
-              <ListOptionsButton listId={baseList.id} />
-              {
-                !baseList.ranked && 
-                <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
-                  <Ionicons name="options" size={24} color={Colors.text} />
-                </Pressable>
-              }
-            </>
-          )
-        }
-      },
-    });
-  }, [baseList])
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
-  const widescreen = useMemo(() => width > 1000, [width])
-  const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
-  const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
-  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
-
-  const paddedEntries = useMemo(() => {
-    const padded = [...entries];
-    const remainder = padded.length % 4;
-    if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder;
-      for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null);
+  const loadDataPage = useCallback(async (page) => {
+    setServer(Response.loading)
+    try {
+      const url = user
+        ? `${BaseUrl.api}/lists/entries/${listId}?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+        : `${BaseUrl.api}/lists/entries/${listId}?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      const res = await fetch(url)
+      if (res.ok) {
+        const json = await res.json()
+        setData({ page: json.page, entries: json.items, totalCount: json.totalCount, seenFilms: json.seen, seenCount: json.seenCount })
+        setServer(Response.ok)
+      } else {
+        setServer(Response.internalServerError)
       }
+    } catch {
+      setServer(Response.networkError)
     }
-    return padded;
-  }, [entries]);
+  }, [user, listId, currentFilter, currentSort])
 
-  const handleLike = async () => {
-    const vS = await isValidSession();
-    if (!user || !vS) return
+  const handleLike = useCallback(async () => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
     const delta = iLiked ? -1 : 1
-    setILiked(!iLiked)
-    setLikeCount((c) => c + delta)
+    setILiked(prev => !prev)
+    setBase(prev => ({...prev, likeCount: prev.likeCount + delta}))
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/like`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${jwt}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${jwt}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          'UserId': user.userId,
-          'UserName': user.name,
-          'AuthorId': baseList?.authorId,
-          'ReviewId': null,
-          'FilmTitle': null,
-          'ListId': listId,
-          'ListName': baseList?.name,
-          'LikeChange': delta
+          UserId: user.userId,
+          UserName: user.name,
+          AuthorId: base?.authorId,
+          ReviewId: null,
+          FilmTitle: null,
+          ListId: listId,
+          ListName: base?.name,
+          LikeChange: delta
         })
       })
-      if (res.status !== 200) console.log('failed to send like request for this list');
-    } catch { console.log('failed to like/unlike list.') }
-  }
+      if (!res.ok) {
+        console.log(`${res.status}: list like failed.`)
+      }
+    } catch {
+      console.log('like list failed; network error.')
+    }
+  }, [user, iLiked, base, listId])
 
-  const renderHeader = () => (
-    <View style={{ width: maxRowWidth, alignSelf: 'center' }}>
-      <Text style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: 20}]}>{baseList?.name}</Text>
-      <Pressable onPress={() => setDescCollapsed((p) => !p)}>
+  useEffect(() => {
+    loadBaseData()
+  }, [loadBaseData])
+
+  useEffect(() => {
+    if (!base?.id) return
+    loadDataPage(1)
+  }, [base?.id, currentFilter, currentSort])
+
+  const widescreen = useMemo(() => width > 1000, [width])
+
+  useEffect(() => {
+    if (!base) return
+    navigation.setOptions({
+      headerTitle: `${base.authorName}'s list`,
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title},
+      headerRight: () => {
+        return (
+          <>
+            <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} />
+            {
+              !base.ranked && 
+              <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
+                <Ionicons name='options' size={24} color={Colors.text} />
+              </Pressable>
+            }
+          </>
+        )
+      }
+    })
+  }, [navigation, widescreen, base, openMenu2])
+
+  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
+  const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
+  const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
+  const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
+  const paddedEntries = useMemo(() => {
+    const padded = [...data.entries]
+    const remainder = padded.length % 4
+    if (remainder !== 0) {
+      const placeholdersToAdd = 4 - remainder
+      for (let i = 0; i < placeholdersToAdd; i++) {
+        padded.push(null)
+      }
+    }
+    return padded
+  }, [data.entries])
+
+  const Header = () => (
+    <View style={{width: maxRowWidth, alignSelf: 'center'}}>
+      <Text style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: 20}]}>{base?.name}</Text>
+      <Pressable onPress={() => setDescCollapsed(prev => !prev)}>
         <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
-          {descCollapsed && baseList?.description?.length > 300
-            ? `${baseList.description.slice(0, 300)}...`
-            : baseList?.description}
+          {descCollapsed && base?.description?.length > 300
+            ? `${base?.description.slice(0, 300)}...`
+            : base?.description}
         </Text>
       </Pressable>
       <View style={styles.metaRow}>
@@ -239,45 +212,34 @@ const List = () => {
             size={widescreen ? 24 : 20}
             color={iLiked ? Colors.heteroboxd : Colors.text}
           />
-          <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(likeCount)} likes</Text>
+          <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</Text>
         </Pressable>
-        <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{totalCount} entries</Text>
+        <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{data.totalCount > 0 ? `${data.totalCount} entries` : ''}</Text>
       </View>
       {
-        user && !isLoading ? (
+        user && server.result > 0 ? (
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
           <View />
           <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'right', paddingTop: 5}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-              <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, totalCount)}% seen</Text>
+              <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</Text>
             </View>
           </Pressable>
         </View>
         ) : <View />
       }
-      <View style={{ height: 20 }} />
+      <View style={{height: 20}} />
     </View>
   )
 
-  const renderContent = ({item}) => {
+  const Film = ({ item }) => {
     if (!item) {
-      return (
-        <View
-          style={{
-            width: posterWidth,
-            height: posterHeight,
-            margin: spacing / 2,
-          }}
-        />
-      );
+      return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
-    const isSeen = fadeSeen && (seenFilms?.includes(item.filmId) ?? false)
+    const isSeen = fadeSeen && (data.seenFilms?.includes(item.filmId) ?? false)
     return (
-      <Pressable
-        onPress={() => router.push(`/film/${item.filmId}`)}
-        style={{ margin: spacing / 2 }}
-      >
+      <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{ margin: spacing / 2 }}>
         <Poster
           posterUrl={item.filmPosterUrl}
           style={{
@@ -289,7 +251,7 @@ const List = () => {
             opacity: isSeen ? 0.3 : 1
           }}
         />
-        {baseList?.ranked && (
+        {base?.ranked && (
           <View
             style={{
               width: widescreen ? 28 : 20,
@@ -315,70 +277,64 @@ const List = () => {
           </View>
         )}
       </Pressable>
-    );
+    )
   }
 
-  const renderFooter = () => (
+  const Footer = () => (
     <PaginationBar
-      page={page}
+      page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
-        setPage(num)
-        loadListPage(num)
+        loadDataPage(num)
+        listRef.current?.scrollToOffset({
+          offset: 0,
+          animated: true,
+        })
       }}
     />
   )
 
-  if (!baseList) {
+  if (!base) {
     return (
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
-        paddingHorizontal: 5,
         backgroundColor: Colors.background,
       }}>
         <LoadingResponse visible={true} />
       </View>
-    );
+    )
   }
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
         ref={listRef}
         data={paddedEntries}
         keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
         numColumns={4}
-        ListHeaderComponent={renderHeader}
-        renderItem={renderContent}
-        ListFooterComponent={renderFooter}
-        style={{
-          alignSelf: 'center'
-        }}
-        contentContainerStyle={{
-          paddingHorizontal: spacing / 2,
-          paddingBottom: 80,
-        }}
+        ListHeaderComponent={Header}
+        renderItem={Film}
+        ListFooterComponent={Footer}
+        ListEmptyComponent={
+          server.result === 0
+          ? <View style={{padding: 50, alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
+          : <Text style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</Text>
+        }
+        style={{alignSelf: 'center'}}
+        contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
-      <LoadingResponse visible={isLoading} />
       <Popup
-        visible={[404, 500].includes(result)}
-        message={message}
-        onClose={() =>
-          result === 500
-            ? router.replace('/contact')
-            : router.replace('/')
-        }
+        visible={[403, 404, 500].includes(server.result)}
+        message={server.message}
+        onClose={() => server.result === 403 ? router.replace('/login') : server.result === 404 ? router.back() : router.replace('/contact')}
       />
 
       {
-        baseList && !baseList.ranked && (
+        !base?.ranked && (
           <SlidingMenu 
             menuShown={menuShown2} 
             closeMenu={closeMenu2} 
@@ -404,12 +360,6 @@ const List = () => {
 export default List
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    paddingBottom: 50
-  },
   author: {
     color: Colors.text,
     fontWeight: 'bold',

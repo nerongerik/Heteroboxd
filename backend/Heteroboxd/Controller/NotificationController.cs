@@ -21,7 +21,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> GetNotificationsByUser(string UserId, int Page, int PageSize)
         {
-            _logger.LogInformation($"GET Notifications by User endpoint hit for User: {UserId}");
+            _logger.LogInformation($"GetNotificationsByUser endpoint hit for User: {UserId}");
             try
             {
                 var Response = await _service.GetNotificationsByUser(UserId, Page, PageSize);
@@ -37,7 +37,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> CheckNotifications(string UserId)
         {
-            _logger.LogInformation($"GET number of new notifications endpoint hit for User: {UserId}");
+            _logger.LogInformation($"CheckNotifications endpoint hit for User: {UserId}");
             try
             {
                 var Response = await _service.AnyNewNotifications(UserId);
@@ -53,7 +53,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> MarkAllAsRead(string UserId)
         {
-            _logger.LogInformation($"PUT all notifs as read endpoint hit for User: {UserId}");
+            _logger.LogInformation($"MarkAllAsRead endpoint hit for User: {UserId}");
             try
             {
                 await _service.ReadAll(UserId);
@@ -69,7 +69,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> UpdateNotification(string NotificationId)
         {
-            _logger.LogInformation($"PUT Update Notification endpoint hit for Notification: {NotificationId}");
+            _logger.LogInformation($"UpdateNotification endpoint hit for Notification: {NotificationId}");
             try
             {
                 await _service.UpdateNotification(NotificationId);
@@ -89,7 +89,7 @@ namespace Heteroboxd.Controller
         [Authorize]
         public async Task<IActionResult> DeleteNotification(string NotificationId)
         {
-            _logger.LogInformation($"DELETE Notification endpoint hit for Notification: {NotificationId}");
+            _logger.LogInformation($"DeleteNotification endpoint hit for Notification: {NotificationId}");
             try
             {
                 await _service.DeleteNotification(NotificationId);

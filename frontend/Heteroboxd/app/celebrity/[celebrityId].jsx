@@ -1,233 +1,193 @@
-import { StyleSheet, View, Animated, Pressable, useWindowDimensions } from 'react-native'
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useState, useEffect, useMemo } from 'react';
-import CelebrityTabs from '../../components/tabs/celebrityTabs';
-import Popup from '../../components/popup';
-import LoadingResponse from '../../components/loadingResponse';
-import { Colors } from '../../constants/colors';
-import { BaseUrl } from '../../constants/api';
-import SlidingMenu from '../../components/slidingMenu';
-import FilterSort from '../../components/filterSort';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../hooks/useAuth';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Animated, Pressable, useWindowDimensions, View } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import { useAuth } from '../../hooks/useAuth'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
+import CelebrityTabs from '../../components/tabs/celebrityTabs'
+import FilterSort from '../../components/filterSort'
+import LoadingResponse from '../../components/loadingResponse'
+import Popup from '../../components/popup'
+import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 24;
-
-// Map frontend filter names to backend Role enum values
+const PAGE_SIZE = 24
 const FILTER_TO_ROLE_MAP = {
   'Starred': 'Actor',
   'Directed': 'Director',
   'Wrote': 'Writer',
   'Produced': 'Producer',
   'Composed': 'Composer',
-};
-
-// Map backend Role enum to frontend filter names
+}
 const ROLE_TO_FILTER_MAP = {
   'Actor': 'Starred',
   'Director': 'Directed',
   'Writer': 'Wrote',
   'Producer': 'Produced',
   'Composer': 'Composed',
-};
+}
 
 const Celebrity = () => {
-  const { user } = useAuth();
-
-  const { celebrityId, t } = useLocalSearchParams();
-  
-  const [bio, setBio] = useState(null);
-  const [availableRoles, setAvailableRoles] = useState([]);
-  const [currentTabData, setCurrentTabData] = useState({ films: [], totalCount: 0, page: 1 });
-  const [seenFilms, setSeenFilms] = useState([]);
-  const [seenCount, setSeenCount] = useState(0);
-
-  const [fadeSeen, setFadeSeen] = useState(true);
-
-  const [result, setResult] = useState(-1);
-  const [message, setMessage] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [currentFilter, setCurrentFilter] = useState('Bio');
-  const [currentSort, setCurrentSort] = useState({ field: "RELEASE DATE", desc: true });
-
-  const { width } = useWindowDimensions();
-
-  const router = useRouter();
-  const navigation = useNavigation();
-
-  const [menuShown, setMenuShown] = useState(false);
-  const slideAnim = useState(new Animated.Value(0))[0];
+  const { user } = useAuth()
+  const { celebrityId, t } = useLocalSearchParams()
+  const [ bio, setBio ] = useState(null)
+  const [ availableRoles, setAvailableRoles ] = useState([])
+  const [ currentTabData, setCurrentTabData ] = useState({ films: [], totalCount: 0, page: 1 })
+  const [ seenFilms, setSeenFilms ] = useState([])
+  const [ seenCount, setSeenCount ] = useState(0)
+  const [ fadeSeen, setFadeSeen ] = useState(true)
+  const [ server, setServer ] = useState(Response.initial)
+  const [ currentFilter, setCurrentFilter ] = useState('Bio')
+  const [ currentSort, setCurrentSort ] = useState({ field: "RELEASE DATE", desc: true })
+  const { width } = useWindowDimensions()
+  const router = useRouter()
+  const navigation = useNavigation()
+  const [ menuShown, setMenuShown ] = useState(false)
+  const slideAnim = useState(new Animated.Value(0))[0]
 
   const openMenu = () => {
-    setMenuShown(true);
+    setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true,
-    }).start();
-  };
-
+    }).start()
+  }
   const closeMenu = () => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
-    }).start(() => setMenuShown(false));
-  };
-
+    }).start(() => setMenuShown(false))
+  }
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [300, 0],
-  });
+  })
 
-  const loadBio = async () => {
-    setRefreshing(true);
+  const loadBioData = useCallback(async () => {
+    setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/celebrities/${celebrityId}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      if (res.status === 200) {
-        const json = await res.json();
-        setBio(json);
-        
-        // Convert backend Role enum values to frontend filter names
-        const frontendRoles = (json.roles || []).map(role => ROLE_TO_FILTER_MAP[role]).filter(Boolean);
-        setAvailableRoles(frontendRoles);
-        
-        setResult(200);
+      const res = await fetch(`${BaseUrl.api}/celebrities/${celebrityId}`)
+      if (res.ok) {
+        const json = await res.json()
+        setBio(json)
+        setAvailableRoles((json.roles ?? []).map(role => ROLE_TO_FILTER_MAP[role]).filter(Boolean))
+        setServer(Response.ok)
       } else if (res.status === 404) {
-        setResult(404);
-        setMessage('Celebrity not found.');
+        setServer(Response.notFound)
       } else {
-        setResult(500);
-        setMessage('Something went wrong! Contact Heteroboxd support for more information!');
+        setServer(Response.internalServerError)
       }
     } catch {
-      setResult(500);
-      setMessage('Network error! Check your internet connection.');
-    } finally {
-      setRefreshing(false);
+      setServer(Response.networkError)
     }
-  };
+  }, [celebrityId])
 
-  const loadCredits = async (filter, pageNumber = 1) => {
+  const loadCreditsData = useCallback(async (filter, page = 1) => {
+    setServer(Response.loading)
     if (!filter || filter === 'Bio') {
-      setCurrentTabData({ films: [], totalCount: 0, page: 1 });
-      return;
+      setCurrentTabData({ films: [], totalCount: 0, page: 1 })
+      setServer(Response.ok)
+      return
     }
-
-    // Convert frontend filter to backend Role enum
-    const roleEnum = FILTER_TO_ROLE_MAP[filter];
-    if (!roleEnum) {
-      console.error(`Unknown filter: ${filter}`);
-      return;
+    const role = FILTER_TO_ROLE_MAP[filter]
+    if (!role) {
+      return
     }
-
-    setRefreshing(true);
     try {
       const url = user
-        ? `${BaseUrl.api}/celebrities/${celebrityId}/credits?UserId=${user.userId}&Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${roleEnum}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
-        : `${BaseUrl.api}/celebrities/${celebrityId}/credits?Page=${pageNumber}&PageSize=${PAGE_SIZE}&Filter=${roleEnum}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      if (res.status === 200) {
-        const json = await res.json();
-        setCurrentTabData({
-          films: json.items,
-          totalCount: json.totalCount,
-          page: json.page
-        });
+        ? `${BaseUrl.api}/celebrities/${celebrityId}/credits?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+        : `${BaseUrl.api}/celebrities/${celebrityId}/credits?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+      const res = await fetch(url)
+      if (res.ok) {
+        const json = await res.json()
+        setCurrentTabData({ films: json.items, totalCount: json.totalCount, page: json.page })
         setSeenFilms(json.seen)
         setSeenCount(json.seenCount)
-        setResult(200);
+        setServer(Response.ok)
       } else if (res.status === 404) {
-        setResult(404);
-        setMessage('Celebrity not found.');
+        setServer(Response.notFound)
       } else {
-        setResult(500);
-        setMessage('Something went wrong! Contact Heteroboxd support for more information!');
+        setServer(Response.internalServerError)
       }
     } catch {
-      setResult(500);
-      setMessage('Network error! Check your internet connection.');
-    } finally {
-      setRefreshing(false);
+      setServer(Response.networkError)
     }
-  };
+  }, [user, celebrityId, currentSort])
 
-  const handleTabChange = (newTab) => {
-    setCurrentFilter(newTab);
+  const handleTabChange = useCallback((newTab) => {
+    setCurrentFilter(newTab)
     if (newTab !== 'Bio') {
-      loadCredits(newTab, 1);
+      loadCreditsData(newTab, 1)
     }
-  };
+  }, [loadCreditsData])
 
-  const handlePageChange = (pageNumber) => {
-    loadCredits(currentFilter, pageNumber);
-  };
+  const handlePageChange = useCallback((page) => {
+    loadCreditsData(currentFilter, page)
+  }, [currentFilter, loadCreditsData])
 
-  // Load bio on mount
   useEffect(() => {
-    if (!bio) {
-      loadBio();
-    }
-  }, []);
+    loadBioData()
+  }, [celebrityId])
 
-  // Set initial filter from URL param
   useEffect(() => {
     if (!t || t.length === 0) {
-      setCurrentFilter("Bio");
-    } else {
-      // Normalize the URL param to match our filter names
-      const normalizedParam = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
-      
-      // Check if it's a valid filter
-      let filter = 'Bio';
-      if (normalizedParam === 'Starred' || normalizedParam === 'Acted') {
-        filter = 'Starred';
-      } else if (FILTER_TO_ROLE_MAP[normalizedParam]) {
-        filter = normalizedParam;
-      }
-      
-      setCurrentFilter(filter);
-      if (filter !== 'Bio') {
-        loadCredits(filter, 1);
-      }
+      setCurrentFilter('Bio')
+      return
     }
-  }, [t]);
+    const normalized = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+    let filter = 'Bio'
+    if (['Starred', 'Acted'].includes(normalized)) {
+      filter = 'Starred'
+    } else if (FILTER_TO_ROLE_MAP[normalized]) {
+      filter = normalized
+    }
+    setCurrentFilter(filter)
+    if (filter !== 'Bio') {
+      loadCreditsData(filter, 1)
+    }
+  }, [])
 
-  // Reload when sort changes (only for non-Bio tabs)
   useEffect(() => {
     if (currentFilter && currentFilter !== 'Bio') {
-      loadCredits(currentFilter, 1);
+      loadCreditsData(currentFilter, 1)
     }
-  }, [currentSort]);
+  }, [currentSort])
+
+  const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: bio ? bio.celebrityName : '',
+      headerTitle: bio?.celebrityName ?? '',
       headerTitleAlign: 'center',
       headerTitleStyle: { color: Colors.text_title },
       headerRight: () => (
         <Pressable onPress={openMenu} style={{ marginRight: widescreen ? 15 : null }}>
-          <Ionicons name="options" size={24} color={Colors.text} />
+          <Ionicons name='options' size={24} color={Colors.text} />
         </Pressable>
       ),
-    });
-  }, [bio]);
+    })
+  }, [navigation, bio, widescreen, openMenu])
 
-  const widescreen = useMemo(() => width > 1000, [width]);
+  if (!bio) {
+    return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        backgroundColor: Colors.background,
+      }}>
+        <LoadingResponse visible={true} />
+      </View>
+    )
+  }
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1, backgroundColor: Colors.background}}>
       <CelebrityTabs
-        bio={{ text: bio?.celebrityDescription, url: bio?.celebrityPictureUrl }}
+        bio={{text: bio.celebrityDescription || 'This individual is indescribable.', url: bio.celebrityPictureUrl}}
         currentTabData={currentTabData}
         availableRoles={availableRoles}
         activeTab={currentFilter}
@@ -243,14 +203,12 @@ const Celebrity = () => {
       />
 
       <Popup 
-        visible={result === 404 || result === 500} 
-        message={message} 
-        onClose={() => {
-          result === 500 ? router.replace('/contact') : router.back();
-        }}
+        visible={[404, 500].includes(server.result)} 
+        message={server.message} 
+        onClose={() => { server.result === 404 ? router.back() : router.replace('/contact') }}
       />
-      
-      <LoadingResponse visible={refreshing} />
+
+      <LoadingResponse visible={server.result <= 0} />
 
       <SlidingMenu 
         menuShown={menuShown} 
@@ -264,8 +222,8 @@ const Celebrity = () => {
           context={'celebrity'}
           currentFilter={currentFilter}
           onFilterChange={(newFilter) => {
-            setCurrentFilter(newFilter);
-            closeMenu();
+            setCurrentFilter(newFilter)
+            closeMenu()
           }}
           currentSort={currentSort}
           onSortChange={(newSort) => setCurrentSort(newSort)}
@@ -275,11 +233,4 @@ const Celebrity = () => {
   );
 };
 
-export default Celebrity;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-});
+export default Celebrity

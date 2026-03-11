@@ -7,9 +7,9 @@ namespace Heteroboxd.Repository
     public interface IRefreshTokenRepository
     {
         Task<List<Country>> GetCountriesAsync();
-        Task AddAsync(RefreshToken Token);
+        void Create(RefreshToken Token);
         Task<RefreshToken?> GetValidTokenAsync(string Token);
-        Task<List<RefreshToken>> GetActiveTokensByUserAsync(Guid UserId);
+        Task RevokeAllUserTokens(Guid UserId);
         Task SaveChangesAsync();
     }
 
@@ -28,10 +28,8 @@ namespace Heteroboxd.Repository
             return await _context.Countries.ToListAsync();
         }
 
-        public async Task AddAsync(RefreshToken Token)
-        {
-            await _context.RefreshTokens.AddAsync(Token);
-        }
+        public void Create(RefreshToken Token) =>
+            _context.RefreshTokens.AddAsync(Token);
 
         public async Task<RefreshToken?> GetValidTokenAsync(string Token)
         {
@@ -39,12 +37,10 @@ namespace Heteroboxd.Repository
                 .FirstOrDefaultAsync(t => t.Token == Token && !t.Used && !t.Revoked && t.Expires > DateTime.UtcNow);
         }
 
-        public async Task<List<RefreshToken>> GetActiveTokensByUserAsync(Guid UserId)
-        {
-            return await _context.RefreshTokens
+        public async Task RevokeAllUserTokens(Guid UserId) =>
+            await _context.RefreshTokens
                 .Where(t => t.UserId == UserId && !t.Revoked)
-                .ToListAsync();
-        }
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.Revoked, true));
 
         public async Task SaveChangesAsync() =>
             await _context.SaveChangesAsync();

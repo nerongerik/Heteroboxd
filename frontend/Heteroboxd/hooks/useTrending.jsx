@@ -1,34 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import { onStorageUpdate } from './storageEvents';
+import { useEffect, useState } from 'react'
+import { Platform } from 'react-native'
+import * as SecureStore from 'expo-secure-store'
+import { onStorageUpdate } from './storageEvents'
 
-async function getItem(key) {
-  if (Platform.OS === 'web') return localStorage.getItem(key);
-  return await SecureStore.getItemAsync(key);
+const getItem = async (key) => {
+  if (Platform.OS === 'web') return localStorage.getItem(key)
+  return await SecureStore.getItemAsync(key)
 }
 
-export function useTrending() {
-  const [trending, setTrending] = useState([]);
-
+export const useTrending = () => {
+  const [ trending, setTrending ] = useState(null)
   const load = async () => {
     try {
-      const stored = await getItem('trending');
+      const stored = await getItem('trending')
       if (stored) {
-        setTrending(JSON.parse(stored));
+        setTrending(JSON.parse(stored))
       }
     } catch (error) {
-      console.warn('Failed to load trending: ', error);
-      setTrending([]);
+      console.log('failed to load trending; ', error)
+      setTrending([])
     }
-  };
-
+  }
   useEffect(() => {
-    load();
-    const unsub = onStorageUpdate('trending', load);
-
-    return unsub;
-  }, []);
-
-  return { trending };
+    load()
+    const unsub = onStorageUpdate('trending', load)
+    return unsub
+  }, [])
+  return { trending }
 }

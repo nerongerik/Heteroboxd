@@ -1,90 +1,70 @@
-import { StyleSheet, useWindowDimensions, View, Platform, TextInput, Text, Pressable, FlatList, Animated } from 'react-native'
-import { useAuth } from '../../hooks/useAuth';
-import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Colors } from '../../constants/colors';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { Poster } from '../../components/poster';
-import { useRouter, useNavigation } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import * as auth from '../../helpers/auth';
-import { BaseUrl } from '../../constants/api';
-import LoadingResponse from '../../components/loadingResponse';
-import { Snackbar } from 'react-native-paper';
-import { TouchableOpacity } from 'react-native';
-import SearchBox from '../../components/searchBox';
-import SlidingMenu from '../../components/slidingMenu';
-import PaginationBar from '../../components/paginationBar';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Animated, FlatList, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import { Snackbar } from 'react-native-paper'
+import { useNavigation, useRouter } from 'expo-router'
+import * as auth from '../../helpers/auth'
+import { useAuth } from '../../hooks/useAuth'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import LoadingResponse from '../../components/loadingResponse'
+import PaginationBar from '../../components/paginationBar'
+import { Poster } from '../../components/poster'
+import SearchBox from '../../components/searchBox'
+import SlidingMenu from '../../components/slidingMenu'
 
 const PAGE_SIZE = 20
 
 const CreateList = () => {
-  const { user, isValidSession } = useAuth();
-  const {width, height} = useWindowDimensions();
-  
-  const [listName, setListName] = useState(null);
-  const [desc, setDesc] = useState('');
-  const [entries, setEntries] = useState([]);
-  const [ranked, setRanked] = useState(false);
-
-  const router = useRouter();
-  const navigation = useNavigation();
-
-  const [result, setResult] = useState(-1);
-  const [snack, setSnack] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const [menuShown, setMenuShown] = useState(false);
-  const slideAnim = useState(new Animated.Value(0))[0]; //sliding animation prep
-
-  const [searchResults, setSearchResults] = useState({items: [], totalCount: 0, page: 1})
-  const [searchInit, setSearchInit] = useState(true)
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity onPress={handleSubmit} disabled={!listName || entries.length === 0 || desc?.length > 1000} style={(!listName || entries.length === 0 || desc?.length > 1000) && {opacity: 0.5}}>
-          <Ionicons name="checkmark" size={24} color={Colors.text_title} />
-        </TouchableOpacity>
-      )
-    });
-  }, [listName, desc, entries, ranked]);
+  const { user, isValidSession } = useAuth()
+  const { width, height } = useWindowDimensions()
+  const [ listName, setListName ] = useState('')
+  const [ desc, setDesc ] = useState('')
+  const [ entries, setEntries ] = useState([])
+  const [ ranked, setRanked ] = useState(false)
+  const router = useRouter()
+  const navigation = useNavigation()
+  const [ result, setResult ] = useState(-1)
+  const [ snack, setSnack ] = useState({ shown: false, msg: '' })
+  const [ menuShown, setMenuShown ] = useState(false)
+  const slideAnim = useState(new Animated.Value(0))[0]
+  const [ searchResults, setSearchResults ] = useState({ items: [], totalCount: 0, page: 1 })
+  const [ searchInit, setSearchInit ] = useState(true)
 
   const openMenu = () => {
-    setMenuShown(true);
+    setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
-
+      useNativeDriver: true
+    }).start()
+  }
   const closeMenu = () => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start(() => setMenuShown(false));
-  };
-
+  }
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [300, 0], //slide from bottom
-  });
+    outputRange: [300, 0]
+  })
 
-  async function handleSubmit() {
+  const handleSubmit = useCallback(async () => {
+    if (!user || !(await isValidSession())) {
+      setSnack({ shown: true, msg: 'Session expired! Try logging in again.' })
+      router.replace('/login')
+      return
+    }
+    setResult(0)
     try {
-      const vS = await isValidSession();
-      if (!user || !vS) {
-        setMessage("Session expired - try logging in again!");
-        setSnack(true);
-        return;
-      }
-      setResult(0);
       const payload = entries.map((e, i) => ({
         FilmId: e.filmId,
         Position: i + 1
-      }));
-      const jwt = await auth.getJwt();
+      }))
+      const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists`, {
         method: 'POST',
         headers: {
@@ -92,59 +72,53 @@ const CreateList = () => {
           'Authorization': `Bearer ${jwt}`
         },
         body: JSON.stringify({
-          "Name": listName,
-          "Description": desc,
-          "Ranked": ranked,
-          "AuthorId": user.userId,
-          "Entries": payload
+          Name: listName,
+          Description: desc,
+          Ranked: ranked,
+          AuthorId: user.userId,
+          Entries: payload
         })
-      });
-      if (res.status === 200) {
-        setResult(200);
-        router.replace(`/lists/user/${user.userId}`);
-      } else if (res.status === 401) {
-        setMessage("Credentials expired - try logging in again!");
-        setResult(401);
-        setSnack(true);
+      })
+      if (res.ok) {
+        setResult(200)
+        router.replace(`/lists/user/${user.userId}`)
       } else {
-        console.log(res.status)
-        setMessage("Something went wrong! Contact Heteroboxd support for more information.");
-        setResult(500);
-        setSnack(true);
+        setSnack({ shown: true, msg: 'Something went wrong! Try reloading Heteroboxd.' })
+        setResult(500)
       }
     } catch {
-        setMessage("Network error! Please check your internet connection.");
-        setResult(500);
-        setSnack(true);
-      return;
+      setSnack({ shown: true, msg: 'Network error! Please check your internet connection and try again.' })
+      setResult(500)
     }
-  }
+  }, [user, listName, desc, ranked, entries])
 
-  //web on compooper?
-  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  //minimum spacing between posters
-  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
-  //determine max usable row width:
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
-  //compute poster width:
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing]);
-  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
-  //padded entries
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable onPress={handleSubmit} disabled={listName.length === 0 || entries.length === 0 || desc.length > 1000} style={(listName.length === 0 || entries.length === 0 || desc.length > 1000) && {opacity: 0.5}}>
+          <Ionicons name='checkmark' size={24} color={Colors.text_title} />
+        </Pressable>
+      )
+    })
+  }, [navigation, listName, desc, entries, ranked])
+
+  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
+  const widescreen = useMemo(() => width > 1000, [width])
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen])
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing])
+  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
   const paddedEntries = useMemo(() => {
-    const padded = [...entries];
-    const remainder = padded.length % 4;
-
+    const padded = [...entries]
+    const remainder = padded.length % 4
     if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder;
+      const placeholdersToAdd = 4 - remainder
       for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null);
+        padded.push(null)
       }
     }
-
-    return padded;
-  }, [entries]);
-
-  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE);
+    return padded
+  }, [entries])
 
   const Header = useMemo(() => (
     <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
@@ -178,17 +152,10 @@ const CreateList = () => {
 
   const Render = useCallback(({ item, index }) => {
     if (!item) {
-      return (
-        <View
-          style={{
-            width: posterWidth,
-            height: posterHeight,
-          }}
-        />
-      );
+      return <View style={{width: posterWidth, height: posterHeight}}/>
     }
     return (
-      <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index)); }} style={{alignItems: 'center'}}>
+      <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index))}} style={{alignItems: 'center'}}>
         <Poster
           posterUrl={item.posterUrl}
           style={{
@@ -210,7 +177,7 @@ const CreateList = () => {
               justifyContent: 'center',
               alignItems: 'center',
               marginBottom: spacing / 2,
-              marginTop: -10,
+              marginTop: -10
             }}
           >
             <Text
@@ -218,7 +185,7 @@ const CreateList = () => {
                 color: Colors.text_title,
                 fontSize: widescreen ? 12 : 8,
                 fontWeight: 'bold',
-                lineHeight: 18,
+                lineHeight: 18
               }}
             >
               {index + 1}
@@ -237,7 +204,7 @@ const CreateList = () => {
   ), [ranked, widescreen])
 
   return (
-    <View style={[styles.container]}>
+    <View style={{backgroundColor: Colors.background, flex: 1, justifyContent: 'center'}}>
       <FlatList
         data={paddedEntries}
         numColumns={4}
@@ -245,24 +212,21 @@ const CreateList = () => {
         renderItem={Render}
         ListEmptyComponent={<Text style={{color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>This list is empty.</Text>}
         ListFooterComponent={Footer}
-        contentContainerStyle={{
-          padding: spacing,
-          alignItems: 'center'
-        }}
-        columnWrapperStyle={{
-          columnGap: spacing,
-          rowGap: spacing,
-        }}
+        contentContainerStyle={{padding: spacing, alignItems: 'center'}}
+        columnWrapperStyle={{columnGap: spacing, rowGap: spacing}}
         showsVerticalScrollIndicator={false}
       />
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={openMenu}
-      >
-        <Ionicons name="add" size={28} color="white" />
-      </TouchableOpacity>
+      <Pressable style={styles.fab} onPress={openMenu}>
+        <Ionicons name='add' size={28} color='white' />
+      </Pressable>
       
-      <SlidingMenu menuShown={menuShown} closeMenu={() => {setSearchResults({items: [], totalCount: 0, page: 1}); setSearchInit(true); closeMenu();}} translateY={translateY} widescreen={widescreen} width={width}>
+      <SlidingMenu
+        menuShown={menuShown}
+        closeMenu={() => {setSearchResults({items: [], totalCount: 0, page: 1}); setSearchInit(true); closeMenu()}}
+        translateY={translateY}
+        widescreen={widescreen}
+        width={width}
+      >
         <SearchBox
           onSelected={(res) => {
             setSearchResults(res)
@@ -284,10 +248,10 @@ const CreateList = () => {
             numColumns={1}
             renderItem={({item, index}) => (
               <Pressable key={index} onPress={() => {
-                if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }]);
-                setSearchResults({items: [], totalCount: 0, page: 1});
-                setSearchInit(true);
-                closeMenu();
+                if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }])
+                setSearchResults({items: [], totalCount: 0, page: 1})
+                setSearchInit(true)
+                closeMenu()
               }}>
                 <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
                   <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
@@ -307,23 +271,18 @@ const CreateList = () => {
               </Pressable>
             )}
             ListEmptyComponent={
-              !searchInit && <Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text></View>
             }
             ListFooterComponent={
-              <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>
+              <View style={{width: widescreen ? width*0.5 : width*0.95}}>
                 <PaginationBar
                   page={searchResults.page}
                   totalPages={totalPages}
-                  visible={searchResults.totalCount > PAGE_SIZE}
                   onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
                 />
               </View>
             }
-            contentContainerStyle={{
-              padding: 20,
-              alignItems: 'flex-start',
-              width: '100%'
-            }}
+            contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />
         </View>
@@ -331,37 +290,27 @@ const CreateList = () => {
 
       <LoadingResponse visible={result === 0} />
       <Snackbar
-        visible={snack}
-        onDismiss={() => setSnack(false)}
+        visible={snack.shown}
+        onDismiss={() => setSnack(prev => ({...prev, shown: false}))}
         duration={3000}
-        style={{
-          backgroundColor: Colors.card,
-          width: widescreen ? width*0.5 : width*0.9,
-          alignSelf: 'center',
-          borderRadius: 8,
-        }}
+        style={{backgroundColor: Colors.card, width: widescreen ? width*0.5 : width*0.9, alignSelf: 'center', borderRadius: 8}}
         action={{
           label: 'OK',
-          onPress: () => setSnack(false),
+          onPress: () => setSnack(prev => ({...prev, shown: false})),
           textColor: Colors.text_link
         }}
       >
-        {message}
+        {snack.msg}
       </Snackbar>
 
     </View>
   )
 }
 
-export default CreateList;
+export default CreateList
 
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.background,
-    flex: 1,
-    justifyContent: 'center'
-  },
   descWrapper: {
     marginBottom: 10,
     maxHeight: 80,
@@ -417,10 +366,10 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5, //android
+    elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 }, //iOS
+    shadowOffset: { width: 0, height: 2 },
   },
 });

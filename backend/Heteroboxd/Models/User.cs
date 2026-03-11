@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models.Enums;
+﻿using Heteroboxd.Models.DTO;
+using Heteroboxd.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace Heteroboxd.Models
@@ -50,6 +51,12 @@ namespace Heteroboxd.Models
             this.Name = Name;
             this.Bio = Bio;
             this.Gender = Gender == "male" ? Enums.Gender.Male : Enums.Gender.Female;
+        }
+
+        public void UpdateFields(UpdateUserRequest Request)
+        {
+            this.Name = string.IsNullOrEmpty(Request.Name) ? this.Name : Request.Name;
+            this.Bio = string.IsNullOrEmpty(Request.Bio) ? this.Bio : Request.Bio;
         }
     }
 }

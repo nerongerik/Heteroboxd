@@ -1,109 +1,86 @@
-import { useEffect, useState } from 'react'
-import { StyleSheet, View, TextInput, TouchableOpacity, Modal, Text } from 'react-native'
-import { Colors } from '../constants/colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react'
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { Colors } from '../constants/colors'
 
-const ParsedInput = ({initial, width, onValueChange}) => {
-
-  const [text, setText] = useState('');
-  const [currentLink, setCurrentLink] = useState('');
-  const [visible, setVisible] = useState(false);
-
-  const inputRef = useRef(null);
-  const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [pendingTag, setPendingTag] = useState(null); // used for <a>
-
-  useEffect(() => {
-    //if this helper component is updating an existing comment/review instead of making a new one from scratch,
-    //firstly display the existing text if any
-    if (initial && initial !== '') setText(initial);
-  }, [initial, text])
-
-  useEffect(() => {
-    onValueChange(text);
-  }, [text]);
+const ParsedInput = ({ initial, width, onValueChange }) => {
+  const [ text, setText ] = useState('')
+  const [ currentLink, setCurrentLink ] = useState('')
+  const [ visible, setVisible ] = useState(false)
+  const inputRef = useRef(null)
+  const [ selection, setSelection ] = useState({ start: 0, end: 0 })
+  const [ pendingTag, setPendingTag ] = useState(null)
 
   const applyTag = (openTag, closeTag) => {
-    const { start, end } = selection;
-
-    const before = text.slice(0, start);
-    const selected = text.slice(start, end);
-    const after = text.slice(end);
-
-    let newText;
-    let newCursorPos;
-
+    const { start, end } = selection
+    const before = text.slice(0, start)
+    const selected = text.slice(start, end)
+    const after = text.slice(end)
+    let newText
+    let newCursorPos
     if (start !== end) {
-      // Wrap selected text
-      newText = `${before}${openTag}${selected}${closeTag}${after}`;
-      newCursorPos = end + openTag.length + closeTag.length;
+      newText = `${before}${openTag}${selected}${closeTag}${after}`
+      newCursorPos = end + openTag.length + closeTag.length
     } else {
-      // Insert empty tags and place cursor between them
-      newText = `${before}${openTag}${closeTag}${after}`;
-      newCursorPos = start + openTag.length;
+      newText = `${before}${openTag}${closeTag}${after}`
+      newCursorPos = start + openTag.length
     }
-
-    setText(newText);
-
-    // Cursor update must happen after render
+    setText(newText)
     requestAnimationFrame(() => {
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    });
-  };
+      setSelection({ start: newCursorPos, end: newCursorPos })
+    })
+  }
 
   const confirmLink = () => {
-    const { start, end } = pendingTag.selection;
-
-    const before = text.slice(0, start);
-    const selected = text.slice(start, end);
-    const after = text.slice(end);
-
-    const openTag = `<a href="${currentLink}">`;
-    const closeTag = `</a>`;
-
-    let newText;
-    let cursorPos;
-
+    const { start, end } = pendingTag.selection
+    const before = text.slice(0, start)
+    const selected = text.slice(start, end)
+    const after = text.slice(end)
+    const openTag = `<a href="${currentLink}">`
+    const closeTag = `</a>`
+    let newText
+    let cursorPos
     if (start !== end) {
-      newText = `${before}${openTag}${selected}${closeTag}${after}`;
-      cursorPos = end + openTag.length + closeTag.length;
+      newText = `${before}${openTag}${selected}${closeTag}${after}`
+      cursorPos = end + openTag.length + closeTag.length
     } else {
-      newText = `${before}${openTag}${closeTag}${after}`;
-      cursorPos = start + openTag.length;
+      newText = `${before}${openTag}${closeTag}${after}`
+      cursorPos = start + openTag.length
     }
-
-    setText(newText);
-    setCurrentLink('');
-    setVisible(false);
-
-    requestAnimationFrame(() => {
-      setSelection({ start: cursorPos, end: cursorPos });
-    });
-  };
+    setText(newText)
+    setCurrentLink('')
+    setVisible(false)
+    requestAnimationFrame(() => { setSelection({ start: cursorPos, end: cursorPos }) })
+  }
 
   const insertMarkup = (tag) => {
     switch (tag) {
       case 'i':
-        applyTag('<i>', '</i>');
-        break;
+        applyTag('<i>', '</i>')
+        break
       case 'strong':
-        applyTag('<strong>', '</strong>');
-        break;
+        applyTag('<strong>', '</strong>')
+        break
       case 'u':
-        applyTag('<u>', '</u>');
-        break;
+        applyTag('<u>', '</u>')
+        break
       case 'a':
-        setPendingTag({
-          selection,
-        });
-        setVisible(true);
-        break;
+        setPendingTag({ selection })
+        setVisible(true)
+        break
     }
   }
 
+  useEffect(() => {
+    setText(initial || '')
+  }, [initial])
+
+  useEffect(() => {
+    onValueChange(text)
+  }, [text])
+
   return (
-    <View style={{width: width*0.9, maxWidth: 1000}}>
+    <View style={{width: Math.min(width*0.9, 1000)}}>
       <TextInput
         scrollEnabled={true}
         ref={inputRef}
@@ -145,18 +122,18 @@ const ParsedInput = ({initial, width, onValueChange}) => {
           alignItems: 'center',
           justifyContent: 'space-evenly'
         }}>
-          <TouchableOpacity onPress={() => insertMarkup('i')}>
+          <Pressable onPress={() => insertMarkup('i')}>
             <FontAwesome name="italic" size={20} color={Colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => insertMarkup('strong')}>
+          </Pressable>
+          <Pressable onPress={() => insertMarkup('strong')}>
             <FontAwesome name="bold" size={20} color={Colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => insertMarkup('u')}>
+          </Pressable>
+          <Pressable onPress={() => insertMarkup('u')}>
             <FontAwesome name="underline" size={20} color={Colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => insertMarkup('a')}>
+          </Pressable>
+          <Pressable onPress={() => insertMarkup('a')}>
             <FontAwesome name="external-link" size={20} color={Colors.text} />
-          </TouchableOpacity>
+          </Pressable>
       </View>
 
       <Modal
@@ -190,26 +167,25 @@ const ParsedInput = ({initial, width, onValueChange}) => {
               }}
             />
             <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
-              <TouchableOpacity onPress={() => {setCurrentLink(''); setVisible(false)}} style={[styles.button, { backgroundColor: Colors.button_reject, marginHorizontal: 10 }]}>
+              <Pressable onPress={() => {setCurrentLink(''); setVisible(false)}} style={[styles.button, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>
                 <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity disabled={!URL.canParse(currentLink)} onPress={confirmLink} style={[styles.button, { backgroundColor: Colors.button_confirm, marginHorizontal: 10 }, (!URL.canParse(currentLink)) && {opacity: 0.5}]}>
+              </Pressable>
+              <Pressable disabled={!URL.canParse(currentLink)} onPress={confirmLink} style={[styles.button, { backgroundColor: Colors._heteroboxd, marginHorizontal: 10 }, (!URL.canParse(currentLink)) && {opacity: 0.5}]}>
                 <Text style={styles.buttonText}>Link</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
       </Modal>
-
     </View>
   )
 }
 
-export default ParsedInput;
+export default ParsedInput
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     paddingVertical: 7,
     borderRadius: 3,
     width: 75,
@@ -218,5 +194,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: Colors.text_button,
     fontWeight: '600',
-  },
+  }
 })

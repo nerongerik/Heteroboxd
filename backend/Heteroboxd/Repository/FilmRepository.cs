@@ -12,7 +12,6 @@ namespace Heteroboxd.Repository
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
         Task<List<Trending>> GetTrendingAsync();
         Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetFilmsAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<(List<Film> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -30,9 +29,7 @@ namespace Heteroboxd.Repository
 
         public async Task<Film?> GetByIdAsync(int Id) =>
             await _context.Films
-                .AsSplitQuery()
                 .Include(f => f.CastAndCrew)
-                .Include(f => f.Reviews)
                 .FirstOrDefaultAsync(f => f.Id == Id);
 
         public async Task<Film?> LightweightFetcher(int Id) =>
@@ -171,24 +168,8 @@ namespace Heteroboxd.Repository
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();
-                return (JoinResult.Select(x => x.Film).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount);
+                return (JoinResult.Select(x => x.Film).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount)!;
             }
-        }
-
-        public async Task<(List<Film> Films, int TotalCount)> GetByCelebrityAsync(int CelebrityId, int Page, int PageSize)
-        {
-            var CelebQuery = _context.Films
-                .Include(f => f.CastAndCrew)
-                .Where(f => f.CastAndCrew.Any(c => c.CelebrityId == CelebrityId));
-
-            var TotalCount = await CelebQuery.CountAsync();
-
-            var Films = await CelebQuery
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            return (Films, TotalCount);
         }
 
         public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -277,7 +258,7 @@ namespace Heteroboxd.Repository
             return (Results, TotalCount);
         }
 
-        public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta) //increments/decrements watch count
+        public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta)
         {
             var Rows = await _context.Films
                 .Where(f => f.Id == FilmId)

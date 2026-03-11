@@ -1,337 +1,231 @@
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Animated, Platform, useWindowDimensions, Pressable, ActivityIndicator, FlatList } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../hooks/useAuth';
-import { Colors } from '../../constants/colors';
-import { useEffect, useState, useMemo } from 'react';
-import { UserAvatar } from '../../components/userAvatar';
-import { BaseUrl } from '../../constants/api';
-import Popup from '../../components/popup';
-import LoadingResponse from '../../components/loadingResponse';
-import { Poster } from '../../components/poster';
-import { Snackbar } from 'react-native-paper';
-import * as auth from '../../helpers/auth';
-import * as format from '../../helpers/format';
-import Foundation from '@expo/vector-icons/Foundation';
-import Histogram from '../../components/histogram';
-import SearchBox from '../../components/searchBox';
-import SlidingMenu from '../../components/slidingMenu';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import Foundation from '@expo/vector-icons/Foundation'
+import { Snackbar } from 'react-native-paper'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import * as auth from '../../helpers/auth'
+import * as format from '../../helpers/format'
+import { useAuth } from '../../hooks/useAuth'
+import { BaseUrl } from '../../constants/api'
+import { Colors } from '../../constants/colors'
+import { Response } from '../../constants/response'
+import Divider from '../../components/divider'
+import Histogram from '../../components/histogram'
+import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
+import Popup from '../../components/popup'
+import { Poster } from '../../components/poster'
+import ProfileOptionsButton from '../../components/optionButtons/profileOptionsButton'
+import SearchBox from '../../components/searchBox'
+import SlidingMenu from '../../components/slidingMenu'
+import { UserAvatar } from '../../components/userAvatar'
 
+const RECENTS = 8
 const PAGE_SIZE = 20
 
 const Profile = () => {
-  const { userId } = useLocalSearchParams();
-  const { user, isValidSession } = useAuth();
-
-  const [data, setData] = useState(null);
-  const [result, setResult] = useState(-1);
-  const [error, setError] = useState("");
-  const [ratings, setRatings] = useState({});
-
-  const { width, height } = useWindowDimensions();
-
-  const router = useRouter();
-
-  const [visible, setVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-
-  const [favorites, setFavorites] = useState([null, null, null, null]);
-  const [favoritesResult, setFavoritesResult] = useState(-1);
-
-  const [recent, setRecent] = useState([]);
-  const [recentResult, setRecentResult] = useState(-1);
-
-  const [blocked, setBlocked] = useState(false);
-  const [following, setFollowing] = useState(false);
-  const [followLabel, setFollowLabel] = useState('FOLLOW'); // 'FOLLOW', 'FOLLOW BACK', 'UNFOLLOW'
-
-  //searchbar
-  const [menuShown2, setMenuShown2] = useState(false);
-  const slideAnim2 = useState(new Animated.Value(0))[0];
-  const [favIndex, setFavIndex] = useState(-1);
-  const [searchResults, setSearchResults] = useState({items: [], totalCount: 0, page: 1})
-  const [searchInit, setSearchInit] = useState(true)
-
-
-  const loadProfileData = async () => {
-    //fetch profile
-    setResult(0);
-    try {
-      const res = await fetch(`${BaseUrl.api}/users/${userId}`);
-      if (res.status === 200) {
-        const json = await res.json();
-        setData({ 
-          name: json.name, pictureUrl: json.pictureUrl, bio: json.bio, gender: json.gender, admin: json.admin,
-          joined: format.parseDate(json.joined), flags: json.flags, watchlistCount: json.watchlistCount, listsCount: json.listsCount,
-          followersCount: json.followersCount, followingCount: json.followingCount, blockedCount: json.blockedCount,
-          reviewsCount: json.reviewsCount, likes: json.likes, watched: json.watched
-        });
-        setResult(200);
-      } else if (res.status === 404) {
-        setError("This user no longer exists!");
-        setResult(404);
-        setData({})
-      } else {
-        setError("Something went wrong! Please contact Heteroboxd support for more information!");
-        setResult(500);
-        setData({})
-      }
-    } catch {
-      setError("Unable to connect to Heteroboxd. Please check your internet connection!");
-      setResult(500);
-      setData({})
-    }
-
-    //fetch favorites
-    setFavoritesResult(0);
-    try {
-      const res = await fetch(`${BaseUrl.api}/users/user-favorites/${userId}`, {
-        method: 'GET',
-        headers: {'Accept': 'application/json'}
-      });
-      if (res.status === 200) {
-        const json = await res.json();
-        setFavorites([json["1"], json["2"], json["3"], json["4"]]);
-        setFavoritesResult(200);
-      } else if (res.status === 404) {
-        setFavoritesResult(404);
-      } else if (res.status === 400) {
-        setError("This user no longer exists!");
-        setResult(400);
-      } else {
-        setError("Something went wrong! Please contact Heteroboxd support for more information!");
-        setResult(500);
-      }
-    } catch {
-      setError("Unable to connect to Heteroboxd. Please check your internet connection!");
-      setResult(500);
-    }
-
-    //fetch recents
-    setRecentResult(0);
-    try {
-      const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=1&PageSize=8&Filter=ALL&Sort=${"DATE WATCHED"}&Desc=true&FilterValue=${null}`);
-      if (res.status === 200) {
-        const json = await res.json();
-        setRecent(json.items);
-        setRecentResult(200);
-      } else if (res.status === 400) {
-        setError("This user no longer exists!")
-        setResult(400);
-      } else {
-        setError("Something went wrong! Please contact Heteroboxd support for more information!");
-        setResult(500);
-      }
-    } catch {
-      setError("Unable to connect to Heteroboxd. Please check your internet connection!");
-      setResult(500);
-    }
-  };
-
-  useEffect(() => {
-    let loaded = true;
-    if (!user || user.userId === userId) return;
-    (async () => {
-      try {
-        const jwt = await auth.getJwt()
-        const res = await fetch(`${BaseUrl.api}/users/determine-relationship/${user.userId}/${userId}`, {
-          method: "GET",
-          headers: {'Authorization': `Bearer ${jwt}`}
-        });
-        if (!loaded) return;
-
-        if (res.status === 200) {
-          const relationship = await res.text();
-          const trimmed = relationship.replace(/^"|"$/g, '').trim().toLowerCase();
-          if (trimmed === 'blocked') {
-            setBlocked(true);
-          } else if (trimmed === 'following') {
-            setFollowing(true);
-            setFollowLabel('UNFOLLOW');
-          } else if (trimmed === 'followed') {
-            setFollowing(false);
-            setFollowLabel('FOLLOW BACK');
-          } else {
-            setFollowing(false);
-            setFollowLabel('FOLLOW');
-          }
-        } else {
-          console.log('Failed to determine relationship; falling back to none.');
-        }
-      } catch {
-        console.log('Network error determining relationship; falling back to none.');
-      }
-    })();
-
-    return () => { loaded = false; };
-  }, [userId]);
-
-  useEffect(() => {
-    if (!blocked) {
-      loadProfileData();
-    }
-  }, [userId, blocked]);
-
-  useEffect(() => {
-    (async () => {
-      if (!userId) return;
-      try {
-        const res = await fetch(`${BaseUrl.api}/users/ratings/${userId}`, {
-          method: 'GET',
-          headers: {'Accept': 'application/json'}
-        });
-        if (res.status === 200) {
-          const json = await res.json();
-          setRatings(json);
-        } else {
-          console.log(`${res.status}: Failed to fetch ratings; probably threw in earlier load.`);
-        }
-      } catch {
-        console.log('network error when fetching ratings; probably threw in earlier load.');
-      }
-    })();
-  }, [userId]);
-
-  function handleButtons(button) {
-    switch(button) {
-      case 'Watched':
-        router.push(`/films/user-watched/${userId}`);
-        break;
-      case 'Watchlist':
-        router.push(`/films/watchlist/${userId}`);
-        break;
-      case 'Reviews':
-        router.push(`/reviews/user/${userId}`);
-        break;
-      case 'Lists':
-        if (data.listsCount === '0') router.push(`/list/create`)
-        else router.push(`/lists/user/${userId}`);
-        break;
-      case 'Likes':
-        router.push(`/likes/${userId}`);
-        break;
-      case 'Followers':
-        router.push(`/relationships/${userId}?t=followers`);
-        break;
-      case 'Following':
-        router.push(`/relationships/${userId}?t=following`);
-        break;
-      case 'Blocked':
-        router.push(`/relationships/${userId}?t=blocked`);
-        break;
-      default:
-        setSnackbarMessage("I'm gonna touch you lil bro");
-        setVisible(true);
-    }
-  }
-
-  async function handleFollow() {
-    if (!user || !(await isValidSession())) {
-      setSnackbarMessage('You must be logged in to follow people.');
-      setVisible(true);
-      return;
-    }
-    if (following) {
-      setFollowing(false);
-      setFollowLabel(followLabel === 'UNFOLLOW' ? 'FOLLOW' : followLabel);
-    } else {
-      setFollowing(true);
-      setFollowLabel('UNFOLLOW');
-    }
-    const jwt = await auth.getJwt();
-    await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=follow-unfollow`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${jwt}`
-      }
-    }).then((res) => {
-      //not critical to handle errors, not critical architecture
-      console.log(res.status);
-    });
-  }
-
-  const updateFavorites = async (filmId, index) => {
-    try {
-      const vS = await isValidSession();
-      if (!user || !isOwnProfile || !vS) {
-        setSnackbarMessage(`Session expired! Try logging in again.`);
-        setVisible(true);
-      }
-      const jwt = await auth.getJwt();
-      const i = index ? index : favIndex;
-      const res = await fetch(`${BaseUrl.api}/users/favorites/${user.userId}/${filmId}?Index=${i}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${jwt}`,
-          'Accept': 'application/json'
-        }
-      });
-      if (res.status === 200) {
-        const json = await res.json();
-        setFavorites([json["1"], json["2"], json["3"], json["4"]]);
-      } else {
-        setSnackbarMessage(`${res.status}: Failed to update your favorites! Try reloading Heteroboxd.`);
-        setVisible(true);
-      }
-    } catch {
-      setSnackbarMessage(`Network error! Check your internet connection.`)
-      setVisible(true);
-    }
-  }
+  const { userId } = useLocalSearchParams()
+  const { user, isValidSession } = useAuth()
+  const [ data, setData ] = useState(null)
+  const [ server, setServer ] = useState(Response.initial)
+  const [ ratings, setRatings ] = useState({})
+  const { width, height } = useWindowDimensions()
+  const navigation = useNavigation()
+  const router = useRouter()
+  const [ snack, setSnack ] = useState({ shown: false, msg: '' })
+  const [ favorites, setFavorites ] = useState([])
+  const [ recent, setRecent ] = useState(null)
+  const [ blocked, setBlocked ] = useState(false)
+  const [ following, setFollowing ] = useState(false)
+  const [ followLabel, setFollowLabel ] = useState('FOLLOW')
+  const [ menuShown2, setMenuShown2 ] = useState(false)
+  const slideAnim2 = useState(new Animated.Value(0))[0]
+  const [ favIndex, setFavIndex ] = useState(-1)
+  const [ searchResults, setSearchResults ] = useState({items: [], totalCount: 0, page: 1})
+  const [ searchInit, setSearchInit ] = useState(true)
 
   const openMenu2 = () => {
-    setMenuShown2(true);
+    setMenuShown2(true)
     Animated.timing(slideAnim2, {
       toValue: 1,
       duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
-
+      useNativeDriver: true
+    }).start()
+  }
   const closeMenu2 = () => {
     Animated.timing(slideAnim2, {
       toValue: 0,
       duration: 150,
-      useNativeDriver: true,
-    }).start(() => setMenuShown2(false));
-  };
-
+      useNativeDriver: true
+    }).start(() => setMenuShown2(false))
+  }
   const translateY2 = slideAnim2.interpolate({
     inputRange: [0, 1],
-    outputRange: [300, 0], //slide from bottom
-  });
+    outputRange: [300, 0]
+  })
 
-  const widescreen = useMemo(() => Platform.OS === 'web' && width > 1000, [width]);
-  const isOwnProfile = useMemo(() => user?.userId === userId, [user?.userId, userId]);
-  //minimum spacing between posters
-  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen]);
-  //determine max usable row width:
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen]);
-  //compute poster width:
-  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing]);
-  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth]); //maintain 2:3 aspect
-  //recents
-  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing]);
-  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth]); //maintain 2:3 aspect
+  const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
-  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE);
+  const loadProfileData = useCallback(async () => {
+    setServer(Response.loading)
+    try {
+      const res = await fetch(`${BaseUrl.api}/users/${userId}?Inclusive=${true}${!isOwnProfile && user?.userId ? `&VisitorId=${user.userId}` : ''}`)
+      if (res.ok) {
+        const json = await res.json()
+        setRatings(json.ratings)
+        if (!isOwnProfile) {
+          const trimmed = json.relationship.replace(/^"|"$/g, '').trim().toLowerCase()
+          if (trimmed === 'blocked') {
+            setBlocked(true)
+          } else if (trimmed === 'following') {
+            setFollowing(true)
+            setFollowLabel('UNFOLLOW')
+          } else if (trimmed === 'followed') {
+            setFollowing(false)
+            setFollowLabel('FOLLOW BACK')
+          } else {
+            setFollowing(false)
+            setFollowLabel('FOLLOW')
+          }
+        }
+        setData({ 
+          name: json.profile.name, pictureUrl: json.profile.pictureUrl, bio: json.profile.bio, gender: json.profile.gender, admin: json.profile.admin,
+          joined: format.parseDate(json.profile.joined), flags: json.profile.flags, watchlistCount: json.profile.watchlistCount,
+          listsCount: json.profile.listsCount, followersCount: json.profile.followersCount, followingCount: json.profile.followingCount,
+          blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount, likes: json.profile.likes, watched: json.profile.watched
+        })
+        setServer(Response.ok)
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
+        setData({})
+      } else {
+        setServer(Response.internalServerError)
+        setData({})
+      }
+    } catch {
+      setServer(Response.networkError)
+      setData({})
+    }
+  }, [userId, user, isOwnProfile])
 
-  const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.button_reject : Colors.button_confirm;
+  const loadFilmData = useCallback(async () => {
+    try {
+      const res = await fetch(`${BaseUrl.api}/users/${userId}/subsequent?PageSize=${RECENTS}`)
+      if (res.ok) {
+        const json = await res.json()
+        setFavorites([json.favorites["1"] || null, json.favorites["2"] || null, json.favorites["3"] || null, json.favorites["4"] || null])
+        setRecent({ films: json.recents.items, totalCount: json.recents.totalCount })
+      } else {
+        setFavorites([null, null, null, null])
+        setRecent({ films: [], totalCount: 0 })
+        console.log('failed to fetch favorites and recents; internal server error...')
+      }
+    } catch {
+      setFavorites([null, null, null, null])
+      setRecent({ films: [], totalCount: 0 })
+      console.log('failed to fetch favorites and recents; network error...')
+    }
+  }, [userId])
 
-
-  if (blocked) {
-    return (
-      <View style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        paddingHorizontal: 5,
-        backgroundColor: Colors.background,
-      }}>
-        <Text style={styles.text}>You have blocked this user.</Text>
-      </View>
-    );
+  const handleButtons = (button) => {
+    switch (button) {
+      case 'Watched':
+        router.push(`/films/user-watched/${userId}`)
+        break
+      case 'Watchlist':
+        router.push(`/films/watchlist/${userId}`)
+        break
+      case 'Reviews':
+        router.push(`/reviews/user/${userId}`)
+        break
+      case 'Lists':
+        if (data.listsCount === '0') router.push(`/list/create`)
+        else router.push(`/lists/user/${userId}`)
+        break
+      case 'Likes':
+        router.push(`/likes/${userId}`)
+        break
+      case 'Followers':
+        router.push(`/relationships/${userId}?t=followers`)
+        break
+      case 'Following':
+        router.push(`/relationships/${userId}?t=following`)
+        break
+      case 'Blocked':
+        router.push(`/relationships/${userId}?t=blocked`)
+        break
+      default:
+        setSnack({ shown: true, msg: 'You cannot access that functionality.' })
+    }
   }
+
+  const handleFollow = useCallback(async () => {
+    if (!user || !(await isValidSession())) {
+      setSnack({ shown: true, msg: 'Session expired! Try logging in again.' })
+      return
+    }
+    if (following) {
+      setFollowing(false)
+      setFollowLabel(followLabel === 'UNFOLLOW' ? 'FOLLOW' : followLabel)
+    } else {
+      setFollowing(true)
+      setFollowLabel('UNFOLLOW')
+    }
+    const jwt = await auth.getJwt()
+    const res = await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=follow-unfollow`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${jwt}` }
+    })
+    if (!res.ok) {
+      console.log('follow/unfollow failed; debugging...')
+    }
+  }, [user, userId, following, followLabel])
+
+  const updateFavorites = useCallback(async (filmId, index) => {
+    if (!user || !isOwnProfile || !(await isValidSession())) {
+      setSnack({ shown: true, msg: 'Session expired! Try logging in again.' })
+      return
+    }
+    const jwt = await auth.getJwt()
+    const i = index ? index : favIndex
+    const res = await fetch(`${BaseUrl.api}/users/favorites/${user.userId}/${filmId}?Index=${i}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${jwt}` }
+    })
+    if (res.ok) {
+      const json = await res.json()
+      setFavorites([json["1"], json["2"], json["3"], json["4"]])
+    } else {
+      setSnack({ shown: true, msg: `${res.status}: Something went wrong! Try reloading Heteroboxd.` })
+    }
+  }, [user, isOwnProfile, favIndex])
+
+  useEffect(() => {
+    loadProfileData()
+  }, [loadProfileData])
+
+  useEffect(() => {
+    if (!user) return
+    navigation.setOptions({
+      headerTitle: '',
+      headerRight: () => <ProfileOptionsButton userId={userId} blocked={blocked} />
+    })
+  }, [navigation, blocked, user])
+
+  useEffect(() => {
+    if (!data) return
+    loadFilmData()
+  }, [data, loadFilmData])
+
+  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
+  const widescreen = useMemo(() => width > 1000, [width])
+  const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
+  const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
+  const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
+  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4.1, [maxRowWidth, spacing])
+  const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
+  const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.heteroboxd : Colors._heteroboxd
 
   if (!data) {
     return (
@@ -339,218 +233,178 @@ const Profile = () => {
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
-        paddingHorizontal: 5,
-        backgroundColor: Colors.background,
+        backgroundColor: Colors.background
       }}>
         <LoadingResponse visible={true} />
       </View>
-    );
+    )
+  }
+
+  if (blocked) {
+    return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        backgroundColor: Colors.background
+      }}>
+        <Text style={styles.text}>You have blocked this user.</Text>
+      </View>
+    )
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={{
-          padding: 5,
-          minWidth: widescreen ? 1000 : 'auto',
-          maxWidth: widescreen ? 1000 : "100%",
-          width: "100%",
-          alignSelf: "center",
-        }}
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
+      <ScrollView contentContainerStyle={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}} showsVerticalScrollIndicator={false}>
         <View style={styles.profile}>
-          <View style={styles.inline}>
-            {
-              Platform.OS === "web" && width < 500 ? (
-                <UserAvatar pictureUrl={data.pictureUrl} style={styles.smallWebProfile} />
-              ) : (
-                <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
-              )
-            }
-            {!isOwnProfile && (
-              <Pressable
-                onPress={handleFollow}
-                style={{
-                  backgroundColor: 'transparent',
-                  borderWidth: 3,
-                  borderColor: followButtonColor,
-                  borderRadius: 3,
-                  paddingVertical: widescreen ? 8 : 6,
-                  paddingHorizontal: widescreen ? 8 : 6,
-                  justifyContent: 'center',
-                  alignSelf: 'center',
-                  position: 'absolute',
-                  right: Platform.OS === 'web' && width < 500
-                    ? -85
-                    : (widescreen ? -120 : -100)
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: Platform.OS === 'web' && width < 500 ? 10 : (widescreen ? 16 : (width > 350 ? 12 : 10)),
-                    fontWeight: '700',
-                    color: followButtonColor,
-                    textAlign: 'center',
-                  }}
-                >
-                  {followLabel}
-                </Text>
-              </Pressable>
-            )}
+          <View style={{marginBottom: 15}}>
+            <UserAvatar pictureUrl={data.pictureUrl} style={width < 500 ? styles.smallWebProfile : styles.profileImage} />
           </View>
-
-          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{alignItems: 'center', justifyContent: 'center'}}>
             <Text style={styles.username}>{data.name}{data.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
           </View>
+          {!isOwnProfile && (
+            <Pressable
+              onPress={handleFollow}
+              style={{
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                borderColor: followButtonColor,
+                borderRadius: 3,
+                paddingVertical: widescreen ? 8 : 6,
+                paddingHorizontal: widescreen ? 8 : 6,
+                justifyContent: 'center',
+                alignSelf: 'center'
+              }}
+            >
+              <Text style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: followButtonColor, textAlign: 'center'}}>{followLabel}</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={{marginVertical: 5}} />
 
         <View style={styles.bio}>
           {
-            data.gender === 'male' || data.gender === 'Male' ? (
-              <Foundation name="male-symbol" size={24} color={Colors.male} />
+            data.gender?.toLowerCase() === 'male' ? (
+              <Foundation name='male-symbol' size={24} color={Colors.male} />
             ) : (
-              <Foundation name="female-symbol" size={24} color={Colors.female} />
+              <Foundation name='female-symbol' size={24} color={Colors.female} />
             )
           }
           <Text style={styles.text}>{data.bio}</Text>
         </View>
 
-        <View style={[styles.divider, {marginVertical: 20}]} />
+        <Divider marginVertical={20} />
 
         <Text style={styles.subtitle}>Favorites</Text>
-        {favoritesResult === 0 ? (
-          <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-            <ActivityIndicator size="large" color={Colors.text_link} />
-          </View>
-        ) : (
-        <View style={[styles.movies, { width: "100%", justifyContent: "space-between", paddingHorizontal: 5 }]}>
-          {favorites.map((film, index) => (
+        <FlatList
+          horizontal
+          data={favorites}
+          keyExtractor={(_, index) => index.toString()}
+          ListEmptyComponent={<View style={{width: maxRowWidth, paddingVertical: 30, alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>}
+          renderItem={({ item, index }) => (
             <Pressable
-              key={index}
-              onLongPress={() => {
-                if (!isOwnProfile) return;
-                updateFavorites(-1, index+1);
-              }}
+              onLongPress={() => isOwnProfile ? updateFavorites(-1, index + 1) : null}
               onPress={() => {
-                if (favoritesResult === 404) {
-                  setSnackbarMessage("There was an error loading this film...");
-                  setVisible(true);
-                } else if (film === 'error') {
-                  setSnackbarMessage("There was an error loading this film...");
-                  setVisible(true);
-                } else if (film && film.filmId) {
-                  router.push(`/film/${film.filmId}`);
+                if (item === 'error') {
+                  setSnack({ shown:  true, msg: 'There was an error loading this film.' })
+                } else if (item?.filmId) {
+                  router.push(`/film/${item.filmId}`)
                 } else if (!isOwnProfile) {
-                  setSnackbarMessage("You can't choose favorites for other people!");
-                  setVisible(true);
+                  setSnack({ shown:  true, msg: 'You cannot choose favorites for other people!' })
                 } else {
-                  setFavIndex(index + 1);
-                  openMenu2();
+                  setFavIndex(index + 1)
+                  openMenu2()
                 }
               }}
-              style={{ alignItems: "center", marginRight: index === 3 ? 0 : 5 }}
             >
               <Poster
-                posterUrl={favoritesResult === 404 || film === 'error' ? 'error' : (film?.posterUrl ?? null)}
+                posterUrl={item === 'error' ? 'error' : (item?.posterUrl || null)}
                 style={{
                   width: posterWidth,
                   height: posterHeight,
                   borderRadius: 6,
                   borderWidth: 2,
-                  borderColor: Colors.border_color,
+                  borderColor: Colors.border_color
                 }}
                 other={!isOwnProfile}
               />
             </Pressable>
-          ))}
-        </View>
-        )}
+          )}
+          contentContainerStyle={{width: maxRowWidth, justifyContent: 'space-between'}}
+          showsHorizontalScrollIndicator={false}
+        />
 
-        <View style={[styles.divider, {marginVertical: 20}]} />
+        <Divider marginVertical={20} />
         
         <Text style={[styles.subtitle, {marginBottom: 10}]}>Ratings</Text>
         {
           Object.entries(ratings).length > 0 ? (
             <Histogram histogram={ratings} />
           ) : (
-            <View style={{ alignSelf: 'center', alignItems: "center", paddingVertical: 30 }}>
-              <Text style={styles.text}>Nothing yet.</Text>
-            </View>
+            <View style={{alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><Text style={styles.text}>Nothing to see here.</Text></View>
           )
         }
 
-        <View style={[styles.divider, {marginVertical: 20}]} />
+        <Divider marginVertical={20} />
 
         <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
           <Text style={styles.subtitle}>Recents</Text>
         </Pressable>
-        <View 
-          style={{
-            width: colPosterWidth * 4 + spacing * 3,
-            maxWidth: "100%",
-            alignSelf: "center",
-          }}
-        >
-          {recentResult === 0 ? (
-            <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-              <ActivityIndicator size="large" color={Colors.text_link} />
-            </View>
-          ) : recent.length === 0 ? (
-            <View style={{ width: "100%", alignItems: "center", paddingVertical: 30 }}>
-              <Text style={styles.text}>This user has no motion.</Text>
-            </View>
-          ) : (
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={widescreen}
-              style={{ maxWidth: Math.min(width * 0.95, 1000), paddingBottom: 10 }}
-              contentContainerStyle={{alignItems: 'center'}}
-              data={recent.slice(0, 8)}
-              keyExtractor={(item) => item.filmId.toString()}
-              renderItem={({ item }) => {
-                return (
-                  <Pressable
-                    onPress={() => router.push(`/film/${item.filmId}`)}
-                    style={{ marginRight: spacing }}
-                  >
-                    <Poster
-                      posterUrl={item?.posterUrl ?? null}
-                      style={{
-                        width: colPosterWidth,
-                        height: colPosterHeight,
-                        borderRadius: 6,
-                        borderWidth: 2,
-                        borderColor: Colors.border_color,
-                      }}
-                      other={!isOwnProfile}
-                    />
-                  </Pressable>
-                );
-              }}
-            />
-          )}
+        <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
+          {
+            !recent ? (
+              <View style={{width: maxRowWidth, alignItems: 'center', paddingVertical: 30}}>
+                <ActivityIndicator size='large' color={Colors.text_link} />
+              </View>
+            ) : (
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={widescreen}
+                style={{width: maxRowWidth, paddingBottom: 10}}
+                contentContainerStyle={{alignItems: 'center'}}
+                data={recent.films}
+                keyExtractor={(item) => item.filmId.toString()}
+                ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><Text style={styles.text}>Nothing to see here.</Text></View>}
+                renderItem={({ item }) => {
+                  return (
+                    <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{marginRight: spacing}}>
+                      <Poster
+                        posterUrl={item?.posterUrl ?? null}
+                        style={{
+                          width: colPosterWidth,
+                          height: colPosterHeight,
+                          borderRadius: 6,
+                          borderWidth: 2,
+                          borderColor: Colors.border_color
+                        }}
+                      />
+                    </Pressable>
+                  )
+                }}
+              />
+            )
+          }
         </View>
 
-        <View style={[styles.divider, {marginVertical: 20}]} />
+        <Divider marginVertical={20} />
 
         <View style={styles.buttons}>
           {[
-            ...(isOwnProfile ? [{ label: "Watchlist", count: data.watchlistCount }] : []),
-            { label: "Watched", count: recent?.length ?? 0 },
-            { label: "Reviews", count: data.reviewsCount },
-            { label: "Lists", count: data.listsCount },
-            { label: "Likes", count: data.likes },
-            { label: "Followers", count: data.followersCount },
-            { label: "Following", count: data.followingCount },
-            ...(isOwnProfile ? [{ label: "Blocked", count: data.blockedCount }] : []),
+            ...(isOwnProfile ? [{ label: 'Watchlist', count: data.watchlistCount }] : []),
+            { label: 'Watched', count: recent?.totalCount },
+            { label: 'Reviews', count: data.reviewsCount },
+            { label: 'Lists', count: data.listsCount },
+            { label: 'Likes', count: data.likes },
+            { label: 'Followers', count: data.followersCount },
+            { label: 'Following', count: data.followingCount },
+            ...(isOwnProfile ? [{ label: 'Blocked', count: data.blockedCount }] : []),
           ]
           .map((item, index) => {
-            const disabled = item.label === 'Lists' ? (isOwnProfile ? false : item.count === 0) : item.count === 0;
+            const disabled = item.label === 'Lists' ? (isOwnProfile ? false : item.count === 0) : item.count === 0
             return (
-              <TouchableOpacity
+              <Pressable
                 key={index}
                 disabled={disabled}
                 onPress={() => {handleButtons(item.label)}}
@@ -562,43 +416,47 @@ const Profile = () => {
                 <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
                   {format.formatCount(item.count)} {'➜'}
                 </Text>
-              </TouchableOpacity>
-            );
+              </Pressable>
+            )
           })}
           <Text style={[styles.text, {marginTop: 50}]}>joined {data.joined}</Text>
         </View>
       </ScrollView>
 
-      <Popup visible={result === 400 || result === 404 || result === 500} message={error} onClose={() => {
-        result === 500 ? router.replace('/contact') : router.replace('/');
-        }}
+      <Popup
+        visible={[404, 500].includes(server.result)} 
+        message={server.message} 
+        onClose={() => server.result === 404 ? router.back() : router.replace('/contact')}
       />
 
       <Snackbar
-        visible={visible}
-        onDismiss={() => setVisible(false)}
+        visible={snack.shown}
+        onDismiss={() => setSnack(prev => ({...prev, shown: false}))}
         duration={3000}
         style={{
           backgroundColor: Colors.card,
-          width: Platform.OS === 'web' && width > 1000 ? width*0.5 : width*0.9,
+          width: widescreen ? width*0.5 : width*0.9,
           alignSelf: 'center',
-          borderRadius: 8,
+          borderRadius: 8
         }}
         action={{
-          label: 'Sorry',
-          onPress: () => setVisible(false),
+          label: 'OK',
+          onPress: () => setSnack(prev => ({...prev, shown: false})),
           textColor: Colors.text_link
         }}
       >
-        {snackbarMessage}
+        {snack.msg}
       </Snackbar>
 
-      <SlidingMenu menuShown={menuShown2} closeMenu={() => {setSearchResults({items: [], totalCount: 0, page: 1}); setSearchInit(true); closeMenu2();}} translateY={translateY2} widescreen={widescreen} width={width}>
+      <SlidingMenu
+        menuShown={menuShown2} 
+        closeMenu={() => {setSearchResults({items: [], totalCount: 0, page: 1}); setSearchInit(true); closeMenu2()}} 
+        translateY={translateY2} 
+        widescreen={widescreen} 
+        width={width}
+      >
         <SearchBox
-          onSelected={(res) => {
-            setSearchResults(res)
-            setSearchInit(false)
-          }}
+          onSelected={(res) => {setSearchResults(res); setSearchInit(false)}}
           page={searchResults.page}
           pageSize={PAGE_SIZE}
         />
@@ -623,13 +481,13 @@ const Profile = () => {
                 <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
                   <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
                   <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                    <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                      {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
+                    <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
+                      {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</Text>
                     </Text>
                     <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
                       item.castAndCrew?.map((d, i) => (
                         <Text key={i} style={{}}>
-                          {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                          {d.celebrityName ?? ''}{i < item.castAndCrew.length - 1 && ', '}
                         </Text>
                       ))
                     }</Text>
@@ -638,48 +496,32 @@ const Profile = () => {
               </Pressable>
             )}
             ListEmptyComponent={
-              !searchInit && <Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text>
+              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text></View>
             }
             ListFooterComponent={
               <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>
                 <PaginationBar
                   page={searchResults.page}
                   totalPages={totalPages}
-                  visible={searchResults.totalCount > PAGE_SIZE}
                   onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
                 />
               </View>
             }
-            contentContainerStyle={{
-              padding: 20,
-              alignItems: 'flex-start',
-              width: '100%'
-            }}
+            contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />
         </View>
       </SlidingMenu>
     </View>
-  );
-};
+  )
+}
 
-export default Profile;
+export default Profile
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 50,
-  },
   profile: {
     alignItems: "center",
     justifyContent: "center",
-  },
-  inline: {
-    flexDirection: 'row',
-    marginBottom: 15
   },
   username: {
     fontSize: 25,
@@ -695,11 +537,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 5,
     width: '75%',
-  },
-  movies: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   ratings: {
     alignItems: 'center',
@@ -741,9 +578,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   profileImage: {
-    width: Platform.OS === 'web' ? 150 : 100,
-    height: Platform.OS === 'web' ? 150 : 100,
-    borderRadius: Platform.OS === 'web' ? 75 : 50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     borderColor: Colors.border_color,
     borderWidth: 1.5,
   },
@@ -772,4 +609,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16
   },
-});
+})

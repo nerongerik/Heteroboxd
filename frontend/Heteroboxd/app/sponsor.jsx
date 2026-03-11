@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, ScrollView, useWindowDimensions, Pressable, Linking } from 'react-native'
-import { Colors } from '../constants/colors'
 import { useMemo } from 'react'
-import Svg, { Path, Circle, Rect } from 'react-native-svg'
+import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import Svg, { Circle, Path, Rect } from 'react-native-svg'
+import { Colors } from '../constants/colors'
 
 const BuyMeACoffeeIcon = ({ size = 24 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -35,15 +35,9 @@ const Sponsor = () => {
   const iconSize = widescreen ? 50 : 36
 
   return (
-    <View style={styles.container}>
+    <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
       <ScrollView
-        contentContainerStyle={{
-          width: widescreen ? 1000 : width * 0.95,
-          flexGrow: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          alignSelf: 'center',
-        }}
+        contentContainerStyle={{width: widescreen ? 1000 : width * 0.95, flexGrow: 1, justifyContent: 'center', alignItems: 'center', alignSelf: 'center',}}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>Donate to Heteroboxd</Text>
@@ -90,12 +84,6 @@ const Sponsor = () => {
 export default Sponsor
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingBottom: 50,
-    backgroundColor: Colors.background,
-  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -120,5 +108,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 8,
     padding: 4,
-  },
+  }
 })

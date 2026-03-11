@@ -1,8 +1,9 @@
-import RenderHTML from 'react-native-render-html';
-import { Colors } from '../constants/colors';
+import RenderHTML from 'react-native-render-html'
+import { Colors } from '../constants/colors'
 
-const ParsedRead = ({html}) => {
+const ParsedRead = ({ html }) => {
   const normalized = `${html.replace(/\n/g, '<br />')}`
+
   return (
     <RenderHTML
       source={{ html: normalized }}
@@ -24,7 +25,7 @@ const ParsedRead = ({html}) => {
         a: { color: Colors.text_link, textDecorationLine: 'none', cursor: 'pointer' }
       }}
     />
-  );
+  )
 }
 
-export default ParsedRead;
+export default ParsedRead

@@ -1,14 +1,14 @@
-import { StyleSheet, Text, View, Pressable } from 'react-native';
-import { UserAvatar } from './userAvatar';
-import { Colors } from '../constants/colors';
+import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Colors } from '../constants/colors'
+import { UserAvatar } from './userAvatar'
 
-const Author = ({userId, url, username, admin, router, widescreen}) => {
+const Author = ({ userId, url, username, admin, router, widescreen }) => {
   return (
     <Pressable onPress={() => router.push(`/profile/${userId}`)}>
-      <View style={styles.container}>
-        <UserAvatar pictureUrl={url} style={styles.pic} />
+      <View style={{flexDirection: 'row', paddingTop: 5, alignItems: 'center'}}>
+        <UserAvatar pictureUrl={url || null} style={styles.pic} />
         <Text style={[styles.username, {fontSize: widescreen ? 20 : 16}]}>
-          {username}{admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}
+          {username || 'Anonymous'}{admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}
         </Text>
       </View>
     </Pressable>
@@ -18,11 +18,6 @@ const Author = ({userId, url, username, admin, router, widescreen}) => {
 export default Author
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    paddingTop: 5,
-    alignItems: 'center'
-  },
   pic: {
     marginRight: 5,
     width: 26,

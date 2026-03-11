@@ -1,44 +1,37 @@
-import { TouchableOpacity, StyleSheet, Text, View, ActivityIndicator } from 'react-native'
+import { useCallback, useEffect, useState } from 'react'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useState, useEffect } from 'react';
-import { Colors } from '../constants/colors';
-import { BaseUrl } from '../constants/api';
+import { BaseUrl } from '../constants/api'
+import { Colors } from '../constants/colors'
+import { Response } from '../constants/response'
 
 const Verify = () => {
-  
-  const {userId, token} = useLocalSearchParams();
-  const [response, setResponse] = useState(-1);
-  const [message, setMessage] = useState("");
-  const router = useRouter();
-  useEffect(() => {
-    verifyUser();
-  }, [])
+  const { userId, token } = useLocalSearchParams()
+  const [ server, setServer ] = useState(Response.initial)
+  const router = useRouter()
 
-  async function verifyUser() {
-    setResponse(0);
-    fetch(`${BaseUrl.api}/users/verify`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        UserId: userId,
-        Token: token
+  const verifyUser = useCallback(async () => {
+    setServer(Response.loading)
+    try {
+      const res = await fetch(`${BaseUrl.api}/users/verify/${userId}?Token=${encodeURIComponent(token)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
       })
-    }).then((res) => {
-      console.log(res);
-      if (res.status === 200) {
-        setMessage("Thank you for verifying your email address! You are now free to use Heteroboxd.");
-        setResponse(200);
+      if (res.ok) {
+        setServer({ result: 200, message: 'Thank you for verifying your email address! You are now free to use Heteroboxd.' })
       } else if (res.status === 404) {
-        setMessage("The account you are trying to verify no longer exists. Please contact Heteroboxd support for help!");
-        setResponse(404);
+        setServer(Response.notFound)
       } else {
-        setMessage("Something went wrong! Try again later, or contact Heteroboxd support for further inquires.");
-        setResponse(500);
+        setServer(Response.internalServerError)
       }
-    });
-  }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [userId, token])
+
+  useEffect(() => {
+    verifyUser()
+  }, [verifyUser])
 
   function handleProceedPress() {
     if (response === 200) router.replace('/login');
@@ -46,22 +39,19 @@ const Verify = () => {
   }
 
   return (
-    <View style={styles.container}>
-      {response === 0 ? (
+    <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, paddingBottom: 50, backgroundColor: Colors.background, paddingHorizontal: 5}}>
+      {server.response <= 0 ? (
         <ActivityIndicator size={'large'} color={Colors.text_link} />
       ) : (
-        <Text style={styles.title}>{message}</Text>
+        <Text style={styles.title}>{server.message}</Text>
       )}
-      <TouchableOpacity
-        style={[
-                styles.button,
-                (response === -1 || response === 0) && { opacity: 0.5 }
-              ]}
-        onPress={handleProceedPress}
-        disabled={response === -1 || response === 0}
+      <Pressable
+        style={[styles.button, server.response <= 0 && { opacity: 0.5 }]}
+        onPress={() => server.result === 200 ? router.replace('/login') : router.replace('/contact')}
+        disabled={server.response <= 0}
       >
         <Text style={styles.buttonText}>Proceed</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   )
 }
@@ -69,14 +59,6 @@ const Verify = () => {
 export default Verify
 
 const styles = StyleSheet.create({
-  container: {
-    alignContent: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: "5%",
-    paddingBottom: 50,
-    backgroundColor: Colors.background,
-  },
   title: {
     fontSize: 28,
     fontWeight: "700",
@@ -85,7 +67,7 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   button: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     width: "50%",
     padding: 15,
     borderRadius: 10,
@@ -96,5 +78,5 @@ const styles = StyleSheet.create({
     color: Colors.text_button,
     fontWeight: "600",
     alignSelf: 'center',
-  },
-});
+  }
+})

@@ -11,11 +11,6 @@ export const Colors = {
     text_input: '#acb1b5',
     text_placeholder: '#777777',
     text_link: '#ff8a00',
-    //button
-    button: '#ff8a00',
-    button_confirm: '#0f5400',
-    button_reject: '#450101',
-    button_hover: '#ffa733',
     //border
     border_color: '#262a2d',
     //strenghts

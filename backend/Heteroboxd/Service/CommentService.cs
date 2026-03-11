@@ -30,10 +30,9 @@ namespace Heteroboxd.Service
         public async Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize)
         {
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(ReviewId));
-            if (Review == null) throw new KeyNotFoundException();
+            if (Review == null) return new PagedResponse<CommentInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
 
             var (Responses, TotalCount) = await _repo.GetByReviewAsync(Review.Id, Page, PageSize);
-
             return new PagedResponse<CommentInfoResponse>
             {
                 TotalCount = TotalCount,
@@ -43,18 +42,15 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task ReportCommentEfCore7(string CommentId)
-        {
-            if (!Guid.TryParse(CommentId, out Guid Id)) throw new ArgumentException();
-            await _repo.ReportEfCore7Async(Id);
-        }
+        public async Task ReportCommentEfCore7(string CommentId) =>
+            await _repo.ReportEfCore7Async(Guid.Parse(CommentId));
 
         public async Task CreateComment(CreateCommentRequest CommentRequest)
         {
-            Review? Review = await _reviewRepo.GetByIdAsync(Guid.Parse(CommentRequest.ReviewId));
+            var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(CommentRequest.ReviewId));
             if (Review == null) throw new KeyNotFoundException();
 
-            Comment Comment = new Comment(CommentRequest.Text, Flag(CommentRequest.Text), Guid.Parse(CommentRequest.AuthorId), Review.Id);
+            var Comment = new Comment(CommentRequest.Text, Flag(CommentRequest.Text), Guid.Parse(CommentRequest.AuthorId), Review.Id);
             _repo.Create(Comment);
             await _repo.SaveChangesAsync();
 
@@ -69,7 +65,7 @@ namespace Heteroboxd.Service
 
         public async Task DeleteComment(string CommentId)
         {
-            Comment? Comment = await _repo.GetByIdAsync(Guid.Parse(CommentId));
+            var Comment = await _repo.GetByIdAsync(Guid.Parse(CommentId));
             if (Comment == null) throw new KeyNotFoundException();
             _repo.Delete(Comment);
             await _repo.SaveChangesAsync();

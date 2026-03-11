@@ -354,7 +354,7 @@ namespace Heteroboxd.Integrations
 
         public Celebrity ParseCelebrity(TMDBCelebrityResponse CelebrityResponse)
         {
-            string Name = CelebrityResponse.name ?? "NOMEN NESCIO";
+            string Name = CelebrityResponse.name ?? "N/A";
             string? Description = CelebrityResponse.biography;
             string? PictureUrl = FormUrls(CelebrityResponse.profile_path);
             int TmdbId = CelebrityResponse.id ?? throw new Exception("TMDB celebrity response missing ID");

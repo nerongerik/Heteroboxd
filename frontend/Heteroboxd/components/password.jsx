@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
-import Feather from '@expo/vector-icons/Feather';
+import { useEffect, useState } from 'react'
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import Feather from '@expo/vector-icons/Feather'
+import { Colors } from '../constants/colors'
  
 const Password = ({ value, onChangeText, onValidityChange }) => {
-  const [showRequirements, setShowRequirements] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [ showRequirements, setShowRequirements ] = useState(false)
+  const [ showPassword, setShowPassword ] = useState(false)
 
   const checkRequirements = (pw) => ({
     length: pw.length >= 8,
@@ -14,17 +14,15 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
     lower: /[a-z]/.test(pw),
     number: /[0-9]/.test(pw),
     special: /[^A-Za-z0-9]/.test(pw),
-  });
+  })
 
-  const reqs = checkRequirements(value || "");
-  const passed = Object.values(reqs).filter(Boolean).length;
-  const isValid = Object.values(reqs).every(Boolean);
+  const reqs = checkRequirements(value || '')
+  const passed = Object.values(reqs).filter(Boolean).length
+  const isValid = Object.values(reqs).every(Boolean)
 
   useEffect(() => {
-    if (typeof onValidityChange === 'function') {
-      onValidityChange(isValid);
-    }
-  }, [isValid, onValidityChange]);
+    onValidityChange(isValid)
+  }, [isValid, onValidityChange])
  
   const strengthColors = [
     Colors.password_weak,
@@ -33,38 +31,30 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
     Colors.password_solid,
     Colors.password_acceptable,
     Colors.password_strong,
-  ];
-  const strength = Math.min(passed, 5);
+  ]
+  const strength = Math.min(passed, 5)
 
   return (
-    <View style={styles.container}>
+    <View style={{width: '100%'}}>
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Password*"
+          placeholder='Password*'
           secureTextEntry={!showPassword}
           value={value}
           onChangeText={onChangeText}
           placeholderTextColor={Colors.text}
         />
-        {
-          !showPassword ? (
-            <TouchableOpacity onPress={() => setShowPassword(true)} style={styles.iconBtn}>
-              <Feather name="eye" size={22} color={Colors.text_input} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={() => setShowPassword(false)} style={styles.iconBtn}>
-              <Feather name="eye-off" size={22} color={Colors.text_input} />
-            </TouchableOpacity>
-          )
-        }
+        <Pressable onPress={() => setShowPassword(showPassword ? false : true)} style={styles.iconBtn}>
+          <Feather name={showPassword ? 'eye-off' : 'eye'} size={22} color={Colors.text_input} />
+        </Pressable>
       </View>
       
       <View style={styles.strContainer}>
         <View style={[styles.strengthBar, { backgroundColor: strengthColors[strength] }]} />
-        <TouchableOpacity onPress={() => setShowRequirements(!showRequirements)} style={styles.iconBtn}>
-            <Ionicons name="help-circle-outline" size={22} color={Colors.text_input} />
-        </TouchableOpacity>
+        <Pressable onPress={() => setShowRequirements(!showRequirements)} style={styles.iconBtn}>
+            <Ionicons name='help-circle-outline' size={22} color={Colors.text_input} />
+        </Pressable>
       </View>
  
       {showRequirements && (
@@ -77,16 +67,13 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
         </View>
       )}
     </View>
-  );
+  )
 }
 
 
 export default Password
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -136,5 +123,5 @@ const styles = StyleSheet.create({
   reqMet: {
     color: Colors.success,
     textDecorationLine: 'line-through',
-  },
-});
+  }
+})

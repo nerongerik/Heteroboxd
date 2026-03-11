@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native'
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Colors } from '../constants/colors'
 
 const Popup = ({ visible, message, onClose, confirm, onConfirm }) => {
@@ -6,24 +6,24 @@ const Popup = ({ visible, message, onClose, confirm, onConfirm }) => {
     <Modal
       transparent={false}
       visible={visible}
-      animationType="none"
+      animationType='none'
     >
       <View style={styles.overlay}>
         <View style={styles.popup}>
           <Text style={styles.message}>{message}</Text>
           {
             !confirm ? (
-              <TouchableOpacity onPress={onClose} style={styles.button}>
+              <Pressable onPress={onClose} style={styles.button}>
                 <Text style={styles.buttonText}>OK</Text>
-              </TouchableOpacity>
+              </Pressable>
             ) : (
               <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
-                <TouchableOpacity onPress={onConfirm} style={[styles.button, { backgroundColor: Colors.button_confirm, marginHorizontal: 10 }]}>
+                <Pressable onPress={onConfirm} style={[styles.button, { backgroundColor: Colors._heteroboxd, marginHorizontal: 10 }]}>
                   <Text style={styles.buttonText}>Yes</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={onClose} style={[styles.button, { backgroundColor: Colors.button_reject, marginHorizontal: 10 }]}>
+                </Pressable>
+                <Pressable onPress={onClose} style={[styles.button, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>
                   <Text style={styles.buttonText}>No</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             )
           }
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   button: {
-    backgroundColor: Colors.button,
+    backgroundColor: Colors.heteroboxd,
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 8,

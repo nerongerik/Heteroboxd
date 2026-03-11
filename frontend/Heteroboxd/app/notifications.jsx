@@ -1,170 +1,135 @@
-import { StyleSheet, Text, View, FlatList, RefreshControl, useWindowDimensions, TouchableOpacity, Pressable } from 'react-native'
-import { useAuth } from '../hooks/useAuth'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FlatList, Pressable, RefreshControl, Text, useWindowDimensions, View } from 'react-native'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useRouter } from 'expo-router'
-import { BaseUrl } from '../constants/api'
-import Popup from '../components/popup'
-import LoadingResponse from '../components/loadingResponse'
-import PaginationBar from '../components/paginationBar'
-import { Colors } from '../constants/colors'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
+import { useAuth } from '../hooks/useAuth'
+import { BaseUrl } from '../constants/api'
+import { Colors } from '../constants/colors'
+import { Response } from '../constants/response'
+import LoadingResponse from '../components/loadingResponse'
+import PaginationBar from '../components/paginationBar'
+import Popup from '../components/popup'
 
-const PAGE_SIZE = 48
+const PAGE_SIZE = 24
 
 const Notifications = () => {
   const { user, isValidSession } = useAuth()
-
-  const [notifs, setNotifs] = useState([])
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [showPagination, setShowPagination] = useState(false)
-
+  const [ data, setData ] = useState({ page: 1, notifs: [], totalCount: 0 })
+  const [ server, setServer ] = useState(Response.initial)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
   const router = useRouter()
-  const {width} = useWindowDimensions();
+  const { width } = useWindowDimensions()
 
-  const [response, setResponse] = useState(-1)
-  const [message, setMessage] = useState("")
-
-  const loadNotifsPage = async (pageNumber, fromRefresh = false) => {
-    const vS = await isValidSession()
-    if (!user || !vS) {
-      router.replace('/login')
+  const loadDataPage = useCallback(async (page, fromRefresh = false) => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
       return
     }
     try {
-      if (fromRefresh) setIsRefreshing(false);
-      setIsLoading(true);
+      if (fromRefresh) setIsRefreshing(false)
+      setServer(Response.loading)
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/${user.userId}?Page=${pageNumber}&PageSize=${PAGE_SIZE}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${jwt}`
-        }
+      const res = await fetch(`${BaseUrl.api}/notifications/${user.userId}?Page=${page}&PageSize=${PAGE_SIZE}`, {
+        headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.status === 200) {
+      if (res.ok) {
         const json = await res.json()
-        setPage(json.page)
-        setTotalCount(json.totalCount)
-        setNotifs(json.items)
+        setData({ page: json.page, notifs: json.items, totalCount: json.totalCount })
+        setServer(Response.ok)
       } else {
-        setMessage('Something went wrong while fetching your notifications! Try again later.')
+        setServer(Response.internalServerError)
       }
-      setResponse(res.status)
     } catch {
-      setMessage('Network error! Please check your internet connection.')
-      setResponse(500)
-    } finally {
-      setIsLoading(false)
+      setServer(Response.networkError)
     }
-  }
-
-  useEffect(() => {
-    setPage(1)
-    loadNotifsPage(1)
   }, [user])
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
-  const maxRowWidth = useMemo(() => Math.min(1000, width*0.95), [width])
-
-  const handleReadAll = async () => {
-    const vS = await isValidSession();
-    if (!user || !vS) {
-      router.replace('/login')
+  const handleReadAll = useCallback(async () => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
       return
     }
+    setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/notifications/all/${user.userId}`, {
         method: 'PUT',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${jwt}`
-        }
+        headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.status === 200) {
-        loadNotifsPage(page)
+      if (res.ok) {
+        loadDataPage(data.page)
       } else {
-        setMessage('Something went wrong. Please try again later.')
-        setResponse(res.status)
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMessage('Network error! Please check your internet connection.')
-      setResponse(500)
+      setServer(Response.networkError)
     }
-  }
+  }, [user, data])
 
-  const handleNotifRead = async (i) => {
-    const vS = await isValidSession();
-    if (!user || !vS) {
-      router.replace('/login')
+  const handleNotifRead = useCallback(async (i) => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
       return
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/${notifs[i]?.id}`, {
+      const res = await fetch(`${BaseUrl.api}/notifications/${data.notifs[i]?.id}`, {
         method: 'PUT',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${jwt}`
-        }
+        headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.status === 200) {
-        loadNotifsPage(page)
+      if (res.ok) {
+        loadDataPage(data.page)
       } else {
-        setMessage('Something went wrong. Please try again later.')
-        setResponse(res.status)
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMessage('Network error! Please check your internet connection.')
-      setResponse(500)
+      setServer(Response.networkError)
     }
-  }
+  }, [user, data])
 
-  const handleNotifDelete = async (i) => {
-    const vS = await isValidSession();
-    if (!user || !vS) {
-      router.replace('/login')
+  const handleNotifDelete = useCallback(async (i) => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
       return
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/${notifs[i]?.id}`, {
+      const res = await fetch(`${BaseUrl.api}/notifications/${data.notifs[i]?.id}`, {
         method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${jwt}`
-        }
+        headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.status === 200) {
-        loadNotifsPage(page)
+      if (res.ok) {
+        loadDataPage(data.page)
       } else {
-        setMessage('Something went wrong. Please try again later.')
-        setResponse(res.status)
+        setServer(Response.internalServerError)
       }
     } catch {
-      setMessage('Network error! Please check your internet connection.')
-      setResponse(500)
+      setServer(Response.networkError)
     }
-  }
+  }, [user, data])
 
-  const renderHeader = () => (
-    <View style={{ width: maxRowWidth, alignSelf: 'center' }}>
+  useEffect(() => {
+    loadDataPage(1)
+  }, [loadDataPage])
+
+  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
+  const maxRowWidth = useMemo(() => Math.min(1000, width*0.95), [width])
+
+  const Header = () => (
+    <View style={{width: maxRowWidth, alignSelf: 'center'}}>
       {
-        totalCount > 0 &&
+        data.totalCount > 0 &&
         <Text style={{color: Colors.text, padding: 30, textAlign: 'center', fontSize: 14}}>
           Tip: to delete a notification for good, you can just press and hold on it!
         </Text>
       }
-      <View style={{ height: 20 }} />
+      <View style={{height: 20}} />
     </View>
   )
 
-  const renderContent = ({item, index}) => {
+  const Notif = ( {item, index} ) => {
     return (
       <Pressable
         style={{
@@ -183,89 +148,62 @@ const Notifications = () => {
         onLongPress={() => handleNotifDelete(index)}
       >
         <View style={{flexShrink: 0, backgroundColor: item.read ? 'transparent' : Colors.heteroboxd, width: 15, height: 15, borderRadius: 999, marginLeft: 10}} />
-        <Text style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'left', fontSize: 14, width: '75%'}}>
-          {item.text}
-        </Text>
-        <Text style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'center', fontSize: 12, marginRight: 10}}>
-          {format.parseDateShort(item.date)}
-        </Text>
+        <Text style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'left', fontSize: 14, width: '75%'}}>{item.text}</Text>
+        <Text style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'center', fontSize: 12, marginRight: 10}}>{format.parseDateShort(item.date)}</Text>
       </Pressable>
     )
   }
 
-  const renderFooter = () => (
+  const Footer = () => (
     <PaginationBar
-      page={page}
+      page={data.page}
       totalPages={totalPages}
-      visible={showPagination}
       onPagePress={(num) => {
-        setPage(num)
-        loadNotifsPage(num)
+        loadDataPage(num)
       }}
     />
   )
   
   return (
-    <View style={styles.container}>
-
+    <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
-        data={notifs}
+        data={data.notifs}
         keyExtractor={item => item.id}
-        ListHeaderComponent={renderHeader}
-        renderItem={renderContent}
+        ListHeaderComponent={Header}
+        renderItem={Notif}
         ListEmptyComponent={<Text style={{padding: 15, textAlign: 'center', fontSize: 16, color: Colors.text}}>You have no notifications.</Text>}
-        ListFooterComponent={renderFooter}
+        ListFooterComponent={Footer}
         refreshControl={
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
               setIsRefreshing(true)
-              loadNotifsPage(page, true)
+              loadDataPage(data.page, true)
             }} 
           />
         }
-        style={{
-          alignSelf: 'center'
-        }}
-        contentContainerStyle={{
-          paddingHorizontal: 10,
-          paddingBottom: 80,
-        }}
+        style={{alignSelf: 'center'}}
+        contentContainerStyle={{paddingHorizontal: 10, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
-        onEndReached={() => setShowPagination(true)}
-        onEndReachedThreshold={0.2}
       />
 
-      { totalCount > 0 &&
+      { data.totalCount > 0 &&
         <View style={{position: 'absolute', bottom: 75, backgroundColor: Colors._heteroboxd, borderRadius: 5, padding: 7.5}}>
-          <TouchableOpacity onPress={handleReadAll} style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Pressable onPress={handleReadAll} style={{flexDirection: 'row', alignItems: 'center'}}>
             <Text style={{color: Colors.text_button, fontWeight: 'bold', fontSize: 14}}>MARK ALL AS READ </Text>
-            <MaterialIcons name="mark-email-read" size={18} color={Colors.text_button} />
-          </TouchableOpacity>
+            <MaterialIcons name='mark-email-read' size={18} color={Colors.text_button} />
+          </Pressable>
         </View>
       }
 
-      <LoadingResponse visible={isLoading} />
+      <LoadingResponse visible={server.result <= 0} />
       <Popup
-        visible={![-1, 200].includes(response)}
-        message={message}
-        onClose={() =>
-          response === 500
-            ? router.replace('/contact')
-            : router.replace('/')
-        }
+        visible={[403, 500].includes(server.response)}
+        message={server.message}
+        onClose={() => server.response === 403 ? router.replace('/login') : router.replace('/contact')}
       />
     </View>
   )
 }
 
 export default Notifications
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    paddingBottom: 50
-  },
-})

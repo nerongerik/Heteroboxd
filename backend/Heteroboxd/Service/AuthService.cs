@@ -13,11 +13,11 @@ namespace Heteroboxd.Service
 {
     public interface IAuthService
     {
-        Task<List<CountryInfoResponse>> FrontendCountrySync(string? LastSync);
+        Task<List<CountryInfoResponse>> SyncCountries(string? LastSync);
         Task<string?> Register(RegisterRequest Request);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
-        Task<bool> Logout(string RefreshToken, string UserId);
-        Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string RefreshToken);
+        Task<bool> Logout(string? RefreshToken, string UserId);
+        Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string? RefreshToken);
         Task RevokeAllUserTokens(Guid UserId);
         Task ForgotPassword(string Email);
         Task<bool> ResetPassword(ResetPasswordRequest Request);
@@ -45,7 +45,7 @@ namespace Heteroboxd.Service
             _logger = logger;
         }
 
-        public async Task<List<CountryInfoResponse>> FrontendCountrySync(string? LastSync)
+        public async Task<List<CountryInfoResponse>> SyncCountries(string? LastSync)
         {
             var Countries = await _refreshRepo.GetCountriesAsync();
             if (!Countries.Any()) return new List<CountryInfoResponse>();
@@ -64,22 +64,14 @@ namespace Heteroboxd.Service
         public async Task<string?> Register(RegisterRequest Request)
         {
             var ExistingUser = await _userManager.FindByEmailAsync(Request.Email);
-            if (ExistingUser != null)
-            {
-                _logger.LogError($"Failed to register User with Email: {Request.Email}; Already exists.");
-                throw new ArgumentException();
-            }
+            if (ExistingUser != null) throw new ArgumentException();
 
             var User = new User(Request.Name, Request.Email, Request.Bio, Request.Gender);
             User.Watchlist = new Watchlist(User.Id);
             User.Favorites = new UserFavorites(User.Id);
 
             var Result = await _userManager.CreateAsync(User, Request.Password);
-            if (!Result.Succeeded)
-            {
-                _logger.LogError($"Failed to register User with Email: {Request.Email}; Internal Server Error.");
-                throw new Exception();
-            }
+            if (!Result.Succeeded) throw new Exception();
 
             //generate presigned url (if picture uploaded)
             string? PresignedUrl = null;
@@ -113,28 +105,17 @@ namespace Heteroboxd.Service
         public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
         {
             var User = await _userManager.FindByEmailAsync(Request.Email);
-            if (User == null)
-            {
-                _logger.LogError($"Failed to sign in: User with email {Request.Email} does not exist.");
-                return (false, null, null);
-            }
+            if (User == null) return (false, null, null);
 
             var Check = await _signInManager.CheckPasswordSignInAsync(User, Request.Password, false);
-            if (!Check.Succeeded)
-            {
-                _logger.LogError($"Failed to sign in: password {Request.Password} is invalid.");
-                return (false, null, null);
-            }
+            if (!Check.Succeeded) return (false, null, null);
 
-            string Jwt = GenerateJwt(User);
-            var RefreshToken = await GenerateRefreshTokenAsync(User);
-
-            _logger.LogInformation("Succesfully generated JWT and Refresh tokens.");
-            return (true, Jwt, RefreshToken);
+            return (true, GenerateJwt(User), (await GenerateRefreshTokenAsync(User)));
         }
 
-        public async Task<bool> Logout(string RefreshToken, string UserId)
+        public async Task<bool> Logout(string? RefreshToken, string UserId)
         {
+            if (RefreshToken == null) return false;
             var Token = await _refreshRepo.GetValidTokenAsync(RefreshToken);
             if (Token == null || Token.UserId != Guid.Parse(UserId)) return false;
 
@@ -143,37 +124,24 @@ namespace Heteroboxd.Service
             return true;
         }
 
-        public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string RefreshToken)
+        public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string? RefreshToken)
         {
+            if (RefreshToken == null) return (false, null, null);
+
             var Token = await _refreshRepo.GetValidTokenAsync(RefreshToken);
-            if (Token == null)
-            {
-                _logger.LogError($"Token {RefreshToken} invalid!");
-                return (false, null, null);
-            }
+            if (Token == null) return (false, null, null);
 
             Token.Used = true;
 
             var User = await _userManager.FindByIdAsync(Token.UserId.ToString());
-            if (User == null)
-            {
-                _logger.LogError("User for specified token not found.");
-                return (false, null, null);
-            }
-
-            var Jwt = GenerateJwt(User);
-            var NewRefreshToken = await GenerateRefreshTokenAsync(User);
+            if (User == null) return (false, null, null);
 
             await _refreshRepo.SaveChangesAsync();
-            return (true, Jwt, NewRefreshToken);
+            return (true, GenerateJwt(User), await GenerateRefreshTokenAsync(User));
         }
 
-        public async Task RevokeAllUserTokens(Guid UserId)
-        {
-            var Tokens = await _refreshRepo.GetActiveTokensByUserAsync(UserId);
-            foreach (var Token in Tokens) Token.Revoked = true;
-            await _refreshRepo.SaveChangesAsync();
-        }
+        public async Task RevokeAllUserTokens(Guid UserId) =>
+            await _refreshRepo.RevokeAllUserTokens(UserId);
 
         private string GenerateJwt(User User)
         {
@@ -181,13 +149,12 @@ namespace Heteroboxd.Service
             {
                 var Key = Convert.FromBase64String(_config["Jwt:Key"]!);
                 var Claims = new List<Claim>
-            {
+                {
                 new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, User.Email!),
                 new Claim("name", User.Name!),
                 new Claim("pictureUrl", User.PictureUrl!),
                 new Claim("admin", User.IsAdmin.ToString()),
-            };
+                };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);
                 var Token = new JwtSecurityToken(
@@ -202,7 +169,6 @@ namespace Heteroboxd.Service
             }
             catch
             {
-                _logger.LogError($"Failed to generate Jwt token for user: {User.Id}");
                 throw new Exception();
             }
         }
@@ -221,21 +187,20 @@ namespace Heteroboxd.Service
                     Revoked = false
                 };
 
-                await _refreshRepo.AddAsync(Token);
+                _refreshRepo.Create(Token);
                 await _refreshRepo.SaveChangesAsync();
 
                 return Token;
             }
             catch
             {
-                _logger.LogError($"Failed to generate Refresh token for user {User.Id}");
                 throw new Exception();
             }
         }
 
         public async Task ForgotPassword(string Email)
         {
-            User? User = await _userManager.FindByEmailAsync(Email);
+            var User = await _userManager.FindByEmailAsync(Email);
 
             //never reveal user's existance
             if (User == null || !(await _userManager.IsEmailConfirmedAsync(User))) return;
@@ -260,14 +225,14 @@ namespace Heteroboxd.Service
 
         public async Task<bool> ResetPassword(ResetPasswordRequest Request)
         {
-            User? User = await _userManager.FindByIdAsync(Request.UserId);
+            var User = await _userManager.FindByIdAsync(Request.UserId);
             if (User == null) return false;
 
             var Result = await _userManager.ResetPasswordAsync(User, Request.Token, Request.NewPassword);
 
             if (!Result.Succeeded) return false;
 
-            await RevokeAllUserTokens(User.Id);
+            await _refreshRepo.RevokeAllUserTokens(User.Id);
             return true;
         }
     }

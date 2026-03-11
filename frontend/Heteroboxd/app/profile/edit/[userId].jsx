@@ -1,151 +1,134 @@
-import { StyleSheet, Text, Image, TextInput, View, KeyboardAvoidingView, ScrollView, Platform, TouchableOpacity, useWindowDimensions } from 'react-native'
-import { useRouter, useLocalSearchParams, Link } from 'expo-router'
+import { useCallback, useEffect, useState } from 'react'
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { Link, useLocalSearchParams, useRouter } from 'expo-router'
+import * as ImageManipulator from 'expo-image-manipulator'
+import * as ImagePicker from 'expo-image-picker'
+import * as auth from '../../../helpers/auth'
+import { useAuth } from '../../../hooks/useAuth'
+import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
+import { Response } from '../../../constants/response'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
-import { useState, useEffect } from 'react'
 import { UserAvatar } from '../../../components/userAvatar'
-import { useAuth } from '../../../hooks/useAuth'
-import * as auth from '../../../helpers/auth'
-import { BaseUrl } from '../../../constants/api'
-import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
 
 const ProfileEdit = () => {
+  const { userId } = useLocalSearchParams()
+  const { user, isValidSession } = useAuth()
+  const { width } = useWindowDimensions()
+  const [ data, setData ] = useState(null)
+  const [ name, setName ] = useState('')
+  const [ bio, setBio ] = useState('')
+  const [ profileChanged, setProfileChanged ] = useState(false)
+  const [ profileUri, setProfileUri ] = useState('')
+  const [ server, setServer ] = useState(Response.initial)
+  const router = useRouter()
 
-  const { userId } = useLocalSearchParams(); //needed for fetching
-  const { user, isValidSession } = useAuth(); //needed for jwt
-
-  const { width } = useWindowDimensions();
-
-  const [data, setData] = useState(null); //user's initial data
-
-  //new data -> not all can be null at once for request to pass
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [profileChanged, setProfileChanged] = useState(false)
-  const [profileUri, setProfileUri] = useState("");
-
-  const [response, setResponse] = useState(-1); //for loading and popups
-  const [message, setMessage] = useState(''); //error message
-
-  const router = useRouter(); //redirect after button press
-
-  useEffect(() => { //profile fetch
-    (async () => {
-      if (!user || user.userId !== userId) { //illegal case
-        setMessage("How did you get in here? Your session is invalid. Return from whence thou cam'st!");
-        setResponse(401);
-        setData({});
-        return;
-      }
-      //otherwise...
-      const res = await fetch(`${BaseUrl.api}/users/${userId}`, {method: "GET",});
-      if (res.status === 200) {
-        const json = await res.json();
-        setResponse(200);
-        setData({ name: json.name, pictureUrl: json.pictureUrl, bio: json.bio });
+  const loadData = useCallback(async () => {
+    if (user?.userId !== userId) {
+      setServer(Response.forbidden)
+      setData({})
+      return
+    }
+    setServer(Response.loading)
+    try {
+      const res = await fetch(`${BaseUrl.api}/users/${userId}`)
+      if (res.ok) {
+        const json = await res.json()
+        setData({ name: json.name, pictureUrl: json.pictureUrl, bio: json.bio })
+        setServer(Response.ok)
       } else if (res.status === 404) {
-        setMessage("The user you are trying to find no longer exists.");
-        setResponse(404);
+        setServer(Response.notFound)
         setData({})
       } else {
-        setMessage("Something went wrong. Contact Heteroboxd support for more information.");
-        setResponse(500);
+        setServer(Response.internalServerError)
         setData({})
       }
-    })();
-  }, [userId]);
+    } catch {
+      setServer(Response.networkError)
+      setData({})
+    }
+  }, [user, userId])
 
   const pickImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission required', 'Permission to access media library is required to change profile picture.');
-        return;
+        Alert.alert('Permission required', 'Permission to access media library is required to change profile picture.')
+        return
       }
-
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         quality: 1,
         allowsEditing: true,
         aspect: [1, 1],
-      });
-
-      setResponse(0)
+      })
+      setServer(Response.loading)
       if (!result.canceled) {
-        const uri = result.assets?.[0]?.uri ?? result.uri;
+        const uri = result.assets?.[0]?.uri ?? result.uri
         if (uri) {
-          //resize to 150x150px
           const manipResult = await ImageManipulator.manipulateAsync(
             uri,
             [{ resize: { width: 150, height: 150 } }],
             { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-          );
-          setProfileChanged(true);
-          setProfileUri(manipResult.uri);
+          )
+          setProfileChanged(true)
+          setProfileUri(manipResult.uri)
         }
       }
-      setResponse(-1)
-    } catch (e) {
-      console.warn('image pick error', e);
-    }
-  };
-
-  const handleEdit = async () => {
-    const vS = await isValidSession();
-    if (!vS) {
-      setMessage("We failed to validate your session, and thus cannot procede in committing your changes.");
-      setResponse(401);
-      return;
-    }
-
-    setResponse(0);
-
-    const jwt = await auth.getJwt();
-    const res = await fetch(`${BaseUrl.api}/users`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        UserId: userId,
-        Name: name,
-        GeneratePresign: profileChanged,
-        Bio: bio
-      }),
-      headers: {
-        'Authorization': `Bearer ${jwt}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    if (res.ok) {
-      //upload to R2
-      const json = await res.json()
-      if (json.presignedUrl && profileChanged) {
-        const response = await fetch(profileUri);
-        const blob = await response.blob();
-        const picRes = await fetch(json.presignedUrl, {
-          method: 'PUT',
-          body: blob,
-          headers: { 'Content-Type': 'image/png' }
-        })
-        if (picRes.status === 200) {
-          setResponse(200);
-          router.replace(`/profile/${userId}`);
-        } else {
-          setMessage(`There was an error updating your profile picture: ${picRes.status}\nTry again later.`);
-          setResponse(picRes.status)
-        }
-      } else {
-        setResponse(200);
-        router.replace(`/profile/${userId}`);
-      }
-    } else if (res.status === 404) {
-      setMessage("The user you are trying to edit no longer exists.");
-      setResponse(404);
-    } else {
-      setMessage("Something went wrong. Contact Heteroboxd support for more information.");
-      setResponse(500);
+      setServer(Response.ok)
+    } catch {
+      console.log('image pick failed; debugging...')
     }
   }
+
+  const handleEdit = useCallback(async () => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          UserId: userId,
+          Name: name,
+          GeneratePresign: profileChanged,
+          Bio: bio
+        })
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.presignedUrl && profileChanged) {
+          const response = await fetch(profileUri)
+          const blob = await response.blob()
+          const picRes = await fetch(json.presignedUrl, {
+            method: 'PUT',
+            body: blob,
+            headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' }
+          })
+          if (picRes.ok) {
+            setServer(Response.ok)
+            router.replace(`/profile/${userId}`)
+          } else {
+            setServer(Response.internalServerError)
+          }
+        } else {
+          setServer(Response.ok)
+          router.replace(`/profile/${userId}`)
+        }
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, userId, name, profileChanged, profileUri, bio, router])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   if (!data) {
     return (
@@ -153,31 +136,28 @@ const ProfileEdit = () => {
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
-        paddingHorizontal: 5,
-        backgroundColor: Colors.background,
+        backgroundColor: Colors.background
       }}>
         <LoadingResponse visible={true} />
       </View>
-    );
+    )
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding" enabled>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={[styles.form, { maxWidth: Platform.OS === 'web' && width > 1000 ? 1000 : '100%' }]}>
-
+    <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior="padding" enabled>
+      <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}}>
+        <View style={[styles.form, {maxWidth: width > 1000 ? 1000 : '100%' }]}>
           <Text style={styles.title}>Edit Your Profile</Text>
-
-          <TouchableOpacity onPress={pickImage} style={styles.profileWrapper}>
+          <Pressable onPress={pickImage} style={styles.profileWrapper}>
             {profileUri ? (
               <Image source={{ uri: profileUri }} style={styles.profileImage} />
             ) : (
-              <TouchableOpacity onPress={pickImage}>
+              <Pressable onPress={pickImage}>
                 <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
-              </TouchableOpacity>
+              </Pressable>
             )}
             <Text style={styles.changePicText}>Change Profile Picture</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <Text style={[styles.changePicText, {padding: 5, marginTop: -5}]}>Change Name</Text>
           <TextInput
@@ -199,29 +179,23 @@ const ProfileEdit = () => {
             placeholderTextColor={Colors.text_placeholder}
           />
 
-          <TouchableOpacity
+          <Pressable
             style={[styles.button, (!name && !bio && !profileUri) && { opacity: 0.5 }]}
             onPress={handleEdit}
             disabled={!name && !bio && !profileUri}
           >
             <Text style={styles.buttonText}>Confirm</Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <Text style={styles.footerText}>
-            Changed your mind? <Link href={`profile/${userId}`} style={styles.link}>Cancel</Link>
-          </Text>
-
+          <Text style={styles.footerText}>Changed your mind? <Link href={`profile/${userId}`} style={styles.link}>Cancel</Link></Text>
         </View>
 
+        <LoadingResponse visible={server.result <= 0} />
         <Popup
-          visible={response === 401 || response === 404 || response === 500}
-          message={message}
-          onClose={() => {
-            response === 500 ? router.replace('/contact') : router.replace('/');
-          }}
+          visible={[403, 404, 500].includes(server.result)}
+          message={server.message}
+          onClose={() => server.response === 403 ? router.replace('/login') : server.result === 404 ? router.back() : router.replace('/contact')}
         />
-        <LoadingResponse visible={response === 0} />
-
       </ScrollView>
     </KeyboardAvoidingView>
   )
@@ -230,8 +204,6 @@ const ProfileEdit = () => {
 export default ProfileEdit
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50 },
   form: { width: '100%', alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '700', marginBottom: 30, color: Colors.text_title, textAlign: 'center' },
   profileWrapper: { alignItems: 'center', marginBottom: 16 },
@@ -251,9 +223,8 @@ const styles = StyleSheet.create({
     outlineColor: 'transparent',
   },
   bioInput: { minHeight: 80, textAlignVertical: 'top', padding: 5 },
-  button: { backgroundColor: Colors.button, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10,
-            width: '25%', alignSelf: 'center' },
+  button: { backgroundColor: Colors.heteroboxd, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10, width: '25%', alignSelf: 'center' },
   buttonText: { color: Colors.text_button, fontWeight: '600' },
   footerText: { textAlign: 'center', marginTop: 20, fontSize: 14, color: Colors.text },
   link: { color: Colors.text_link, fontWeight: '600' },
-});
+})

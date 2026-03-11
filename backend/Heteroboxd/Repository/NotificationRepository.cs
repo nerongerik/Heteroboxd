@@ -8,10 +8,10 @@ namespace Heteroboxd.Repository
     {
         Task<Notification?> GetByIdAsync(Guid NotificationId);
         Task<int> CountUnread(Guid UserId);
-        Task<List<Notification>> GetByUserAsync(Guid UserId);
-        Task<(List<Notification> Notifications, int TotalCount)> GetByUserPagedAsync(Guid UserId, int Page, int PageSize);
+        Task<(List<Notification> Notifications, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
         void Create(Notification Notification);
         void Update(Notification Notification);
+        Task MarkAllRead(Guid UserId);
         void Delete(Notification Notification);
         Task SaveChangesAsync();
     }
@@ -32,10 +32,7 @@ namespace Heteroboxd.Repository
         public async Task<int> CountUnread(Guid UserId) =>
             await _context.Notifications.Where(n => n.UserId == UserId && !n.Read).CountAsync();
 
-        public async Task<List<Notification>> GetByUserAsync(Guid UserId) =>
-            await _context.Notifications.Where(n => n.UserId == UserId).ToListAsync();
-
-        public async Task<(List<Notification> Notifications, int TotalCount)> GetByUserPagedAsync(Guid UserId, int Page, int PageSize)
+        public async Task<(List<Notification> Notifications, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {
             var UserQuery = _context.Notifications
                 .Where(n => n.UserId == UserId)
@@ -60,6 +57,11 @@ namespace Heteroboxd.Repository
         {
             _context.Notifications.Update(Notification);
         }
+
+        public async Task MarkAllRead(Guid UserId) =>
+            await _context.Notifications
+                .Where(n => n.UserId == UserId && !n.Read)
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.Read, true));
 
         public void Delete(Notification Notification)
         {
