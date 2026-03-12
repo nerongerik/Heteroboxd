@@ -21,7 +21,7 @@ builder.Services.AddDbContext<HeteroboxdContext>(options =>
     {
         npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(10),
+            maxRetryDelay: TimeSpan.FromSeconds(15),
             errorCodesToAdd: null
         );
     })
@@ -66,7 +66,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminTier", policy =>
-        policy.RequireClaim("tier", "Admin"));
+        policy.RequireClaim("admin_session", "true"));
 });
 
 // --- CORS ---
@@ -87,7 +87,7 @@ builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<ICelebrityRepository, CelebrityRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserListRepository, UserListRepository>();
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 // --- SERVICES ---
 builder.Services.AddScoped<IFilmService, FilmService>();

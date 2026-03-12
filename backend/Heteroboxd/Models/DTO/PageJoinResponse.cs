@@ -15,4 +15,6 @@
         public T1 Item { get; set; }
         public T2 Joined { get; set; }
     }
+
+    public record JoinedReviewFilm(Review Review, Film Film);
 }

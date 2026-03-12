@@ -59,7 +59,7 @@ const FilmsReviews = () => {
     setServer(Response.loading)
     try {
       if (user?.userId) {
-        const res = await fetch(`${BaseUrl.api}/reviews/film-reviews/${filmId}?UserId=${user?.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
+        const res = await fetch(`${BaseUrl.api}/reviews/film?FilmId=${filmId}&UserId=${user?.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
         if (res.ok) {
           const json = await res.json()
           setData({ page: json.reviews.page, reviews: json.reviews.items, totalCount: json.reviews.totalCount })
@@ -69,7 +69,7 @@ const FilmsReviews = () => {
           setServer(Response.internalServerError)
         }
       } else {
-        const res = await fetch(`${BaseUrl.api}/reviews/film-reviews/${filmId}?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
+        const res = await fetch(`${BaseUrl.api}/reviews/film?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
         if (res.ok) {
           const json = await res.json()
           setData({ page: json.page, reviews: json.items, totalCount: json.totalCount })

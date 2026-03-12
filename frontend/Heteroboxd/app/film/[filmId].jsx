@@ -46,7 +46,7 @@ const Film = () => {
   const loadBasicData = useCallback(async () => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/films/${filmId}`)
+      const res = await fetch(`${BaseUrl.api}/films?FilmId=${filmId}`)
       if (res.ok) {
         const json = await res.json()
         setFilm({
@@ -73,7 +73,7 @@ const Film = () => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/${user.userId}/interactions/${filmId}`, {
+      const res = await fetch(`${BaseUrl.api}/users/interactions/${filmId}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
@@ -100,7 +100,7 @@ const Film = () => {
 
   const loadSubsequentData = useCallback(async () => {
     try {
-      const res = await fetch(`${BaseUrl.api}/films/${filmId}/subsequent?PageSize=${TOP_COUNT}`)
+      const res = await fetch(`${BaseUrl.api}/films/subsequent?FilmId=${filmId}&PageSize=${TOP_COUNT}`)
       if (res.ok) {
         const json = await res.json()
         console.log(json.reviews)

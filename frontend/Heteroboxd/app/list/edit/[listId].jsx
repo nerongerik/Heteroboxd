@@ -62,7 +62,7 @@ const EditList = () => {
     }
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/lists/${listId}`)
+      const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}`)
       if (res.ok) {
         const json = await res.json()
         setBase({ listName: json.name, desc: json.description, ranked: json.ranked })
@@ -83,7 +83,7 @@ const EditList = () => {
   const loadEntriesData = useCallback(async () => {
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/power/${listId}`, {
+      const res = await fetch(`${BaseUrl.api}/lists/power?UserListId=${listId}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {

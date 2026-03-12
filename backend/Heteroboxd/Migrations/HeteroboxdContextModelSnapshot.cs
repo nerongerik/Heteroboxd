@@ -494,6 +494,9 @@ namespace Heteroboxd.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<int>("Flags")
+                        .HasColumnType("integer");
+
                     b.Property<int>("LikeCount")
                         .HasColumnType("integer");
 

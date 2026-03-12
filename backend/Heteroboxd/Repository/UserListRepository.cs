@@ -7,8 +7,9 @@ namespace Heteroboxd.Repository
 {
     public interface IUserListRepository
     {
-        Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> GetListsAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserList?> GetByIdAsync(Guid ListId);
+        Task<JoinResponse<UserList, User>?> GetJoinedByIdAsync(Guid ListId);
         Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId);
         Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -16,14 +17,14 @@ namespace Heteroboxd.Repository
         Task<(List<JoinResponse<UserList, User>> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetFeaturingFilmCountAsync(int FilmId);
         Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
-        void Create(UserList UserList);
-        void CreateEntry(ListEntry ListEntry);
-        void Update(UserList UserList);
-        Task UpdateLikeCountEfCore7Async(Guid ListId, int Delta);
-        Task ToggleNotificationsEfCore7Async(Guid ListId);
-        void Delete(UserList UserList);
-        Task DeleteEntriesByListIdEfCore7Async(Guid ListId);
-        Task SaveChangesAsync();
+        Task CreateAsync(UserList UserList);
+        Task CreateEntriesAsync(IReadOnlyCollection<ListEntry> ListEntry);
+        Task UpdateAsync(UserList UserList);
+        Task UpdateLikeCountAsync(Guid ListId, int Delta);
+        Task ToggleNotificationsAsync(Guid ListId);
+        Task ReportAsync(Guid ListId);
+        Task DeleteAsync(Guid ListId);
+        Task DeleteAllEntriesAsync(Guid ListId);
     }
 
     public class UserListRepository : IUserListRepository
@@ -35,9 +36,10 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> GetListsAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var Query = _context.UserLists
+                .AsNoTracking()
                 .Include(ul => ul.Films)
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
                 .AsQueryable();
@@ -65,6 +67,9 @@ namespace Heteroboxd.Repository
                 case "size":
                     Query = Desc ? Query.OrderByDescending(x => x.ul.Films.Count) : Query.OrderBy(x => x.ul.Films.Count);
                     break;
+                case "flags":
+                    Query = Query.OrderByDescending(x => x.ul.Flags);
+                    break;
                 default:
                     //error handling
                     Query = Query.OrderByDescending(x => x.ul.LikeCount);
@@ -77,20 +82,33 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .Select(x => new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u })
                 .ToListAsync();
+
             return (Responses, TotalCount);
         }
 
         public async Task<UserList?> GetByIdAsync(Guid ListId) =>
             await _context.UserLists
+                .AsNoTracking()
                 .FirstOrDefaultAsync(ul => ul.Id == ListId);
+
+        public async Task<JoinResponse<UserList, User>?> GetJoinedByIdAsync(Guid ListId)
+        {
+            var Result = await _context.UserLists
+                .AsNoTracking()
+                .Where(ul => ul.Id == ListId)
+                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                .FirstOrDefaultAsync();
+            return Result == null ? null : new JoinResponse<UserList, User> { Item = Result.ul, Joined = Result.u };
+        }
 
         public async Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             if (UserId == null)
             {
                 var EntriesQuery = _context.ListEntries
-                .Where(le => le.UserListId == ListId)
-                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { Entry = le, Film = f });
+                    .AsNoTracking()
+                    .Where(le => le.UserListId == ListId)
+                    .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { Entry = le, Film = f });
 
                 //filtering - lists are defined by Users, and thus cannot be filtered by arbitrary properties
 
@@ -127,11 +145,13 @@ namespace Heteroboxd.Repository
                     .Take(PageSize)
                     .Select(x => x.Entry)
                     .ToListAsync();
+
                 return (Entries, TotalCount, null, null);
             }
             else
             {
                 var EntriesQuery = _context.ListEntries
+                    .AsNoTracking()
                     .Where(le => le.UserListId == ListId)
                     .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { Entry = le, Film = f })
                     .GroupJoin(_context.UserWatchedFilms.Where(uwf => uwf.UserId == UserId),
@@ -184,6 +204,7 @@ namespace Heteroboxd.Repository
 
         public async Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId) =>
             await _context.ListEntries
+                .AsNoTracking()
                 .Where(le => le.UserListId == ListId)
                 .OrderBy(le => le.Position)
                 .ToListAsync();
@@ -191,8 +212,9 @@ namespace Heteroboxd.Repository
         public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var UserQuery = _context.UserLists
-                .Include(ul => ul.Films)
+                .AsNoTracking()
                 .Where(ul => ul.AuthorId == UserId)
+                .Include(ul => ul.Films)
                 .AsQueryable();
 
             //filtering - querying by User already filters out enough
@@ -220,11 +242,13 @@ namespace Heteroboxd.Repository
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
+
             return (Lists, TotalCount);
         }
 
         public async Task<List<UserList>> SummarizeListsAsync(Guid UserId) =>
             await _context.UserLists
+                .AsNoTracking()
                 .Where(ul => ul.AuthorId == UserId)
                 .Include(ul => ul.Films)
                 .ToListAsync();
@@ -232,6 +256,7 @@ namespace Heteroboxd.Repository
         public async Task<(List<JoinResponse<UserList, User>> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var FilmQuery = _context.UserLists
+                .AsNoTracking()
                 .Include(ul => ul.Films)
                 .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
@@ -272,11 +297,13 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .Select(x => new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u })
                 .ToListAsync();
+
             return (Responses, TotalCount);
         }
 
         public async Task<int> GetFeaturingFilmCountAsync(int FilmId) =>
             await _context.UserLists
+                .AsNoTracking()
                 .Include(ul => ul.Films)
                 .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
                 .CountAsync();
@@ -284,6 +311,7 @@ namespace Heteroboxd.Repository
         public async Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
             var Query = _context.UserLists
+                .AsNoTracking()
                 .Include(ul => ul.Films)
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
                 .AsQueryable();
@@ -307,25 +335,25 @@ namespace Heteroboxd.Repository
         }
 
 
-        public void Create(UserList UserList)
+        public async Task CreateAsync(UserList UserList)
         {
-            _context.UserLists
-                .Add(UserList);
+            _context.UserLists.Add(UserList);
+            await _context.SaveChangesAsync();
         }
 
-        public void CreateEntry(ListEntry ListEntry)
+        public async Task CreateEntriesAsync(IReadOnlyCollection<ListEntry> Entries)
         {
-            _context.ListEntries
-                .Add(ListEntry);
+            _context.ListEntries.AddRange(Entries);
+            await _context.SaveChangesAsync();
         }
 
-        public void Update(UserList UserList)
+        public async Task UpdateAsync(UserList UserList)
         {
-            _context.UserLists
-                .Update(UserList);
+            _context.UserLists.Update(UserList);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateLikeCountEfCore7Async(Guid ListId, int Delta)
+        public async Task UpdateLikeCountAsync(Guid ListId, int Delta)
         {
             var Rows = await _context.UserLists
                 .Where(ul => ul.Id == ListId)
@@ -336,7 +364,7 @@ namespace Heteroboxd.Repository
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public async Task ToggleNotificationsEfCore7Async(Guid ListId)
+        public async Task ToggleNotificationsAsync(Guid ListId)
         {
             var Rows = await _context.UserLists
                 .Where(ul => ul.Id == ListId)
@@ -347,18 +375,25 @@ namespace Heteroboxd.Repository
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public void Delete(UserList UserList)
+        public async Task ReportAsync(Guid ListId)
         {
-            _context.UserLists
-                .Remove(UserList);
+            var Rows = await _context.UserLists
+                .Where(ul => ul.Id == ListId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    ul => ul.Flags,
+                    ul => ul.Flags + 1
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public async Task DeleteEntriesByListIdEfCore7Async(Guid ListId) =>
+        public async Task DeleteAsync(Guid ListId) =>
+            await _context.UserLists
+                .Where(ul => ul.Id == ListId)
+                .ExecuteDeleteAsync();
+
+        public async Task DeleteAllEntriesAsync(Guid ListId) =>
             await _context.ListEntries
                 .Where(le => le.UserListId == ListId)
                 .ExecuteDeleteAsync();
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
     }
 }

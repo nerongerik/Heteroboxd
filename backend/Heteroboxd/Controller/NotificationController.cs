@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Heteroboxd.Service;
+﻿using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Heteroboxd.Controller
 {
@@ -17,15 +18,15 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet("{UserId}")]
+        [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetNotificationsByUser(string UserId, int Page, int PageSize)
+        public async Task<IActionResult> GetNotificationsByUser(int Page, int PageSize)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"GetNotificationsByUser endpoint hit for User: {UserId}");
             try
             {
-                var Response = await _service.GetNotificationsByUser(UserId, Page, PageSize);
-                return Ok(Response);
+                return Ok(await _service.GetNotificationsByUser(UserId!, Page, PageSize));
             }
             catch
             {
@@ -33,15 +34,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("count/{UserId}")]
+        [HttpGet("count")]
         [Authorize]
-        public async Task<IActionResult> CheckNotifications(string UserId)
+        public async Task<IActionResult> CheckNotifications()
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"CheckNotifications endpoint hit for User: {UserId}");
             try
             {
-                var Response = await _service.AnyNewNotifications(UserId);
-                return Ok(Response);
+                return Ok(await _service.AnyNewNotifications(UserId!));
             }
             catch
             {
@@ -49,14 +50,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("all/{UserId}")]
+        [HttpPut("all")]
         [Authorize]
-        public async Task<IActionResult> MarkAllAsRead(string UserId)
+        public async Task<IActionResult> MarkAllAsRead()
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"MarkAllAsRead endpoint hit for User: {UserId}");
             try
             {
-                await _service.ReadAll(UserId);
+                await _service.ReadAll(UserId!);
                 return Ok();
             }
             catch
@@ -75,10 +77,6 @@ namespace Heteroboxd.Controller
                 await _service.UpdateNotification(NotificationId);
                 return Ok();
             }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
             catch
             {
                 return StatusCode(500);
@@ -94,10 +92,6 @@ namespace Heteroboxd.Controller
             {
                 await _service.DeleteNotification(NotificationId);
                 return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {

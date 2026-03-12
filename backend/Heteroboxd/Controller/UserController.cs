@@ -2,6 +2,7 @@
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Heteroboxd.Controller
 {
@@ -24,7 +25,7 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet("{UserId}")]
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetUser(string UserId, bool Inclusive = false, string? VisitorId = null)
         {
@@ -56,7 +57,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{UserId}/subsequent")]
+        [HttpGet("subsequent")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserSubsequent(string UserId, int PageSize = 8)
         {
@@ -80,15 +81,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("watchlist/{UserId}")]
+        [HttpGet("watchlist")]
         [Authorize]
-        public async Task<IActionResult> GetUserWatchlist(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE ADDED", bool Desc = true, string? FilterValue = null)
+        public async Task<IActionResult> GetUserWatchlist(int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE ADDED", bool Desc = true, string? FilterValue = null)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"GetUserWatchlist endpoint hit for User: {UserId}");
             try
             {
-                var Response = await _service.GetWatchlist(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetWatchlist(UserId!, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch
             {
@@ -96,15 +97,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-relationships/{UserId}")]
+        [HttpGet("relationships")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserRelationships(string UserId, int FollowersPage = 1, int FollowingPage = 1, int BlockedPage = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GetUserRelationships endpoint hit for UserId: {UserId}");
             try
             {
-                var Response = await _service.GetRelationships(UserId, FollowersPage, FollowingPage, BlockedPage, PageSize);
-                return Ok(Response);
+                return Ok(await _service.GetRelationships(UserId, FollowersPage, FollowingPage, BlockedPage, PageSize));
             }
             catch (KeyNotFoundException)
             {
@@ -116,15 +116,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user-likes/{UserId}")]
+        [HttpGet("likes")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUserLikes(string UserId, int ReviewsPage = 1, int ListsPage = 1, int PageSize = 32)
+        public async Task<IActionResult> GetUserLikes(string UserId, int ReviewsPage = 1, int ListsPage = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GetUserLikes endpoint hit for UserId: {UserId}");
             try
             {
-                var Response = await _service.GetLikes(UserId, ReviewsPage, ListsPage, PageSize);
-                return Ok(Response);
+                return Ok(await _service.GetLikes(UserId, ReviewsPage, ListsPage, PageSize));
             }
             catch (KeyNotFoundException)
             {
@@ -136,20 +135,21 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{UserId}/interactions/{FilmId}")]
+        [HttpGet("interactions/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> GetUserFilmInteractions(string UserId, int FilmId)
+        public async Task<IActionResult> GetUserFilmInteractions(int FilmId)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"GetUserFilmInteractions endpoint hit for: {UserId}, {FilmId}");
             try
             {
                 return Ok(
                     new 
                     { 
-                        Uwf = await _service.DidUserWatchFilm(UserId, FilmId),
-                        Watchlisted = await _service.IsFilmWatchlisted(UserId, FilmId),
-                        Review = await _reviewService.GetReviewByUserFilm(UserId, FilmId),
-                        Friends = await _service.GetFriendsForFilm(UserId, FilmId) 
+                        Uwf = await _service.DidUserWatchFilm(UserId!, FilmId),
+                        Watchlisted = await _service.IsFilmWatchlisted(UserId!, FilmId),
+                        Review = await _reviewService.GetReviewByUserFilm(UserId!, FilmId),
+                        Friends = await _service.GetFriendsForFilm(UserId!, FilmId) 
                     });
             }
             catch
@@ -160,16 +160,17 @@ namespace Heteroboxd.Controller
 
         [HttpGet("friends")]
         [Authorize]
-        public async Task<IActionResult> GetFriendActivity(string UserId, int Page = 1, int PageSize = 4, string Sort = "DATE CREATED", bool Desc = true)
+        public async Task<IActionResult> GetFriendActivity(int Page = 1, int PageSize = 4, string Sort = "DATE CREATED", bool Desc = true)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"GetFriendActivity endpoint hit for User: {UserId}");
             try
             {
                 return Ok(
                 new
                 {
-                    Reviews = await _reviewService.GetReviews(UserId, Page, PageSize, "FRIENDS", Sort, Desc, null),
-                    Lists = await _userListService.GetLists(UserId, Page, PageSize, "FRIENDS", Sort, Desc, null)
+                    Reviews = await _reviewService.GetReviews(UserId!, Page, PageSize, "FRIENDS", Sort, Desc, null),
+                    Lists = await _userListService.GetLists(UserId!, Page, PageSize, "FRIENDS", Sort, Desc, null)
                 });
             }
             catch
@@ -185,8 +186,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"SearchUsers endpoint hit with Search: {Search}");
             try
             {
-                var Response = await _service.SearchUsers(Search, Page, PageSize);
-                return Ok(Response);
+                return Ok(await _service.SearchUsers(Search, Page, PageSize));
             }
             catch
             {
@@ -201,8 +201,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"UpdateUser endpoint hit with UserId: {Request.UserId}");
             try
             {
-                var Response = await _service.UpdateUser(Request);
-                return Ok(new { PresignedUrl = Response });
+                return Ok(new { PresignedUrl = await _service.UpdateUser(Request) });
             }
             catch (KeyNotFoundException)
             {
@@ -214,7 +213,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("verify/{UserId}")]
+        [HttpPut("verify")]
         [AllowAnonymous]
         public async Task<IActionResult> Verify(string UserId, string Token)
         {
@@ -234,14 +233,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("report/{UserId}")]
+        [HttpPut("report")]
         [Authorize]
         public async Task<IActionResult> ReportUser(string UserId)
         {
             _logger.LogInformation($"ReportUser endpoint hit with UserId: {UserId}");
             try
             {
-                await _service.ReportUserEfCore7Async(UserId);
+                await _service.ReportAsync(UserId);
                 return Ok();
             }
             catch (KeyNotFoundException)
@@ -254,14 +253,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("watchlist/{UserId}/{FilmId}")]
+        [HttpPut("watchlist")]
         [Authorize]
-        public async Task<IActionResult> UpdateWatchlist(string UserId, int FilmId)
+        public async Task<IActionResult> UpdateWatchlist(int FilmId)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"UpdateWatchlist endpoint hit for User: {UserId}, Film: {FilmId}");
             try
             {
-                await _service.UpdateWatchlist(UserId, FilmId);
+                await _service.UpdateWatchlist(UserId!, FilmId);
                 return Ok();
             }
             catch (KeyNotFoundException)
@@ -274,23 +274,18 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("favorites/{UserId}/{FilmId}")]
+        [HttpPut("favorites")]
         [Authorize]
-        public async Task<IActionResult> UpdateFavorites(string UserId, int FilmId, int Index)
+        public async Task<IActionResult> UpdateFavorites(int FilmId, int Index)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"UpdateFavorites endpoint hit for User: {UserId}");
             try
             {
-                if (FilmId < 0)
-                {
-                    var UpdatedFavorites = await _service.UpdateFavorites(UserId, null, Index);
-                    return Ok(UpdatedFavorites);
-                }
-                else
-                {
-                    var UpdatedFavorites = await _service.UpdateFavorites(UserId, FilmId, Index);
-                    return Ok(UpdatedFavorites);
-                }
+                return Ok(FilmId < 0
+                ? await _service.UpdateFavorites(UserId!, null, Index)
+                : await _service.UpdateFavorites(UserId!, FilmId, Index)
+                );
             }
             catch (KeyNotFoundException)
             {
@@ -306,14 +301,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("relationships/{UserId}/{TargetId}")]
+        [HttpPut("relationships")]
         [Authorize]
-        public async Task<IActionResult> UpdateRelationships(string UserId, string TargetId, string Action)
+        public async Task<IActionResult> UpdateRelationships(string TargetId, string Action)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"UpdateRelationships endpoint hit with originator {UserId}, target {TargetId}, action = {Action}");
             try
             {
-                await _service.UpdateRelationship(UserId, TargetId, Action); //also handles notifs
+                await _service.UpdateRelationship(UserId!, TargetId, Action);
                 return Ok();
             }
             catch (KeyNotFoundException)
@@ -326,14 +322,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("track-film/{UserId}/{FilmId}")]
+        [HttpPut("track/{FilmId}")]
         [Authorize]
-        public async Task<IActionResult> TrackFilm(string UserId, int FilmId, string Action)
+        public async Task<IActionResult> TrackFilm(int FilmId, string Action)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"TrackFilm endpoint hint for User: {UserId}, Film: {FilmId}; action: {Action}");
             try
             {
-                await _service.TrackFilm(UserId, FilmId, Action);
+                await _service.TrackFilm(UserId!, FilmId, Action);
                 return Ok();
             }
             catch (KeyNotFoundException)
@@ -350,23 +347,16 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpDelete("{UserId}")]
+        [HttpDelete]
         [Authorize]
-        public async Task<IActionResult> DeleteUser(string UserId)
+        public async Task<IActionResult> DeleteUser()
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"DeleteUser endpoint hit with UserId: {UserId}");
             try
             {
-                await _service.DeleteUser(UserId);
+                await _service.DeleteUser(UserId!);
                 return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (ArgumentException)
-            {
-                return BadRequest();
             }
             catch
             {

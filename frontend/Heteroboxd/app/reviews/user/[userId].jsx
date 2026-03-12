@@ -56,7 +56,7 @@ const UserReviews = () => {
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/reviews/user-reviews/${userId}?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
+      const res = await fetch(`${BaseUrl.api}/reviews/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
       if (res.ok) {
         const json = await res.json()
         setData({ page: json.page, reviews: json.items, totalCount: json.totalCount })

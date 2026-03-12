@@ -61,7 +61,7 @@ const List = () => {
     setServer(Response.loading)
     try {
       if (user?.userId) {
-        const res = await fetch(`${BaseUrl.api}/lists/${listId}?UserId=${user.userId}`)
+        const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}&UserId=${user.userId}`)
         if (res.ok) {
           const json = await res.json()
           setBase(json.list)
@@ -75,7 +75,7 @@ const List = () => {
           setBase({})
         }
       } else {
-        const res = await fetch(`${BaseUrl.api}/lists/${listId}`)
+        const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}`)
         if (res.ok) {
           const json = await res.json()
           setBase(json)
@@ -98,8 +98,8 @@ const List = () => {
     setServer(Response.loading)
     try {
       const url = user
-        ? `${BaseUrl.api}/lists/entries/${listId}?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-        : `${BaseUrl.api}/lists/entries/${listId}?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+        ? `${BaseUrl.api}/lists/entries?UserListId=${listId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+        : `${BaseUrl.api}/lists/entries?UserListId=${listId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       const res = await fetch(url)
       if (res.ok) {
         const json = await res.json()
@@ -165,7 +165,7 @@ const List = () => {
       headerRight: () => {
         return (
           <>
-            <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} />
+            {user && <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} />}
             {
               !base.ranked && 
               <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>

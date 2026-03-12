@@ -4,6 +4,10 @@ export const formatCount = (n) => {
   return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + 'M'
 }
 
+export const sliceText = (text, chars) => {
+  return `${text.slice(0, chars) + (text.length > chars ? '...' : '')}`
+}
+
 export const round1 = (n) => (Math.round(round2(n) * 10) / 10).toFixed(1)
 
 export const round2 = (n) => Math.round(n * 100) / 100

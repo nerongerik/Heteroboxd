@@ -32,7 +32,7 @@ const Relationships = () => {
       PageSize: PAGE_SIZE
     })
     try {
-      const res = await fetch(`${BaseUrl.api}/users/user-relationships/${userId}?${params}`)
+      const res = await fetch(`${BaseUrl.api}/users/relationships?UserId=${userId}&${params}`)
       if (res.ok) {
         const json = await res.json()
         setFollowers({
@@ -90,7 +90,7 @@ const Relationships = () => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${followerId}?Action=remove-follower`, {
+      const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${followerId}&Action=remove-follower`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })

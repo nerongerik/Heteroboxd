@@ -31,7 +31,7 @@ const Notifications = () => {
       if (fromRefresh) setIsRefreshing(false)
       setServer(Response.loading)
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/${user.userId}?Page=${page}&PageSize=${PAGE_SIZE}`, {
+      const res = await fetch(`${BaseUrl.api}/notifications?Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
@@ -54,7 +54,7 @@ const Notifications = () => {
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/all/${user.userId}`, {
+      const res = await fetch(`${BaseUrl.api}/notifications/all`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })

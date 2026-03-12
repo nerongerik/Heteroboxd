@@ -49,7 +49,7 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/reviews/${reviewId}`, {
+      const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -74,7 +74,7 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/reviews/toggle-notifications/${reviewId}`, {
+      const res = await fetch(`${BaseUrl.api}/reviews/notifs?ReviewId=${reviewId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -109,7 +109,7 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/reviews/report/${reviewId}`, {
+      const res = await fetch(`${BaseUrl.api}/reviews/report?ReviewId=${reviewId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })

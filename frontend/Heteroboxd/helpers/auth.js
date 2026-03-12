@@ -57,7 +57,7 @@ export const refreshToken = async () => {
   }
 }
 
-export async function logout(userId) {
+export const logout = async (userId) => {
   try {
     const refresh = Platform.OS === 'web' ? localStorage.getItem('refresh') : await SecureStore.getItemAsync('refresh')
     const res = await fetch(`${BaseUrl.api}/auth/logout/${userId}?Token=${encodeURIComponent(refresh)}`, {

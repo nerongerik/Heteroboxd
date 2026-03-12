@@ -56,8 +56,8 @@ const FilmsLists = () => {
     setServer(Response.loading)
     try {
       const url = user
-      ? `${BaseUrl.api}/lists/featuring-film/${filmId}?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-      : `${BaseUrl.api}/lists/featuring-film/${filmId}?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      ? `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      : `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       const res = await fetch(url)
       if (res.ok) {
         const json = await res.json()

@@ -23,6 +23,7 @@ namespace Heteroboxd.Repository
 
         public async Task<Celebrity?> GetByIdAsync(int Id) =>
             await _context.Celebrities
+                .AsNoTracking()
                 .Include(c => c.Credits)
                 .FirstOrDefaultAsync(c => c.Id == Id);
 
@@ -32,11 +33,13 @@ namespace Heteroboxd.Repository
             {
                 //filtering
                 var FilmIds = await _context.CelebrityCredits
+                    .AsNoTracking()
                     .Where(cc => cc.CelebrityId == CelebrityId && cc.Role == Filter)
                     .Select(cc => cc.FilmId)
                     .ToListAsync();
 
                 var CreditsQuery = _context.Films
+                    .AsNoTracking()
                     .Where(f => FilmIds.Contains(f.Id))
                     .AsQueryable();
 
@@ -72,11 +75,13 @@ namespace Heteroboxd.Repository
             {
                 //filtering
                 var FilmIds = await _context.CelebrityCredits
+                    .AsNoTracking()
                     .Where(cc => cc.CelebrityId == CelebrityId && cc.Role == Filter)
                     .Select(cc => cc.FilmId)
                     .ToListAsync();
 
                 var CreditsQuery = _context.Films
+                    .AsNoTracking()
                     .Where(f => FilmIds.Contains(f.Id))
                     .GroupJoin(_context.UserWatchedFilms.Where(uwf => uwf.UserId == UserId),
                         f => f.Id,
@@ -113,13 +118,15 @@ namespace Heteroboxd.Repository
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();
-                return (JoinResult.Select(x => x.Film).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount);
+                return (JoinResult.Select(x => x.Film).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount)!;
             }
         }
 
         public async Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.Celebrities.AsQueryable();
+            var Query = _context.Celebrities
+                .AsNoTracking()
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(Search))
             {
@@ -127,12 +134,13 @@ namespace Heteroboxd.Repository
                     EF.Functions.TrigramsSimilarity(c.Name, Search) > 0.3f);
             }
 
-            int TotalCount = await Query.CountAsync();
+            var TotalCount = await Query.CountAsync();
             var Results = await Query
                 .OrderByDescending(c => EF.Functions.TrigramsSimilarity(c.Name, Search))
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
+
             return (Results, TotalCount);
         }
 

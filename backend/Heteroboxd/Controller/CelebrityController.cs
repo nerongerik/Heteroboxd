@@ -17,15 +17,14 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet("{CelebrityId}")]
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetCelebrity(int CelebrityId)
         {
             _logger.LogInformation($"GetCelebrity endpoint hit for {CelebrityId}");
             try
             {
-                var Response = await _service.GetCelebrity(CelebrityId);
-                return Ok(Response);
+                return Ok(await _service.GetCelebrity(CelebrityId));
             }
             catch (KeyNotFoundException)
             {
@@ -37,15 +36,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{CelebrityId}/credits")]
+        [HttpGet("credits")]
         [AllowAnonymous]
         public async Task<IActionResult> GetCredits(int CelebrityId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "Starred", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GetCredits endpoint hit for {CelebrityId}");
             try
             {
-                var Response = await _service.GetCreditsDelimited(CelebrityId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetCreditsDelimited(CelebrityId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch
             {
@@ -60,8 +58,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"SearchCelebrities endpoint hit with {Search}");
             try
             {
-                var Response = await _service.SearchCelebrities(Search, Page, PageSize);
-                return Ok(Response);
+                return Ok(await _service.SearchCelebrities(Search, Page, PageSize));
             }
             catch
             {

@@ -1,6 +1,4 @@
-﻿using FirebaseAdmin.Messaging;
-using Heteroboxd.Models;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Models.Enums;
 using Heteroboxd.Repository;
 
@@ -38,33 +36,18 @@ namespace Heteroboxd.Service
         }
 
         public async Task<int> AnyNewNotifications(string UserId) =>
-            await _repo.CountUnread(Guid.Parse(UserId));
+            await _repo.CountUnreadAsync(Guid.Parse(UserId));
 
-        public async Task AddNotification(string Text, NotificationType Type, Guid UserId)
-        {
-            var Notification = new Models.Notification(Text, Type, UserId);
-            _repo.Create(Notification);
-            await _repo.SaveChangesAsync();
-        }
+        public async Task AddNotification(string Text, NotificationType Type, Guid UserId) =>
+            await _repo.CreateAsync(new Models.Notification(Text, Type, UserId));
 
         public async Task ReadAll(string UserId) =>
-            await _repo.MarkAllRead(Guid.Parse(UserId));
+            await _repo.MarkAllReadAsync(Guid.Parse(UserId));
 
-        public async Task UpdateNotification(string NotificationId)
-        {
-            var Notification = await _repo.GetByIdAsync(Guid.Parse(NotificationId));
-            if (Notification == null) throw new KeyNotFoundException();
-            Notification.Read = true;
-            _repo.Update(Notification);
-            await _repo.SaveChangesAsync();
-        }
+        public async Task UpdateNotification(string NotificationId) =>
+            await _repo.UpdateAsync(Guid.Parse(NotificationId));
 
-        public async Task DeleteNotification(string NotificationId)
-        {
-            var Notification = await _repo.GetByIdAsync(Guid.Parse(NotificationId));
-            if (Notification == null) throw new KeyNotFoundException();
-            _repo.Delete(Notification);
-            await _repo.SaveChangesAsync();
-        }
+        public async Task DeleteNotification(string NotificationId) =>
+            await _repo.DeleteAsync(Guid.Parse(NotificationId));
     }
 }

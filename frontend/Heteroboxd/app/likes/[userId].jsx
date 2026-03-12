@@ -21,7 +21,7 @@ const UserLikes = () => {
     setServer(Response.loading)
     try {
       const params = new URLSearchParams({ ReviewsPage: pages.reviews || 1, ListsPage: pages.lists || 1, PageSize: PAGE_SIZE })
-      const res = await fetch(`${BaseUrl.api}/users/user-likes/${userId}?${params}`)
+      const res = await fetch(`${BaseUrl.api}/users/likes?UserId=${userId}&${params}`)
       if (res.ok) {
         const json = await res.json()
         setReviews({ page: json.likedReviews.page, items: json.likedReviews.items, totalCount: json.likedReviews.totalCount })

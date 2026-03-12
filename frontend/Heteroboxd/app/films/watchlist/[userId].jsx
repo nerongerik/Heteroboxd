@@ -58,7 +58,7 @@ const Watchlist = () => {
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/watchlist/${userId}?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
+      const res = await fetch(`${BaseUrl.api}/users/watchlist?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
@@ -80,7 +80,7 @@ const Watchlist = () => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/watchlist/${userId}/${filmId}`, {
+      const res = await fetch(`${BaseUrl.api}/users/watchlist?FilmId=${filmId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })

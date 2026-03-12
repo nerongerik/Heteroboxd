@@ -16,12 +16,12 @@ namespace Heteroboxd.Service
         Task<List<CountryInfoResponse>> SyncCountries(string? LastSync);
         Task<string?> Register(RegisterRequest Request);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
-        Task<bool> Logout(string? RefreshToken, string UserId);
+        (bool Success, string? AdminToken) VerifyAdminKey(string Key);
+        Task Logout(string? RefreshToken, string UserId);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string? RefreshToken);
         Task RevokeAllUserTokens(Guid UserId);
         Task ForgotPassword(string Email);
         Task<bool> ResetPassword(ResetPasswordRequest Request);
-
     }
 
     public class AuthService : IAuthService
@@ -29,25 +29,23 @@ namespace Heteroboxd.Service
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _config;
-        private readonly IRefreshTokenRepository _refreshRepo;
+        private readonly IAuthRepository _authRepo;
         private readonly IR2Handler _r2Handler;
         private readonly IEmailSender _emailSender;
-        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IRefreshTokenRepository refreshTokenRepo, IR2Handler r2Handler, IEmailSender emailSender, ILogger<AuthService> logger)
+        public AuthService(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration config, IAuthRepository authRepo, IR2Handler r2Handler, IEmailSender emailSender)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
-            _refreshRepo = refreshTokenRepo;
+            _authRepo = authRepo;
             _r2Handler = r2Handler;
             _emailSender = emailSender;
-            _logger = logger;
         }
 
         public async Task<List<CountryInfoResponse>> SyncCountries(string? LastSync)
         {
-            var Countries = await _refreshRepo.GetCountriesAsync();
+            var Countries = await _authRepo.GetCountriesAsync();
             if (!Countries.Any()) return new List<CountryInfoResponse>();
 
             if (LastSync != null)
@@ -113,35 +111,38 @@ namespace Heteroboxd.Service
             return (true, GenerateJwt(User), (await GenerateRefreshTokenAsync(User)));
         }
 
-        public async Task<bool> Logout(string? RefreshToken, string UserId)
+        public (bool Success, string? AdminToken) VerifyAdminKey(string Key)
         {
-            if (RefreshToken == null) return false;
-            var Token = await _refreshRepo.GetValidTokenAsync(RefreshToken);
-            if (Token == null || Token.UserId != Guid.Parse(UserId)) return false;
+            if (Key != _config["Admin:Key"]) return (false, null);
 
-            Token.Revoked = true;
-            await _refreshRepo.SaveChangesAsync();
-            return true;
+            var AdminToken = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: new[] { new Claim("admin_session", "true") },
+                expires: DateTime.UtcNow.AddMinutes(30),
+                signingCredentials: new SigningCredentials(
+                    new SymmetricSecurityKey(Convert.FromBase64String(_config["Jwt:Key"]!)),
+                    SecurityAlgorithms.HmacSha256)
+            );
+            return (true, new JwtSecurityTokenHandler().WriteToken(AdminToken));
         }
+
+        public async Task Logout(string? RefreshToken, string UserId) =>
+            await _authRepo.InvalidateAsync(Guid.Parse(UserId), RefreshToken ?? "");
 
         public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string? RefreshToken)
         {
-            if (RefreshToken == null) return (false, null, null);
+            var UserId = await _authRepo.UseAsync(RefreshToken ?? "");
+            if (UserId == null) return (false, null, null);
 
-            var Token = await _refreshRepo.GetValidTokenAsync(RefreshToken);
-            if (Token == null) return (false, null, null);
-
-            Token.Used = true;
-
-            var User = await _userManager.FindByIdAsync(Token.UserId.ToString());
+            var User = await _userManager.FindByIdAsync(UserId.ToString()!);
             if (User == null) return (false, null, null);
 
-            await _refreshRepo.SaveChangesAsync();
             return (true, GenerateJwt(User), await GenerateRefreshTokenAsync(User));
         }
 
         public async Task RevokeAllUserTokens(Guid UserId) =>
-            await _refreshRepo.RevokeAllUserTokens(UserId);
+            await _authRepo.RevokeAllByUserAsync(UserId);
 
         private string GenerateJwt(User User)
         {
@@ -187,8 +188,7 @@ namespace Heteroboxd.Service
                     Revoked = false
                 };
 
-                _refreshRepo.Create(Token);
-                await _refreshRepo.SaveChangesAsync();
+                await _authRepo.CreateAsync(Token);
 
                 return Token;
             }
@@ -232,7 +232,7 @@ namespace Heteroboxd.Service
 
             if (!Result.Succeeded) return false;
 
-            await _refreshRepo.RevokeAllUserTokens(User.Id);
+            await _authRepo.RevokeAllByUserAsync(User.Id);
             return true;
         }
     }
