@@ -32,7 +32,7 @@ const ProfileEdit = () => {
     }
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/users/${userId}`)
+      const res = await fetch(`${BaseUrl.api}/users?UserId=${userId}`)
       if (res.ok) {
         const json = await res.json()
         setData({ name: json.name, pictureUrl: json.pictureUrl, bio: json.bio })

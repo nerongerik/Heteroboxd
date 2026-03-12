@@ -8,10 +8,10 @@ namespace Heteroboxd.Repository
     public interface IFilmRepository
     {
         Task<Film?> GetByIdAsync(int Id);
-        Task<Film?> LightweightFetcher(int Id);
+        Task<Film?> LightweightFetcherAsync(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
         Task<List<Trending>> GetTrendingAsync();
-        Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetFilmsAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetAllAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<(List<Film> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -29,10 +29,11 @@ namespace Heteroboxd.Repository
 
         public async Task<Film?> GetByIdAsync(int Id) =>
             await _context.Films
+                .AsNoTracking()
                 .Include(f => f.CastAndCrew)
                 .FirstOrDefaultAsync(f => f.Id == Id);
 
-        public async Task<Film?> LightweightFetcher(int Id) =>
+        public async Task<Film?> LightweightFetcherAsync(int Id) =>
             await _context.Films
                 .AsNoTracking()
                 .FirstOrDefaultAsync(f => f.Id == Id);
@@ -42,6 +43,7 @@ namespace Heteroboxd.Repository
             if (Ids.Count == 0) return new();
 
             return await _context.Films
+                .AsNoTracking()
                 .Where(f => Ids.Contains(f.Id))
                 .ToListAsync();
         }
@@ -52,11 +54,14 @@ namespace Heteroboxd.Repository
                 .OrderBy(t => t.Rank)
                 .ToListAsync();
 
-        public async Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetFilmsAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetAllAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             if (UserId == null)
             {
-                var FilmsQuery = _context.Films.AsQueryable();
+                var FilmsQuery = _context.Films
+                    .AsNoTracking()
+                    .AsQueryable();
+
                 //filtering
                 switch (Filter.ToLower())
                 {
@@ -76,6 +81,7 @@ namespace Heteroboxd.Repository
                         //error fallback
                         break;
                 }
+
                 //sorting
                 switch (Sort.ToLower())
                 {
@@ -103,19 +109,23 @@ namespace Heteroboxd.Repository
                         }
                         break;
                 }
+
                 var TotalCount = await FilmsQuery.CountAsync();
                 var Films = await FilmsQuery
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();
+
                 return (Films, TotalCount, null, null);
             }
             else
             {
-                var FilmsQuery = _context.Films.
-                    GroupJoin(_context.UserWatchedFilms.Where(uwf => uwf.UserId == UserId), f => f.Id, uwf => uwf.FilmId, (f, uwfs) => new { Film = f, Uwfs = uwfs })
+                var FilmsQuery = _context.Films
+                    .AsNoTracking()
+                    .GroupJoin(_context.UserWatchedFilms.Where(uwf => uwf.UserId == UserId), f => f.Id, uwf => uwf.FilmId, (f, uwfs) => new { Film = f, Uwfs = uwfs })
                     .SelectMany(x => x.Uwfs.DefaultIfEmpty(), (x, uwf) => new { Film = x.Film, Uwf = uwf })
                     .AsQueryable();
+
                 //filtering
                 switch (Filter.ToLower())
                 {
@@ -135,6 +145,7 @@ namespace Heteroboxd.Repository
                         //error fallback
                         break;
                 }
+
                 //sorting
                 switch (Sort.ToLower())
                 {
@@ -164,10 +175,12 @@ namespace Heteroboxd.Repository
                 }
                 var TotalCount = await FilmsQuery.CountAsync();
                 var SeenCount = await FilmsQuery.Where(x => x.Uwf != null).CountAsync();
+
                 var JoinResult = await FilmsQuery
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();
+
                 return (JoinResult.Select(x => x.Film).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount)!;
             }
         }
@@ -175,6 +188,7 @@ namespace Heteroboxd.Repository
         public async Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var UwQuery = _context.UserWatchedFilms
+                .AsNoTracking()
                 .Where(uwf => uwf.UserId == UserId)
                 .Join(_context.Films, uwf => uwf.FilmId, f => f.Id, (uwf, f) => new { Uwf = uwf, Film = f });
 
@@ -225,11 +239,13 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .Select(x => x.Film)
                 .ToListAsync();
+
             return (Uwfs, TotalCount);
         }
 
         public async Task<Dictionary<double, int>> GetRatingsAsync(int FilmId) =>
             await _context.Reviews
+                .AsNoTracking()
                 .Where(r => r.FilmId == FilmId)
                 .GroupBy(r => r.Rating)
                 .Select(g => new { Rating = g.Key, Count = g.Count() })
@@ -237,7 +253,9 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<Film> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.Films.AsQueryable();
+            var Query = _context.Films
+                .AsNoTracking()
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(Search))
             {
@@ -246,11 +264,10 @@ namespace Heteroboxd.Repository
                     EF.Functions.TrigramsSimilarity(f.OriginalTitle ?? "", Search) > 0.3f);
             }
 
-            int TotalCount = await Query.CountAsync();
+            var TotalCount = await Query.CountAsync();
             var Results = await Query
                 .Include(f => f.CastAndCrew.Where(cc => cc.Role == Role.Director))
-                .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Search))
-                .ThenByDescending(f => f.WatchCount)
+                .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Search)).ThenByDescending(f => f.WatchCount)
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();

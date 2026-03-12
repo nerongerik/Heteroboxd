@@ -15,12 +15,12 @@ namespace Heteroboxd.Service
         Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetListsFeaturingFilmCount(int FilmId);
         Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search, int Page, int PageSize);
-        Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId);
-        Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries);
+        Task AddList(CreateUserListRequest ListRequest);
         Task UpdateList(UpdateUserListRequest ListRequest);
         Task UpdateListsBulk(UpdateUserListBulkRequest Request);
-        Task UpdateLikeCountEfCore7(string ListId, int Delta);
-        Task ToggleNotificationsEfCore7(string ListId);
+        Task UpdateListLikeCount(string ListId, int Delta);
+        Task ToggleListNotifications(string ListId);
+        Task ReportList(string ListId);
         Task DeleteList(string ListId);
     }
 
@@ -47,7 +47,7 @@ namespace Heteroboxd.Service
                 UsersFriends = await _userRepo.GetFriendsAsync(Guid.Parse(UserId));
             }
 
-            var (Responses, TotalCount) = await _repo.GetListsAsync(UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
+            var (Responses, TotalCount) = await _repo.GetAllAsync(UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<UserListInfoResponse>
             {
                 TotalCount = TotalCount,
@@ -59,12 +59,10 @@ namespace Heteroboxd.Service
 
         public async Task<UserListInfoResponse> GetList(string ListId)
         {
-            var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
-            if (List == null) throw new KeyNotFoundException();
-            var Author = await _userRepo.LightweightFetcherAsync(List.AuthorId);
-            if (Author == null) throw new KeyNotFoundException();
+            var Response = await _repo.GetJoinedByIdAsync(Guid.Parse(ListId));
+            if (Response == null) throw new KeyNotFoundException();
 
-            return new UserListInfoResponse(List, Author, 0);
+            return new UserListInfoResponse(Response.Item, Response.Joined, 0);
         }
 
         public async Task<PagedResponse<ListEntryInfoResponse>> GetListEntries(string ListId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -89,7 +87,7 @@ namespace Heteroboxd.Service
                     Page = Page,
                     PageSize = PageSize,
                     Items = Entries.Select(le => new ListEntryInfoResponse(le)).ToList(),
-                    Seen = Seen.Select(uwf => uwf.FilmId).ToList(),
+                    Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
                 };
             }
@@ -148,11 +146,8 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<int> GetListsFeaturingFilmCount(int FilmId)
-        {
-            var Count = await _repo.GetFeaturingFilmCountAsync(FilmId);
-            return Count;
-        }
+        public async Task<int> GetListsFeaturingFilmCount(int FilmId) => 
+            await _repo.GetFeaturingFilmCountAsync(FilmId);
 
         public async Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search, int Page, int PageSize)
         {
@@ -166,23 +161,11 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<Guid> AddList(string Name, string? Description, bool Ranked, string AuthorId)
+        public async Task AddList(CreateUserListRequest ListRequest)
         {
-            var NewList = new UserList(Name, Description, Ranked, Guid.Parse(AuthorId));
-            _repo.Create(NewList);
-            await _repo.SaveChangesAsync();
-            return NewList.Id;
-        }
-
-        public async Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries)
-        {
-            foreach (CreateListEntryRequest Request in Entries)
-            {
-                var Film = await _filmRepo.LightweightFetcher(Request.FilmId);
-                if (Film == null) continue;
-                _repo.CreateEntry(new ListEntry(Request.Position, Film.Title, Film.ReleaseYear, Film.PosterUrl, Film.BackdropUrl, Request.FilmId, Guid.Parse(AuthorId), ListId));
-            }
-            await _repo.SaveChangesAsync();
+            var NewList = new UserList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, Guid.Parse(ListRequest.AuthorId));
+            await _repo.CreateAsync(NewList);
+            await AddListEntries(ListRequest.AuthorId, NewList.Id, ListRequest.Entries);
         }
 
         public async Task UpdateList(UpdateUserListRequest ListRequest)
@@ -191,38 +174,48 @@ namespace Heteroboxd.Service
             if (List == null) throw new KeyNotFoundException();
             
             List.UpdateFields(ListRequest);
+            await _repo.UpdateAsync(List);
 
-            await _repo.DeleteEntriesByListIdEfCore7Async(List.Id);
+            await _repo.DeleteAllEntriesAsync(List.Id);
             await AddListEntries(List.AuthorId.ToString(), List.Id, ListRequest.Entries);
         }
         
         public async Task UpdateListsBulk(UpdateUserListBulkRequest Request)
         {
-            var Film = await _filmRepo.LightweightFetcher(Request.FilmId);
+            var Film = await _filmRepo.LightweightFetcherAsync(Request.FilmId);
             if (Film == null) throw new KeyNotFoundException();
+            List<ListEntry> Created = new();
             foreach (var kvp in Request.Lists)
             {
-                _repo.CreateEntry(new ListEntry(kvp.Value + 1, Film.Title, Film.ReleaseYear, Film.PosterUrl, Film.BackdropUrl, Film.Id, Guid.Parse(Request.AuthorId), Guid.Parse(kvp.Key)));
+                Created.Add(new ListEntry(kvp.Value + 1, Film.Title, Film.ReleaseYear, Film.PosterUrl, Film.BackdropUrl, Film.Id, Guid.Parse(Request.AuthorId), Guid.Parse(kvp.Key)));
             }
-            await _repo.SaveChangesAsync();
+            await _repo.CreateEntriesAsync(Created);
         }
 
-        public async Task UpdateLikeCountEfCore7(string ListId, int Delta)
-        {
-            await _repo.UpdateLikeCountEfCore7Async(Guid.Parse(ListId), Delta);
-        }
+        public async Task UpdateListLikeCount(string ListId, int Delta) =>
+            await _repo.UpdateLikeCountAsync(Guid.Parse(ListId), Delta);
 
-        public async Task ToggleNotificationsEfCore7(string ListId)
-        {
-            await _repo.ToggleNotificationsEfCore7Async(Guid.Parse(ListId));
-        }
+        public async Task ToggleListNotifications(string ListId) =>
+            await _repo.ToggleNotificationsAsync(Guid.Parse(ListId));
 
-        public async Task DeleteList(string ListId)
+        public async Task ReportList(string ListId) =>
+            await _repo.ReportAsync(Guid.Parse(ListId));
+
+        public async Task DeleteList(string ListId) =>
+            await _repo.DeleteAsync(Guid.Parse(ListId));
+
+        private async Task AddListEntries(string AuthorId, Guid ListId, List<CreateListEntryRequest> Entries)
         {
-            var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
-            if (List == null) throw new KeyNotFoundException();
-            _repo.Delete(List);
-            await _repo.SaveChangesAsync();
+            var FilmIds = Entries.Select(e => e.FilmId).ToList();
+            var Films = await _filmRepo.GetByIdsAsync(FilmIds);
+            var FilmMap = Films.ToDictionary(f => f.Id);
+
+            var Created = Entries
+                .Where(e => FilmMap.ContainsKey(e.FilmId))
+                .Select(e => new ListEntry(e.Position, FilmMap[e.FilmId].Title, FilmMap[e.FilmId].ReleaseYear, FilmMap[e.FilmId].PosterUrl, FilmMap[e.FilmId].BackdropUrl, e.FilmId, Guid.Parse(AuthorId), ListId))
+                .ToList();
+
+            await _repo.CreateEntriesAsync(Created);
         }
     }
 }

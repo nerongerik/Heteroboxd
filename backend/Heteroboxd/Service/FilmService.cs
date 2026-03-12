@@ -3,7 +3,7 @@ using Heteroboxd.Repository;
 
 namespace Heteroboxd.Service
 {
-    public interface  IFilmService
+    public interface IFilmService
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<TrendingInfoResponse>> GetTrending(string? LastSync);
@@ -51,7 +51,7 @@ namespace Heteroboxd.Service
         {
             if (UserId == null)
             {
-                var (Films, TotalCount, _, _) = await _repo.GetFilmsAsync(null, Page, PageSize, Filter, Sort, Desc, FilterValue);
+                var (Films, TotalCount, _, _) = await _repo.GetAllAsync(null, Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return new PagedResponse<FilmInfoResponse>
                 {
                     TotalCount = TotalCount,
@@ -62,7 +62,7 @@ namespace Heteroboxd.Service
             }
             else
             {
-                var (Films, TotalCount, Seen, SeenCount) = await _repo.GetFilmsAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
+                var (Films, TotalCount, Seen, SeenCount) = await _repo.GetAllAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
                 return new PagedResponse<FilmInfoResponse>
                 {
                     TotalCount = TotalCount,

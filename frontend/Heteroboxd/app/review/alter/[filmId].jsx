@@ -34,7 +34,7 @@ const AlterReview = () => {
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/reviews/${user?.userId}/${filmId}`, {
+      const res = await fetch(`${BaseUrl.api}/reviews/user-film?FilmId=${filmId}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {

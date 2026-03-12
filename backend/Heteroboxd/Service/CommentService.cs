@@ -6,6 +6,8 @@ namespace Heteroboxd.Service
 {
     public interface ICommentService
     {
+        Task<CommentInfoResponse?> GetComment(string CommentId);
+        Task<PagedResponse<CommentInfoResponse>> GetComments(int Page, int PageSize);
         Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize);
         Task ReportCommentEfCore7(string CommentId);
         Task CreateComment(CreateCommentRequest CommentRequest);
@@ -16,15 +18,32 @@ namespace Heteroboxd.Service
     {
         private readonly INotificationService _notificationService;
         private readonly ICommentRepository _repo;
-        private readonly IUserRepository _userRepo;
         private readonly IReviewRepository _reviewRepo;
 
-        public CommentService(ICommentRepository repo, IUserRepository userRepo, IReviewRepository reviewRepo, INotificationService notificationService)
+        public CommentService(ICommentRepository repo, IReviewRepository reviewRepo, INotificationService notificationService)
         {
             _repo = repo;
-            _userRepo = userRepo;
             _reviewRepo = reviewRepo;
             _notificationService = notificationService;
+        }
+
+        public async Task<CommentInfoResponse?> GetComment(string CommentId)
+        {
+            var Response = await _repo.GetByIdAsync(Guid.Parse(CommentId));
+            if (Response == null) return null;
+            return new CommentInfoResponse(Response.Item, Response.Joined);
+        }
+
+        public async Task<PagedResponse<CommentInfoResponse>> GetComments(int Page, int PageSize)
+        {
+            var (Responses, TotalCount) = await _repo.GetAllAsync(Page, PageSize);
+            return new PagedResponse<CommentInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined)).ToList()
+            };
         }
 
         public async Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize)
@@ -43,19 +62,16 @@ namespace Heteroboxd.Service
         }
 
         public async Task ReportCommentEfCore7(string CommentId) =>
-            await _repo.ReportEfCore7Async(Guid.Parse(CommentId));
+            await _repo.ReportAsync(Guid.Parse(CommentId));
 
         public async Task CreateComment(CreateCommentRequest CommentRequest)
         {
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(CommentRequest.ReviewId));
             if (Review == null) throw new KeyNotFoundException();
 
-            var Comment = new Comment(CommentRequest.Text, Flag(CommentRequest.Text), Guid.Parse(CommentRequest.AuthorId), Review.Id);
-            _repo.Create(Comment);
-            await _repo.SaveChangesAsync();
+            await _repo.CreateAsync(new Comment(CommentRequest.Text, Flag(CommentRequest.Text), Guid.Parse(CommentRequest.AuthorId), Review.Id));
 
             if (!Review.NotificationsOn || Review.AuthorId == Guid.Parse(CommentRequest.AuthorId)) return;
-
             await _notificationService.AddNotification(
                 $"{CommentRequest.AuthorName} commented on your review of {CommentRequest.FilmTitle}",
                 Models.Enums.NotificationType.Comment,
@@ -63,13 +79,8 @@ namespace Heteroboxd.Service
             );
         }
 
-        public async Task DeleteComment(string CommentId)
-        {
-            var Comment = await _repo.GetByIdAsync(Guid.Parse(CommentId));
-            if (Comment == null) throw new KeyNotFoundException();
-            _repo.Delete(Comment);
-            await _repo.SaveChangesAsync();
-        }
+        public async Task DeleteComment(string CommentId) =>
+            await _repo.DeleteAsync(Guid.Parse(CommentId));
 
         private int Flag(string? Text)
         {

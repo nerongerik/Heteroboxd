@@ -13,7 +13,7 @@ const Verify = () => {
   const verifyUser = useCallback(async () => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/users/verify/${userId}?Token=${encodeURIComponent(token)}`, {
+      const res = await fetch(`${BaseUrl.api}/users/verify?UserId=${userId}&Token=${encodeURIComponent(token)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       })
@@ -32,11 +32,6 @@ const Verify = () => {
   useEffect(() => {
     verifyUser()
   }, [verifyUser])
-
-  function handleProceedPress() {
-    if (response === 200) router.replace('/login');
-    else router.replace('/contact');
-  }
 
   return (
     <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, paddingBottom: 50, backgroundColor: Colors.background, paddingHorizontal: 5}}>

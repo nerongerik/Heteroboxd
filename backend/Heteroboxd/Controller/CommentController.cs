@@ -18,7 +18,7 @@ namespace Heteroboxd.Controller
             _logger = logger;
         }
 
-        [HttpGet("review/{ReviewId}")]
+        [HttpGet("review")]
         [AllowAnonymous]
         public async Task<IActionResult> GetCommentsByReview(string ReviewId, int Page = 1, int PageSize = 20)
         {
@@ -40,7 +40,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"AddComment endpoint hit for Review: {CommentRequest.ReviewId} by User: {CommentRequest.AuthorId}");
             try
             {
-                await _service.CreateComment(CommentRequest); //also handles notifs
+                await _service.CreateComment(CommentRequest);
                 return Ok();
             }
             catch
@@ -49,7 +49,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("report/{CommentId}")]
+        [HttpPut("{CommentId}")]
         [Authorize]
         public async Task<IActionResult> ReportComment(string CommentId)
         {
@@ -78,10 +78,6 @@ namespace Heteroboxd.Controller
             {
                 await _service.DeleteComment(CommentId);
                 return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {

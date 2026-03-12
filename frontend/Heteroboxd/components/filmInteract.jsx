@@ -111,7 +111,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/track-film/${user.userId}/${filmId}?Action=watched`, {
+      const res = await fetch(`${BaseUrl.api}/users/track/${filmId}?Action=watched`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -138,7 +138,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     }
     try {
       const jwt = await auth.getJwt();
-      const res = await fetch(`${BaseUrl.api}/users/track-film/${user.userId}/${filmId}?Action=unwatched`, {
+      const res = await fetch(`${BaseUrl.api}/users/track/${filmId}?Action=unwatched`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -165,7 +165,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/watchlist/${user.userId}/${filmId}`, {
+      const res = await fetch(`${BaseUrl.api}/users/watchlist?FilmId=${filmId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -188,7 +188,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/film-interact/${user.userId}/${filmId}`, {
+      const res = await fetch(`${BaseUrl.api}/lists/film-interact?FilmId=${filmId}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
@@ -211,7 +211,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     try {
       const lists = usersLists.filter(item => item.selected).map(item => ({ key: item.listId, value: item.size }))
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/update-bulk`, {
+      const res = await fetch(`${BaseUrl.api}/lists/bulk`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
         body: JSON.stringify({

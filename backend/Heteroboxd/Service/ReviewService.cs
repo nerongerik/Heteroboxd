@@ -61,7 +61,7 @@ namespace Heteroboxd.Service
             var Response = await _repo.GetByUserFilmAsync(Guid.Parse(UserId), FilmId);
             if (Response == null)
             {
-                var Film = await _filmRepo.LightweightFetcher(FilmId);
+                var Film = await _filmRepo.LightweightFetcherAsync(FilmId);
                 if (Film == null) return null;
                 return new ReviewInfoResponse(Film);
             }
@@ -78,7 +78,7 @@ namespace Heteroboxd.Service
                 UsersFriends = await _userRepo.GetFriendsAsync(Guid.Parse(UserId));
             }
 
-            var Film = await _filmRepo.LightweightFetcher(FilmId);
+            var Film = await _filmRepo.LightweightFetcherAsync(FilmId);
             if (Film == null) return new PagedResponse<ReviewInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
 
             var (Responses, TotalCount) = await _repo.GetByFilmAsync(FilmId, UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
@@ -107,32 +107,37 @@ namespace Heteroboxd.Service
         }
 
         public async Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta) =>
-            await _repo.UpdateReviewLikeCountEfCore7Async(Guid.Parse(ReviewId), Delta);
+            await _repo.UpdateLikeCountAsync(Guid.Parse(ReviewId), Delta);
 
         public async Task ToggleNotificationsEfCore7(string ReviewId) =>
-            await _repo.ToggleNotificationsEfCore7Async(Guid.Parse(ReviewId));
+            await _repo.ToggleNotificationsAsync(Guid.Parse(ReviewId));
 
         public async Task ReportReviewEfCore7(string ReviewId) =>
-            await _repo.ReportReviewEfCore7Async(Guid.Parse(ReviewId));
+            await _repo.ReportAsync(Guid.Parse(ReviewId));
 
         public async Task<ReviewInfoResponse> AddReview(CreateReviewRequest ReviewRequest)
         {
             Guid UserId = Guid.Parse(ReviewRequest.AuthorId);
+
+            var DuplicateCheck = await _repo.GetByUserFilmAsync(UserId, ReviewRequest.FilmId);
+            if (DuplicateCheck != null)
+            {
+                return new ReviewInfoResponse(DuplicateCheck.Review); //fail silently
+            }
+
             var Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, Flag(ReviewRequest.Text), ReviewRequest.Spoiler, UserId, ReviewRequest.FilmId);
-            _repo.Create(Review);
+            await _repo.CreateAsync(Review);
             //if user never clicked "Watched" on this title, we add it here for their lazy arse
             if ((await _userRepo.GetUserWatchedFilmAsync(UserId, ReviewRequest.FilmId)) == null)
             {
                 var (Existing, _) = await _userRepo.IsWatchlistedAsync(ReviewRequest.FilmId, UserId);
                 if (Existing != null)
                 {
-                    await _userRepo.RemoveFromWatchlist(Existing);
+                    await _userRepo.RemoveFromWatchlistAsync(Existing.Id);
                 }
-                _userRepo.CreateUserWatchedFilm(new UserWatchedFilm(UserId, ReviewRequest.FilmId));
+                await _userRepo.CreateUserWatchedFilmAsync(new UserWatchedFilm(UserId, ReviewRequest.FilmId));
                 await _filmRepo.UpdateFilmWatchCountEfCore7Async(ReviewRequest.FilmId, 1);
-                await _userRepo.SaveChangesAsync();
             }
-            await _repo.SaveChangesAsync();
             return new ReviewInfoResponse(Review);
         }
 
@@ -140,21 +145,17 @@ namespace Heteroboxd.Service
         {
             var Review = await _repo.GetByIdAsync(Guid.Parse(ReviewRequest.ReviewId));
             if (Review == null) throw new KeyNotFoundException();
+
             Review.UpdateFields(ReviewRequest);
             Review.Flags = Flag(Review.Text); //reflag after update
-            _repo.Update(Review);
-            await _repo.SaveChangesAsync();
+            await _repo.UpdateAsync(Review);
+
             return new ReviewInfoResponse(Review);
         }
 
-        public async Task DeleteReview(string ReviewId)
-        {
-            var Review = await _repo.GetByIdAsync(Guid.Parse(ReviewId));
-            if (Review == null) throw new KeyNotFoundException();
-            _repo.Delete(Review);
-            await _repo.SaveChangesAsync();
-        }
-        
+        public async Task DeleteReview(string ReviewId) =>
+            await _repo.DeleteAsync(Guid.Parse(ReviewId));
+
         private int Flag(string? Text)
         {
             if (string.IsNullOrWhiteSpace(Text)) return 0;

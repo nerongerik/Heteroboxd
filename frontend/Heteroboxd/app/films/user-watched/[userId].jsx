@@ -50,7 +50,7 @@ const UserWatchedFilms = () => {
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/films/user/${userId}?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
+      const res = await fetch(`${BaseUrl.api}/films/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
       if (res.ok) {
         const json = await res.json()
         setData({ page: json.page, entries: json.items, totalCount: json.totalCount })

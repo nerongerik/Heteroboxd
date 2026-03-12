@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, Pressable, Text, useWindowDimensions, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -40,7 +40,7 @@ const ReviewWithComments = () => {
     setServer(Response.loading)
     try {
       if (user?.userId) {
-        const res = await fetch(`${BaseUrl.api}/reviews/${reviewId}?UserId=${user.userId}`)
+        const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}&UserId=${user.userId}`)
         if (res.ok) {
           const json = await res.json()
           setReview(json.review)
@@ -55,7 +55,7 @@ const ReviewWithComments = () => {
           setReview({})
         }
       } else {
-        const res = await fetch(`${BaseUrl.api}/reviews/${reviewId}`)
+        const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}`)
         if (res.ok) {
           const json = await res.json()
           setReview(json)
@@ -77,7 +77,7 @@ const ReviewWithComments = () => {
 
   const loadCommentsDataPage = useCallback(async (page) => {
     try {
-      const res = await fetch(`${BaseUrl.api}/comments/review/${reviewId}?Page=${page}&PageSize=${PAGE_SIZE}`)
+      const res = await fetch(`${BaseUrl.api}/comments/review?ReviewId=${reviewId}&Page=${page}&PageSize=${PAGE_SIZE}`)
       if (res.ok) {
         const json = await res.json()
         setComments({ page: json.page, comments: json.items, totalCount: json.totalCount })
@@ -181,12 +181,14 @@ const ReviewWithComments = () => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/comments/report/${id}`, {
+      const res = await fetch(`${BaseUrl.api}/comments/${id}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
         setSnack({ shown: true, msg: 'Comment reported!' })
+      } else if (res.status === 404) {
+        setSnack({ shown: true, msg: `${res.status}: Comment not found! Try reloading Heteroboxd.` })
       } else {
         setSnack({ shown: true, msg: `${res.status}: Something went wrong! Try reloading Heteroboxd.` })
       }
@@ -292,6 +294,7 @@ const ReviewWithComments = () => {
       <View>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
           <View style={{marginLeft: 10}}>
+            <>
             <Author
               userId={item.authorId}
               url={item.authorProfilePictureUrl}
@@ -300,19 +303,18 @@ const ReviewWithComments = () => {
               router={router}
               widescreen={widescreen}
             />
+            {user?.admin && Platform.OS === 'web' && <Text style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 12}}>{item.id}</Text>}
+            </>
           </View>
           {
             user ? (
-              <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginRight: 20}}>
+              <View style={{marginRight: 20}}>
                 {
-                  !user.admin && user.userId !== item.authorId && (
+                  user.userId !== item.authorId ? (
                     <Pressable onPress={() => handleReport(item.id)}>
                       <Octicons name='report' size={widescreen ? 22 : 18} color={Colors.text} />
                     </Pressable>
-                  )
-                }
-                {
-                  (user.userId === item.authorId) && (
+                  ) : (
                     <Pressable onPress={() => handleDelete(item.id)}>
                       <MaterialIcons name='delete-forever' size={widescreen ? 24 : 20} color={Colors.text} />
                     </Pressable>

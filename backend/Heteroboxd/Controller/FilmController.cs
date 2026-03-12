@@ -22,13 +22,13 @@ namespace Heteroboxd.Controller
         }
 
         [HttpGet("trending")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetTrendingFilms(string? LastSync = null)
         {
             _logger.LogInformation("GetTrendingFilms endpoint hit.");
             try
             {
-                var Response = await _service.GetTrending(LastSync);
-                return Ok(Response);
+                return Ok(await _service.GetTrending(LastSync));
             }
             catch
             {
@@ -36,7 +36,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{FilmId}")]
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilm(int FilmId)
         {
@@ -44,10 +44,10 @@ namespace Heteroboxd.Controller
             try
             {
                 return Ok(
-                    new {
-                        Film = await _service.GetFilm(FilmId), 
-                        Ratings = await _service.GetFilmRatings(FilmId) 
-                    });
+                new {
+                    Film = await _service.GetFilm(FilmId), 
+                    Ratings = await _service.GetFilmRatings(FilmId) 
+                });
             }
             catch (KeyNotFoundException)
             {
@@ -59,7 +59,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{FilmId}/subsequent")]
+        [HttpGet("subsequent")]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilmSubsequent(int FilmId, int PageSize = 3)
         {
@@ -67,11 +67,11 @@ namespace Heteroboxd.Controller
             try
             {
                 return Ok(
-                    new 
-                    {
-                        Reviews = await _reviewService.GetReviewsByFilm(FilmId, null, 1, PageSize, "ALL", "POPULARITY", true, null), 
-                        Lists = await _userListService.GetListsFeaturingFilmCount(FilmId) 
-                    });
+                new 
+                {
+                    Reviews = await _reviewService.GetReviewsByFilm(FilmId, null, 1, PageSize, "ALL", "POPULARITY", true, null), 
+                    Lists = await _userListService.GetListsFeaturingFilmCount(FilmId) 
+                });
             }
             catch
             {
@@ -79,15 +79,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet]
+        [HttpGet("all")]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilms(string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "RELEASE DATE", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation("GetFilms endpoint hit.");
             try
             {
-                var Response = await _service.GetFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch
             {
@@ -95,15 +94,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user/{UserId}")]
+        [HttpGet("user")]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilmsByUser(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE WATCHED", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GetFilmsByUser endpoint hit with UserId: {UserId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Response = await _service.GetFilmsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetFilmsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch (ArgumentException)
             {
@@ -122,8 +120,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"SearchFilms endpoint hit with: {Search}");
             try
             {
-                var Response = await _service.SearchFilms(Search, Page, PageSize);
-                return Ok(Response);
+                return Ok(await _service.SearchFilms(Search, Page, PageSize));
             }
             catch
             {

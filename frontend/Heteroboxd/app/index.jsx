@@ -78,7 +78,7 @@ const Home = () => {
 
   const getPopularFilms = useCallback(async () => {
     try {
-      const res = await fetch(`${BaseUrl.api}/films?Page=1&PageSize=${PAGE_SIZE}&Filter=ALL&Sort=POPULARITY&Desc=${true}`)
+      const res = await fetch(`${BaseUrl.api}/films/all?Page=1&PageSize=${PAGE_SIZE}&Filter=ALL&Sort=POPULARITY&Desc=${true}`)
       if (res.ok) {
         const json = await res.json()
         setPopular(json.items)
@@ -98,7 +98,7 @@ const Home = () => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/friends?UserId=${user.userId}&Page=1&PageSize=${PAGE_SIZE/2.5}&Sort=${'DATE CREATED'}&Desc=${true}`, {
+      const res = await fetch(`${BaseUrl.api}/users/friends?Page=1&PageSize=${PAGE_SIZE/2.5}&Sort=${'DATE CREATED'}&Desc=${true}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
@@ -131,7 +131,7 @@ const Home = () => {
         }
         try {
           const jwt = await auth.getJwt()
-          const res = await fetch(`${BaseUrl.api}/notifications/count/${user.userId}`, {
+          const res = await fetch(`${BaseUrl.api}/notifications/count`, {
             headers: { 'Authorization': `Bearer ${jwt}` }
           })
           if (res.ok) {

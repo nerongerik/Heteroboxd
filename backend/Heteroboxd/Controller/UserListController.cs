@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Heteroboxd.Models.DTO;
+﻿using Heteroboxd.Models.DTO;
 using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
-using System.Reflection.Metadata.Ecma335;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Heteroboxd.Controller
 {
@@ -21,15 +21,14 @@ namespace Heteroboxd.Controller
             _userService = userService;
         }
 
-        [HttpGet]
+        [HttpGet("all")]
         [AllowAnonymous]
         public async Task<IActionResult> GetLists(string? UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation("GetLists endpoint hit.");
             try
             {
-                var Response = await _service.GetLists(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetLists(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch
             {
@@ -37,7 +36,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("{UserListId}")]
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetList(string UserListId, string? UserId = null)
         {
@@ -45,8 +44,8 @@ namespace Heteroboxd.Controller
             try
             {
                 return UserId == null
-                    ? Ok(await _service.GetList(UserListId))
-                    : Ok(new { List = await _service.GetList(UserListId), ILiked = await _userService.IsObjectLiked(UserId, UserListId, "list") });
+                ? Ok(await _service.GetList(UserListId))
+                : Ok(new { List = await _service.GetList(UserListId), ILiked = await _userService.IsObjectLiked(UserId, UserListId, "list") });
             }
             catch (KeyNotFoundException)
             {
@@ -58,15 +57,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("entries/{UserListId}")]
+        [HttpGet("entries")]
         [AllowAnonymous]
         public async Task<IActionResult> GetListEntries(string UserListId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
         {
             _logger.LogInformation($"GetListEntries endpoint hit for ListId: {UserListId}");
             try
             {
-                var Response = await _service.GetListEntries(UserListId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetListEntries(UserListId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch
             {
@@ -74,15 +72,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("power/{UserListId}")]
+        [HttpGet("power")]
         [Authorize]
         public async Task<IActionResult> PowerGetEntries(string UserListId)
         {
             _logger.LogInformation($"PowerGetEntries endpoint hit for ListId: {UserListId}");
             try
             {
-                var Response = await _service.PowerGetEntries(UserListId);
-                return Ok(Response);
+                return Ok(await _service.PowerGetEntries(UserListId));
             }
             catch
             {
@@ -90,15 +87,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("user/{UserId}")]
+        [HttpGet("user")]
         [AllowAnonymous]
         public async Task<IActionResult> GetListsByAuthor(string UserId, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "DATE CREATED", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GetListsByAuthor endpoint hit for User: {UserId}");
             try
             {
-                var Response = await _service.GetListsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetListsByUser(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch (KeyNotFoundException)
             {
@@ -110,15 +106,15 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("film-interact/{UserId}/{FilmId}")]
+        [HttpGet("film-interact")]
         [Authorize]
-        public async Task<IActionResult> GetAuthorsListsDelimitedFilm(string UserId, int FilmId)
+        public async Task<IActionResult> GetAuthorsListsDelimitedFilm(int FilmId)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"GetAuthorsListsDelimitedFilm endpoint hit for User: {UserId} delimited by Film: {FilmId}");
             try
             {
-                var Response = await _service.GetDelimitedLists(UserId, FilmId);
-                return Ok(Response);
+                return Ok(await _service.GetDelimitedLists(UserId!, FilmId));
             }
             catch (KeyNotFoundException)
             {
@@ -130,15 +126,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpGet("featuring-film/{FilmId}")]
+        [HttpGet("featuring")]
         [AllowAnonymous]
         public async Task<IActionResult> GetListsFeaturingFilm(int FilmId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POPULARITY", bool Desc = true, string? FilterValue = null)
         {
             _logger.LogInformation($"GetListsFeaturingFilm endpoint hit for FilmId: {FilmId}, Page: {Page}, PageSize: {PageSize}");
             try
             {
-                var Response = await _service.GetListsFeaturingFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return Ok(Response);
+                return Ok(await _service.GetListsFeaturingFilm(FilmId, UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
             }
             catch (KeyNotFoundException)
             {
@@ -157,8 +152,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"SearchLists endpoint hit with Search Term: {Search}");
             try
             {
-                var Response = await _service.SearchLists(Search, Page, PageSize);
-                return Ok(Response);
+                return Ok(await _service.SearchLists(Search, Page, PageSize));
             }
             catch (KeyNotFoundException)
             {
@@ -177,8 +171,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"AddList endpoint hit with AuthorId: {ListRequest.AuthorId}");
             try
             {
-                Guid ListId = await _service.AddList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, ListRequest.AuthorId);
-                await _service.AddListEntries(ListRequest.AuthorId, ListId, ListRequest.Entries);
+                await _service.AddList(ListRequest);
                 return Ok();
             }
             catch
@@ -211,7 +204,7 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("update-bulk")]
+        [HttpPut("bulk")]
         [Authorize]
         public async Task<IActionResult> UpdateListsBulk(UpdateUserListBulkRequest Request)
         {
@@ -238,8 +231,8 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"UpdateLikes endpoint hit for {Request.ListId!}");
             try
             {
-                await _service.UpdateLikeCountEfCore7(Request.ListId!, Request.LikeChange);
-                await _userService.UpdateLikes(Request); //also handles notifs
+                await _service.UpdateListLikeCount(Request.ListId!, Request.LikeChange);
+                await _userService.UpdateLikes(Request);
                 return Ok();
             }
             catch (KeyNotFoundException)
@@ -256,14 +249,14 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpPut("toggle-notifications/{UserListId}")]
+        [HttpPut("notifs")]
         [Authorize]
         public async Task<IActionResult> ToggleNotifications(string UserListId)
         {
             _logger.LogInformation($"ToggleNotifications endpoint hit for ListId: {UserListId}");
             try
             {
-                await _service.ToggleNotificationsEfCore7(UserListId);
+                await _service.ToggleListNotifications(UserListId);
                 return Ok();
             }
             catch (KeyNotFoundException)
@@ -276,7 +269,27 @@ namespace Heteroboxd.Controller
             }
         }
 
-        [HttpDelete("{UserListId}")]
+        [HttpPut("report")]
+        [Authorize]
+        public async Task<IActionResult> ReportList(string UserListId)
+        {
+            _logger.LogInformation($"ReportList endpoint hit for ListId: {UserListId}");
+            try
+            {
+                await _service.ReportList(UserListId);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpDelete]
         [Authorize]
         public async Task<IActionResult> DeleteList(string UserListId)
         {
@@ -285,10 +298,6 @@ namespace Heteroboxd.Controller
             {
                 await _service.DeleteList(UserListId);
                 return Ok();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
             }
             catch
             {

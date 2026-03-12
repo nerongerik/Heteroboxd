@@ -7,13 +7,12 @@ namespace Heteroboxd.Repository
     public interface INotificationRepository
     {
         Task<Notification?> GetByIdAsync(Guid NotificationId);
-        Task<int> CountUnread(Guid UserId);
+        Task<int> CountUnreadAsync(Guid UserId);
         Task<(List<Notification> Notifications, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
-        void Create(Notification Notification);
-        void Update(Notification Notification);
-        Task MarkAllRead(Guid UserId);
-        void Delete(Notification Notification);
-        Task SaveChangesAsync();
+        Task CreateAsync(Notification Notification);
+        Task UpdateAsync(Guid NotificationId);
+        Task MarkAllReadAsync(Guid UserId);
+        Task DeleteAsync(Guid NotificationId);
     }
 
     public class NotificationRepository : INotificationRepository
@@ -27,14 +26,19 @@ namespace Heteroboxd.Repository
 
         public async Task<Notification?> GetByIdAsync(Guid NotificationId) =>
             await _context.Notifications
+                .AsNoTracking()
                 .FirstOrDefaultAsync(n => n.Id == NotificationId);
 
-        public async Task<int> CountUnread(Guid UserId) =>
-            await _context.Notifications.Where(n => n.UserId == UserId && !n.Read).CountAsync();
+        public async Task<int> CountUnreadAsync(Guid UserId) =>
+            await _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.UserId == UserId && !n.Read)
+                .CountAsync();
 
         public async Task<(List<Notification> Notifications, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {
             var UserQuery = _context.Notifications
+                .AsNoTracking()
                 .Where(n => n.UserId == UserId)
                 .OrderByDescending(n => n.Date);
 
@@ -48,27 +52,25 @@ namespace Heteroboxd.Repository
             return (Notifications, TotalCount);
         }
 
-        public void Create(Notification Notification)
+        public async Task CreateAsync(Notification Notification)
         {
             _context.Notifications.Add(Notification);
+            await _context.SaveChangesAsync();
         }
 
-        public void Update(Notification Notification)
-        {
-            _context.Notifications.Update(Notification);
-        }
+        public async Task UpdateAsync(Guid NotificationId) =>
+            await _context.Notifications
+                .Where(n => n.Id == NotificationId)
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.Read, true));
 
-        public async Task MarkAllRead(Guid UserId) =>
+        public async Task MarkAllReadAsync(Guid UserId) =>
             await _context.Notifications
                 .Where(n => n.UserId == UserId && !n.Read)
                 .ExecuteUpdateAsync(s => s.SetProperty(n => n.Read, true));
 
-        public void Delete(Notification Notification)
-        {
-            _context.Notifications.Remove(Notification);
-        }
-
-        public async Task SaveChangesAsync() =>
-            await _context.SaveChangesAsync();
+        public async Task DeleteAsync(Guid NotificationId) =>
+            await _context.Notifications
+                .Where(n => n.Id == NotificationId)
+                .ExecuteDeleteAsync();
     }
 }

@@ -60,7 +60,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/${userId}`, {
+      const res = await fetch(`${BaseUrl.api}/users`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -75,7 +75,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
       console.log('delete failed; network error; straight up lying to the user and logging them out lol.')
       handleLogout()
     }
-  }, [user, userId, handleLogout])
+  }, [user, handleLogout])
   
   const handleEdit = useCallback(() => {
     router.replace(`/profile/edit/${userId}`)
@@ -89,7 +89,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/report/${userId}`, {
+      const res = await fetch(`${BaseUrl.api}/users/report?UserId=${userId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -113,7 +113,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=block-unblock`, {
+      const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=block-unblock`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })

@@ -23,8 +23,7 @@ public class AuthController : ControllerBase
         _logger.LogInformation($"Countries endpoint hit.");
         try
         {
-            var Response = await _service.SyncCountries(LastSync);
-            return Ok(Response);
+            return Ok(await _service.SyncCountries(LastSync));
         }
         catch (ArgumentException)
         {
@@ -43,8 +42,7 @@ public class AuthController : ControllerBase
         _logger.LogInformation($"Register endpoint hit with Email: {Request.Email}");
         try
         {
-            var Response = await _service.Register(Request);
-            return Ok(new { PresignedUrl = Response });
+            return Ok(new { PresignedUrl = await _service.Register(Request) });
         }
         catch (ArgumentException)
         {
@@ -63,8 +61,24 @@ public class AuthController : ControllerBase
         _logger.LogInformation($"Login endpoint hit with Email: {Request.Email} and Password: {Request.Password}");
         try
         {
-            var Result = await _service.Login(Request);
-            return Result.Success ? Ok(new { jwt = Result.Jwt, refresh = Result.RefreshToken!.Token }) : Unauthorized();
+            var Response = await _service.Login(Request);
+            return Response.Success ? Ok(new { jwt = Response.Jwt, refresh = Response.RefreshToken!.Token }) : Unauthorized();
+        }
+        catch
+        {
+            return StatusCode(500);
+        }
+    }
+
+    [HttpGet("admin")]
+    [Authorize]
+    public async Task<IActionResult> AuthorizeAdmin(string Key)
+    {
+        //never log the admin key
+        try
+        {
+            var Response = _service.VerifyAdminKey(Key);
+            return Response.Success ? Ok(Response.AdminToken) : BadRequest();
         }
         catch
         {
@@ -79,8 +93,8 @@ public class AuthController : ControllerBase
         _logger.LogInformation($"Logout endpoint hit with User: {UserId}");
         try
         {
-            var Result = await _service.Logout(Token, UserId);
-            return Result ? Ok() : BadRequest();
+            await _service.Logout(Token, UserId);
+            return Ok();
         }
         catch
         {
@@ -95,8 +109,8 @@ public class AuthController : ControllerBase
         _logger.LogInformation($"Refresh endpoint hit with Refresh Token: {Token}");
         try
         {
-            var Result = await _service.Refresh(Token);
-            return Result.Success ? Ok(new { jwt = Result.Jwt, refresh = Result.RefreshToken!.Token }) : Unauthorized();
+            var Response = await _service.Refresh(Token);
+            return Response.Success ? Ok(new { jwt = Response.Jwt, refresh = Response.RefreshToken!.Token }) : Unauthorized();
         }
         catch
         {
@@ -110,7 +124,7 @@ public class AuthController : ControllerBase
     {
         _logger.LogInformation($"ForgotPassword endpoint hit for {Email}");
         await _service.ForgotPassword(Email);
-        return Ok(); //prevents user enumeration
+        return Ok(); //prevent user enumeration
     }
 
     [HttpPost("reset-password")]
@@ -118,7 +132,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest Request)
     {
         _logger.LogInformation($"ResetPassword endpoint hit for {Request.UserId}");
-        var Success = await _service.ResetPassword(Request);
-        return Success ? Ok() : BadRequest();
+        var Response = await _service.ResetPassword(Request);
+        return Response ? Ok() : BadRequest();
     }
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import { Octicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -48,7 +49,7 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/${listId}`, {
+      const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -73,7 +74,7 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
     }
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/toggle-notifications/${listId}`, {
+      const res = await fetch(`${BaseUrl.api}/lists/notifs?UserListId=${listId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -91,6 +92,30 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
     }
   }, [user, authorId, notifsOnLocal, listId, onNotifChange])
 
+  const handleReport = useCallback(async () => {
+    if (user?.userId === authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/lists/report?UserListId=${listId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer({ result: 201, message: 'List reported.' })
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
+      } else {
+        setServer(Response.internalServerError)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, authorId, listId])
+
   const handleEdit = useCallback(async () => {
     if (user?.userId !== authorId || !(await isValidSession())) {
       setServer(Response.forbidden)
@@ -106,10 +131,6 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
 
   const widescreen = useMemo((() => width > 1000), [width])
 
-  if (user?.userId !== authorId) {
-    return <View />
-  }
-
   return (
     <View>
       <Pressable onPress={openMenu} style={{zIndex: 1}}>
@@ -122,18 +143,29 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
         widescreen={widescreen} 
         width={width}
       >
-        <Pressable style={styles.option} onPress={handleEdit}>
-          <Text style={styles.optionText}>Edit List </Text>
-          <MaterialIcons name="edit" size={20} color={Colors.text} />
-        </Pressable>
-        <Pressable style={styles.option} onPress={handleNotifications}>
-          <Text style={styles.optionText}>{notifsOnLocal ? 'Turn Notifications Off ' : 'Turn Notifications On '}</Text>
-          <MaterialIcons name={notifsOnLocal ? "notifications-off" : 'notifications-active'} size={20} color={Colors.text} />
-        </Pressable>
-        <Pressable style={styles.option} onPress={handleDelete}>
-          <Text style={styles.optionText}>Delete List </Text>
-          <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
-        </Pressable>
+        {
+          user?.userId !== authorId ? (
+            <Pressable style={styles.option} onPress={handleReport}>
+              <Text style={styles.optionText}>Report List </Text>
+              <Octicons name="report" size={18} color={Colors.text} />
+            </Pressable>
+          ) : (
+            <>
+              <Pressable style={styles.option} onPress={handleEdit}>
+                <Text style={styles.optionText}>Edit List </Text>
+                <MaterialIcons name="edit" size={20} color={Colors.text} />
+              </Pressable>
+              <Pressable style={styles.option} onPress={handleNotifications}>
+                <Text style={styles.optionText}>{notifsOnLocal ? 'Turn Notifications Off ' : 'Turn Notifications On '}</Text>
+                <MaterialIcons name={notifsOnLocal ? "notifications-off" : 'notifications-active'} size={20} color={Colors.text} />
+              </Pressable>
+              <Pressable style={styles.option} onPress={handleDelete}>
+                <Text style={styles.optionText}>Delete List </Text>
+                <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
+              </Pressable>
+            </>
+          )
+        }
 
         <LoadingResponse visible={server.result === 0} />
         <Snackbar
@@ -166,7 +198,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     alignContent: 'center',
-    flexDirection: 'row'
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   optionText: {
     fontSize: 16,

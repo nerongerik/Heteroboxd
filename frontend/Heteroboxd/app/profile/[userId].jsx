@@ -69,7 +69,7 @@ const Profile = () => {
   const loadProfileData = useCallback(async () => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/users/${userId}?Inclusive=${true}${!isOwnProfile && user?.userId ? `&VisitorId=${user.userId}` : ''}`)
+      const res = await fetch(`${BaseUrl.api}/users?UserId=${userId}&Inclusive=${true}${!isOwnProfile && user?.userId ? `&VisitorId=${user.userId}` : ''}`)
       if (res.ok) {
         const json = await res.json()
         setRatings(json.ratings)
@@ -110,7 +110,7 @@ const Profile = () => {
 
   const loadFilmData = useCallback(async () => {
     try {
-      const res = await fetch(`${BaseUrl.api}/users/${userId}/subsequent?PageSize=${RECENTS}`)
+      const res = await fetch(`${BaseUrl.api}/users/subsequent?UserId=${userId}&PageSize=${RECENTS}`)
       if (res.ok) {
         const json = await res.json()
         setFavorites([json.favorites["1"] || null, json.favorites["2"] || null, json.favorites["3"] || null, json.favorites["4"] || null])
@@ -172,7 +172,7 @@ const Profile = () => {
       setFollowLabel('UNFOLLOW')
     }
     const jwt = await auth.getJwt()
-    const res = await fetch(`${BaseUrl.api}/users/relationships/${user.userId}/${userId}?Action=follow-unfollow`, {
+    const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=follow-unfollow`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${jwt}` }
     })
@@ -188,7 +188,7 @@ const Profile = () => {
     }
     const jwt = await auth.getJwt()
     const i = index ? index : favIndex
-    const res = await fetch(`${BaseUrl.api}/users/favorites/${user.userId}/${filmId}?Index=${i}`, {
+    const res = await fetch(`${BaseUrl.api}/users/favorites?FilmId=${filmId}&Index=${i}`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${jwt}` }
     })

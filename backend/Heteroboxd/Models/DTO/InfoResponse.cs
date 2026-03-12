@@ -235,6 +235,7 @@
         public string? Description { get; set; }
         public bool Ranked { get; set; }
         public string DateCreated { get; set; }
+        public int Flags { get; set; }
         public bool NotificationsOn { get; set; }
         public int ListEntryCount { get; set; }
         public List<ListEntryInfoResponse> Films { get; set; }
@@ -251,6 +252,7 @@
             this.Description = List.Description;
             this.Ranked = List.Ranked;
             this.DateCreated = List.DateCreated.ToString("dd/MM/yyyy HH:mm");
+            this.Flags = List.Flags;
             this.NotificationsOn = List.NotificationsOn;
             this.ListEntryCount = List.Films.Count;
             if (Take < 0) this.Films = List.Films.OrderBy(le => le.Position).Select(le => new ListEntryInfoResponse(le)).ToList();

@@ -7,12 +7,12 @@ namespace Heteroboxd.Repository
 {
     public interface ICommentRepository
     {
-        Task<Comment?> GetByIdAsync(Guid CommentId);
+        Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetAllAsync(int Page, int PageSize);
+        Task<JoinResponse<Comment, User>?> GetByIdAsync(Guid CommentId);
         Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize);
-        Task ReportEfCore7Async(Guid CommentId);
-        void Create(Comment Comment);
-        void Delete(Comment Comment);
-        Task SaveChangesAsync();
+        Task ReportAsync(Guid CommentId);
+        Task CreateAsync(Comment Comment);
+        Task DeleteAsync(Guid CommentId);
     }
 
     public class CommentRepository : ICommentRepository
@@ -24,13 +24,35 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<Comment?> GetByIdAsync(Guid CommentId) =>
-            await _context.Comments
-                .FirstOrDefaultAsync(c => c.Id == CommentId);
+        public async Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetAllAsync(int Page, int PageSize)
+        {
+            var CommentQuery = _context.Comments
+                .AsNoTracking()
+                .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
+                .OrderByDescending(x => x.c.Flags);
+            var TotalCount = await CommentQuery.CountAsync();
+            var Responses = await CommentQuery
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .Select(x => new JoinResponse<Comment, User> { Item = x.c, Joined = x.u })
+                .ToListAsync();
+            return (Responses, TotalCount);
+        }
+
+        public async Task<JoinResponse<Comment, User>?> GetByIdAsync(Guid CommentId)
+        {
+            var Response = await _context.Comments
+                .AsNoTracking()
+                .Where(c => c.Id == CommentId)
+                .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
+                .FirstOrDefaultAsync();
+            return Response == null ? null : new JoinResponse<Comment, User> { Item = Response.c, Joined = Response.u };
+        }
 
         public async Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize)
         {
             var ReviewQuery = _context.Comments
+                .AsNoTracking()
                 .Where(c => c.ReviewId == ReviewId)
                 .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
                 .OrderBy(x => x.c.Date);
@@ -45,7 +67,7 @@ namespace Heteroboxd.Repository
             return (Responses, TotalCount);
         }
 
-        public async Task ReportEfCore7Async(Guid CommentId) //increments the flag count of a review
+        public async Task ReportAsync(Guid CommentId)
         {
             var Rows = await _context.Comments
                 .Where(c => c.Id == CommentId)
@@ -56,15 +78,15 @@ namespace Heteroboxd.Repository
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public void Create(Comment Comment) =>
-             _context.Comments
-                .Add(Comment);
-
-        public void Delete(Comment Comment) =>
-            _context.Comments
-                .Remove(Comment);
-
-        public async Task SaveChangesAsync() =>
+        public async Task CreateAsync(Comment Comment)
+        {
+            _context.Comments.Add(Comment);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(Guid CommentId) =>
+            await _context.Comments
+                .Where(c => c.Id == CommentId)
+                .ExecuteDeleteAsync();
     }
 }

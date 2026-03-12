@@ -69,7 +69,7 @@ const Celebrity = () => {
   const loadBioData = useCallback(async () => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/celebrities/${celebrityId}`)
+      const res = await fetch(`${BaseUrl.api}/celebrities?CelebrityId=${celebrityId}`)
       if (res.ok) {
         const json = await res.json()
         setBio(json)
@@ -98,8 +98,8 @@ const Celebrity = () => {
     }
     try {
       const url = user
-        ? `${BaseUrl.api}/celebrities/${celebrityId}/credits?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
-        : `${BaseUrl.api}/celebrities/${celebrityId}/credits?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+        ? `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+        : `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
       const res = await fetch(url)
       if (res.ok) {
         const json = await res.json()
