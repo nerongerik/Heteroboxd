@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -12,6 +12,7 @@ import { Response } from '../../constants/response'
 import Author from '../../components/author'
 import CommentInput from '../../components/commentInput'
 import Divider from '../../components/divider'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
 import ParsedRead from '../../components/parsedRead'
@@ -203,24 +204,24 @@ const ReviewWithComments = () => {
 
   useEffect(() => {
     if (!review) return
-    loadCommentsDataPage(1) 
-  }, [review?.id, loadCommentsDataPage])
-
-  useEffect(() => {
-    if (!review) return
     navigation.setOptions({
-      headerTitle: review.authorName + "'s review",
+      headerTitle: review.authorName?.length > 0 ? `${review.authorName}'s review` : '',
       headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} /> : null
     })
   }, [navigation, user, review])
+
+  useEffect(() => {
+    if (!review) return
+    loadCommentsDataPage(1) 
+  }, [review?.id, loadCommentsDataPage])
 
   const widescreen = useMemo(() => width > 1000, [width])
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width*0.95), [widescreen, width])
   const spacing = useMemo(() => (widescreen ? 10 : 5), [widescreen])
 
-  const Header = () => (
+  const Header = useMemo(() => (
     <View style={{padding: 5, paddingTop: 0, width: widescreen ? 1000 : '100%', alignSelf: 'center'}}>
       <View style={{marginBottom: -5}}>
         <Author
@@ -234,9 +235,9 @@ const ReviewWithComments = () => {
       </View>
       <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignSelf: 'center'}}>
         <View style={{flex: 1, justifyContent: 'space-around'}}>
-          <Text style={{paddingLeft: 3, color: Colors.text_title, fontWeight: '500', fontSize: widescreen ? 24 : 20, textAlign: 'left', flexShrink: 1}}>{review?.filmTitle}</Text>
+          <HText style={{paddingLeft: 3, color: Colors.text_title, fontWeight: '500', fontSize: widescreen ? 24 : 20, textAlign: 'left', flexShrink: 1}}>{review?.filmTitle}</HText>
           <Stars size={widescreen ? 40 : 30} rating={review?.rating ?? 0} readonly={true} padding={false} align={'flex-start'} />
-          <Text style={{paddingLeft: 3, fontWeight: '400', fontSize: widescreen ? 16 : 13, color: Colors.text, textAlign: 'left'}}>{`Reviewed on ${format.parseDate(review?.date)}`}</Text>
+          <HText style={{paddingLeft: 3, fontWeight: '400', fontSize: widescreen ? 16 : 13, color: Colors.text, textAlign: 'left'}}>{`Reviewed on ${format.parseDate(review?.date)}`}</HText>
         </View>
         <Pressable onPress={() => router.push(`/film/${review?.filmId}`)}>
           <Poster
@@ -260,13 +261,13 @@ const ReviewWithComments = () => {
             <Pressable onPress={() => setShowText(true)}>
               <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
-                <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<Text style={{color: Colors.text_link}}> Read anyway?</Text></Text>
+                <HText style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<HText style={{color: Colors.text_link}}> Read anyway?</HText></HText>
               </View>
             </Pressable>
           )
         ) : (
           <View>
-            <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'left'}}>{review?.authorName} wrote no review regarding this film.</Text>
+            <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'left'}}>The author was left speechless.</HText>
           </View>
         )
       }
@@ -277,7 +278,7 @@ const ReviewWithComments = () => {
           ) : (
             <MaterialCommunityIcons style={{marginRight: 3}} name='cards-heart-outline' size={widescreen ? 24 : 20} color={Colors.text} />
           )}
-          <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{format.formatCount(review?.likeCount)} likes</Text>
+          <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{format.formatCount(review?.likeCount)} likes</HText>
         </Pressable>
       </View>
       
@@ -285,9 +286,9 @@ const ReviewWithComments = () => {
 
       {user && <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} />}
 
-      <Text style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</Text>
+      <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</HText>
     </View>
-  )
+  ), [review, router, widescreen, user, iLiked, maxRowWidth, comments, showText])
 
   const Comment = ({ item }) => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
@@ -303,7 +304,7 @@ const ReviewWithComments = () => {
               router={router}
               widescreen={widescreen}
             />
-            {user?.admin && Platform.OS === 'web' && <Text style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 12}}>{item.id}</Text>}
+            {user?.admin && Platform.OS === 'web' && <HText style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 12}}>{item.id}</HText>}
             </>
           </View>
           {
@@ -334,7 +335,7 @@ const ReviewWithComments = () => {
 
   const NoComments = () => (
     <View style={{width: maxRowWidth, height: 200, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
-      <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center'}}>No comments yet. Be the first to respond!</Text>
+      <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center'}}>No comments yet. Be the first to respond!</HText>
     </View>
   )
 

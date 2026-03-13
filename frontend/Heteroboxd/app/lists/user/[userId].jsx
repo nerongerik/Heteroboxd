@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import AntDesign from '@expo/vector-icons/AntDesign'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { Ionicons } from '@expo/vector-icons'
@@ -11,6 +11,7 @@ import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
 import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import PaginationBar from '../../../components/paginationBar'
 import Popup from '../../../components/popup'
@@ -86,14 +87,10 @@ const UsersLists = () => {
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
-    if (author.username?.length > 0) {
-      navigation.setOptions({
-        headerTitle: `${author.username}'s lists`,
-        headerTitleAlign: 'center',
-        headerTitleStyle: {color: Colors.text_title},
-      })
-    }
     navigation.setOptions({
+      headerTitle: author.username?.length > 0 ? `${author.username}'s lists` : '',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <>
           {
@@ -103,7 +100,7 @@ const UsersLists = () => {
               </Pressable>
             )
           }
-          <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null, marginLeft: user?.userId === userId ? 15 : 0}}>
+          <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null, marginLeft: user?.userId === userId ? 15 : null}}>
             <Ionicons name='options' size={24} color={Colors.text} />
           </Pressable>
         </>
@@ -133,7 +130,7 @@ const UsersLists = () => {
     <View style={[styles.card, { marginBottom: spacing * 1.25 }]}>
       {AuthorSection}
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
-        <Text style={[styles.listTitle, {fontSize: widescreen ? 22 : 18}]}>{item.name}</Text>
+        <HText style={[styles.listTitle, {fontSize: widescreen ? 22 : 18}]}>{item.name}</HText>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
             const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
@@ -171,16 +168,16 @@ const UsersLists = () => {
             ))
           })()}
         </View>
-        <Text style={[styles.description, {fontSize: widescreen ? 18 : 14}]}>
+        <HText style={[styles.description, {fontSize: widescreen ? 18 : 14}]}>
           {item.description.slice(0, widescreen ? 500 : 150)}
           {widescreen && item.description.length > 500 && '...'}
           {!widescreen && item.description.length > 150 && '...'}
-        </Text>
+        </HText>
         <View style={styles.statsRow}>
           <Fontisto name='nav-icon-list-a' size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
-          <Text style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </Text>
+          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </HText>
           <Fontisto name='heart' size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
-          <Text style={[styles.statText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</Text>
+          <HText style={[styles.statText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -206,7 +203,7 @@ const UsersLists = () => {
         ref={listRef}
         data={data.lists}
         keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={server.result > 0 && <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</Text>}
+        ListEmptyComponent={server.result > 0 && <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</HText>}
         renderItem={List}
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}

@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
-import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { Colors } from '../../constants/colors'
+import HText from '../htext'
 import PaginationBar from '../paginationBar'
 import { UserAvatar } from '../userAvatar'
 
@@ -27,7 +28,7 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
   const TabButton = ({ title, active, onPress }) => {
     return (
       <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
-        <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
+        <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
       </Pressable>
     )
   }
@@ -64,7 +65,7 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
             <Pressable style={styles.userRow} onPress={() => onUserPress(item.id)}>
               <View style={{flexDirection: 'row', alignItems: 'center'}}>
                 <UserAvatar pictureUrl={item.pictureUrl} style={styles.picture} />
-                <Text style={styles.username}>{item.name}{item.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
+                <HText style={styles.username}>{item.name}{item.admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}</HText>
               </View>
             </Pressable>
             { isMyProfile && activeTab === 'followers' &&

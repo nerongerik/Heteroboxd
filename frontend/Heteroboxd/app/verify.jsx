@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
+import HText from '../components/htext'
 
 const Verify = () => {
   const { userId, token } = useLocalSearchParams()
@@ -38,14 +39,14 @@ const Verify = () => {
       {server.response <= 0 ? (
         <ActivityIndicator size={'large'} color={Colors.text_link} />
       ) : (
-        <Text style={styles.title}>{server.message}</Text>
+        <HText style={styles.title}>{server.message}</HText>
       )}
       <Pressable
         style={[styles.button, server.response <= 0 && { opacity: 0.5 }]}
         onPress={() => server.result === 200 ? router.replace('/login') : router.replace('/contact')}
         disabled={server.response <= 0}
       >
-        <Text style={styles.buttonText}>Proceed</Text>
+        <HText style={styles.buttonText}>Proceed</HText>
       </Pressable>
     </View>
   )

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Octicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
+import HText from '../htext'
 import LoadingResponse from '../loadingResponse'
 import SlidingMenu from '../slidingMenu'
 
@@ -146,21 +147,21 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
         {
           user?.userId !== authorId ? (
             <Pressable style={styles.option} onPress={handleReport}>
-              <Text style={styles.optionText}>Report List </Text>
+              <HText style={styles.optionText}>Report List </HText>
               <Octicons name="report" size={18} color={Colors.text} />
             </Pressable>
           ) : (
             <>
               <Pressable style={styles.option} onPress={handleEdit}>
-                <Text style={styles.optionText}>Edit List </Text>
+                <HText style={styles.optionText}>Edit List </HText>
                 <MaterialIcons name="edit" size={20} color={Colors.text} />
               </Pressable>
               <Pressable style={styles.option} onPress={handleNotifications}>
-                <Text style={styles.optionText}>{notifsOnLocal ? 'Turn Notifications Off ' : 'Turn Notifications On '}</Text>
+                <HText style={styles.optionText}>{notifsOnLocal ? 'Turn Notifications Off ' : 'Turn Notifications On '}</HText>
                 <MaterialIcons name={notifsOnLocal ? "notifications-off" : 'notifications-active'} size={20} color={Colors.text} />
               </Pressable>
               <Pressable style={styles.option} onPress={handleDelete}>
-                <Text style={styles.optionText}>Delete List </Text>
+                <HText style={styles.optionText}>Delete List </HText>
                 <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
               </Pressable>
             </>

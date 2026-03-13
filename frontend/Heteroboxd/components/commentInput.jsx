@@ -1,6 +1,7 @@
 import { memo, useRef, useState } from 'react'
-import { StyleSheet, Text, TextInput, Pressable, View } from 'react-native'
+import { StyleSheet, TextInput, Pressable, View } from 'react-native'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 
 const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth }) => {
   const [ text, setText ] = useState('')
@@ -27,16 +28,16 @@ const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth }) => {
           scrollEnabled={true}
           showsVerticalScrollIndicator={false}
         />
-        <Text style={[styles.counterText, {fontSize: widescreen ? 14 : 12}, {color: text.trim().length < 501 ? Colors.text_title : Colors.password_meager}]}>
+        <HText style={[styles.counterText, {fontSize: widescreen ? 14 : 12}, {color: text.trim().length < 501 ? Colors.text_title : Colors.password_meager}]}>
           {text.trim().length}/500
-        </Text>
+        </HText>
       </View>
       <Pressable
         style={(text.trim().length === 0 || text.trim().length > 500) && { opacity: 0.5 }}
         onPress={handleSubmit}
         disabled={text.trim().length === 0 || text.trim().length > 500}
       >
-        <Text style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, marginBottom: 10}}>{' ➜'}</Text>
+        <HText style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, marginBottom: 10}}>{' ➜'}</HText>
       </Pressable>
     </View>
   )

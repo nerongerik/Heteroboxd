@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Link, useLocalSearchParams, useRouter } from 'expo-router'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
@@ -8,6 +8,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import { UserAvatar } from '../../../components/userAvatar'
@@ -147,7 +148,7 @@ const ProfileEdit = () => {
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior="padding" enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}}>
         <View style={[styles.form, {maxWidth: width > 1000 ? 1000 : '100%' }]}>
-          <Text style={styles.title}>Edit Your Profile</Text>
+          <HText style={styles.title}>Edit Your Profile</HText>
           <Pressable onPress={pickImage} style={styles.profileWrapper}>
             {profileUri ? (
               <Image source={{ uri: profileUri }} style={styles.profileImage} />
@@ -156,10 +157,10 @@ const ProfileEdit = () => {
                 <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
               </Pressable>
             )}
-            <Text style={styles.changePicText}>Change Profile Picture</Text>
+            <HText style={styles.changePicText}>Change Profile Picture</HText>
           </Pressable>
 
-          <Text style={[styles.changePicText, {padding: 5, marginTop: -5}]}>Change Name</Text>
+          <HText style={[styles.changePicText, {padding: 5, marginTop: -5}]}>Change Name</HText>
           <TextInput
             style={styles.input}
             placeholder={data.name}
@@ -168,7 +169,7 @@ const ProfileEdit = () => {
             placeholderTextColor={Colors.text_placeholder}
           />
 
-          <Text style={[styles.changePicText, {padding: 5}]}>Change Bio</Text>
+          <HText style={[styles.changePicText, {padding: 5}]}>Change Bio</HText>
           <TextInput
             style={[styles.input, styles.bioInput]}
             placeholder={data.bio}
@@ -184,10 +185,10 @@ const ProfileEdit = () => {
             onPress={handleEdit}
             disabled={!name && !bio && !profileUri}
           >
-            <Text style={styles.buttonText}>Confirm</Text>
+            <HText style={styles.buttonText}>Confirm</HText>
           </Pressable>
 
-          <Text style={styles.footerText}>Changed your mind? <Link href={`profile/${userId}`} style={styles.link}>Cancel</Link></Text>
+          <HText style={styles.footerText}>Changed your mind? <Link href={`profile/${userId}`} style={styles.link}>Cancel</Link></HText>
         </View>
 
         <LoadingResponse visible={server.result <= 0} />

@@ -132,6 +132,21 @@ const Celebrity = () => {
     loadBioData()
   }, [celebrityId])
 
+  const widescreen = useMemo(() => width > 1000, [width])
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: bio?.celebrityName || '',
+      headerTitleAlign: 'center',
+      headerTitleStyle: { color: Colors.text_title, fontFamily: 'Inter_400Regular' },
+      headerRight: () => (
+        <Pressable onPress={openMenu} style={{ marginRight: widescreen ? 15 : null }}>
+          <Ionicons name='options' size={24} color={Colors.text} />
+        </Pressable>
+      ),
+    })
+  }, [navigation, bio, widescreen, openMenu])
+
   useEffect(() => {
     if (!t || t.length === 0) {
       setCurrentFilter('Bio')
@@ -155,21 +170,6 @@ const Celebrity = () => {
       loadCreditsData(currentFilter, 1)
     }
   }, [currentSort])
-
-  const widescreen = useMemo(() => width > 1000, [width])
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: bio?.celebrityName ?? '',
-      headerTitleAlign: 'center',
-      headerTitleStyle: { color: Colors.text_title },
-      headerRight: () => (
-        <Pressable onPress={openMenu} style={{ marginRight: widescreen ? 15 : null }}>
-          <Ionicons name='options' size={24} color={Colors.text} />
-        </Pressable>
-      ),
-    })
-  }, [navigation, bio, widescreen, openMenu])
 
   if (!bio) {
     return (
@@ -230,7 +230,7 @@ const Celebrity = () => {
         />
       </SlidingMenu>
     </View>
-  );
-};
+  )
+}
 
 export default Celebrity

@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
-import { FlatList, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { FlatList, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import { Fontisto } from '@expo/vector-icons'
 import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
 import Author from '../author'
+import HText from '../htext'
 import PaginationBar from '../paginationBar'
 import ParsedRead from '../parsedRead'
 import { Poster } from '../poster'
@@ -32,7 +33,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
 
   const TabButton = ({ title, active, onPress }) => (
     <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
-      <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
+      <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </TouchableOpacity>
   )
 
@@ -64,7 +65,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         <Stars size={width > 1000 ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
       </View>
       <Pressable onPress={() => router.push(`/review/${item.id}`)}>
-        <Text style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: width > 1000 ? 20 : 16, color: Colors.text_title}}>{item.filmTitle}</Text>
+        <HText style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: width > 1000 ? 20 : 16, color: Colors.text_title}}>{item.filmTitle}</HText>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
           <View style={{width: posterWidth, height: posterHeight, marginRight: 5}}>
             <Poster
@@ -85,13 +86,13 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
             </View>
             :
             <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-              <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{item.authorName} wrote no review regarding this film.</Text>
+              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>The author was left speechless.</HText>
             </View>
           }
         </View>
         <View style={styles.statsRow}>
           <Fontisto name='heart' size={width > 1000 ? 16 : 12} color={Colors.heteroboxd} />
-          <Text style={[styles.statText, {fontSize: width > 1000 ? 16 : 12}]}>{format.formatCount(item.likeCount)}</Text>
+          <HText style={[styles.statText, {fontSize: width > 1000 ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -110,7 +111,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         />
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
-        <Text style={[styles.listTitle, {fontSize: width > 1000 ? 22 : 18}]}>{item.name}</Text>
+        <HText style={[styles.listTitle, {fontSize: width > 1000 ? 22 : 18}]}>{item.name}</HText>
                       
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
@@ -149,16 +150,16 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
             ))
           })()}
         </View>        
-        <Text style={[styles.description, {fontSize: width > 1000 ? 18 : 14}]}>
+        <HText style={[styles.description, {fontSize: width > 1000 ? 18 : 14}]}>
           {item.description?.slice(0, width > 1000 ? 500 : 150)}
           {width > 1000 && item.description.length > 500 && '...'}
           {width <= 1000 && item.description.length > 150 && '...'}
-        </Text>         
+        </HText>         
         <View style={styles.statsRow}>
           <Fontisto name='nav-icon-list-a' size={width > 1000 ? 18 : 14} color={Colors._heteroboxd} />
-          <Text style={[styles.statText, {color: Colors._heteroboxd, fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </Text>
+          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </HText>
           <Fontisto name='heart' size={width > 1000 ? 18 : 14} color={Colors.heteroboxd} />
-          <Text style={[styles.statText, {fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.likeCount)}</Text>
+          <HText style={[styles.statText, {fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -176,7 +177,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         key={activeTab}
         keyExtractor={(item) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-${item.listId}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
-        ListEmptyComponent={<Text style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</Text>}
+        ListEmptyComponent={<HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</HText>}
         ListFooterComponent={Footer}
         style={{width: maxRowWidth, alignSelf: 'center'}}
         contentContainerStyle={{paddingBottom: 80}}

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FlatList, Pressable, RefreshControl, Text, useWindowDimensions, View } from 'react-native'
+import { FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import { useRouter } from 'expo-router'
+import { useNavigation, useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
 import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
+import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
 import PaginationBar from '../components/paginationBar'
 import Popup from '../components/popup'
@@ -20,6 +21,7 @@ const Notifications = () => {
   const [ server, setServer ] = useState(Response.initial)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
   const router = useRouter()
+  const navigation = useNavigation()
   const { width } = useWindowDimensions()
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
@@ -111,6 +113,14 @@ const Notifications = () => {
   }, [user, data])
 
   useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Notifications',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
+    })
+  }, [navigation])
+
+  useEffect(() => {
     loadDataPage(1)
   }, [loadDataPage])
 
@@ -121,9 +131,9 @@ const Notifications = () => {
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
       {
         data.totalCount > 0 &&
-        <Text style={{color: Colors.text, padding: 30, textAlign: 'center', fontSize: 14}}>
+        <HText style={{color: Colors.text, padding: 30, textAlign: 'center', fontSize: 14}}>
           Tip: to delete a notification for good, you can just press and hold on it!
-        </Text>
+        </HText>
       }
       <View style={{height: 20}} />
     </View>
@@ -148,8 +158,8 @@ const Notifications = () => {
         onLongPress={() => handleNotifDelete(index)}
       >
         <View style={{flexShrink: 0, backgroundColor: item.read ? 'transparent' : Colors.heteroboxd, width: 15, height: 15, borderRadius: 999, marginLeft: 10}} />
-        <Text style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'left', fontSize: 14, width: '75%'}}>{item.text}</Text>
-        <Text style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'center', fontSize: 12, marginRight: 10}}>{format.parseDateShort(item.date)}</Text>
+        <HText style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'left', fontSize: 14, width: '75%'}}>{item.text}</HText>
+        <HText style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'center', fontSize: 12, marginRight: 10}}>{format.parseDateShort(item.date)}</HText>
       </Pressable>
     )
   }
@@ -171,7 +181,7 @@ const Notifications = () => {
         keyExtractor={item => item.id}
         ListHeaderComponent={Header}
         renderItem={Notif}
-        ListEmptyComponent={<Text style={{padding: 15, textAlign: 'center', fontSize: 16, color: Colors.text}}>You have no notifications.</Text>}
+        ListEmptyComponent={<HText style={{padding: 15, textAlign: 'center', fontSize: 16, color: Colors.text}}>You have no notifications.</HText>}
         ListFooterComponent={Footer}
         refreshControl={
           <RefreshControl 
@@ -190,7 +200,7 @@ const Notifications = () => {
       { data.totalCount > 0 &&
         <View style={{position: 'absolute', bottom: 75, backgroundColor: Colors._heteroboxd, borderRadius: 5, padding: 7.5}}>
           <Pressable onPress={handleReadAll} style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Text style={{color: Colors.text_button, fontWeight: 'bold', fontSize: 14}}>MARK ALL AS READ </Text>
+            <HText style={{color: Colors.text_button, fontWeight: 'bold', fontSize: 14}}>MARK ALL AS READ </HText>
             <MaterialIcons name='mark-email-read' size={18} color={Colors.text_button} />
           </Pressable>
         </View>

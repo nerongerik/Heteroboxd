@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { View } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
@@ -16,6 +16,7 @@ const UserLikes = () => {
   const [ lists, setLists ] = useState({ items: [], totalCount: 0, page: 1 })
   const [ server, setServer ] = useState(Response.initial)
   const router = useRouter()
+  const navigation = useNavigation()
 
   const loadData = useCallback(async (pages = {}) => {
     setServer(Response.loading)
@@ -41,6 +42,14 @@ const UserLikes = () => {
     const pages = { reviews: tab === 'reviews' ? page : reviews.page, lists: tab === 'lists' ? page : lists.page }
     loadData(pages)
   }, [loadData])
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Likes',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
+    })
+  }, [navigation])
 
   useEffect(() => {
     loadData()

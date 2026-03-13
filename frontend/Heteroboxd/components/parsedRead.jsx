@@ -8,9 +8,10 @@ const ParsedRead = ({ html }) => {
     <RenderHTML
       source={{ html: normalized }}
       defaultTextProps={{
-        selectable: true
+        selectable: true,
       }}
       baseStyle={{
+        fontFamily: 'Inter_400Regular',
         fontSize: 16,
         color: Colors.text_input,
         lineHeight: 24,

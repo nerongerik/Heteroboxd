@@ -82,9 +82,9 @@ const UserReviews = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: `${author.authorName || 'User'}'s Reviews`,
+      headerTitle: author.authorName?.length > 0 ? `${author.authorName}'s reviews` : '',
       headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
           <Ionicons name='options' size={24} color={Colors.text} />
@@ -136,7 +136,7 @@ const UserReviews = () => {
               </View>
             :
               <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-                <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{author.authorName || 'User'} wrote no review regarding this film.</Text>
+                <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>The author was left speechless.</Text>
               </View>
           }
         </View>

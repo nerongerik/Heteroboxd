@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import AntDesign from '@expo/vector-icons/AntDesign'
 import Entypo from '@expo/vector-icons/Entypo'
 import Feather from '@expo/vector-icons/Feather'
@@ -12,6 +12,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
+import HText from '../htext'
 import LoadingResponse from '../loadingResponse'
 import Popup from '../popup'
 import SlidingMenu from '../slidingMenu'
@@ -142,7 +143,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
 
   return (
     <View>
-      <Pressable onPress={openMenu}>
+      <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
         <MaterialIcons name='more-vert' size={24} color={Colors.text} />
       </Pressable>
       <SlidingMenu
@@ -155,26 +156,26 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
         {other ? (
           <>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleReport}>
-              <Text style={styles.optionText}>Report User  </Text>
+              <HText style={styles.optionText}>Report User  </HText>
               <Octicons name='report' size={18} color={Colors.text} />
             </Pressable>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-              <Text style={styles.optionText}>{blockedLocalCopy ? 'Unblock user  ' : 'Block user  '}</Text>
+              <HText style={styles.optionText}>{blockedLocalCopy ? 'Unblock user  ' : 'Block user  '}</HText>
               <Entypo name={blockedLocalCopy ? 'lock-open' : 'block'} size={18} color={Colors.text} />
             </Pressable>
           </>
         ) : (
           <>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleEdit}>
-              <Text style={styles.optionText}>Edit Profile  </Text>
+              <HText style={styles.optionText}>Edit Profile  </HText>
               <Feather name="edit" size={18} color={Colors.text} />
             </Pressable>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleLogout}>
-              <Text style={styles.optionText}>Sign Out  </Text>
+              <HText style={styles.optionText}>Sign Out  </HText>
               <FontAwesome name="sign-out" size={18} color={Colors.text} />
             </Pressable>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => {setDeleteConfirm(true)}}>
-              <Text style={styles.optionText}>Delete Profile  </Text>
+              <HText style={styles.optionText}>Delete Profile  </HText>
               <AntDesign name="user-delete" size={18} color={Colors.text} />
             </Pressable>
           </>
@@ -208,7 +209,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
   )
 }
 
-export default ProfileOptionsButton;
+export default ProfileOptionsButton
 
 const styles = StyleSheet.create({
   option: {

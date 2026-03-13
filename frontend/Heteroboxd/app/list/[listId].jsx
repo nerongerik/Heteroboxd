@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -10,6 +10,7 @@ import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
 import FilterSort from '../../components/filterSort'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
 import PaginationBar from '../../components/paginationBar'
@@ -149,26 +150,21 @@ const List = () => {
     loadBaseData()
   }, [loadBaseData])
 
-  useEffect(() => {
-    if (!base?.id) return
-    loadDataPage(1)
-  }, [base?.id, currentFilter, currentSort])
-
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
     if (!base) return
     navigation.setOptions({
-      headerTitle: `${base.authorName}'s list`,
+      headerTitle: `${base.authorName || 'User'}'s list`,
       headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => {
         return (
           <>
             {user && <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} />}
             {
               !base.ranked && 
-              <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
+              <Pressable onPress={openMenu2} style={{marginLeft: user ? 15 : null, marginRight: widescreen ? 15 : null}}>
                 <Ionicons name='options' size={24} color={Colors.text} />
               </Pressable>
             }
@@ -176,7 +172,12 @@ const List = () => {
         )
       }
     })
-  }, [navigation, widescreen, base, openMenu2])
+  }, [navigation, user, widescreen, base, openMenu2])
+
+  useEffect(() => {
+    if (!base?.id) return
+    loadDataPage(1)
+  }, [base?.id, currentFilter, currentSort])
 
   const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
@@ -197,13 +198,13 @@ const List = () => {
 
   const Header = () => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
-      <Text style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: 20}]}>{base?.name}</Text>
+      <HText style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: 20}]}>{base?.name}</HText>
       <Pressable onPress={() => setDescCollapsed(prev => !prev)}>
-        <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
+        <HText style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
           {descCollapsed && base?.description?.length > 300
             ? `${base?.description.slice(0, 300)}...`
             : base?.description}
-        </Text>
+        </HText>
       </Pressable>
       <View style={styles.metaRow}>
         <Pressable onPress={handleLike} style={styles.likeRow}>
@@ -212,9 +213,9 @@ const List = () => {
             size={widescreen ? 24 : 20}
             color={iLiked ? Colors.heteroboxd : Colors.text}
           />
-          <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</Text>
+          <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</HText>
         </Pressable>
-        <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{data.totalCount > 0 ? `${data.totalCount} entries` : ''}</Text>
+        <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{data.totalCount > 0 ? `${data.totalCount} entries` : ''}</HText>
       </View>
       {
         user && server.result > 0 ? (
@@ -223,7 +224,7 @@ const List = () => {
           <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'right', paddingTop: 5}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-              <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</Text>
+              <HText style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</HText>
             </View>
           </Pressable>
         </View>
@@ -264,7 +265,7 @@ const List = () => {
               alignSelf: 'center'
             }}
           >
-            <Text
+            <HText
               style={{
                 color: Colors.text_title,
                 fontSize: widescreen ? 12 : 8,
@@ -273,7 +274,7 @@ const List = () => {
               }}
             >
               {item.position}
-            </Text>
+            </HText>
           </View>
         )}
       </Pressable>
@@ -320,7 +321,7 @@ const List = () => {
         ListEmptyComponent={
           server.result === 0
           ? <View style={{padding: 50, alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
-          : <Text style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</Text>
+          : <HText style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</HText>
         }
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}

@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from "react"
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { useMemo, useRef } from "react"
+import { FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import * as format from '../../helpers/format'
 import { Colors } from "../../constants/colors"
 import { Headshot } from '../headshot'
+import HText from '../htext'
 import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 
@@ -38,7 +39,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
       onPress={onPress}
       style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 10 : 5 }, active && styles.activeTabButton]}
     >
-      <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
+      <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
   )
 
@@ -48,16 +49,16 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
       <>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth}}>
           <View style={{padding: 5}}>
-            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>
               {currentTabData?.totalCount || 0} films
-            </Text>
+            </HText>
           </View>
           {
             showSeen ? (
               <Pressable onPress={flipShowSeen}>
                 <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
                   <MaterialCommunityIcons name='eye-outline' size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-                  <Text style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</Text>
+                  <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</HText>
                 </View>
               </Pressable>
             ) : <View />
@@ -166,7 +167,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
               alignSelf: widescreen ? 'auto' : 'center'
             }}
           />
-          <Text style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</Text>
+          <HText style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</HText>
         </ScrollView>
       ) : (
         <FlatList

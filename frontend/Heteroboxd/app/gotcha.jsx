@@ -1,5 +1,6 @@
-import { Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Image, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Colors } from '../constants/colors'
+import HText from '../components/htext'
 
 const Gotcha = () => {
   const {width} = useWindowDimensions()
@@ -7,9 +8,9 @@ const Gotcha = () => {
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}>
-        <Text style={styles.title}>Why would you ever need to see which specific users watched the same film as you? Weirdo.</Text>
+        <HText style={styles.title}>Why would you ever need to see which specific users watched the same film as you? Weirdo.</HText>
         <Image style={{alignSelf: 'center'}} source={require('../assets/gotcha.png')} />
-        <Text style={styles.text}>When we tell you the watch count, just trust us. You stick to the movies, and we'll handle the numbers {';)'}</Text>
+        <HText style={styles.text}>When we tell you the watch count, just trust us. You stick to the movies, and we'll handle the numbers {';)'}</HText>
       </View>
     </View>
   )

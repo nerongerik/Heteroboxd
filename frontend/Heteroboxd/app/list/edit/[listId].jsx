@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
@@ -10,6 +10,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import PaginationBar from '../../../components/paginationBar'
 import Popup from '../../../components/popup'
@@ -152,31 +153,34 @@ const EditList = () => {
     loadBaseData()
   }, [loadBaseData])
 
+  const widescreen = useMemo(() => width > 1000, [width])
+
+  useEffect(() => {
+    if (!base) return
+    navigation.setOptions({
+      headerTitle: 'Edit list',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
+      headerRight: () => (
+        <Pressable onPress={handleSubmit} disabled={base.listName?.length === 0 || entries.length === 0} style={[{marginRight: widescreen ? 15 : null}, (base.listName?.length === 0 || entries.length === 0) && {opacity: 0.5}]}>
+          <Ionicons name='checkmark' size={24} color={Colors.text_title} />
+        </Pressable>
+      )
+    })
+  }, [navigation, widescreen, handleSubmit])
+
   useEffect(() => {
     if (!base) return
     loadEntriesData()
   }, [base])
 
-  useEffect(() => {
-    if (!base) return
-    navigation.setOptions({
-      headerRight: () => (
-        <Pressable onPress={handleSubmit} disabled={base.listName?.length === 0 || entries.length === 0} style={(base.listName?.length === 0 || entries.length === 0) && {opacity: 0.5}}>
-          <Ionicons name='checkmark' size={24} color={Colors.text_title} />
-        </Pressable>
-      )
-    })
-  }, [navigation, base, entries, handleSubmit]);
-
-  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE);
-  const widescreen = useMemo(() => width > 1000, [width]);
-  const posterWidth = useMemo(() => widescreen ? 150 : 75, [widescreen]);
-  const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth]);
+  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
+  const posterWidth = useMemo(() => widescreen ? 150 : 75, [widescreen])
+  const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth])
 
   const Header = useMemo(() => (
     <>
-      <View style={{width: widescreen ? 1000 : width*0.9, alignSelf: 'center',}}>
-        <Text style={{color: Colors.text_title, fontSize: widescreen ? 30 : 20, textAlign: 'center', fontWeight: '500', marginBottom: 25}}>Edit List</Text>
+      <View style={{width: widescreen ? 1000 : width*0.9, alignSelf: 'center'}}>
         <TextInput
           style={[styles.input, {marginBottom: 15}]}
           value={base?.listName ?? ''}
@@ -193,16 +197,16 @@ const EditList = () => {
             placeholderTextColor={Colors.text_placeholder}
             placeholder='Description (optional)'
           />
-          <Text style={[
+          <HText style={[
             styles.counterText,
             { color: base?.desc?.length < 1001 ? Colors.text_title : Colors.password_meager }
           ]}>
             {base?.desc?.length ?? 0}/1000
-          </Text>
+          </HText>
         </View>
         <Pressable onPress={() => setBase(prev => ({...prev, ranked: !prev.ranked}))} style={{alignItems: 'center'}}>
           <FontAwesome5 name='trophy' size={widescreen ? 30 : 20} color={base?.ranked ? Colors.heteroboxd : Colors.text} />
-          <Text style={{textAlign: 'center', fontSize: widescreen ? 16 : 12, color: base?.ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
+          <HText style={{textAlign: 'center', fontSize: widescreen ? 16 : 12, color: base?.ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
         </Pressable>
       </View>
     </>
@@ -225,10 +229,10 @@ const EditList = () => {
             other={true}
           />
           <View style={{flexShrink: 1, maxWidth: '100%'}}>
-            <Text style={{color: Colors.text_title, fontWeight: '600', fontSize: widescreen ? 24 : 16, textAlign: 'center'}}>
+            <HText style={{color: Colors.text_title, fontWeight: '600', fontSize: widescreen ? 24 : 16, textAlign: 'center'}}>
               {item.filmTitle}
-              <Text style={{color: Colors.text, fontWeight: '400', fontSize: widescreen ? 20 : 12}}> {item.filmYear || ''}</Text>
-            </Text>
+              <HText style={{color: Colors.text, fontWeight: '400', fontSize: widescreen ? 20 : 12}}> {item.filmYear || ''}</HText>
+            </HText>
           </View>
           <View style={{gap: 5, marginLeft: 3}}>
             <Pressable onPress={() => moveItem(index, -1)}>
@@ -256,14 +260,14 @@ const EditList = () => {
       <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
         <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} other={true} />
         <View style={{flexShrink: 1, maxWidth: '100%'}}>
-          <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-            {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</Text>
-          </Text>
-          <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+          <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+            {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
+          </HText>
+          <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
             item.castAndCrew?.map((d, i) => (
-              <Text key={i} style={{}}>{d.celebrityName || ''}{i < item.castAndCrew?.length - 1 && ', '}</Text>
+              <HText key={i} style={{}}>{d.celebrityName || ''}{i < item.castAndCrew?.length - 1 && ', '}</HText>
             ))
-          }</Text>
+          }</HText>
         </View>
       </View>
     </Pressable>
@@ -292,7 +296,7 @@ const EditList = () => {
         ListEmptyComponent={
           server.result === 0
           ? <View style={{padding: 50, alignItems: 'center'}}><ActivityIndicator size="large" color={Colors.text_link} /></View>
-          : <Text style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</Text>
+          : <HText style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</HText>
         }
         contentContainerStyle={{width: widescreen ? 1000 : width*0.9, alignSelf: 'center', gap: 10, paddingBottom: widescreen ? null : 100}}
         showsVerticalScrollIndicator={false}
@@ -352,7 +356,7 @@ const EditList = () => {
             numColumns={1}
             renderItem={SearchResult}
             ListEmptyComponent={
-              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text></View>
+              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>
             }
             ListFooterComponent={
               <View style={{width: widescreen ? width*0.5 : width*0.95}}>

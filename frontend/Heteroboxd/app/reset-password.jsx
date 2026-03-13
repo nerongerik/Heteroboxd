@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
-import { Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { Pressable, useWindowDimensions, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
+import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
 import Password from '../components/password'
 import Popup from '../components/popup'
@@ -44,14 +45,14 @@ const PasswordReset = () => {
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: Math.min(width*0.95, 1000), alignSelf: 'center'}}>
-        <Text style={{color: Colors.text_title, fontSize: 20, textAlign: 'center', padding: 10}}>Almost there! Enter your new password:</Text>
+        <HText style={{color: Colors.text_title, fontSize: 20, textAlign: 'center', padding: 10}}>Almost there! Enter your new password:</HText>
         <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
         <Pressable
           disabled={!pwValid}
           onPress={handleReset}
           style={[{backgroundColor: Colors.heteroboxd, alignSelf: 'center', borderRadius: 3}, (!pwValid) && {opacity: 0.5}]}
         >
-          <Text style={{color: Colors.text_button, paddingHorizontal: 10, paddingVertical: 5, fontSize: 16}}>Confirm</Text>
+          <HText style={{color: Colors.text_button, paddingHorizontal: 10, paddingVertical: 5, fontSize: 16}}>Confirm</HText>
         </Pressable>
       </View>
 

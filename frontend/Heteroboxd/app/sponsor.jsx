@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import { Colors } from '../constants/colors'
+import HText from '../components/htext'
 
 const BuyMeACoffeeIcon = ({ size = 24 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -40,16 +41,16 @@ const Sponsor = () => {
         contentContainerStyle={{width: widescreen ? 1000 : width * 0.95, flexGrow: 1, justifyContent: 'center', alignItems: 'center', alignSelf: 'center',}}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Donate to Heteroboxd</Text>
+        <HText style={styles.title}>Donate to Heteroboxd</HText>
 
         <Pressable onPress={() => Linking.openURL('https://buymeacoffee.com/nerongerik')} style={[styles.card, { width: widescreen ? 500 : '80%', marginBottom: widescreen ? 15 : 5 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
             <View style={styles.iconWrapper}>
               <BuyMeACoffeeIcon size={iconSize} />
             </View>
-            <Text style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16, marginLeft: 10 }}>Buy Me a Coffee</Text>
+            <HText style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16, marginLeft: 10 }}>Buy Me a Coffee</HText>
           </View>
-          <Text style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16 }}>{'➜'}</Text>
+          <HText style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16 }}>{'➜'}</HText>
         </Pressable>
 
         <Pressable onPress={() => Linking.openURL('https://paypal.me/nerongerik')} style={[styles.card, { width: widescreen ? 500 : '80%', marginBottom: widescreen ? 15 : 5 }]}>
@@ -57,9 +58,9 @@ const Sponsor = () => {
             <View style={styles.iconWrapper}>
               <PayPalIcon size={iconSize} />
             </View>
-            <Text style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16, marginLeft: 10 }}>PayPal</Text>
+            <HText style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16, marginLeft: 10 }}>PayPal</HText>
           </View>
-          <Text style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16 }}>{'➜'}</Text>
+          <HText style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16 }}>{'➜'}</HText>
         </Pressable>
 
         <Pressable onPress={() => Linking.openURL('https://patreon.com/nerongerik')} style={[styles.card, { width: widescreen ? 500 : '80%' }]}>
@@ -67,15 +68,15 @@ const Sponsor = () => {
             <View style={styles.iconWrapper}>
               <PatreonIcon size={iconSize} />
             </View>
-            <Text style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16, marginLeft: 10 }}>Patreon</Text>
+            <HText style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16, marginLeft: 10 }}>Patreon</HText>
           </View>
-          <Text style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16 }}>{'➜'}</Text>
+          <HText style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16 }}>{'➜'}</HText>
         </Pressable>
 
-        <Text style={{ fontWeight: widescreen ? '400' : '300', marginTop: 30, fontSize: widescreen ? 18 : 16, color: Colors.text, textAlign: 'center' }}>
+        <HText style={{ fontWeight: widescreen ? '400' : '300', marginTop: 30, fontSize: widescreen ? 18 : 16, color: Colors.text, textAlign: 'center' }}>
           Heteroboxd is free to use and intends to stay that way. You can help us cover our maintenance fees with a donation!{'\n'}{'\n'}
           100% optional. 100% appreciated.{'\n'}
-        </Text>
+        </HText>
       </ScrollView>
     </View>
   )

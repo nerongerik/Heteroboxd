@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 import { UserAvatar } from './userAvatar'
 
 const Author = ({ userId, url, username, admin, router, widescreen }) => {
@@ -7,9 +8,9 @@ const Author = ({ userId, url, username, admin, router, widescreen }) => {
     <Pressable onPress={() => router.push(`/profile/${userId}`)}>
       <View style={{flexDirection: 'row', paddingTop: 5, alignItems: 'center'}}>
         <UserAvatar pictureUrl={url || null} style={styles.pic} />
-        <Text style={[styles.username, {fontSize: widescreen ? 20 : 16}]}>
-          {username || 'Anonymous'}{admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}
-        </Text>
+        <HText style={[styles.username, {fontSize: widescreen ? 20 : 16}]}>
+          {username || 'Anonymous'}{admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}
+        </HText>
       </View>
     </Pressable>
   )

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Pressable, StyleSheet, TextInput, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Feather from '@expo/vector-icons/Feather'
 import { Colors } from '../constants/colors'
+import HText from './htext'
  
 const Password = ({ value, onChangeText, onValidityChange }) => {
   const [ showRequirements, setShowRequirements ] = useState(false)
@@ -59,11 +60,11 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
  
       {showRequirements && (
         <View style={styles.reqsContainer}>
-          <Text style={[styles.req, reqs.length && styles.reqMet]}>• At least 8 characters</Text>
-          <Text style={[styles.req, reqs.upper && styles.reqMet]}>• At least one uppercase letter</Text>
-          <Text style={[styles.req, reqs.lower && styles.reqMet]}>• At least one lowercase letter</Text>
-          <Text style={[styles.req, reqs.number && styles.reqMet]}>• At least one number</Text>
-          <Text style={[styles.req, reqs.special && styles.reqMet]}>• At least one special character</Text>
+          <HText style={[styles.req, reqs.length && styles.reqMet]}>• At least 8 characters</HText>
+          <HText style={[styles.req, reqs.upper && styles.reqMet]}>• At least one uppercase letter</HText>
+          <HText style={[styles.req, reqs.lower && styles.reqMet]}>• At least one lowercase letter</HText>
+          <HText style={[styles.req, reqs.number && styles.reqMet]}>• At least one number</HText>
+          <HText style={[styles.req, reqs.special && styles.reqMet]}>• At least one special character</HText>
         </View>
       )}
     </View>

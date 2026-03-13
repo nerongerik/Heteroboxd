@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react'
-import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { Link, useRouter } from 'expo-router'
 import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
+import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
 import Popup from '../components/popup'
 
@@ -66,7 +67,7 @@ const Login = () => {
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
         <View style={[styles.form, {width: width > 1000 ? 1000 : width*0.95}]}>
-          <Text style={styles.title}>Welcome Back</Text>
+          <HText style={styles.title}>Welcome Back</HText>
           <TextInput
             style={styles.input}
             placeholder='Email'
@@ -93,14 +94,14 @@ const Login = () => {
             style={[styles.button, (email.length === 0 || password.length === 0) && { opacity: 0.5 }]}
             onPress={handleLogin}
             disabled={email.length === 0 || password.length === 0}>
-            <Text style={styles.buttonText}>Log In</Text>
+            <HText style={styles.buttonText}>Log In</HText>
           </Pressable>
           <Pressable onPress={() => setVisible(true)} style={{marginTop: 10}}>
-            <Text style={[styles.footerText, {color: Colors.text_link}]}>Forgot your password?</Text>
+            <HText style={[styles.footerText, {color: Colors.text_link}]}>Forgot your password?</HText>
           </Pressable>
-          <Text style={[styles.footerText, {marginTop: 50}]}>
+          <HText style={[styles.footerText, {marginTop: 50}]}>
             Don't have an account? <Link href='register' style={styles.link}>Sign up</Link>
-          </Text>
+          </HText>
         </View>
         <Modal
           transparent={true}
@@ -109,7 +110,7 @@ const Login = () => {
         >
           <View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center'}}>
             <View style={{backgroundColor: Colors.card, padding: 15, borderRadius: 10, alignItems: 'center'}}>
-              <Text style={{fontSize: 20, fontWeight: '600', paddingVertical: 7, color: Colors.text_title, textAlign: 'center'}}>Enter your account email:</Text>
+              <HText style={{fontSize: 20, fontWeight: '600', paddingVertical: 7, color: Colors.text_title, textAlign: 'center'}}>Enter your account email:</HText>
               <TextInput
                 placeholder='nerongerik@gmail.com'
                 value={recovery}
@@ -134,7 +135,7 @@ const Login = () => {
               />
               <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
                 <Pressable onPress={() => {setRecovery(''); setVisible(false)}} style={[styles.buttonR, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>
-                  <Text style={styles.buttonTextR}>Cancel</Text>
+                  <HText style={styles.buttonTextR}>Cancel</HText>
                 </Pressable>
                 <Pressable
                   disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recovery)}
@@ -145,7 +146,7 @@ const Login = () => {
                     (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recovery)) && {opacity: 0.5}
                   ]}
                 >
-                  <Text style={styles.buttonTextR}>Send</Text>
+                  <HText style={styles.buttonTextR}>Send</HText>
                 </Pressable>
               </View>
             </View>

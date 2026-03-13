@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react'
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
+import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
 import Password from '../components/password'
 import Popup from '../components/popup'
@@ -99,13 +100,13 @@ const Register = () => {
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20}}>
         <View style={[styles.form, { width: width > 1000 ? 1000 : width*0.95 }]}>
-          <Text style={styles.title}>Join Us</Text>
+          <HText style={styles.title}>Join Us</HText>
           <Pressable onPress={pickImage} style={styles.profileWrapper}>
             <Image
               source={profileUri ? { uri: profileUri } : require('../assets/before-pick.png')}
               style={styles.profileImage}
             />
-            <Text style={styles.changePicText}>Profile Picture (optional)</Text>
+            <HText style={styles.changePicText}>Profile Picture (optional)</HText>
           </Pressable>
           <TextInput
             style={styles.input}
@@ -148,14 +149,14 @@ const Register = () => {
               onPress={() => setGender(0)}
             >
               <View style={[styles.radioCircle, gender === 0 && styles.radioSelected]} />
-              <Text style={styles.genderText}>Male</Text>
+              <HText style={styles.genderText}>Male</HText>
             </Pressable>
             <Pressable
               style={styles.genderOption}
               onPress={() => setGender(1)}
             >
               <View style={[styles.radioCircle, gender === 1 && styles.radioSelected]} />
-              <Text style={styles.genderText}>Female</Text>
+              <HText style={styles.genderText}>Female</HText>
             </Pressable>
           </View>
           <Pressable
@@ -163,12 +164,12 @@ const Register = () => {
             onPress={handleRegister}
             disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword || gender === -1}
           >
-            <Text style={styles.buttonText}>Register</Text>
+            <HText style={styles.buttonText}>Register</HText>
           </Pressable>
 
-          <Text style={styles.footerText}>
+          <HText style={styles.footerText}>
             Already a member? <Link href='login' style={styles.link}>Log in</Link>
-          </Text>
+          </HText>
         </View>
 
         <LoadingResponse visible={server.result === 0} />

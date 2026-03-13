@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Foundation from '@expo/vector-icons/Foundation'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -11,6 +11,7 @@ import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
 import Divider from '../../components/divider'
 import Histogram from '../../components/histogram'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
 import Popup from '../../components/popup'
@@ -205,12 +206,12 @@ const Profile = () => {
   }, [loadProfileData])
 
   useEffect(() => {
-    if (!user) return
+    if (!data) return
     navigation.setOptions({
       headerTitle: '',
-      headerRight: () => <ProfileOptionsButton userId={userId} blocked={blocked} />
+      headerRight: () => user ? <ProfileOptionsButton userId={userId} blocked={blocked} /> : null
     })
-  }, [navigation, blocked, user])
+  }, [navigation, blocked, data, user, userId])
 
   useEffect(() => {
     if (!data) return
@@ -248,7 +249,7 @@ const Profile = () => {
         flex: 1,
         backgroundColor: Colors.background
       }}>
-        <Text style={styles.text}>You have blocked this user.</Text>
+        <HText style={styles.text}>You have blocked this user.</HText>
       </View>
     )
   }
@@ -261,7 +262,7 @@ const Profile = () => {
             <UserAvatar pictureUrl={data.pictureUrl} style={width < 500 ? styles.smallWebProfile : styles.profileImage} />
           </View>
           <View style={{alignItems: 'center', justifyContent: 'center'}}>
-            <Text style={styles.username}>{data.name}{data.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
+            <HText style={styles.username}>{data.name}{data.admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}</HText>
           </View>
           {!isOwnProfile && (
             <Pressable
@@ -277,7 +278,7 @@ const Profile = () => {
                 alignSelf: 'center'
               }}
             >
-              <Text style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: followButtonColor, textAlign: 'center'}}>{followLabel}</Text>
+              <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: followButtonColor, textAlign: 'center'}}>{followLabel}</HText>
             </Pressable>
           )}
         </View>
@@ -292,12 +293,12 @@ const Profile = () => {
               <Foundation name='female-symbol' size={24} color={Colors.female} />
             )
           }
-          <Text style={styles.text}>{data.bio}</Text>
+          <HText style={styles.text}>{data.bio}</HText>
         </View>
 
         <Divider marginVertical={20} />
 
-        <Text style={styles.subtitle}>Favorites</Text>
+        <HText style={styles.subtitle}>Favorites</HText>
         <FlatList
           horizontal
           data={favorites}
@@ -338,19 +339,19 @@ const Profile = () => {
 
         <Divider marginVertical={20} />
         
-        <Text style={[styles.subtitle, {marginBottom: 10}]}>Ratings</Text>
+        <HText style={[styles.subtitle, {marginBottom: 10}]}>Ratings</HText>
         {
           Object.entries(ratings).length > 0 ? (
             <Histogram histogram={ratings} />
           ) : (
-            <View style={{alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><Text style={styles.text}>Nothing to see here.</Text></View>
+            <View style={{alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>
           )
         }
 
         <Divider marginVertical={20} />
 
         <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
-          <Text style={styles.subtitle}>Recents</Text>
+          <HText style={styles.subtitle}>Recents</HText>
         </Pressable>
         <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
           {
@@ -366,7 +367,7 @@ const Profile = () => {
                 contentContainerStyle={{alignItems: 'center'}}
                 data={recent.films}
                 keyExtractor={(item) => item.filmId.toString()}
-                ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><Text style={styles.text}>Nothing to see here.</Text></View>}
+                ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>}
                 renderItem={({ item }) => {
                   return (
                     <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{marginRight: spacing}}>
@@ -410,16 +411,16 @@ const Profile = () => {
                 onPress={() => {handleButtons(item.label)}}
                 style={[styles.boxButton, (disabled) && { opacity: 0.5 }]}
               >
-                <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
+                <HText style={[styles.boxButtonText, { color: Colors.text_title }]}>
                   {item.label}
-                </Text>
-                <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
+                </HText>
+                <HText style={[styles.boxButtonText, { color: Colors.text_title }]}>
                   {format.formatCount(item.count)} {'➜'}
-                </Text>
+                </HText>
               </Pressable>
             )
           })}
-          <Text style={[styles.text, {marginTop: 50}]}>joined {data.joined}</Text>
+          <HText style={[styles.text, {marginTop: 50}]}>joined {data.joined}</HText>
         </View>
       </ScrollView>
 
@@ -481,22 +482,22 @@ const Profile = () => {
                 <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
                   <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
                   <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                    <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
-                      {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</Text>
-                    </Text>
-                    <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                    <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
+                      {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
+                    </HText>
+                    <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
                       item.castAndCrew?.map((d, i) => (
-                        <Text key={i} style={{}}>
+                        <HText key={i} style={{}}>
                           {d.celebrityName ?? ''}{i < item.castAndCrew.length - 1 && ', '}
-                        </Text>
+                        </HText>
                       ))
-                    }</Text>
+                    }</HText>
                   </View>
                 </View>
               </Pressable>
             )}
             ListEmptyComponent={
-              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text></View>
+              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>
             }
             ListFooterComponent={
               <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>

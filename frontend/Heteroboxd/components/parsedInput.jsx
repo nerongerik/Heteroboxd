@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 
 const ParsedInput = ({ initial, width, onValueChange }) => {
   const [ text, setText ] = useState('')
@@ -143,7 +144,7 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
       >
         <View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center'}}>
           <View style={{backgroundColor: Colors.card, padding: 15, borderRadius: 10, alignItems: 'center'}}>
-            <Text style={{fontSize: 20, fontWeight: '600', paddingVertical: 7, color: Colors.text_title, textAlign: 'center'}}>Enter hyperlink destination:</Text>
+            <HText style={{fontSize: 20, fontWeight: '600', paddingVertical: 7, color: Colors.text_title, textAlign: 'center'}}>Enter hyperlink destination:</HText>
             <TextInput
               placeholder='https://www.youtube.com/@nerongerik'
               value={currentLink}
@@ -168,10 +169,10 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
             />
             <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
               <Pressable onPress={() => {setCurrentLink(''); setVisible(false)}} style={[styles.button, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>
-                <Text style={styles.buttonText}>Cancel</Text>
+                <HText style={styles.buttonText}>Cancel</HText>
               </Pressable>
               <Pressable disabled={!URL.canParse(currentLink)} onPress={confirmLink} style={[styles.button, { backgroundColor: Colors._heteroboxd, marginHorizontal: 10 }, (!URL.canParse(currentLink)) && {opacity: 0.5}]}>
-                <Text style={styles.buttonText}>Link</Text>
+                <HText style={styles.buttonText}>Link</HText>
               </Pressable>
             </View>
           </View>
