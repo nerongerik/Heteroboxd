@@ -161,7 +161,7 @@ const Film = () => {
   const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
   const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen])
-  const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen])
+  const expansionScaling = useMemo(() => widescreen ? 30 : 20, [widescreen])
   const friendSize = useMemo(() => headshotSize*0.75, [headshotSize])
   const backdrop = useMemo(() => <Backdrop backdropUrl={film.backdropUrl} />, [film.backdropUrl])
 
@@ -230,13 +230,13 @@ const Film = () => {
         
         <Divider marginVertical={15} />
         
-        <HText style={{fontWeight: '700', color: Colors.text, textAlign: 'left', paddingHorizontal: 10, fontSize: widescreen ? 20 : 16, marginBottom: film.tagline?.length === 0 ? 0 : 10}}>{film.tagline || ''}</HText>
+        <HText style={{fontWeight: '700', color: Colors.text, textAlign: 'left', paddingHorizontal: 10, fontSize: widescreen ? 20 : 16, marginBottom: film.tagline?.length === 0 ? 0 : widescreen ? 10 : 5}}>{film.tagline || ''}</HText>
         <HText style={[styles.text, {fontSize: widescreen ? 18 : 14, paddingHorizontal: 10}]}>{film.synopsis}</HText>
 
         {
           film.genres && film.genres.length > 0 &&
           <>
-            <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 10}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: widescreen ? 15 : 10}}>
               {
                 film.genres.map((genre, i) => (
                   <Pressable key={i} onPress={() => router.push(`films/explore?filter=genre&value=${genre}`)} style={[{backgroundColor: Colors.heteroboxd, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
@@ -250,12 +250,12 @@ const Film = () => {
 
         <Divider marginVertical={15} />
         
-        <HText style={[styles.regionalTitle, {marginBottom: 10}]}>Ratings</HText>
+        <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Ratings</HText>
         {
           Object.entries(ratings).length > 0 ? (
             <Histogram histogram={ratings} />
           ) : (
-            <HText style={{padding: widescreen ? 40 : 30, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
+            <HText style={{padding: widescreen ? 20 : 10, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
               This film hasn't been rated yet.
             </HText>
           )
@@ -277,17 +277,17 @@ const Film = () => {
         
         <Divider marginVertical={20} />
 
-        <HText style={[styles.regionalTitle, {marginBottom: 10}]}>Cast</HText>
+        <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Cast</HText>
         {
           actors.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-              <HText style={[styles.text, {fontSize: 20}]}>There's no recorded cast for this feature.</HText>
+              <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>There's no recorded cast for this feature.</HText>
             </View>
           ) : (
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
-              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center', paddingBottom: 10}}
+              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center'}}
               contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={actors}
               keyExtractor={(item, index) => `${item.celebrityId}-${item.character}-${index}`}
@@ -295,20 +295,20 @@ const Film = () => {
                 <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}?t=starred`)} style={{marginRight: 15}}>
                   <View style={{width: headshotSize + expansionScaling, alignItems: 'center'}}>
                     <Headshot
-                      pictureUrl={item.celebrityPictureUrl}
+                      pictureUrl={item.celebrityPictureUrl || null}
                       style={{
                         width: headshotSize,
                         height: headshotSize,
                         borderRadius: headshotSize / 2,
-                        borderWidth: 2,
+                        borderWidth: 1,
                         borderColor: Colors.border_color
                       }}
                     />
-                    <HText style={[styles.subtitle, { textAlign: 'center', marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
-                      {item.celebrityName}
+                    <HText style={[styles.subtitle, { textAlign: 'center', marginTop: 5, fontSize: widescreen ? 16 : 12 }]}>
+                      {item.celebrityName || 'N/A'}
                     </HText>
-                    <HText style={[styles.text, { textAlign: 'center', fontSize: widescreen ? 14 : 10 }, ]} numberOfLines={1}>
-                      {`(${item.character?.length === 0 ? 'N/A' : item.character})`}
+                    <HText style={[styles.text, { textAlign: 'center', fontSize: widescreen ? 15 : 11 }, ]}>
+                      {item.character.replace('(uncredited)', '') || 'N/A'}
                     </HText>
                   </View>
                 </Pressable>
@@ -317,17 +317,17 @@ const Film = () => {
           )
         }
 
-        <HText style={[styles.regionalTitle, {marginBottom: 10}]}>Crew</HText>
+        <HText style={[styles.regionalTitle, {marginVertical: 10, fontSize: widescreen ? 24 : 20}]}>Crew</HText>
         {
           (directors.length === 0 && crew.length === 0) ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-              <HText style={[styles.text, {fontSize: 20}]}>There's no recorded crew for this feature.</HText>
+              <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>There's no recorded crew for this feature.</HText>
             </View>
           ) : (
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
-              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center', paddingBottom: 10}}
+              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center'}}
               contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={[...directors, ...crew]}
               keyExtractor={(item, index) => `${item.celebrityId}-${item.role}-${index}`}
@@ -344,10 +344,10 @@ const Film = () => {
                         borderColor: Colors.border_color
                       }}
                     />
-                    <HText style={[styles.subtitle, {textAlign: 'center', marginTop: 5, fontSize: widescreen ? 15 : 11}]} numberOfLines={1}>
+                    <HText style={[styles.subtitle, {textAlign: 'center', marginTop: 5, fontSize: widescreen ? 16 : 12}]}>
                       {item.celebrityName}
                     </HText>
-                    <HText style={[styles.text, {textAlign: 'center', fontSize: widescreen ? 15 : 10 }]} numberOfLines={1}>
+                    <HText style={[styles.text, {textAlign: 'center', fontSize: widescreen ? 15 : 11 }]}>
                       {`(${item.role})`}
                     </HText>
                   </View>
@@ -362,7 +362,7 @@ const Film = () => {
             <>
               <Divider marginVertical={20} />
 
-              <HText style={styles.regionalTitle}>Also watched by...</HText>
+              <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Also watched by...</HText>
 
               <FlatList
                 horizontal
@@ -380,7 +380,7 @@ const Film = () => {
                           width: friendSize,
                           height: friendSize,
                           borderRadius: friendSize/2,
-                          borderWidth: 2,
+                          borderWidth: 1,
                           borderColor: Colors.border_color
                         }}
                       />
@@ -397,7 +397,7 @@ const Film = () => {
 
         <Divider marginVertical={20} />
 
-        <HText style={[styles.regionalTitle, {marginBottom: 10}]}>Top Reviews</HText>
+        <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Top Reviews</HText>
         {
           topReviews.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
@@ -449,7 +449,7 @@ const Film = () => {
         {film.collection && Object.keys(film.collection).length > 0 && (
           <>
             <Divider marginVertical={20} />
-            <HText style={styles.regionalTitle}>Related Films</HText>
+            <HText style={[styles.regionalTitle, {fontSize: widescreen ? 24 : 20}]}>Related Films</HText>
             <View style={{width: colPosterWidth * 4 + spacing * 3, maxWidth: '100%', alignSelf: 'center'}}>
               <FlatList
                 horizontal
@@ -525,7 +525,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 5,
     marginLeft: 12,
-    fontSize: 20,
     color: Colors.text_title,
     textAlign: 'left',
   },

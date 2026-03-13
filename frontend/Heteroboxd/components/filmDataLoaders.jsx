@@ -14,7 +14,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
       >
         <MaterialCommunityIcons name="eye-outline" size={widescreen ? 32 : 24} color={Colors.text_title} />
         <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Watched</HText>
-        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{format.formatCount(watchCount)}</HText>
+        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(watchCount)}</HText>
       </Pressable>
 
       <Pressable
@@ -24,7 +24,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
       >
         <MaterialCommunityIcons name="text-box" size={widescreen ? 32 : 24} color={Colors.text_title} />
         <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Reviews</HText>
-        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{format.formatCount(reviewCount)}</HText>
+        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(reviewCount)}</HText>
       </Pressable>
 
       <Pressable
@@ -34,7 +34,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
       >
         <MaterialCommunityIcons name="format-list-bulleted-square" size={widescreen ? 32 : 24} color={Colors.text_title} />
         <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Lists</HText>
-        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{format.formatCount(listsIncluded)}</HText>
+        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(listsIncluded)}</HText>
       </Pressable>
     </View>
   )

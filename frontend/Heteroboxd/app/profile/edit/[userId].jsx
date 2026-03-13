@@ -145,8 +145,8 @@ const ProfileEdit = () => {
   }
 
   return (
-    <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior="padding" enabled>
-      <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}}>
+    <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
+      <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}} keyboardShouldPersistTaps='handled'>
         <View style={[styles.form, {maxWidth: width > 1000 ? 1000 : '100%' }]}>
           <HText style={styles.title}>Edit Your Profile</HText>
           <Pressable onPress={pickImage} style={styles.profileWrapper}>

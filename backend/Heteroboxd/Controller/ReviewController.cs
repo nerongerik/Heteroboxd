@@ -157,7 +157,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"UpdateLikes endpoint hit for {Request.ReviewId!}");
             try
             {
-                await _service.UpdateReviewLikeCountEfCore7(Request.ReviewId!, Request.LikeChange);
+                await _service.UpdateReviewLikeCount(Request.ReviewId!, Request.LikeChange);
                 await _userService.UpdateLikes(Request);
                 return Ok();
             }
@@ -178,7 +178,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"ToggleNotifications endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                await _service.ToggleNotificationsEfCore7(ReviewId);
+                await _service.ToggleNotifications(ReviewId);
                 return Ok();
             }
             catch (KeyNotFoundException)
@@ -198,7 +198,7 @@ namespace Heteroboxd.Controller
             _logger.LogInformation($"ReportReview endpoint hit for ReviewId: {ReviewId}");
             try
             {
-                await _service.ReportReviewEfCore7(ReviewId);
+                await _service.ReportReview(ReviewId);
                 return Ok();
             }
             catch (KeyNotFoundException)

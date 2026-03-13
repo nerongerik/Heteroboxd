@@ -258,11 +258,11 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   }, [reviewLocalCopy])
 
   const button = 
-    <View style={[styles.card, {minWidth: widescreen ? '50%' : '90%', maxWidth: widescreen ? '50%' : '90%', borderWidth: widescreen ? 0 : 2, borderColor: widescreen ? 'transparent' : Colors._heteroboxd}]}>
+    <View style={[styles.card, {minWidth: widescreen ? '50%' : '90%', maxWidth: widescreen ? '50%' : '90%', borderWidth: 2, borderColor: Colors._heteroboxd}]}>
       <Pressable onPress={openMenu}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 10, alignItems: 'center' }}>
-          <UserAvatar pictureUrl={user?.pictureUrl || null} style={[styles.avatar, {width: widescreen ? 28 : 24, height: widescreen ? 28 : 24, borderRadius: widescreen ? 14 : 12}]} />
-          <HText style={{color: Colors.text_button, fontSize: widescreen ? 16 : 13}}>
+          <UserAvatar pictureUrl={user?.pictureUrl || null} style={[styles.avatar, {width: widescreen ? 32 : 26, height: widescreen ? 32 : 26, borderRadius: widescreen ? 16 : 13}]} />
+          <HText style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>
             {
               seenLocalCopy
                 ? (reviewLocalCopy?.rating != null)

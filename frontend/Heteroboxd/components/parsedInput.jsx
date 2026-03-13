@@ -166,6 +166,12 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
                 width: width >= 1000 ? width/4 : width/2,
                 marginBottom: 20
               }}
+              onSubmitEditing={() => {
+                if (URL.canParse(currentLink)) {
+                  confirmLink()
+                }
+              }}
+              returnKeyType='done'
             />
             <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
               <Pressable onPress={() => {setCurrentLink(''); setVisible(false)}} style={[styles.button, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>

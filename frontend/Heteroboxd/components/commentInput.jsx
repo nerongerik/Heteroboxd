@@ -23,10 +23,13 @@ const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth }) => {
           onChangeText={setText}
           placeholder='Add a comment…'
           placeholderTextColor={Colors.text_placeholder}
-          style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 80 : 60}]}
-          multiline={true}
-          scrollEnabled={true}
-          showsVerticalScrollIndicator={false}
+          style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 60 : 40}]}
+          onSubmitEditing={() => {
+            if (text.trim().length > 0 && text.trim().length < 500) {
+              handleSubmit()
+            }
+          }}
+          returnKeyType='send'
         />
         <HText style={[styles.counterText, {fontSize: widescreen ? 14 : 12}, {color: text.trim().length < 501 ? Colors.text_title : Colors.password_meager}]}>
           {text.trim().length}/500

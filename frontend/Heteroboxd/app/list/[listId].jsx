@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
+import Author from '../../components/author'
 import FilterSort from '../../components/filterSort'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
@@ -30,7 +31,6 @@ const List = () => {
   const [ base, setBase ] = useState(null)
   const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0, seenFilms: [], seenCount: 0 })
   const [ fadeSeen, setFadeSeen ] = useState(true)
-  const [ iLiked, setILiked ] = useState(false)
   const [ descCollapsed, setDescCollapsed ] = useState(true)
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'POSITION', desc: false })
@@ -65,8 +65,7 @@ const List = () => {
         const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}&UserId=${user.userId}`)
         if (res.ok) {
           const json = await res.json()
-          setBase(json.list)
-          setILiked(json.iLiked)
+          setBase({...json.list, iLiked: json.iLiked})
           setServer(Response.ok)
         } else if (res.status === 404) {
           setServer(Response.notFound)
@@ -79,7 +78,7 @@ const List = () => {
         const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}`)
         if (res.ok) {
           const json = await res.json()
-          setBase(json)
+          setBase({...json, iLiked: false})
           setServer(Response.ok)
         } else if (res.status === 404) {
           setServer(Response.notFound)
@@ -119,9 +118,8 @@ const List = () => {
       setServer(Response.forbidden)
       return
     }
-    const delta = iLiked ? -1 : 1
-    setILiked(prev => !prev)
-    setBase(prev => ({...prev, likeCount: prev.likeCount + delta}))
+    const likeChange = base.iLiked ? -1 : 1
+    setBase(prev => ({...prev, likeCount: Math.max(prev.likeCount + (prev.iLiked ? -1 : 1), 0), iLiked: !prev.iLiked}))
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/like`, {
@@ -135,7 +133,7 @@ const List = () => {
           FilmTitle: null,
           ListId: listId,
           ListName: base?.name,
-          LikeChange: delta
+          LikeChange: likeChange
         })
       })
       if (!res.ok) {
@@ -144,7 +142,7 @@ const List = () => {
     } catch {
       console.log('like list failed; network error.')
     }
-  }, [user, iLiked, base, listId])
+  }, [user, base, listId])
 
   useEffect(() => {
     loadBaseData()
@@ -155,9 +153,6 @@ const List = () => {
   useEffect(() => {
     if (!base) return
     navigation.setOptions({
-      headerTitle: `${base.authorName || 'User'}'s list`,
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => {
         return (
           <>
@@ -196,11 +191,20 @@ const List = () => {
     return padded
   }, [data.entries])
 
-  const Header = () => (
+  const Header = useMemo(() => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
-      <HText style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: 20}]}>{base?.name}</HText>
+      <Author
+        userId={base?.authorId}
+        url={base?.authorProfilePictureUrl}
+        username={base?.authorName}
+        admin={base?.admin}
+        router={router}
+        widescreen={widescreen}
+        dim={widescreen ? 40 : 30}
+      />
+      <HText style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: widescreen ? 20 : 5, marginBottom: widescreen ? 40 : 10}]}>{base?.name}</HText>
       <Pressable onPress={() => setDescCollapsed(prev => !prev)}>
-        <HText style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
+        <HText style={[styles.desc, {fontSize: widescreen ? 20 : 16}]}>
           {descCollapsed && base?.description?.length > 300
             ? `${base?.description.slice(0, 300)}...`
             : base?.description}
@@ -209,9 +213,9 @@ const List = () => {
       <View style={styles.metaRow}>
         <Pressable onPress={handleLike} style={styles.likeRow}>
           <MaterialCommunityIcons
-            name={iLiked ? 'cards-heart' : 'cards-heart-outline'}
+            name={base?.iLiked ? 'cards-heart' : 'cards-heart-outline'}
             size={widescreen ? 24 : 20}
-            color={iLiked ? Colors.heteroboxd : Colors.text}
+            color={base?.iLiked ? Colors.heteroboxd : Colors.text}
           />
           <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</HText>
         </Pressable>
@@ -232,7 +236,7 @@ const List = () => {
       }
       <View style={{height: 20}} />
     </View>
-  )
+  ), [maxRowWidth, base, router, widescreen, descCollapsed, user, data, fadeSeen])
 
   const Film = ({ item }) => {
     if (!item) {

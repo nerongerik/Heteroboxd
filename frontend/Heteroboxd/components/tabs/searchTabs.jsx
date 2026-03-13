@@ -274,6 +274,11 @@ const SearchTabs = ({ widescreen, router }) => {
             onChangeText={setQuery}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
+            onSubmitEditing={() => {
+              if (query.length > 0) {
+                search(1)
+              }
+            }}
           />
           <Pressable
             onPress={() => search(1)}

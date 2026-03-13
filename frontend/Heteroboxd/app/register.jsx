@@ -98,7 +98,7 @@ const Register = () => {
 
   return (
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
-      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20}}>
+      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20}} keyboardShouldPersistTaps='handled'>
         <View style={[styles.form, { width: width > 1000 ? 1000 : width*0.95 }]}>
           <HText style={styles.title}>Join Us</HText>
           <Pressable onPress={pickImage} style={styles.profileWrapper}>
@@ -142,6 +142,12 @@ const Register = () => {
             onChangeText={setRepeatPassword}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
+            onSubmitEditing={() => {
+              if (email.length > 0 && pwValid && name.trim().length > 0 && password === repeatPassword && gender !== -1) {
+                handleRegister()
+              }
+            }}
+            returnKeyType='join'
           />
           <View style={styles.genderContainer}>
             <Pressable

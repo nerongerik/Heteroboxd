@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Entypo, Fontisto, FontAwesome, FontAwesome6, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons'
 import { Link, useFocusEffect, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'

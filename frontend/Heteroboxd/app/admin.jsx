@@ -220,6 +220,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, users: Response.loading}))
+          handleSearch(search.users, (data) => {
+            data ? setUsers({ page: 1, items: [data], totalCount: 1}) : setUsers({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, users: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -259,6 +267,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, lists: Response.loading}))
+          handleSearch(search.lists, (data) => {
+            data ? setLists({ page: 1, items: [data], totalCount: 1}) : setLists({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, lists: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -298,6 +314,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, reviews: Response.loading}))
+          handleSearch(search.reviews, (data) => {
+            data ? setReviews({ page: 1, items: [data], totalCount: 1}) : setReviews({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, reviews: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -337,6 +361,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, comments: Response.loading}))
+          handleSearch(search.comments, (data) => {
+            data ? setComments({ page: 1, items: [data], totalCount: 1}) : setComments({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, comments: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -374,6 +406,8 @@ const Admin = () => {
             marginVertical: 20,
             alignSelf: 'center'
           }}
+          onSubmitEditing={handleSubmitKey}
+          returnKeyType='search'
         />
         <Pressable
           style={[{backgroundColor: Colors.heteroboxd, width: 'auto', padding: 10, borderRadius: 10, alignSelf: 'center'}, key.length === 0 && { opacity: 0.5 }]}

@@ -134,7 +134,7 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
 
   return (
     <View>
-      <Pressable onPress={openMenu} style={{zIndex: 1}}>
+      <Pressable onPress={openMenu} style={{zIndex: 999}}>
         <MaterialIcons name='more-vert' size={24} color={Colors.text} />
       </Pressable>
       <SlidingMenu

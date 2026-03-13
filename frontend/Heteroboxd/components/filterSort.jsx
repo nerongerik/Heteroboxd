@@ -14,12 +14,12 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     explore: ['ALL', 'GENRE', 'YEAR', 'POPULAR', 'COUNTRY'],
     watchlist: ['ALL', 'GENRE', 'YEAR', 'COUNTRY'],
     userWatched: ['ALL', 'GENRE', 'YEAR', 'COUNTRY'],
-    list: ['ALL'],
-    celebrity: ['ALL'],
-    userLists: ['ALL'],
+    list: [],
+    celebrity: [],
+    userLists: [],
     filmLists: ['ALL', 'FRIENDS'],
     exploreLists: ['ALL', 'FRIENDS'],
-    userReviews: ['ALL'],
+    userReviews: [],
     filmReviews: ['ALL', 'FRIENDS']
   }
 
@@ -144,7 +144,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
               nestedScrollEnabled={true}
               showsVerticalScrollIndicator={false}
             >
-              {getValueOptions(item).map((value, index) => {
+              {getValueOptions(item).map((value) => {
                 const displayValue = item === 'COUNTRY' ? value.name : value.toString();
                 const storedValue = item === 'COUNTRY' ? value.code : value.toString();
                 const isValueSelected = isSelected && currentFilter.value === storedValue;
@@ -175,8 +175,13 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
   return (
     <ScrollView style={{flex: 1}} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        <HText style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>FILTERS</HText>
-        {filterOptions[context].map((item) => renderFilterButton(item))}
+        { filterOptions[context].length > 0 && (
+          <>
+            <HText style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>FILTERS</HText>
+            {filterOptions[context].map((item) => renderFilterButton(item))}
+          </>
+        )
+        }
 
         <HText style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>SORT</HText>
         {sortOptions[context].map((item) => {

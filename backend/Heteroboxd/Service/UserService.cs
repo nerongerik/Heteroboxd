@@ -362,7 +362,7 @@ namespace Heteroboxd.Service
                     await _repo.BlockUnblockAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
                     break;
                 case ("remove-follower"):
-                    await _repo.FollowUnfollowAsync(Guid.Parse(TargetId), Guid.Parse(UserId));
+                    await _repo.RemoveFollowerAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
                     break;
             }
         }
@@ -371,13 +371,9 @@ namespace Heteroboxd.Service
         {
             if (LikeRequest.ReviewId != null)
             {
+                var NotificationsOn = await _repo.UpdateLikedReviewsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ReviewId));
 
-                var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(LikeRequest.ReviewId));
-                if (Review == null) throw new KeyNotFoundException();
-
-                await _repo.UpdateLikedReviewsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ReviewId));
-
-                if (LikeRequest.LikeChange < 0 || !Review!.NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
+                if (LikeRequest.LikeChange < 0 || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
                 
                 await _notificationService.AddNotification(
                     $"{LikeRequest.UserName} liked your review of {LikeRequest.FilmTitle!}",
@@ -387,12 +383,9 @@ namespace Heteroboxd.Service
             }
             else if (LikeRequest.ListId != null)
             {
-                var UserList = await _listRepo.GetByIdAsync(Guid.Parse(LikeRequest.ListId));
-                if (UserList == null) throw new KeyNotFoundException();
+                var NotificationsOn = await _repo.UpdateLikedListsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ListId));
 
-                await _repo.UpdateLikedListsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ListId));
-
-                if (LikeRequest.LikeChange < 0 || !UserList!.NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
+                if (LikeRequest.LikeChange < 0 || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
 
                 await _notificationService.AddNotification(
                     $"{LikeRequest.UserName} liked your list '{LikeRequest.ListName!}'",
@@ -419,12 +412,12 @@ namespace Heteroboxd.Service
                         AlreadyWatchedFilm.TimesWatched++;
                         AlreadyWatchedFilm.DateWatched = DateTime.UtcNow;
                         await _repo.UpdateUserWatchedFilmAsync(AlreadyWatchedFilm);
-                        await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, 1);
+                        await _filmRepo.UpdateWatchCountAsync(Film.Id, 1);
                     }
                     else
                     {
                         await _repo.CreateUserWatchedFilmAsync(new UserWatchedFilm(User.Id, Film.Id));
-                        await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, 1);
+                        await _filmRepo.UpdateWatchCountAsync(Film.Id, 1);
                     }
                     //remove film from watchlist (if there)
                     var (Entry, _) = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
@@ -435,14 +428,17 @@ namespace Heteroboxd.Service
                     break;
                 case ("unwatched"):
                     //decrement watchcount
-                    await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, -1);
+                    await _filmRepo.UpdateWatchCountAsync(Film.Id, -1);
                     //delete uwf
-                    await _repo.DeleteUserWatchedFilmAsync(AlreadyWatchedFilm!.Id);
-                    //delete associated review (if any)
-                    var Response = await _reviewRepo.GetByUserFilmAsync(AlreadyWatchedFilm.UserId, Film.Id);
-                    if (Response?.Review != null)
+                    if (AlreadyWatchedFilm != null)
                     {
-                        await _reviewRepo.DeleteAsync(Response.Review.Id);
+                        await _repo.DeleteUserWatchedFilmAsync(AlreadyWatchedFilm.Id);
+                        //delete associated review (if any)
+                        var Response = await _reviewRepo.GetByUserFilmAsync(AlreadyWatchedFilm.UserId, Film.Id);
+                        if (Response?.Review != null)
+                        {
+                            await _reviewRepo.DeleteAsync(Response.Review.Id);
+                        }
                     }
                     break;
                 default:

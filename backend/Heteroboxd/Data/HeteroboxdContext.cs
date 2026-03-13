@@ -52,64 +52,64 @@ namespace Heteroboxd.Data
 
             modelBuilder.Entity<User>(entity =>
             {
-                // Watchlist (1:1)
+                //Watchlist (1:1)
                 entity.HasOne(u => u.Watchlist)
                       .WithOne()
                       .HasForeignKey<Watchlist>(w => w.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Favorites (1:1)
+                //Favorites (1:1)
                 entity.HasOne(u => u.Favorites)
                       .WithOne()
                       .HasForeignKey<UserFavorites>(f => f.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Lists (1:M)
+                //Lists (1:M)
                 entity.HasMany(u => u.Lists)
                       .WithOne()
                       .HasForeignKey(ul => ul.AuthorId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Followers/Following (M:M)
+                //Followers/Following (M:M)
                 entity.HasMany(u => u.Following)
                       .WithMany(u => u.Followers)
                       .UsingEntity(j => j.ToTable("UserRelationships"));
 
-                // Blocked (M:M)
+                //Blocked (M:M)
                 entity.HasMany(u => u.Blocked)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserBlocked"));
 
-                // Notifications (1:M)
+                //Notifications (1:M)
                 entity.HasMany(u => u.Notifications)
                       .WithOne()
                       .HasForeignKey(n => n.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Reviews (1:M)
+                //Reviews (1:M)
                 entity.HasMany(u => u.Reviews)
                       .WithOne()
                       .HasForeignKey(r => r.AuthorId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // LikedReviews (M:M)
+                //LikedReviews (M:M)
                 entity.HasMany(u => u.LikedReviews)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserLikedReviews"));
 
-                // LikedLists (M:M)
+                //LikedLists (M:M)
                 entity.HasMany(u => u.LikedLists)
                       .WithMany()
                       .UsingEntity(j => j.ToTable("UserLikedLists"));
 
-                // WatchedFilms (1:M)
+                //WatchedFilms (1:M)
                 entity.HasMany(u => u.WatchedFilms)
                       .WithOne()
                       .HasForeignKey(uwf => uwf.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Watchlist
+            //Watchlist
             modelBuilder.Entity<Watchlist>(entity =>
             {
                 entity.HasKey(w => w.Id);
@@ -120,7 +120,7 @@ namespace Heteroboxd.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // UserFavorites
+            //UserFavorites
             modelBuilder.Entity<UserFavorites>(entity =>
             {
                 entity.HasKey(f => f.Id);
@@ -132,7 +132,7 @@ namespace Heteroboxd.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Film
+            //Film
             modelBuilder.Entity<Film>(entity =>
             {
                 entity.HasKey(f => f.Id);
@@ -171,13 +171,13 @@ namespace Heteroboxd.Data
                     );
             });
 
-            // UserWatchedFilm
+            //UserWatchedFilm
             modelBuilder.Entity<UserWatchedFilm>(entity =>
             {
                 entity.HasKey(uwf => uwf.Id);
             });
 
-            // Review
+            //Review
             modelBuilder.Entity<Review>(entity =>
             {
                 entity.HasKey(r => r.Id);
@@ -188,13 +188,13 @@ namespace Heteroboxd.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Comment
+            //Comment
             modelBuilder.Entity<Comment>(entity =>
             {
                 entity.HasKey(c => c.Id);
             });
 
-            // Celebrity
+            //Celebrity
             modelBuilder.Entity<Celebrity>(entity =>
             {
                 entity.HasKey(c => c.Id);
@@ -205,13 +205,13 @@ namespace Heteroboxd.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // CelebrityCredit
+            //CelebrityCredit
             modelBuilder.Entity<CelebrityCredit>(entity =>
             {
                 entity.HasKey(cc => cc.Id);
             });
 
-            // ListEntry
+            //ListEntry
             modelBuilder.Entity<ListEntry>(entity =>
             {
                 entity.HasKey(le => le.Id);
@@ -222,7 +222,7 @@ namespace Heteroboxd.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // WatchlistEntry
+            //WatchlistEntry
             modelBuilder.Entity<WatchlistEntry>(entity =>
             {
                 entity.HasKey(le => le.Id);
@@ -234,7 +234,7 @@ namespace Heteroboxd.Data
             });
 
 
-            // UserList
+            //UserList
             modelBuilder.Entity<UserList>(entity =>
             {
                 entity.HasKey(ul => ul.Id);
@@ -245,25 +245,25 @@ namespace Heteroboxd.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Notification
+            //Notification
             modelBuilder.Entity<Notification>(entity =>
             {
                 entity.HasKey(n => n.Id);
             });
 
-            // RefreshToken
+            //RefreshToken
             modelBuilder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
             });
 
-            // Trending
+            //Trending
             modelBuilder.Entity<Trending>(entity =>
             {
                 entity.HasKey(t => t.FilmId);
             });
 
-            // Country
+            //Country
             modelBuilder.Entity<Country>(entity =>
             {
                 entity.HasKey(c => c.Code);

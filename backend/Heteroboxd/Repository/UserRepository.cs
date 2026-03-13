@@ -26,10 +26,11 @@ namespace Heteroboxd.Repository
         Task ReportAsync(Guid UserId);
         Task AddToWatchlistAsync(WatchlistEntry Entry);
         Task RemoveFromWatchlistAsync(Guid WeId);
-        Task UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId);
-        Task UpdateLikedListsAsync(Guid UserId, Guid ListId);
+        Task<bool> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId);
+        Task<bool> UpdateLikedListsAsync(Guid UserId, Guid ListId);
         Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId);
         Task BlockUnblockAsync(Guid UserId, Guid TargetId);
+        Task RemoveFollowerAsync(Guid UserId, Guid TargetId);
 
         Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId);
         Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId);
@@ -340,61 +341,58 @@ namespace Heteroboxd.Repository
                 .Where(wle => wle.Id == WeId)
                 .ExecuteDeleteAsync();
 
-        public async Task UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId)
+        public async Task<bool> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId)
         {
             var User = await _context.Users
-                .AsNoTracking()
                 .Include(u => u.LikedReviews)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
+            if (User == null) throw new KeyNotFoundException();
             var Review = await _context.Reviews
-                .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == ReviewId);
-            if (User == null || Review == null) throw new KeyNotFoundException();
+            if (Review == null) throw new KeyNotFoundException();
             if (User.LikedReviews.Any(r => r.Id == ReviewId)) User.LikedReviews.Remove(Review);
             else User.LikedReviews.Add(Review);
-            await UpdateAsync(User);
+            await _context.SaveChangesAsync();
+            return Review.NotificationsOn;
         }
 
-        public async Task UpdateLikedListsAsync(Guid UserId, Guid ListId)
+        public async Task<bool> UpdateLikedListsAsync(Guid UserId, Guid ListId)
         {
             var User = await _context.Users
-                .AsNoTracking()
                 .Include(u => u.LikedLists)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
+            if (User == null) throw new KeyNotFoundException();
             var UserList = await _context.UserLists
-                .AsNoTracking()
                 .FirstOrDefaultAsync(ul => ul.Id == ListId);
-            if (User == null || UserList == null) throw new KeyNotFoundException();
+            if (UserList == null) throw new KeyNotFoundException();
             if (User.LikedLists.Any(ul => ul.Id == ListId)) User.LikedLists.Remove(UserList);
             else User.LikedLists.Add(UserList);
-            await UpdateAsync(User);
+            await _context.SaveChangesAsync();
+            return UserList.NotificationsOn;
         }
 
         public async Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId)
         {
             var User = await _context.Users
-                .AsNoTracking()
                 .Include(u => u.Following)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
+            if (User == null) throw new KeyNotFoundException();
             var Target = await _context.Users
-                .AsNoTracking()
-                .Include (u => u.Followers)
+                .Include(u => u.Followers)
                 .FirstOrDefaultAsync(u => u.Id == TargetId);
-            if (User == null ||  Target == null) throw new KeyNotFoundException();
+            if (Target == null) throw new KeyNotFoundException();
             if (User.Following.Any(u => u.Id == TargetId))
             {
                 User.Following.Remove(Target);
                 Target.Followers.Remove(User);
-                await UpdateAsync(User);
-                await UpdateAsync(Target);
+                await _context.SaveChangesAsync();
                 return (false, "");
             }
             else
             {
                 User.Following.Add(Target);
                 Target.Followers.Add(User);
-                await UpdateAsync(User);
-                await UpdateAsync(Target);
+                await _context.SaveChangesAsync();
                 return (true, User.Name);
             }
         }
@@ -403,18 +401,17 @@ namespace Heteroboxd.Repository
         {
             var User = await _context.Users
                 .AsSplitQuery()
-                .AsNoTracking()
                 .Include(u => u.Blocked)
                 .Include(u => u.Following)
                 .Include(u => u.Followers)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
+            if (User == null) throw new KeyNotFoundException();
             var Target = await _context.Users
                 .AsSplitQuery()
-                .AsNoTracking()
-                .Include (u => u.Following)
-                .Include (u => u.Followers)
+                .Include(u => u.Following)
+                .Include(u => u.Followers)
                 .FirstOrDefaultAsync(u => u.Id == TargetId);
-            if (User == null || Target == null) throw new KeyNotFoundException();
+            if (Target == null) throw new KeyNotFoundException();
             if (User.Blocked.Any(u => u.Id == TargetId))
             {
                 User.Blocked.Remove(Target);
@@ -426,32 +423,41 @@ namespace Heteroboxd.Repository
                 User.Followers.Remove(Target);
                 Target.Following.Remove(User);
                 Target.Followers.Remove(User);
-                await UpdateAsync(Target);
             }
-            await UpdateAsync(User);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId)
+        public async Task RemoveFollowerAsync(Guid UserId, Guid TargetId)
         {
             var User = await _context.Users
-                .AsNoTracking()
-                .Include(u => u.LikedReviews)
+                .Include(u => u.Followers)
                 .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) return null;
-            var Review = User.LikedReviews.FirstOrDefault(r => r.Id == ReviewId);
-            return Review;
+            if (User == null) throw new KeyNotFoundException();
+            var Target = await _context.Users
+                .Include(u => u.Following)
+                .FirstOrDefaultAsync(u => u.Id == TargetId);
+            if (Target == null) throw new KeyNotFoundException();
+            if (User.Followers.Any(u => u.Id == TargetId) || Target.Following.Any(u => u.Id == UserId))
+            {
+                User.Followers.Remove(Target);
+                Target.Following.Remove(User);
+                await _context.SaveChangesAsync();
+            }
         }
 
-        public async Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId)
-        {
-            var User = await _context.Users
+        public async Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId) =>
+            await _context.Users
                 .AsNoTracking()
-                .Include(u => u.LikedLists)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) return null;
-            var UserList = User.LikedLists.FirstOrDefault(ul => ul.Id == ListId);
-            return UserList;
-        }
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.LikedReviews)
+                .FirstOrDefaultAsync(r => r.Id == ReviewId);
+
+        public async Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId) =>
+            await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == UserId)
+                .SelectMany(u => u.LikedLists)
+                .FirstOrDefaultAsync(ul => ul.Id == ListId);
 
         public async Task<(WatchlistEntry? Entry, Guid WatchlistId)> IsWatchlistedAsync(int FilmId, Guid UserId)
         {

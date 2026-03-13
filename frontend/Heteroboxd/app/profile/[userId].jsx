@@ -38,7 +38,6 @@ const Profile = () => {
   const [ recent, setRecent ] = useState(null)
   const [ blocked, setBlocked ] = useState(false)
   const [ following, setFollowing ] = useState(false)
-  const [ followLabel, setFollowLabel ] = useState('FOLLOW')
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ favIndex, setFavIndex ] = useState(-1)
@@ -80,13 +79,8 @@ const Profile = () => {
             setBlocked(true)
           } else if (trimmed === 'following') {
             setFollowing(true)
-            setFollowLabel('UNFOLLOW')
-          } else if (trimmed === 'followed') {
-            setFollowing(false)
-            setFollowLabel('FOLLOW BACK')
           } else {
             setFollowing(false)
-            setFollowLabel('FOLLOW')
           }
         }
         setData({ 
@@ -167,10 +161,8 @@ const Profile = () => {
     }
     if (following) {
       setFollowing(false)
-      setFollowLabel(followLabel === 'UNFOLLOW' ? 'FOLLOW' : followLabel)
     } else {
       setFollowing(true)
-      setFollowLabel('UNFOLLOW')
     }
     const jwt = await auth.getJwt()
     const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=follow-unfollow`, {
@@ -180,7 +172,7 @@ const Profile = () => {
     if (!res.ok) {
       console.log('follow/unfollow failed; debugging...')
     }
-  }, [user, userId, following, followLabel])
+  }, [user, userId, following])
 
   const updateFavorites = useCallback(async (filmId, index) => {
     if (!user || !isOwnProfile || !(await isValidSession())) {
@@ -226,7 +218,8 @@ const Profile = () => {
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
   const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4.1, [maxRowWidth, spacing])
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
-  const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.heteroboxd : Colors._heteroboxd
+  const followButtonColor = useMemo(() => following ? Colors.heteroboxd : Colors._heteroboxd, [following])
+  const followLabel = useMemo(() => following ? 'UNFOLLOW' : 'FOLLOW', [following])
 
   if (!data) {
     return (

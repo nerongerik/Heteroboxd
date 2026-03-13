@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Platform, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons'
+import { Ionicons, MaterialCommunityIcons, Octicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -26,7 +26,6 @@ const PAGE_SIZE = 20
 const ReviewWithComments = () => {
   const { reviewId } = useLocalSearchParams()
   const [ review, setReview ] = useState(null)
-  const [ iLiked, setILiked ] = useState(false)
   const [ showText, setShowText ] = useState(true)
   const { user, isValidSession } = useAuth()
   const { width } = useWindowDimensions()
@@ -44,9 +43,8 @@ const ReviewWithComments = () => {
         const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}&UserId=${user.userId}`)
         if (res.ok) {
           const json = await res.json()
-          setReview(json.review)
+          setReview({...json.review, iLiked: json.iLiked})
           setShowText(!json.review?.spoiler || json.review?.authorId === user.userId || json.uwf)
-          setILiked(json.iLiked)
           setServer(Response.ok)
         } else if (res.status === 404) {
           setServer(Response.notFound)
@@ -59,7 +57,7 @@ const ReviewWithComments = () => {
         const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}`)
         if (res.ok) {
           const json = await res.json()
-          setReview(json)
+          setReview({...json, iLiked: false})
           setShowText(!json?.spoiler)
           setServer(Response.ok)
         } else if (res.status === 404) {
@@ -97,9 +95,8 @@ const ReviewWithComments = () => {
       setServer(Response.forbidden)
       return
     }
-    const likeChange = iLiked ? -1 : 1
-    setILiked(prev => !prev)
-    setReview(prev => ({...prev, likeCount: prev.likeCount + likeChange}))
+    const likeChange = review.iLiked ? -1 : 1
+    setReview(prev => ({...prev, likeCount: Math.max(prev.likeCount + (prev.iLiked ? -1 : 1), 0), iLiked: !prev.iLiked}))
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/like`, {
@@ -122,7 +119,7 @@ const ReviewWithComments = () => {
     } catch {
       console.log('like review failed; network error.')
     }
-  }, [user, iLiked, review, reviewId])
+  }, [user, review, reviewId])
 
   const handleCreate = useCallback(async (text) => {
     if (!user || !(await isValidSession())) {
@@ -205,9 +202,6 @@ const ReviewWithComments = () => {
   useEffect(() => {
     if (!review) return
     navigation.setOptions({
-      headerTitle: review.authorName?.length > 0 ? `${review.authorName}'s review` : '',
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} /> : null
     })
   }, [navigation, user, review])
@@ -231,6 +225,7 @@ const ReviewWithComments = () => {
           admin={review?.admin}
           router={router}
           widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
       </View>
       <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignSelf: 'center'}}>
@@ -273,7 +268,7 @@ const ReviewWithComments = () => {
       }
       <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 10, justifyContent: 'space-between'}}>
         <Pressable onPress={handleLike} style={{flexDirection: 'row', alignItems: 'center'}}>
-          { iLiked ? (
+          { review?.iLiked ? (
             <MaterialCommunityIcons style={{marginRight: 3}} name='cards-heart' size={widescreen ? 24 : 20} color={Colors.heteroboxd} />
           ) : (
             <MaterialCommunityIcons style={{marginRight: 3}} name='cards-heart-outline' size={widescreen ? 24 : 20} color={Colors.text} />
@@ -288,7 +283,7 @@ const ReviewWithComments = () => {
 
       <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</HText>
     </View>
-  ), [review, router, widescreen, user, iLiked, maxRowWidth, comments, showText])
+  ), [review, router, widescreen, user, maxRowWidth, comments?.totalCount, showText])
 
   const Comment = ({ item }) => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
@@ -317,7 +312,7 @@ const ReviewWithComments = () => {
                     </Pressable>
                   ) : (
                     <Pressable onPress={() => handleDelete(item.id)}>
-                      <MaterialIcons name='delete-forever' size={widescreen ? 24 : 20} color={Colors.text} />
+                      <MaterialCommunityIcons name='delete' size={widescreen ? 24 : 20} color={Colors.text} />
                     </Pressable>
                   )
                 }
@@ -326,7 +321,7 @@ const ReviewWithComments = () => {
           }
         </View>
         <View style={{padding: 10}}>
-          <ParsedRead html={`${item.text.replace(/\n{3,}/g, '\n\n').trim()}`} />
+          <HText style={{fontSize: widescreen ? 16 : 14, color: Colors.text}}>{item.text || ''}</HText>
         </View>
       </View>
       <Divider marginVertical={spacing} />

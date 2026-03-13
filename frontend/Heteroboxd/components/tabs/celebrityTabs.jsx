@@ -32,12 +32,12 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
     return padded
   }, [activeTab, currentTabData])
 
-  const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize);
+  const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize)
 
   const TabButton = ({ title, active, onPress }) => (
     <Pressable
       onPress={onPress}
-      style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 10 : 5 }, active && styles.activeTabButton]}
+      style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 15 : 5 }, active && styles.activeTabButton]}
     >
       <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
@@ -49,7 +49,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
       <>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth}}>
           <View style={{padding: 5}}>
-            <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 16}}>
               {currentTabData?.totalCount || 0} films
             </HText>
           </View>
@@ -57,14 +57,14 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
             showSeen ? (
               <Pressable onPress={flipShowSeen}>
                 <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-                  <MaterialCommunityIcons name='eye-outline' size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-                  <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</HText>
+                  <MaterialCommunityIcons name='eye-outline' size={widescreen ? 22 : 18} color={Colors._heteroboxd} />
+                  <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 18 : 16 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</HText>
                 </View>
               </Pressable>
             ) : <View />
           }
         </View>
-        <View style={{ height: 20 }} />
+        <View style={{ height: widescreen ? 20 : 10 }} />
       </>
     )
   }
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     justifyContent: 'flex-start',
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   tabRowWeb: {
     flexDirection: 'row',

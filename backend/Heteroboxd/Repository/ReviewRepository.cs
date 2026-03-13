@@ -205,7 +205,7 @@ namespace Heteroboxd.Repository
                 .Where(r => r.Id == ReviewId)
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     r => r.LikeCount,
-                    r => r.LikeCount + Delta
+                    r => Math.Max(r.LikeCount + Delta, 0)
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
         }

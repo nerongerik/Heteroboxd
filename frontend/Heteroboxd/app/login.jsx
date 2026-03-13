@@ -65,7 +65,7 @@ const Login = () => {
 
   return (
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
-      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+      <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20}} keyboardShouldPersistTaps='handled'>
         <View style={[styles.form, {width: width > 1000 ? 1000 : width*0.95}]}>
           <HText style={styles.title}>Welcome Back</HText>
           <TextInput
@@ -85,6 +85,12 @@ const Login = () => {
               value={password}
               onChangeText={setPassword}
               placeholderTextColor={Colors.text_placeholder}
+              onSubmitEditing={() => {
+                if (email.length > 0 && password.length > 0) {
+                  handleLogin()
+                }
+              }}
+              returnKeyType='join'
             />
             <Pressable onPress={() => setShowPassword(prev => !prev)} style={styles.iconBtn}>
               <Feather name={showPassword ? 'eye-off' : 'eye'} size={22} color={Colors.text_input} />
@@ -132,6 +138,12 @@ const Login = () => {
                   width: width >= 1000 ? width/4 : width/2,
                   marginBottom: 20
                 }}
+                onSubmitEditing={() => {
+                  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recovery)) {
+                    sendRecovery()
+                  }
+                }}
+                returnKeyType='send'
               />
               <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
                 <Pressable onPress={() => {setRecovery(''); setVisible(false)}} style={[styles.buttonR, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>

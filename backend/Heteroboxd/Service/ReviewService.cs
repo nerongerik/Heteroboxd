@@ -11,9 +11,9 @@ namespace Heteroboxd.Service
         Task<ReviewInfoResponse?> GetReviewByUserFilm(string UserId, int FilmId);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta);
-        Task ToggleNotificationsEfCore7(string ReviewId);
-        Task ReportReviewEfCore7(string ReviewId);
+        Task UpdateReviewLikeCount(string ReviewId, int Delta);
+        Task ToggleNotifications(string ReviewId);
+        Task ReportReview(string ReviewId);
         Task<ReviewInfoResponse> AddReview(CreateReviewRequest ReviewRequest);
         Task<ReviewInfoResponse> UpdateReview(UpdateReviewRequest ReviewRequest);
         Task DeleteReview(string ReviewId);
@@ -106,13 +106,13 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task UpdateReviewLikeCountEfCore7(string ReviewId, int Delta) =>
+        public async Task UpdateReviewLikeCount(string ReviewId, int Delta) =>
             await _repo.UpdateLikeCountAsync(Guid.Parse(ReviewId), Delta);
 
-        public async Task ToggleNotificationsEfCore7(string ReviewId) =>
+        public async Task ToggleNotifications(string ReviewId) =>
             await _repo.ToggleNotificationsAsync(Guid.Parse(ReviewId));
 
-        public async Task ReportReviewEfCore7(string ReviewId) =>
+        public async Task ReportReview(string ReviewId) =>
             await _repo.ReportAsync(Guid.Parse(ReviewId));
 
         public async Task<ReviewInfoResponse> AddReview(CreateReviewRequest ReviewRequest)
@@ -136,7 +136,7 @@ namespace Heteroboxd.Service
                     await _userRepo.RemoveFromWatchlistAsync(Existing.Id);
                 }
                 await _userRepo.CreateUserWatchedFilmAsync(new UserWatchedFilm(UserId, ReviewRequest.FilmId));
-                await _filmRepo.UpdateFilmWatchCountEfCore7Async(ReviewRequest.FilmId, 1);
+                await _filmRepo.UpdateWatchCountAsync(ReviewRequest.FilmId, 1);
             }
             return new ReviewInfoResponse(Review);
         }
