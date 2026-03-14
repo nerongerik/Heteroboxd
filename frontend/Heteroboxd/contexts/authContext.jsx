@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
   }
 
   const login = async (jwt, refresh) => {
-    Platform.OS === 'web' ? auth.handleWebLogin(jwt, refresh) : auth.handleMobileLogin(jwt, refresh)
+    auth.handleLogin(jwt, refresh)
     setUser(auth.decodeUser(jwt))
   }
 

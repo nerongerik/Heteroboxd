@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Link } from 'expo-router'
 import { Colors } from '../constants/colors'
+import HText from '../components/htext'
 
 const About = () => {
   const { width } = useWindowDimensions()
@@ -11,88 +12,88 @@ const About = () => {
         contentContainerStyle={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>
+        <HText style={styles.title}>
           About Heteroboxd
-        </Text>
+        </HText>
     
-        <Text style={styles.subtitle}>
+        <HText style={styles.subtitle}>
           What is Heteroboxd?
-        </Text>
-        <Text style={styles.text}>
-          Heteroboxd is a free-speech, social film discovery platofrm. It was designed to be an open-source
-          alternative to<Text style={{ fontStyle: "italic" }}> certain </Text>proprietary platforms that
-          have become overrun with progressive propaganda and censorship.
-        </Text>
-    
-        <Text style={styles.subtitle}>
-          Is Heteroboxd available on all devices?
-        </Text>
-        <Text style={styles.text}>
-          You can access Heteroboxd via any web browser at <Link style={styles.link} href='https://heteroboxd.com'>heteroboxd.com</Link>,
-          or download our mobile app from the Google Play Store. The iOS version of the app is already developed, but due to the massive
-          costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest and
-          <Link style={styles.link} href='/sponsor'> funding.</Link>
-        </Text>
+        </HText>
+        <HText style={styles.text}>
+          Heteroboxd is a free-speech, social film discovery platform. It was designed to be an open-source
+          alternative to<HText style={{ fontStyle: "italic" }}> certain </HText>proprietary platforms that
+          have become cesspits of progressive propaganda and censorship in the last few years.
+        </HText>
 
-        <Text style={styles.subtitle}>
-          Why is Heteroboxd so slow?
-        </Text>
-        <Text style={styles.text}>
-          Heteroboxd is an open-source project developed without profits out of the kindness of our hearts. We pay for the servers from
-          our own pocket, and unless you choose to support us with <Link style={styles.link} href='sponsor'>donations</Link>,
-          getting faster service will not be feasible.
-        </Text>
-    
-        <Text style={styles.subtitle}>
+        <HText style={styles.subtitle}>
           How does Heteroboxd work?
-        </Text>
-        <Text style={styles.text}>  
+        </HText>
+        <HText style={styles.text}>  
           You can track, rate, and review the films you've seen, or add new ones to your watchlist. Share your criticism,
-          interact with other like-minded users, or create your own custom lists - be they ranked, thematic, or just for fun!
-        </Text>
-    
-        <Text style={styles.subtitle}>
+          interact with like-minded users, or create your own custom lists - be they ranked, thematic, or just for fun!
+        </HText>
+
+        <HText style={styles.subtitle}>
           Is Heteroboxd a wild-west platform?
-        </Text>
-        <Text style={styles.text}>  
+        </HText>
+        <HText style={styles.text}>  
           Yes... and no. Heteroboxd enforces no speech restrictions per se, but remains very serious about both the privacy of its
-          users and the integrity of the founding vision. The community is encouraged to report any behavior that threatens these
-          core tenets so they can recieve the treatment that all utter woke nonsense deserves.
-        </Text>
+          users and the integrity of the founding vision. The community is encouraged to report any behavior threatening these
+          core tenets so they can be accordingly penalized.
+        </HText>
     
-        <Text style={styles.subtitle}>
+        <HText style={styles.subtitle}>
           Does Heteroboxd have guidelines?
-        </Text>
-        <Text style={styles.text}>
+        </HText>
+        <HText style={styles.text}>
           Yes! Unlike our competitors, Heteroboxd is 100% transparent with its <Link style={styles.link} href='https://heteroboxd.com/guidelines'>code of conduct.</Link>
-        </Text>
-    
-        <Text style={styles.subtitle}>
-          How do I contact Heteroboxd support?
-        </Text>
-        <Text style={styles.text}>
-          Please see the details on our <Link style={styles.link} href='contact'>contact page.</Link>
-        </Text>
-    
-        <Text style={styles.subtitle}>
-          Where does Heteroboxd get films from?
-        </Text>
-        <Text style={styles.text}>
+        </HText>
+
+        <HText style={styles.subtitle}>
+          Where does Heteroboxd get its films from?
+        </HText>
+        <HText style={styles.text}>
           Heteroboxd's film database is powered by the one and only tMDB API, wherefrom we source all film metadata and images
           in regular syncs. tMDB does not endorse Heteroboxd.
-        </Text>
+        </HText>
     
-        <Text style={styles.subtitle}>
+        <HText style={styles.subtitle}>
+          Is Heteroboxd available on all devices?
+        </HText>
+        <HText style={styles.text}>
+          You can access Heteroboxd on any web browser at <Link style={styles.link} href='https://heteroboxd.com'>heteroboxd.com</Link>,
+          or download our mobile app from the Google Play Store. The iOS build is ready for deployment, but due to massive
+          costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest and
+          <Link style={styles.link} href='/sponsor'> funding.</Link>
+        </HText>
+
+        <HText style={styles.subtitle}>
+          Why can Heteroboxd get so slow sometimes?
+        </HText>
+        <HText style={styles.text}>
+          Heteroboxd is an open-source project developed out of the kindness of our hearts. We pay for the servers from
+          our own pocket, and unless you choose to support us with <Link style={styles.link} href='sponsor'>donations</Link>,
+          getting better service will not be feasible.
+        </HText>
+    
+        <HText style={styles.subtitle}>
           How can I support Heteroboxd?
-        </Text>
-        <Text style={styles.text}>
-          Heteroboxd is open source and free to use for all, and the (many) expenses are currently covered by the developer.
-          If you'd like to support the project, please consider making <Link style={styles.link} href='sponsor'>a donation</Link>.
-        </Text>
+        </HText>
+        <HText style={styles.text}>
+          Heteroboxd is free to use for everyone, and the (many) expenses are currently covered by the developer.
+          If you'd like to support us, please consider making <Link style={styles.link} href='sponsor'>a donation</Link>.
+        </HText>
+
+        <HText style={styles.subtitle}>
+          How do I contact Heteroboxd support?
+        </HText>
+        <HText style={styles.text}>
+          Please see the details on our <Link style={styles.link} href='/contact'>contact page.</Link>
+        </HText>
     
-        <Text style={[styles.text, {textAlign: 'center', fontWeight: '800', marginTop: 50}]}>  
+        <HText style={[styles.text, {textAlign: 'center', fontWeight: '800', marginTop: 50}]}>  
           Heteroboxd - developed by <Link style={[styles.link, {fontWeight: '800'}]} href='https://github.com/nerongerik'>nerongerik</Link>
-        </Text>
+        </HText>
       </ScrollView>
     </View>
   )

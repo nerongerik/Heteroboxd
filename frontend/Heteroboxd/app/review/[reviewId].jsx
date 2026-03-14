@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, Text, useWindowDimensions, View } from 'react-native'
-import { Ionicons, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons'
+import { ActivityIndicator, FlatList, Platform, Pressable, useWindowDimensions, View } from 'react-native'
+import { Ionicons, MaterialCommunityIcons, Octicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -12,6 +12,7 @@ import { Response } from '../../constants/response'
 import Author from '../../components/author'
 import CommentInput from '../../components/commentInput'
 import Divider from '../../components/divider'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
 import ParsedRead from '../../components/parsedRead'
@@ -25,7 +26,6 @@ const PAGE_SIZE = 20
 const ReviewWithComments = () => {
   const { reviewId } = useLocalSearchParams()
   const [ review, setReview ] = useState(null)
-  const [ iLiked, setILiked ] = useState(false)
   const [ showText, setShowText ] = useState(true)
   const { user, isValidSession } = useAuth()
   const { width } = useWindowDimensions()
@@ -35,6 +35,8 @@ const ReviewWithComments = () => {
   const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const [ server, setServer ] = useState(Response.initial)
   const listRef = useRef(null)
+  const reviewLocalCopyRef = useRef(null)
+  const likeRequestRef = useRef(0)
 
   const loadReviewData = useCallback(async () => {
     setServer(Response.loading)
@@ -43,9 +45,8 @@ const ReviewWithComments = () => {
         const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}&UserId=${user.userId}`)
         if (res.ok) {
           const json = await res.json()
-          setReview(json.review)
+          setReview({...json.review, iLiked: json.iLiked})
           setShowText(!json.review?.spoiler || json.review?.authorId === user.userId || json.uwf)
-          setILiked(json.iLiked)
           setServer(Response.ok)
         } else if (res.status === 404) {
           setServer(Response.notFound)
@@ -58,7 +59,7 @@ const ReviewWithComments = () => {
         const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}`)
         if (res.ok) {
           const json = await res.json()
-          setReview(json)
+          setReview({...json, iLiked: false})
           setShowText(!json?.spoiler)
           setServer(Response.ok)
         } else if (res.status === 404) {
@@ -96,9 +97,9 @@ const ReviewWithComments = () => {
       setServer(Response.forbidden)
       return
     }
-    const likeChange = iLiked ? -1 : 1
-    setILiked(prev => !prev)
-    setReview(prev => ({...prev, likeCount: prev.likeCount + likeChange}))
+    const currentReview = reviewLocalCopyRef.current
+    setReview(prev => ({...prev, likeCount: Math.max(currentReview.likeCount + (currentReview.iLiked ? -1 : 1), 0), iLiked: !currentReview.iLiked}))
+    const requestId = ++likeRequestRef.current
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/like`, {
@@ -107,21 +108,23 @@ const ReviewWithComments = () => {
         body: JSON.stringify({
           UserId: user.userId,
           UserName: user.name,
-          AuthorId: review?.authorId,
+          AuthorId: currentReview.authorId,
           ReviewId: reviewId,
-          FilmTitle: review?.filmTitle,
+          FilmTitle: currentReview.filmTitle,
           ListId: null,
           ListName: null,
-          LikeChange: likeChange
+          LikeChange: currentReview.iLiked ? -1 : 1
         })
       })
+      if (requestId !== likeRequestRef.current) return
       if (!res.ok) {
         console.log(`${res.status}: like review failed.`)
       }
     } catch {
+      if (requestId !== likeRequestRef.current) return
       console.log('like review failed; network error.')
     }
-  }, [user, iLiked, review, reviewId])
+  }, [user, likeRequestRef, reviewId])
 
   const handleCreate = useCallback(async (text) => {
     if (!user || !(await isValidSession())) {
@@ -203,47 +206,49 @@ const ReviewWithComments = () => {
 
   useEffect(() => {
     if (!review) return
+    navigation.setOptions({
+      headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} /> : null
+    })
+  }, [navigation, user, review])
+
+  useEffect(() => {
+    if (!review) return
     loadCommentsDataPage(1) 
   }, [review?.id, loadCommentsDataPage])
 
   useEffect(() => {
-    if (!review) return
-    navigation.setOptions({
-      headerTitle: review.authorName + "'s review",
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
-      headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} /> : null
-    })
-  }, [navigation, user, review])
+    reviewLocalCopyRef.current = review
+  }, [review])
 
   const widescreen = useMemo(() => width > 1000, [width])
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width*0.95), [widescreen, width])
   const spacing = useMemo(() => (widescreen ? 10 : 5), [widescreen])
 
-  const Header = () => (
+  const Header = useMemo(() => (
     <View style={{padding: 5, paddingTop: 0, width: widescreen ? 1000 : '100%', alignSelf: 'center'}}>
       <View style={{marginBottom: -5}}>
         <Author
           userId={review?.authorId}
-          url={review?.authorProfilePictureUrl}
-          username={review?.authorName}
+          url={review?.authorProfilePictureUrl || null}
+          username={format.sliceText(review?.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={review?.admin}
           router={router}
           widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
       </View>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignSelf: 'center'}}>
+      <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignSelf: 'center', marginBottom: widescreen ? 15 : 10}}>
         <View style={{flex: 1, justifyContent: 'space-around'}}>
-          <Text style={{paddingLeft: 3, color: Colors.text_title, fontWeight: '500', fontSize: widescreen ? 24 : 20, textAlign: 'left', flexShrink: 1}}>{review?.filmTitle}</Text>
+          <HText style={{paddingLeft: 3, color: Colors.text_title, fontWeight: '500', fontSize: widescreen ? 24 : 20, textAlign: 'left', flexShrink: 1}}>{review?.filmTitle}</HText>
           <Stars size={widescreen ? 40 : 30} rating={review?.rating ?? 0} readonly={true} padding={false} align={'flex-start'} />
-          <Text style={{paddingLeft: 3, fontWeight: '400', fontSize: widescreen ? 16 : 13, color: Colors.text, textAlign: 'left'}}>{`Reviewed on ${format.parseDate(review?.date)}`}</Text>
+          <HText style={{paddingLeft: 3, fontWeight: '400', fontSize: widescreen ? 16 : 13, color: Colors.text, textAlign: 'left'}}>{`Reviewed on ${format.parseDate(review?.date)}`}</HText>
         </View>
         <Pressable onPress={() => router.push(`/film/${review?.filmId}`)}>
           <Poster
             posterUrl={review?.filmPosterUrl}
             style={{
-              width: widescreen ? 150 : 100,
-              height: widescreen ? 150*3/2 : 100*3/2,
+              width: widescreen ? 200 : 100,
+              height: widescreen ? 200*3/2 : 100*3/2,
               borderWidth: 2,
               borderRadius: 4,
               marginRight: 5,
@@ -260,24 +265,24 @@ const ReviewWithComments = () => {
             <Pressable onPress={() => setShowText(true)}>
               <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
-                <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<Text style={{color: Colors.text_link}}> Read anyway?</Text></Text>
+                <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>
               </View>
             </Pressable>
           )
         ) : (
           <View>
-            <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'left'}}>{review?.authorName} wrote no review regarding this film.</Text>
+            <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'left'}}>The author was left speechless.</HText>
           </View>
         )
       }
       <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 10, justifyContent: 'space-between'}}>
         <Pressable onPress={handleLike} style={{flexDirection: 'row', alignItems: 'center'}}>
-          { iLiked ? (
-            <MaterialCommunityIcons style={{marginRight: 3}} name='cards-heart' size={widescreen ? 24 : 20} color={Colors.heteroboxd} />
-          ) : (
-            <MaterialCommunityIcons style={{marginRight: 3}} name='cards-heart-outline' size={widescreen ? 24 : 20} color={Colors.text} />
-          )}
-          <Text style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}>{format.formatCount(review?.likeCount)} likes</Text>
+            <MaterialCommunityIcons
+              name={review?.iLiked ? 'cards-heart' : 'cards-heart-outline'}
+              size={widescreen ? 24 : 20}
+              color={review?.iLiked ? Colors.heteroboxd : Colors.text}
+            />
+          <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}> {format.formatCount(review?.likeCount)} likes</HText>
         </Pressable>
       </View>
       
@@ -285,9 +290,9 @@ const ReviewWithComments = () => {
 
       {user && <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} />}
 
-      <Text style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</Text>
+      <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</HText>
     </View>
-  )
+  ), [review, router, widescreen, user, maxRowWidth, comments?.totalCount, showText])
 
   const Comment = ({ item }) => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
@@ -297,13 +302,14 @@ const ReviewWithComments = () => {
             <>
             <Author
               userId={item.authorId}
-              url={item.authorProfilePictureUrl}
-              username={item.authorName}
+              url={item.authorProfilePictureUrl || null}
+              username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
               admin={item.admin}
               router={router}
               widescreen={widescreen}
+              dim={widescreen ? 38 : 28}
             />
-            {user?.admin && Platform.OS === 'web' && <Text style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 12}}>{item.id}</Text>}
+            {user?.admin && Platform.OS === 'web' && <HText style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 14}}>{item.id}</HText>}
             </>
           </View>
           {
@@ -316,7 +322,7 @@ const ReviewWithComments = () => {
                     </Pressable>
                   ) : (
                     <Pressable onPress={() => handleDelete(item.id)}>
-                      <MaterialIcons name='delete-forever' size={widescreen ? 24 : 20} color={Colors.text} />
+                      <MaterialCommunityIcons name='delete' size={widescreen ? 24 : 20} color={Colors.text} />
                     </Pressable>
                   )
                 }
@@ -325,7 +331,7 @@ const ReviewWithComments = () => {
           }
         </View>
         <View style={{padding: 10}}>
-          <ParsedRead html={`${item.text.replace(/\n{3,}/g, '\n\n').trim()}`} />
+          <HText style={{fontSize: widescreen ? 16 : 14, color: Colors.text}}>{item.text || ''}</HText>
         </View>
       </View>
       <Divider marginVertical={spacing} />
@@ -334,7 +340,7 @@ const ReviewWithComments = () => {
 
   const NoComments = () => (
     <View style={{width: maxRowWidth, height: 200, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
-      <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center'}}>No comments yet. Be the first to respond!</Text>
+      <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center'}}>No comments yet. Be the first to respond!</HText>
     </View>
   )
 

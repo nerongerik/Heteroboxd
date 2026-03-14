@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
 namespace Heteroboxd.Service
 {
@@ -64,7 +65,7 @@ namespace Heteroboxd.Service
             var ExistingUser = await _userManager.FindByEmailAsync(Request.Email);
             if (ExistingUser != null) throw new ArgumentException();
 
-            var User = new User(Request.Name, Request.Email, Request.Bio, Request.Gender);
+            var User = new User(Regex.Replace(Request.Name.Trim(), @"\s+", " "), Request.Email, Request.Bio, Request.Gender);
             User.Watchlist = new Watchlist(User.Id);
             User.Favorites = new UserFavorites(User.Id);
 

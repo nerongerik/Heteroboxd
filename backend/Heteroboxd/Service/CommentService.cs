@@ -73,7 +73,7 @@ namespace Heteroboxd.Service
 
             if (!Review.NotificationsOn || Review.AuthorId == Guid.Parse(CommentRequest.AuthorId)) return;
             await _notificationService.AddNotification(
-                $"{CommentRequest.AuthorName} commented on your review of {CommentRequest.FilmTitle}",
+                $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
                 Models.Enums.NotificationType.Comment,
                 Review.AuthorId
             );
@@ -132,5 +132,11 @@ namespace Heteroboxd.Service
 
             return Math.Max(0, Score);
         }
+
+        private string TruncateName(string Name, int MaxLength = 25) =>
+             Name.Length <= MaxLength ? Name : $"{Name[..MaxLength]}...";
+
+        private string TruncateTitle(string Title, int MaxLength = 50) =>
+             Title.Length <= MaxLength ? $"\"{Title}\"" : $"\"{Title[..MaxLength]}...\"";
     }
 }

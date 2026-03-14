@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
-import { Link, useLocalSearchParams, useRouter } from 'expo-router'
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import * as auth from '../../../helpers/auth'
@@ -8,6 +8,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import { UserAvatar } from '../../../components/userAvatar'
@@ -23,6 +24,7 @@ const ProfileEdit = () => {
   const [ profileUri, setProfileUri ] = useState('')
   const [ server, setServer ] = useState(Response.initial)
   const router = useRouter()
+  const navigation = useNavigation()
 
   const loadData = useCallback(async () => {
     if (user?.userId !== userId) {
@@ -127,6 +129,14 @@ const ProfileEdit = () => {
   }, [user, userId, name, profileChanged, profileUri, bio, router])
 
   useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Edit your profile',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
+    })
+  }, [navigation])
+
+  useEffect(() => {
     loadData()
   }, [loadData])
 
@@ -144,10 +154,9 @@ const ProfileEdit = () => {
   }
 
   return (
-    <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior="padding" enabled>
-      <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}}>
+    <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
+      <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}} keyboardShouldPersistTaps='handled'>
         <View style={[styles.form, {maxWidth: width > 1000 ? 1000 : '100%' }]}>
-          <Text style={styles.title}>Edit Your Profile</Text>
           <Pressable onPress={pickImage} style={styles.profileWrapper}>
             {profileUri ? (
               <Image source={{ uri: profileUri }} style={styles.profileImage} />
@@ -156,21 +165,21 @@ const ProfileEdit = () => {
                 <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
               </Pressable>
             )}
-            <Text style={styles.changePicText}>Change Profile Picture</Text>
+            <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 12}]}>Change Profile Picture</HText>
           </Pressable>
 
-          <Text style={[styles.changePicText, {padding: 5, marginTop: -5}]}>Change Name</Text>
+          <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 12, padding: 5, marginTop: -5}]}>Change Name</HText>
           <TextInput
-            style={styles.input}
+            style={[styles.input, {fontFamily: 'Inter_400Regular', fontSize: width > 1000 ? 16 : 14}]}
             placeholder={data.name}
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.text_placeholder}
           />
 
-          <Text style={[styles.changePicText, {padding: 5}]}>Change Bio</Text>
+          <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 12, padding: 5}]}>Change Bio</HText>
           <TextInput
-            style={[styles.input, styles.bioInput]}
+            style={[styles.input, styles.bioInput, {fontFamily: 'Inter_400Regular', fontSize: width > 1000 ? 16 : 14}]}
             placeholder={data.bio}
             value={bio}
             onChangeText={setBio}
@@ -184,10 +193,10 @@ const ProfileEdit = () => {
             onPress={handleEdit}
             disabled={!name && !bio && !profileUri}
           >
-            <Text style={styles.buttonText}>Confirm</Text>
+            <HText style={styles.buttonText}>Confirm</HText>
           </Pressable>
 
-          <Text style={styles.footerText}>Changed your mind? <Link href={`profile/${userId}`} style={styles.link}>Cancel</Link></Text>
+          <HText style={[styles.footerText, {fontSize: width > 1000 ? 16 : 14}]}>Changed your mind? <Link href={`profile/${userId}`} style={styles.link}>Cancel</Link></HText>
         </View>
 
         <LoadingResponse visible={server.result <= 0} />
@@ -208,7 +217,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '700', marginBottom: 30, color: Colors.text_title, textAlign: 'center' },
   profileWrapper: { alignItems: 'center', marginBottom: 16 },
   profileImage: { width: 100, height: 100, borderRadius: 50, borderColor: Colors.border_color, borderWidth: 1.5 },
-  changePicText: { marginTop: 6, fontSize: 12, color: Colors.text_link, fontWeight: '600' },
+  changePicText: { marginTop: 6, color: Colors.text_link, fontWeight: '600' },
   input: {
     width: '100%',
     borderWidth: 1.5,
@@ -222,7 +231,7 @@ const styles = StyleSheet.create({
     outlineWidth: 0,
     outlineColor: 'transparent',
   },
-  bioInput: { minHeight: 80, textAlignVertical: 'top', padding: 5 },
+  bioInput: { minHeight: 80, textAlignVertical: 'top', paddingVertical: 7, paddingHorizontal: 10 },
   button: { backgroundColor: Colors.heteroboxd, paddingVertical: 15, borderRadius: 10, alignItems: 'center', marginTop: 10, width: '25%', alignSelf: 'center' },
   buttonText: { color: Colors.text_button, fontWeight: '600' },
   footerText: { textAlign: 'center', marginTop: 20, fontSize: 14, color: Colors.text },

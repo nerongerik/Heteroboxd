@@ -1,13 +1,22 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useWindowDimensions, View } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useNavigation, useRouter } from 'expo-router'
 import { Colors } from '../constants/colors'
 import SearchTabs from '../components/tabs/searchTabs'
 
 const Search = () => {
   const router = useRouter()
+  const navigation = useNavigation()
   const { width } = useWindowDimensions()
   const widescreen = useMemo(() => width > 1000, [width])
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Search',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
+    })
+  }, [navigation])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background}}>

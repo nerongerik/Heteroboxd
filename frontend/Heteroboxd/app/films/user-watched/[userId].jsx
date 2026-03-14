@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
 import FilterSort from '../../../components/filterSort'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import PaginationBar from '../../../components/paginationBar'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import SlidingMenu from '../../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 
 const UserWatchedFilms = () => {
   const { userId } = useLocalSearchParams()
@@ -63,21 +64,13 @@ const UserWatchedFilms = () => {
     }
   }, [userId, currentFilter, currentSort])
 
-  useEffect(() => {
-    setCurrentSort({field: 'DATE WATCHED', desc: true})
-  }, [currentFilter.field])
-
-  useEffect(() => {
-    loadDataPage(1)
-  }, [userId, loadDataPage])
-
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: 'Recents',
       headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
           <Ionicons name='options' size={24} color={Colors.text} />
@@ -85,6 +78,14 @@ const UserWatchedFilms = () => {
       ),
     })
   }, [navigation, widescreen, openMenu])
+
+  useEffect(() => {
+    setCurrentSort({field: 'DATE WATCHED', desc: true})
+  }, [currentFilter.field])
+
+  useEffect(() => {
+    loadDataPage(1)
+  }, [userId, loadDataPage])
 
   const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
@@ -144,7 +145,7 @@ const UserWatchedFilms = () => {
         data={paddedEntries}
         keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
         numColumns={4}
-        ListEmptyComponent={server.result > 0 && <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</Text>}
+        ListEmptyComponent={server.result > 0 && <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</HText>}
         renderItem={Film}
         ListFooterComponent={Footer}
         style={{alignSelf: 'center'}}

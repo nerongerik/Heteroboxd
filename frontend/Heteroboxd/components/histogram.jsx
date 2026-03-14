@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import * as format from '../helpers/format'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 import Stars from './stars'
 
 const BUCKETS = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
@@ -55,7 +56,7 @@ const Histogram = ({ histogram }) => {
               </TouchableOpacity>
           ))}
         </View>
-        <Text style={{color: Colors.text_title, fontSize: widescreen ? 28 : 20, fontWeight: '600'}}>{activeOutput}</Text>
+        <HText style={{color: Colors.text_title, fontSize: widescreen ? 28 : 20, fontWeight: '600'}}>{activeOutput}</HText>
       </View>
       { pressed >= 0 ? (
         <View style={{width: '100%', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', height: widescreen ? 40 : 30}}>

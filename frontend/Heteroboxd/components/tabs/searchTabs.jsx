@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Fontisto } from '@expo/vector-icons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import * as format from '../../helpers/format'
@@ -9,6 +9,7 @@ import { Colors } from '../../constants/colors'
 import Author from '../author'
 import Divider from '../../components/divider'
 import { Headshot } from '../headshot'
+import HText from '../htext'
 import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 import { UserAvatar } from '../userAvatar'
@@ -66,7 +67,7 @@ const SearchTabs = ({ widescreen, router }) => {
 
   const TabButton = ({ title, active, onPress }) => (
     <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
-      <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
+      <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
   )
 
@@ -117,16 +118,18 @@ const SearchTabs = ({ widescreen, router }) => {
                 }}
               />
             </View>
-            <View>
-              <Text style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text_title, fontWeight: '700'}}>{item.title}</Text>
-              {item.originalTitle !== item.title && <Text style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400', fontStyle: 'italic'}}>{item.originalTitle}</Text>}
-              <Text style={{fontSize: widescreen ? 16 : 12, color: Colors.text, fontWeight: '400'}}>
+            <View style={{flexShrink: 1, maxWidth: '100%'}}>
+              <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text_title, fontWeight: '700'}}>
+                {format.sliceText(item.title || '', widescreen ? -1 : 100)}
+              </HText>
+              {item.originalTitle !== item.title && <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400', fontStyle: 'italic'}}>{item.originalTitle}</HText>}
+              <HText style={{fontSize: widescreen ? 16 : 12, color: Colors.text, fontWeight: '400'}}>
                 {item.releaseYear || ''}
                 {item.castAndCrew?.length > 0 && item.releaseYear > 0 && ' • '}
                 {item.castAndCrew?.map((director, index) => (
                   `${director.celebrityName}${index < item.castAndCrew?.length - 1 ? ', ' : ''}`
                 ))}
-              </Text>
+              </HText>
             </View>
           </View>
         </Pressable>
@@ -153,7 +156,7 @@ const SearchTabs = ({ widescreen, router }) => {
             />
           </View>
           <View>
-            <Text style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text, fontWeight: '700'}}>{item.celebrityName}</Text>
+            <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text, fontWeight: '700'}}>{item.celebrityName}</HText>
           </View>
         </View>
       </Pressable>
@@ -165,8 +168,8 @@ const SearchTabs = ({ widescreen, router }) => {
     <>
       <Pressable style={{paddingVertical: 14, lineHeight: 30, paddingHorizontal: 5}} onPress={() => router.push(`/profile/${item.id}`)}>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <UserAvatar pictureUrl={item.pictureUrl} style={{width: 30, height: 30, borderRadius: 15, borderColor: Colors.border_color, borderWidth: 1.5}} />
-          <Text style={{ fontSize: 18, marginLeft: 10, color: Colors.text}}>{item.name}{item.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
+          <UserAvatar pictureUrl={item.pictureUrl} style={{width: widescreen ? 50 : 30, height: widescreen ? 50 : 30, borderRadius: widescreen ? 25 : 15, borderColor: Colors.border_color, borderWidth: 1.5}} />
+          <HText style={{ fontSize: widescreen ? 22 : 18, marginLeft: 10, color: Colors.text}}>{item.name}{item.admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}</HText>
         </View>
       </Pressable>
       <View style={{marginVertical: spacing}} />
@@ -174,19 +177,20 @@ const SearchTabs = ({ widescreen, router }) => {
   )
 
   const RenderList = ({ item }) => (
-    <View style={{ borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 1, marginBottom: spacing }}>
+    <View style={{ borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 1, marginBottom: 5 }}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl}
-          username={item.authorName}
+          url={item.authorProfilePictureUrl || 0}
+          username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
           widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
-        <Text style={[{color: Colors.text_title, fontWeight: '500', padding: 10}, {fontSize: widescreen ? 22 : 18}]}>{item.name}</Text>
+        <HText style={[{color: Colors.text_title, fontWeight: '500', padding: 10}, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
             const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
@@ -225,17 +229,15 @@ const SearchTabs = ({ widescreen, router }) => {
           })()}
         </View>
                 
-        <Text style={[{color: Colors.text, padding: 10,}, {fontSize: widescreen ? 18 : 14}]}>
-          {item.description.slice(0, widescreen ? 500 : 150)}
-          {widescreen && item.description.length > 500 && '...'}
-          {!widescreen && item.description.length > 150 && '...'}
-        </Text>
+        <HText style={[{color: Colors.text, padding: 10,}, {fontSize: widescreen ? 16 : 14}]}>
+          {format.sliceText(item.description || '', widescreen ? 500 : 150)}
+        </HText>
           
-        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6,}}>
-          <Fontisto name='nav-icon-list-a' size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
-          <Text style={[{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd,}, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </Text>
-          <Fontisto name='heart' size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
-          <Text style={[{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd,}, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</Text>
+        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6}}>
+          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <HText style={[{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd,}, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
+          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <HText style={[{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd,}, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -267,12 +269,18 @@ const SearchTabs = ({ widescreen, router }) => {
               outlineStyle: 'none',
               outlineWidth: 0,
               outlineColor: 'transparent',
+              fontFamily: 'Inter_400Regular'
             }}
             placeholder={`Search ${tab}...`}
             value={query}
             onChangeText={setQuery}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
+            onSubmitEditing={() => {
+              if (query.length > 0) {
+                search(1)
+              }
+            }}
           />
           <Pressable
             onPress={() => search(1)}
@@ -293,18 +301,20 @@ const SearchTabs = ({ widescreen, router }) => {
 
       {
         searching === 0 ? (
-          history.map((s, i) => (
-            <View key={i}>
-              <Pressable onPress={() => repeatSearch(s)} style={{marginLeft: widescreen ? 40 : 20}}>
-                <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.text }}>
-                  <Text style={{color: Colors.text_title, opacity: 0.9}}>{s.query}</Text>{' • '}
-                  <Text style={{fontWeight: '700', opacity: 0.7}}>{s.tab.toUpperCase()}</Text>{' • '}
-                  <Text style={{fontStyle: 'italic', opacity: 0.5}}>{format.formatTimestamp(s.timestamp)}</Text>
-                </Text>
-              </Pressable>
-              <Divider marginVertical={20} />
-            </View>
-          ))
+          <ScrollView style={{marginBottom: 30}} showsVerticalScrollIndicator={false}>
+            {history.map((s, i) => (
+              <View key={i}>
+                <Pressable onPress={() => repeatSearch(s)} style={{marginLeft: widescreen ? 40 : 20}}>
+                  <HText style={{fontSize: widescreen ? 18 : 16, color: Colors.text }}>
+                    <HText style={{color: Colors.text_title, opacity: 0.9}}>{s.query}</HText>{' • '}
+                    <HText style={{fontWeight: '700', opacity: 0.7}}>{s.tab.toUpperCase()}</HText>{' • '}
+                    <HText style={{fontStyle: 'italic', opacity: 0.5}}>{format.formatTimestamp(s.timestamp)}</HText>
+                  </HText>
+                </Pressable>
+                <Divider marginVertical={20} />
+              </View>
+            ))}
+          </ScrollView>
         ) : searching === 1 ? (
           <View style={{ width: '100%', alignItems: 'center', paddingVertical: 30 }}>
             <ActivityIndicator size='large' color={Colors.text_link} />
@@ -316,7 +326,7 @@ const SearchTabs = ({ widescreen, router }) => {
             key={tab}
             keyExtractor={(_, index) => `${tab}-${index}`}
             renderItem={RenderItem}
-            ListEmptyComponent={searching === 2 && <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to see here.</Text>}
+            ListEmptyComponent={searching === 2 && <HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to see here.</HText>}
             ListFooterComponent={Footer}
             style={{width: '100%', alignSelf: 'center'}}
             contentContainerStyle={{paddingBottom: 80}}

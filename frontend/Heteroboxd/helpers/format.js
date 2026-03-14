@@ -5,6 +5,7 @@ export const formatCount = (n) => {
 }
 
 export const sliceText = (text, chars) => {
+  if (chars < 0) return text
   return `${text.slice(0, chars) + (text.length > chars ? '...' : '')}`
 }
 

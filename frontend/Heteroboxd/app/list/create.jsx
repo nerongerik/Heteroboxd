@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Animated, FlatList, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { Snackbar } from 'react-native-paper'
@@ -8,6 +8,7 @@ import * as auth from '../../helpers/auth'
 import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
 import { Poster } from '../../components/poster'
@@ -92,18 +93,22 @@ const CreateList = () => {
     }
   }, [user, listName, desc, ranked, entries])
 
+  const widescreen = useMemo(() => width > 1000, [width])
+
   useEffect(() => {
     navigation.setOptions({
+      headerTitle: 'New list',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
-        <Pressable onPress={handleSubmit} disabled={listName.length === 0 || entries.length === 0 || desc.length > 1000} style={(listName.length === 0 || entries.length === 0 || desc.length > 1000) && {opacity: 0.5}}>
+        <Pressable onPress={handleSubmit} disabled={listName.length === 0 || entries.length === 0 || desc.length > 1000} style={[{marginRight: widescreen ? 15 : null}, (listName.length === 0 || entries.length === 0 || desc.length > 1000) && {opacity: 0.5}]}>
           <Ionicons name='checkmark' size={24} color={Colors.text_title} />
         </Pressable>
       )
     })
-  }, [navigation, listName, desc, entries, ranked])
+  }, [navigation, widescreen, handleSubmit])
 
   const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
-  const widescreen = useMemo(() => width > 1000, [width])
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing])
@@ -123,7 +128,7 @@ const CreateList = () => {
   const Header = useMemo(() => (
     <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
       <TextInput
-        style={[styles.input, {marginBottom: 15}]}
+        style={[styles.input, {marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
         placeholder="List name*"
         value={listName}
         onChangeText={setListName}
@@ -131,21 +136,22 @@ const CreateList = () => {
       />
       <View style={styles.descWrapper}>
         <TextInput
-          style={[styles.input, styles.bioInput]}
+          style={[styles.input, styles.bioInput, {fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           placeholder="Description (optional)"
           value={desc}
           onChangeText={setDesc}
           multiline
           placeholderTextColor={Colors.text_placeholder}
         />
-        <Text style={[
+        <HText style={[
           styles.counterText,
           { color: desc.length < 1001 ? Colors.text_title : Colors.password_meager }
         ]}>
           {desc.length}/1000
-        </Text>
+        </HText>
       </View>
-      <Text style={{color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 20 : 18}}> Entries</Text>
+      <View style={{height: widescreen ? 30 : null}} />
+      <HText style={{color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 20 : 18}}> Entries</HText>
       <View style={{height: 15}} />
     </View>
   ), [listName, desc, widescreen, width]);
@@ -180,7 +186,7 @@ const CreateList = () => {
               marginTop: -10
             }}
           >
-            <Text
+            <HText
               style={{
                 color: Colors.text_title,
                 fontSize: widescreen ? 12 : 8,
@@ -189,7 +195,7 @@ const CreateList = () => {
               }}
             >
               {index + 1}
-            </Text>
+            </HText>
           </View>
         )}
       </Pressable>
@@ -198,8 +204,8 @@ const CreateList = () => {
 
   const Footer = useMemo(() => (
     <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
-      <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
-      <Text style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</Text>
+      <FontAwesome5 name="trophy" size={30} color={ranked ? Colors.heteroboxd : Colors.text} />
+      <HText style={{textAlign: 'center', fontSize: 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
     </Pressable>
   ), [ranked, widescreen])
 
@@ -210,7 +216,7 @@ const CreateList = () => {
         numColumns={4}
         ListHeaderComponent={Header}
         renderItem={Render}
-        ListEmptyComponent={<Text style={{color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>This list is empty.</Text>}
+        ListEmptyComponent={<HText style={{color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>This list is empty.</HText>}
         ListFooterComponent={Footer}
         contentContainerStyle={{padding: spacing, alignItems: 'center'}}
         columnWrapperStyle={{columnGap: spacing, rowGap: spacing}}
@@ -256,22 +262,22 @@ const CreateList = () => {
                 <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
                   <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
                   <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                    <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                      {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</Text>
-                    </Text>
-                    <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                    <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
+                      {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
+                    </HText>
+                    <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
                       item.castAndCrew?.map((d, i) => (
-                        <Text key={i} style={{}}>
+                        <HText key={i} style={{}}>
                           {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
-                        </Text>
+                        </HText>
                       ))
-                    }</Text>
+                    }</HText>
                   </View>
                 </View>
               </Pressable>
             )}
             ListEmptyComponent={
-              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text></View>
+              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>
             }
             ListFooterComponent={
               <View style={{width: widescreen ? width*0.5 : width*0.95}}>
@@ -324,7 +330,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
     color: Colors.text_input,
-    fontSize: 16,
     height: 45,
     paddingHorizontal: 12,
     width: '100%',

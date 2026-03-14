@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Foundation from '@expo/vector-icons/Foundation'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -11,6 +11,7 @@ import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
 import Divider from '../../components/divider'
 import Histogram from '../../components/histogram'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
 import Popup from '../../components/popup'
@@ -37,12 +38,13 @@ const Profile = () => {
   const [ recent, setRecent ] = useState(null)
   const [ blocked, setBlocked ] = useState(false)
   const [ following, setFollowing ] = useState(false)
-  const [ followLabel, setFollowLabel ] = useState('FOLLOW')
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ favIndex, setFavIndex ] = useState(-1)
   const [ searchResults, setSearchResults ] = useState({items: [], totalCount: 0, page: 1})
   const [ searchInit, setSearchInit ] = useState(true)
+  const followingLocalCopyRef = useRef(null)
+  const followRequestRef = useRef(0)
 
   const openMenu2 = () => {
     setMenuShown2(true)
@@ -79,13 +81,8 @@ const Profile = () => {
             setBlocked(true)
           } else if (trimmed === 'following') {
             setFollowing(true)
-            setFollowLabel('UNFOLLOW')
-          } else if (trimmed === 'followed') {
-            setFollowing(false)
-            setFollowLabel('FOLLOW BACK')
           } else {
             setFollowing(false)
-            setFollowLabel('FOLLOW')
           }
         }
         setData({ 
@@ -164,22 +161,24 @@ const Profile = () => {
       setSnack({ shown: true, msg: 'Session expired! Try logging in again.' })
       return
     }
-    if (following) {
-      setFollowing(false)
-      setFollowLabel(followLabel === 'UNFOLLOW' ? 'FOLLOW' : followLabel)
-    } else {
-      setFollowing(true)
-      setFollowLabel('UNFOLLOW')
+    const currentFollowing = followingLocalCopyRef.current
+    setFollowing(!currentFollowing)
+    const requestId = ++followRequestRef.current
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=follow-unfollow`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (requestId !== followRequestRef.current) return
+      if (!res.ok) {
+        console.log('follow/unfollow failed; internal server error...')
+      }
+    } catch {
+      if (requestId !== followRequestRef.current) return
+      console.log('follow/unfollow failed; network error...')
     }
-    const jwt = await auth.getJwt()
-    const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=follow-unfollow`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${jwt}` }
-    })
-    if (!res.ok) {
-      console.log('follow/unfollow failed; debugging...')
-    }
-  }, [user, userId, following, followLabel])
+  }, [user, followRequestRef, userId])
 
   const updateFavorites = useCallback(async (filmId, index) => {
     if (!user || !isOwnProfile || !(await isValidSession())) {
@@ -205,17 +204,21 @@ const Profile = () => {
   }, [loadProfileData])
 
   useEffect(() => {
-    if (!user) return
+    if (!data) return
     navigation.setOptions({
       headerTitle: '',
-      headerRight: () => <ProfileOptionsButton userId={userId} blocked={blocked} />
+      headerRight: () => user ? <ProfileOptionsButton userId={userId} blocked={blocked} /> : null
     })
-  }, [navigation, blocked, user])
+  }, [navigation, blocked, data, user, userId])
 
   useEffect(() => {
     if (!data) return
     loadFilmData()
   }, [data, loadFilmData])
+
+  useEffect(() => {
+    followingLocalCopyRef.current = following
+  }, [following])
 
   const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
   const widescreen = useMemo(() => width > 1000, [width])
@@ -225,7 +228,8 @@ const Profile = () => {
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
   const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4.1, [maxRowWidth, spacing])
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
-  const followButtonColor = followLabel === 'UNFOLLOW' ? Colors.heteroboxd : Colors._heteroboxd
+  const followButtonColor = useMemo(() => following ? Colors.heteroboxd : Colors._heteroboxd, [following])
+  const followLabel = useMemo(() => following ? 'UNFOLLOW' : 'FOLLOW', [following])
 
   if (!data) {
     return (
@@ -248,7 +252,7 @@ const Profile = () => {
         flex: 1,
         backgroundColor: Colors.background
       }}>
-        <Text style={styles.text}>You have blocked this user.</Text>
+        <HText style={styles.text}>You have blocked this user.</HText>
       </View>
     )
   }
@@ -261,7 +265,7 @@ const Profile = () => {
             <UserAvatar pictureUrl={data.pictureUrl} style={width < 500 ? styles.smallWebProfile : styles.profileImage} />
           </View>
           <View style={{alignItems: 'center', justifyContent: 'center'}}>
-            <Text style={styles.username}>{data.name}{data.admin && <Text style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</Text>}</Text>
+            <HText style={styles.username}>{data.name}{data.admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}</HText>
           </View>
           {!isOwnProfile && (
             <Pressable
@@ -277,7 +281,7 @@ const Profile = () => {
                 alignSelf: 'center'
               }}
             >
-              <Text style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: followButtonColor, textAlign: 'center'}}>{followLabel}</Text>
+              <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: followButtonColor, textAlign: 'center'}}>{followLabel}</HText>
             </Pressable>
           )}
         </View>
@@ -288,16 +292,16 @@ const Profile = () => {
           {
             data.gender?.toLowerCase() === 'male' ? (
               <Foundation name='male-symbol' size={24} color={Colors.male} />
-            ) : (
+            ) : data.gender?.toLowerCase() === 'male' ? (
               <Foundation name='female-symbol' size={24} color={Colors.female} />
-            )
+            ) : null
           }
-          <Text style={styles.text}>{data.bio}</Text>
+          <HText style={[styles.text, {fontSize: widescreen ? 18 : 16}]}>{data.bio || ''}</HText>
         </View>
 
         <Divider marginVertical={20} />
 
-        <Text style={styles.subtitle}>Favorites</Text>
+        <HText style={[styles.subtitle, {marginBottom: 10}]}>Favorites</HText>
         <FlatList
           horizontal
           data={favorites}
@@ -338,19 +342,19 @@ const Profile = () => {
 
         <Divider marginVertical={20} />
         
-        <Text style={[styles.subtitle, {marginBottom: 10}]}>Ratings</Text>
+        <HText style={[styles.subtitle, {marginBottom: 10}]}>Ratings</HText>
         {
           Object.entries(ratings).length > 0 ? (
             <Histogram histogram={ratings} />
           ) : (
-            <View style={{alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><Text style={styles.text}>Nothing to see here.</Text></View>
+            <View style={{alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>
           )
         }
 
         <Divider marginVertical={20} />
 
         <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
-          <Text style={styles.subtitle}>Recents</Text>
+          <HText style={[styles.subtitle, {marginBottom: 10}]}>Recents</HText>
         </Pressable>
         <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
           {
@@ -366,7 +370,7 @@ const Profile = () => {
                 contentContainerStyle={{alignItems: 'center'}}
                 data={recent.films}
                 keyExtractor={(item) => item.filmId.toString()}
-                ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><Text style={styles.text}>Nothing to see here.</Text></View>}
+                ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>}
                 renderItem={({ item }) => {
                   return (
                     <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{marginRight: spacing}}>
@@ -410,16 +414,16 @@ const Profile = () => {
                 onPress={() => {handleButtons(item.label)}}
                 style={[styles.boxButton, (disabled) && { opacity: 0.5 }]}
               >
-                <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
+                <HText style={[styles.boxButtonText, { color: Colors.text_title }]}>
                   {item.label}
-                </Text>
-                <Text style={[styles.boxButtonText, { color: Colors.text_title }]}>
+                </HText>
+                <HText style={[styles.boxButtonText, { color: Colors.text_title }]}>
                   {format.formatCount(item.count)} {'➜'}
-                </Text>
+                </HText>
               </Pressable>
             )
           })}
-          <Text style={[styles.text, {marginTop: 50}]}>joined {data.joined}</Text>
+          <HText style={[styles.text, {marginTop: widescreen ? 50 : 100, fontSize: widescreen ? 16 : 14}]}>joined {data.joined}</HText>
         </View>
       </ScrollView>
 
@@ -473,30 +477,30 @@ const Profile = () => {
             numColumns={1}
             renderItem={({item, index}) => (
               <Pressable key={index} onPress={() => {
-                setSearchResults({items: [], totalCount: 0, page: 1});
+                setSearchResults({items: [], totalCount: 0, page: 1})
                 setSearchInit(true)
-                updateFavorites(item.filmId);
-                closeMenu2();
+                updateFavorites(item.filmId)
+                closeMenu2()
               }}>
                 <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
                   <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
                   <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                    <Text style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
-                      {item.title} <Text style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</Text>
-                    </Text>
-                    <Text style={{color: Colors.text, fontSize: 12}}>Directed by {
+                    <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
+                      {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
+                    </HText>
+                    <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
                       item.castAndCrew?.map((d, i) => (
-                        <Text key={i} style={{}}>
+                        <HText key={i} style={{}}>
                           {d.celebrityName ?? ''}{i < item.castAndCrew.length - 1 && ', '}
-                        </Text>
+                        </HText>
                       ))
-                    }</Text>
+                    }</HText>
                   </View>
                 </View>
               </Pressable>
             )}
             ListEmptyComponent={
-              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><Text style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</Text></View>
+              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>
             }
             ListFooterComponent={
               <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>
@@ -557,7 +561,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontWeight: "500",
     marginBottom: 5,
-    marginLeft: 12,
+    marginLeft: 6,
     fontSize: 20,
     color: Colors.text_title,
     textAlign: "left",
@@ -569,13 +573,6 @@ const styles = StyleSheet.create({
     textAlign: "justify",
     fontStyle: 'italic',
     marginTop: 0,
-  },
-  divider: {
-    width: "75%",
-    alignSelf: "center",
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border_color,
-    opacity: 0.5,
   },
   profileImage: {
     width: 150,

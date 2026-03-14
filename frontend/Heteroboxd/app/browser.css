@@ -21,3 +21,7 @@
   scrollbar-color: #262a2d #191d1f;
   scrollbar-width: thin;
 }
+
+html, body {
+  background-color: #191d1f;
+}

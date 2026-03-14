@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -10,6 +10,7 @@ import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
 import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import PaginationBar from '../../../components/paginationBar'
 import ParsedRead from '../../../components/parsedRead'
@@ -107,9 +108,9 @@ const FilmsReviews = () => {
     const first = data.reviews[0]
     if (!first) return
     navigation.setOptions({
-      headerTitle: `Reviews of ${first.filmTitle?.slice(0, 20)}${first.filmTitle?.length > 20 ? '...' : ''}`,
+      headerTitle: `Reviews of ${format.sliceText(first.filmTitle || '', widescreen ? 20 : 12)}`,
       headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
           <Ionicons name='options' size={24} color={Colors.text} />
@@ -126,11 +127,12 @@ const FilmsReviews = () => {
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl}
-          username={item.authorName}
+          url={item.authorProfilePictureUrl || null}
+          username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
           widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
         <Stars size={widescreen ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
       </View>
@@ -138,21 +140,21 @@ const FilmsReviews = () => {
         {
           item.text?.length > 0 ?
             !item.spoiler || uwf || isRevealed(item.id) ? (
-              <View style={{marginVertical: 7.5}}>
-                <ParsedRead html={`${item.text.replace(/\n{3,}/g, '\n\n').trim().slice(0, 350)}${item.text.length > 350 ? '...' : ''}`} />
+              <View style={{marginVertical: 7.5, overflow: 'hidden'}}>
+                <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 600 : 300)}`} />
               </View>
             ) : (
             <Pressable onPress={() => revealSpoiler(item.id)}>
               <View style={{width: '95%', alignSelf: 'center', padding: 10, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
-                <Text style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<Text style={{color: Colors.text_link}}> Read anyway?</Text></Text>
+                <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>
               </View>
             </Pressable>
-            ) : <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{item.authorName || 'User'} wrote no review regarding this film.</Text>
+            ) : <HText style={{paddingVertical: 10, color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
         }
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
           <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
-          <Text style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</Text>
+          <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -178,7 +180,7 @@ const FilmsReviews = () => {
         ref={listRef}
         data={data.reviews}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={server.result > 0 && <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</Text>}
+        ListEmptyComponent={server.result > 0 && <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</HText>}
         renderItem={Review}
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}

@@ -3,6 +3,7 @@ import { Animated, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useAuth } from '../../hooks/useAuth'
+import * as format from '../../helpers/format'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
@@ -12,7 +13,7 @@ import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
 import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 const FILTER_TO_ROLE_MAP = {
   'Starred': 'Actor',
   'Directed': 'Director',
@@ -132,6 +133,21 @@ const Celebrity = () => {
     loadBioData()
   }, [celebrityId])
 
+  const widescreen = useMemo(() => width > 1000, [width])
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: format.sliceText(bio?.celebrityName || '', widescreen ? -1 : 18),
+      headerTitleAlign: 'center',
+      headerTitleStyle: { color: Colors.text_title, fontFamily: 'Inter_400Regular' },
+      headerRight: () => (
+        <Pressable onPress={openMenu} style={{ marginRight: widescreen ? 15 : null }}>
+          <Ionicons name='options' size={24} color={Colors.text} />
+        </Pressable>
+      ),
+    })
+  }, [navigation, bio?.celebrityName, widescreen, openMenu])
+
   useEffect(() => {
     if (!t || t.length === 0) {
       setCurrentFilter('Bio')
@@ -148,28 +164,13 @@ const Celebrity = () => {
     if (filter !== 'Bio') {
       loadCreditsData(filter, 1)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (currentFilter && currentFilter !== 'Bio') {
       loadCreditsData(currentFilter, 1)
     }
   }, [currentSort])
-
-  const widescreen = useMemo(() => width > 1000, [width])
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: bio?.celebrityName ?? '',
-      headerTitleAlign: 'center',
-      headerTitleStyle: { color: Colors.text_title },
-      headerRight: () => (
-        <Pressable onPress={openMenu} style={{ marginRight: widescreen ? 15 : null }}>
-          <Ionicons name='options' size={24} color={Colors.text} />
-        </Pressable>
-      ),
-    })
-  }, [navigation, bio, widescreen, openMenu])
 
   if (!bio) {
     return (
@@ -187,7 +188,7 @@ const Celebrity = () => {
   return (
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <CelebrityTabs
-        bio={{text: bio.celebrityDescription || 'This individual is indescribable.', url: bio.celebrityPictureUrl}}
+        bio={{text: bio.celebrityDescription || 'This individual is indescribable.', url: bio.celebrityPictureUrl || null}}
         currentTabData={currentTabData}
         availableRoles={availableRoles}
         activeTab={currentFilter}
@@ -218,19 +219,13 @@ const Celebrity = () => {
         width={width}
       >
         <FilterSort
-          key={`${currentFilter}-${currentSort.field}`}
           context={'celebrity'}
-          currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {
-            setCurrentFilter(newFilter)
-            closeMenu()
-          }}
           currentSort={currentSort}
           onSortChange={(newSort) => setCurrentSort(newSort)}
         />
       </SlidingMenu>
     </View>
-  );
-};
+  )
+}
 
 export default Celebrity

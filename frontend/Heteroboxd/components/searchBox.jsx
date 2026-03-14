@@ -39,15 +39,23 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
   const widescreen = useMemo((() => width > 1000), [width])
 
   return (
-    <View>
+    <View keyboardShouldPersistTaps='handled'>
       <>
         <KeyboardAvoidingView style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, {fontFamily: 'Inter_400Regular'}]}
             placeholder='Search films...'
             value={query}
             onChangeText={setQuery}
             placeholderTextColor={Colors.text_placeholder}
+            onSubmitEditing={() => {
+              if (query.length > 0) {
+                lastQuery.current = query
+                setQuery('')
+                handleSearch()
+              }
+            }}
+            returnKeyType='search'
           />
           <Pressable
             style={[{backgroundColor: Colors.heteroboxd, padding: 10, borderTopRightRadius: 10, borderBottomRightRadius: 10}, (query.length === 0) && {opacity: 0.8}]}

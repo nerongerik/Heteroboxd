@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, FlatList, Linking, Platform, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Linking, Platform, Pressable, TextInput, useWindowDimensions, View } from 'react-native'
 import { MaterialCommunityIcons, Fontisto, Ionicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
+import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
 import PaginationBar from '../components/paginationBar'
 import { UserAvatar } from '../components/userAvatar'
@@ -219,6 +220,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, users: Response.loading}))
+          handleSearch(search.users, (data) => {
+            data ? setUsers({ page: 1, items: [data], totalCount: 1}) : setUsers({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, users: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -258,6 +267,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, lists: Response.loading}))
+          handleSearch(search.lists, (data) => {
+            data ? setLists({ page: 1, items: [data], totalCount: 1}) : setLists({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, lists: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -297,6 +314,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, reviews: Response.loading}))
+          handleSearch(search.reviews, (data) => {
+            data ? setReviews({ page: 1, items: [data], totalCount: 1}) : setReviews({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, reviews: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -336,6 +361,14 @@ const Admin = () => {
           marginVertical: 20,
           alignSelf: 'center'
         }}
+        onSubmitEditing={() => {
+          setServers(prev => ({...prev, comments: Response.loading}))
+          handleSearch(search.comments, (data) => {
+            data ? setComments({ page: 1, items: [data], totalCount: 1}) : setComments({ page: 1, items: [], totalCount: 0})
+            setServers(prev => ({...prev, comments: data ? Response.ok : Response.notFound}))
+          })
+        }}
+        returnKeyType='search'
       />
       <Pressable
         onPress={() => {
@@ -352,7 +385,7 @@ const Admin = () => {
   if (!aJwt) {
     return (
       <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, backgroundColor: Colors.background}}>
-        <Text style={{textAlign: 'center', color: Colors.text_title, fontSize: 20, fontWeight: '600', paddingHorizontal: 10}}>Admin Dashboard Key:</Text>
+        <HText style={{textAlign: 'center', color: Colors.text_title, fontSize: 20, fontWeight: '600', paddingHorizontal: 10}}>Admin Dashboard Key:</HText>
         <TextInput
           value={key}
           onChangeText={setKey}
@@ -373,13 +406,15 @@ const Admin = () => {
             marginVertical: 20,
             alignSelf: 'center'
           }}
+          onSubmitEditing={handleSubmitKey}
+          returnKeyType='search'
         />
         <Pressable
           style={[{backgroundColor: Colors.heteroboxd, width: 'auto', padding: 10, borderRadius: 10, alignSelf: 'center'}, key.length === 0 && { opacity: 0.5 }]}
           onPress={handleSubmitKey}
           disabled={key.length === 0}
         >
-          <Text style={{color: Colors.text_button, fontWeight: '500', textAlign: 'center'}}>Submit</Text>
+          <HText style={{color: Colors.text_button, fontWeight: '500', textAlign: 'center'}}>Submit</HText>
         </Pressable>
 
         <LoadingResponse visible={servers.admin.result === 0} />
@@ -415,7 +450,7 @@ const Admin = () => {
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingHorizontal: 10}}>
-      <Text style={{
+      <HText style={{
         textAlign: 'center',
         color: timerColor,
         fontSize: 36,
@@ -423,7 +458,7 @@ const Admin = () => {
         marginBottom: 10
       }}>
         {minutes}:{seconds}
-      </Text>
+      </HText>
       <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <View style={{width: width/4.1, height: height*0.8, borderWidth: 3, borderRadius: 10, borderColor: Colors.border_color}}>
           <FlatList
@@ -438,11 +473,11 @@ const Admin = () => {
                       pictureUrl={item.pictureUrl || null}
                       style={{width: 50, height: 50, borderRadius: 25, marginRight: 10}}
                     />
-                    <Text style={{fontSize: 20, fontWeight: '600', color: Colors.text_title}}>{format.sliceText(item.name, 20)}</Text>
+                    <HText style={{fontSize: 20, fontWeight: '600', color: Colors.text_title}}>{format.sliceText(item.name, 20)}</HText>
                   </View>
                 </Pressable>
                 <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('user', item.id, () => getUsers(users.page))}>
-                  <Text style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</Text>
+                  <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
@@ -457,7 +492,7 @@ const Admin = () => {
             ListEmptyComponent={
               servers.users.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
-              : <Text style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</Text>
+              : <HText style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</HText>
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
@@ -472,12 +507,12 @@ const Admin = () => {
               <View style={{backgroundColor: Colors.card, padding: 10, borderRadius: 5, marginBottom: 20, width: width/4.1 - 20, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
                 <Pressable style={{width: (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/list/${item.id}`)}>
                   <View>
-                    <Text style={{fontSize: 20, fontWeight: '600', color: Colors.text_title}}>{format.sliceText(item.name, 30)}</Text>
-                    <Text style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Entries: {item.listEntryCount}</Text>
+                    <HText style={{fontSize: 20, fontWeight: '600', color: Colors.text_title}}>{format.sliceText(item.name, 30)}</HText>
+                    <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Entries: {item.listEntryCount}</HText>
                   </View>
                 </Pressable>
                 <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('list', item.id, () => getLists(lists.page))}>
-                  <Text style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</Text>
+                  <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
@@ -492,7 +527,7 @@ const Admin = () => {
             ListEmptyComponent={
               servers.lists.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
-              : <Text style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</Text>
+              : <HText style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</HText>
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
@@ -507,12 +542,12 @@ const Admin = () => {
               <View style={{backgroundColor: Colors.card, padding: 10, borderRadius: 5, marginBottom: 20, width: width/4.1 - 20, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
                 <Pressable style={{width: (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/review/${item.id}`)}>
                   <View>
-                    <Text style={{fontSize: 20, color: Colors.text_title, fontWeight: '500'}}>{format.sliceText(item.filmTitle, 30)} <Text style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{item.filmReleaseYear || ''}</Text></Text>
-                    <Text style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{format.sliceText(item.text || '', 100)}</Text>
+                    <HText style={{fontSize: 20, color: Colors.text_title, fontWeight: '500'}}>{format.sliceText(item.filmTitle, 30)} <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{item.filmReleaseYear || ''}</HText></HText>
+                    <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{format.sliceText(item.text || '', 100)}</HText>
                   </View>
                 </Pressable>
                 <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('review', item.id, () => getReviews(reviews.page))}>
-                  <Text style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</Text>
+                  <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
@@ -527,7 +562,7 @@ const Admin = () => {
             ListEmptyComponent={
               servers.reviews.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
-              : <Text style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</Text>
+              : <HText style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</HText>
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
@@ -546,12 +581,12 @@ const Admin = () => {
                       pictureUrl={item.authorProfilePictureUrl || null}
                       style={{width: 50, height: 50, borderRadius: 25, marginRight: 10}}
                     />
-                    <Text style={{color: Colors.text_title, fontSize: 20, fontWeight: '500'}}>{item.authorName}</Text>
+                    <HText style={{color: Colors.text_title, fontSize: 20, fontWeight: '500'}}>{item.authorName}</HText>
                   </View>
-                  <Text style={{color: Colors.text, fontSize: 16, fontWeight: '400'}}>{format.sliceText(item.text || '', 50)}</Text>
+                  <HText style={{color: Colors.text, fontSize: 16, fontWeight: '400'}}>{format.sliceText(item.text || '', 50)}</HText>
                 </Pressable>
                 <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('comment', item.id, () => getComments(comments.page))}>
-                  <Text style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</Text>
+                  <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
@@ -566,7 +601,7 @@ const Admin = () => {
             ListEmptyComponent={
               servers.comments.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
-              : <Text style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</Text>
+              : <HText style={{textAlign: 'center', color: Colors.text, padding: 5, fontSize: 20}}>Nothing to see here.</HText>
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}

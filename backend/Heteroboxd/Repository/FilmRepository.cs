@@ -15,7 +15,7 @@ namespace Heteroboxd.Repository
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<(List<Film> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
-        Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta);
+        Task UpdateWatchCountAsync(int FilmId, int Delta);
     }
 
     public class FilmRepository : IFilmRepository
@@ -275,7 +275,7 @@ namespace Heteroboxd.Repository
             return (Results, TotalCount);
         }
 
-        public async Task UpdateFilmWatchCountEfCore7Async(int FilmId, int Delta)
+        public async Task UpdateWatchCountAsync(int FilmId, int Delta)
         {
             var Rows = await _context.Films
                 .Where(f => f.Id == FilmId)

@@ -1,5 +1,6 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Modal, Pressable, StyleSheet, View } from 'react-native'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 
 const Popup = ({ visible, message, onClose, confirm, onConfirm }) => {
   return (
@@ -10,19 +11,19 @@ const Popup = ({ visible, message, onClose, confirm, onConfirm }) => {
     >
       <View style={styles.overlay}>
         <View style={styles.popup}>
-          <Text style={styles.message}>{message}</Text>
+          <HText style={styles.message}>{message}</HText>
           {
             !confirm ? (
               <Pressable onPress={onClose} style={styles.button}>
-                <Text style={styles.buttonText}>OK</Text>
+                <HText style={styles.buttonText}>OK</HText>
               </Pressable>
             ) : (
               <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
                 <Pressable onPress={onConfirm} style={[styles.button, { backgroundColor: Colors._heteroboxd, marginHorizontal: 10 }]}>
-                  <Text style={styles.buttonText}>Yes</Text>
+                  <HText style={styles.buttonText}>Yes</HText>
                 </Pressable>
                 <Pressable onPress={onClose} style={[styles.button, { backgroundColor: Colors.heteroboxd, marginHorizontal: 10 }]}>
-                  <Text style={styles.buttonText}>No</Text>
+                  <HText style={styles.buttonText}>No</HText>
                 </Pressable>
               </View>
             )

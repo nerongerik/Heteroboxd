@@ -1,8 +1,7 @@
-//new
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Snackbar } from 'react-native-paper'
-import { Link, useLocalSearchParams, useRouter } from 'expo-router'
+import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -16,6 +15,7 @@ import FilmDataLoaders from '../../components/filmDataLoaders'
 import FilmInteract from '../../components/filmInteract'
 import { Headshot } from '../../components/headshot'
 import Histogram from '../../components/histogram'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import ParsedRead from '../../components/parsedRead'
 import Popup from '../../components/popup'
@@ -38,6 +38,7 @@ const Film = () => {
   const [ listsCount, setListsCount ] = useState(0)
   const [ friends, setFriends ] = useState(null)
   const router = useRouter()
+  const navigation = useNavigation()
   const { width } = useWindowDimensions()
   const [ snack, setSnack ] = useState(false)
   const snackRef = useRef(false)
@@ -122,6 +123,16 @@ const Film = () => {
   }, [filmId])
 
   useEffect(() => {
+    navigation.setOptions({
+      headerShown: Platform.OS === 'web' ? false : true,
+      headerTransparent: true,
+      headerBackground: () => null,
+      headerTitle: '',
+      headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
+    })
+  }, [navigation])
+
+  useEffect(() => {
     loadBasicData()
     loadUserData()
     loadSubsequentData()
@@ -150,7 +161,7 @@ const Film = () => {
   const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
   const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen])
-  const expansionScaling = useMemo(() => widescreen ? 20 : 12, [widescreen])
+  const expansionScaling = useMemo(() => widescreen ? 30 : 20, [widescreen])
   const friendSize = useMemo(() => headshotSize*0.75, [headshotSize])
   const backdrop = useMemo(() => <Backdrop backdropUrl={film.backdropUrl} />, [film.backdropUrl])
 
@@ -182,34 +193,34 @@ const Film = () => {
         <View style={{width: '100%', marginTop: -15, paddingHorizontal: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'center'}}>
           <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
             <View>
-              <Text style={{fontWeight: '700', color: Colors.text_title, textAlign: 'left', fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33, paddingHorizontal: 1 }}>{film.title}</Text>
-              { film.originalTitle !== film.title && <Text style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</Text> }
+              <HText style={{fontWeight: '700', color: Colors.text_title, textAlign: 'left', fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33, paddingHorizontal: 1 }}>{film.title}</HText>
+              { film.originalTitle !== film.title && <HText style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</HText> }
             </View>
             <View>
-              <Text style={[styles.subtitle, { fontSize: widescreen ? 20 : 14 }]}>DIRECTED BY</Text>
-              <Text style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
+              <HText style={[styles.subtitle, { fontSize: widescreen ? 20 : 14 }]}>DIRECTED BY</HText>
+              <HText style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
                 {directors.map((director, index) => (
                   <React.Fragment key={director.celebrityId}>
                     <Link href={`/celebrity/${director.celebrityId}?t=directed`} style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
                       {director.celebrityName}
                     </Link>
-                    {index < directors.length - 1 && <Text>, </Text>}
+                    {index < directors.length - 1 && <HText>, </HText>}
                   </React.Fragment>
                 ))}
-              </Text>
+              </HText>
             </View>
             
             <View style={{flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap'}}>
-              <Text style={[styles.text, {fontSize: widescreen ? 20 : 14}]}>
+              <HText style={[styles.text, {fontSize: widescreen ? 20 : 14}]}>
                 {film.releaseYear > 0 && film.releaseYear}
                 {film.length > 0 && ` • ${film.length} min`}
                 {film.country?.length > 0 && ' • '}
-              </Text>
+              </HText>
               {film.country?.map((c, i) =>
                 Platform.OS === 'web' ? (
                   <img key={i} src={`https://flagcdn.com/24x18/${c}.png`} style={{ marginRight: 6, width: 20, height: 15 }} />
                 ) : (
-                  <Text key={i} style={[styles.text, {fontSize: widescreen ? 20 : 14}]}>{c} </Text>
+                  <HText key={i} style={[styles.text, {fontSize: widescreen ? 20 : 14}]}>{c} </HText>
                 )
               )}
             </View>
@@ -219,17 +230,17 @@ const Film = () => {
         
         <Divider marginVertical={15} />
         
-        <Text style={{fontWeight: '700', color: Colors.text, textAlign: 'left', paddingHorizontal: 10, fontSize: widescreen ? 20 : 16, marginBottom: film.tagline?.length === 0 ? 0 : 10}}>{film.tagline || ''}</Text>
-        <Text style={[styles.text, {fontSize: widescreen ? 18 : 14, paddingHorizontal: 10}]}>{film.synopsis}</Text>
+        <HText style={{fontWeight: '700', color: Colors.text, textAlign: 'left', paddingHorizontal: 10, fontSize: widescreen ? 20 : 16, marginBottom: film.tagline?.length === 0 ? 0 : widescreen ? 10 : 5}}>{film.tagline || ''}</HText>
+        <HText style={[styles.text, {fontSize: widescreen ? 18 : 14, paddingHorizontal: 10}]}>{film.synopsis}</HText>
 
         {
           film.genres && film.genres.length > 0 &&
           <>
-            <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 10}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: widescreen ? 15 : 10}}>
               {
                 film.genres.map((genre, i) => (
                   <Pressable key={i} onPress={() => router.push(`films/explore?filter=genre&value=${genre}`)} style={[{backgroundColor: Colors.heteroboxd, padding: 5, borderRadius: 3}, (i !== film.genres.length - 1) && {marginRight: 10}]}>
-                    <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>{genre}</Text>
+                    <HText style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>{genre}</HText>
                   </Pressable>
                 ))
               }
@@ -239,14 +250,14 @@ const Film = () => {
 
         <Divider marginVertical={15} />
         
-        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Ratings</Text>
+        <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Ratings</HText>
         {
           Object.entries(ratings).length > 0 ? (
             <Histogram histogram={ratings} />
           ) : (
-            <Text style={{padding: widescreen ? 40 : 30, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
+            <HText style={{padding: widescreen ? 20 : 10, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
               This film hasn't been rated yet.
-            </Text>
+            </HText>
           )
         }
 
@@ -266,17 +277,17 @@ const Film = () => {
         
         <Divider marginVertical={20} />
 
-        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Cast</Text>
+        <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Cast</HText>
         {
           actors.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-              <Text style={[styles.text, {fontSize: 20}]}>There's no recorded cast for this feature.</Text>
+              <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>There's no recorded cast for this feature.</HText>
             </View>
           ) : (
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
-              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center', paddingBottom: 10}}
+              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center'}}
               contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={actors}
               keyExtractor={(item, index) => `${item.celebrityId}-${item.character}-${index}`}
@@ -284,21 +295,21 @@ const Film = () => {
                 <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}?t=starred`)} style={{marginRight: 15}}>
                   <View style={{width: headshotSize + expansionScaling, alignItems: 'center'}}>
                     <Headshot
-                      pictureUrl={item.celebrityPictureUrl}
+                      pictureUrl={item.celebrityPictureUrl || null}
                       style={{
                         width: headshotSize,
                         height: headshotSize,
                         borderRadius: headshotSize / 2,
-                        borderWidth: 2,
+                        borderWidth: 1,
                         borderColor: Colors.border_color
                       }}
                     />
-                    <Text style={[styles.subtitle, { textAlign: 'center', marginTop: 5, fontSize: widescreen ? 15 : 11 }]} numberOfLines={1}>
-                      {item.celebrityName}
-                    </Text>
-                    <Text style={[styles.text, { textAlign: 'center', fontSize: widescreen ? 14 : 10 }, ]} numberOfLines={1}>
-                      {`(${item.character?.length === 0 ? 'N/A' : item.character})`}
-                    </Text>
+                    <HText style={[styles.subtitle, { textAlign: 'center', marginTop: 5, fontSize: widescreen ? 16 : 12 }]}>
+                      {item.celebrityName || 'N/A'}
+                    </HText>
+                    <HText style={[styles.text, { textAlign: 'center', fontSize: widescreen ? 15 : 11 }, ]}>
+                      {item.character.replace('(uncredited)', '') || 'N/A'}
+                    </HText>
                   </View>
                 </Pressable>
               )}
@@ -306,17 +317,17 @@ const Film = () => {
           )
         }
 
-        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Crew</Text>
+        <HText style={[styles.regionalTitle, {marginVertical: 10, fontSize: widescreen ? 24 : 20}]}>Crew</HText>
         {
           (directors.length === 0 && crew.length === 0) ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-              <Text style={[styles.text, {fontSize: 20}]}>There's no recorded crew for this feature.</Text>
+              <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>There's no recorded crew for this feature.</HText>
             </View>
           ) : (
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={widescreen}
-              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center', paddingBottom: 10}}
+              style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center'}}
               contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={[...directors, ...crew]}
               keyExtractor={(item, index) => `${item.celebrityId}-${item.role}-${index}`}
@@ -333,12 +344,12 @@ const Film = () => {
                         borderColor: Colors.border_color
                       }}
                     />
-                    <Text style={[styles.subtitle, {textAlign: 'center', marginTop: 5, fontSize: widescreen ? 15 : 11}]} numberOfLines={1}>
+                    <HText style={[styles.subtitle, {textAlign: 'center', marginTop: 5, fontSize: widescreen ? 16 : 12}]}>
                       {item.celebrityName}
-                    </Text>
-                    <Text style={[styles.text, {textAlign: 'center', fontSize: widescreen ? 15 : 10 }]} numberOfLines={1}>
+                    </HText>
+                    <HText style={[styles.text, {textAlign: 'center', fontSize: widescreen ? 15 : 11 }]}>
                       {`(${item.role})`}
-                    </Text>
+                    </HText>
                   </View>
                 </Pressable>
               )}
@@ -351,7 +362,7 @@ const Film = () => {
             <>
               <Divider marginVertical={20} />
 
-              <Text style={styles.regionalTitle}>Also watched by...</Text>
+              <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Also watched by...</HText>
 
               <FlatList
                 horizontal
@@ -369,7 +380,7 @@ const Film = () => {
                           width: friendSize,
                           height: friendSize,
                           borderRadius: friendSize/2,
-                          borderWidth: 2,
+                          borderWidth: 1,
                           borderColor: Colors.border_color
                         }}
                       />
@@ -386,11 +397,11 @@ const Film = () => {
 
         <Divider marginVertical={20} />
 
-        <Text style={[styles.regionalTitle, {marginBottom: 10}]}>Top Reviews</Text>
+        <HText style={[styles.regionalTitle, {marginBottom: 10, fontSize: widescreen ? 24 : 20}]}>Top Reviews</HText>
         {
           topReviews.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-              <Text style={[styles.text, {fontSize: widescreen ? 18 : 14, textAlign: 'center'}]}>There are no spoiler-free reviews for this film.</Text>
+              <HText style={[styles.text, {fontSize: widescreen ? 18 : 14, textAlign: 'center'}]}>There are no spoiler-free reviews for this film.</HText>
               <Link href={`/review/alter/${film.id}`} style={{fontSize: widescreen ? 18 : 14, color: Colors.text_link, textAlign: 'center'}}>Be the first to write one!</Link>
             </View>
           ) : (
@@ -414,22 +425,23 @@ const Film = () => {
                     <Author
                       userId={r.authorId}
                       url={r.authorProfilePictureUrl}
-                      username={r.authorName}
+                      username={format.sliceText(r.authorName || 'Anonymous', widescreen ? 50 : 25)}
                       admin={r.admin}
                       router={router}
                       widescreen={widescreen}
+                      dim={widescreen ? 32 : 26}
                     />
                     <Pressable onPress={() => router.push(`/review/${r.id}`)}>
-                      <Stars size={widescreen ? 30 : 20} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
+                      <Stars size={widescreen ? 30 : 22} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
                       <ParsedRead html={`${r.text.slice(0, 450)}${r.text.length > 450 ? '...' : ''}`} />
                     </Pressable>
                   </View>
                 )
               })}
               <Pressable onPress={() => router.push(`/reviews/film/${film.id}`)}>
-                <Text style={{fontSize: widescreen ? 20 : 16, color: Colors.text_title, textAlign: 'center'}}>
-                  <Text style={{fontWeight: 'bold'}}>SEE ALL ({format.formatCount(reviewCount)})</Text> {'➜'}
-                </Text>
+                <HText style={{fontSize: widescreen ? 20 : 16, color: Colors.text_title, textAlign: 'center'}}>
+                  <HText style={{fontWeight: 'bold'}}>SEE ALL ({format.formatCount(reviewCount)})</HText> {'➜'}
+                </HText>
               </Pressable>
             </>
           )
@@ -438,7 +450,7 @@ const Film = () => {
         {film.collection && Object.keys(film.collection).length > 0 && (
           <>
             <Divider marginVertical={20} />
-            <Text style={styles.regionalTitle}>Related Films</Text>
+            <HText style={[styles.regionalTitle, {fontSize: widescreen ? 24 : 20}]}>Related Films</HText>
             <View style={{width: colPosterWidth * 4 + spacing * 3, maxWidth: '100%', alignSelf: 'center'}}>
               <FlatList
                 horizontal
@@ -465,9 +477,9 @@ const Film = () => {
           </>
         )}
 
-        <Text style={[styles.text, {marginTop: widescreen ? 250 : 100, textAlign: 'center', alignSelf: 'center', fontSize: widescreen ? 18 : 14}]}>
+        <HText style={[styles.text, {marginTop: widescreen ? 250 : 100, textAlign: 'center', alignSelf: 'center', fontSize: widescreen ? 18 : 14}]}>
           This film's metadata was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link>, bearing no endorsment whatsoever.
-        </Text>
+        </HText>
       </ScrollView>
 
       <Popup
@@ -514,7 +526,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 5,
     marginLeft: 12,
-    fontSize: 20,
     color: Colors.text_title,
     textAlign: 'left',
   },

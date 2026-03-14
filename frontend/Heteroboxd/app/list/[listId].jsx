@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -9,7 +9,9 @@ import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
+import Author from '../../components/author'
 import FilterSort from '../../components/filterSort'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
 import PaginationBar from '../../components/paginationBar'
@@ -17,25 +19,26 @@ import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 
 const List = () => {
   const { listId } = useLocalSearchParams()
   const router = useRouter()
-  const navigation = useNavigation();
+  const navigation = useNavigation()
   const { width } = useWindowDimensions()
   const { user, isValidSession } = useAuth()
   const [ server, setServer ] = useState(Response.initial)
   const [ base, setBase ] = useState(null)
   const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0, seenFilms: [], seenCount: 0 })
   const [ fadeSeen, setFadeSeen ] = useState(true)
-  const [ iLiked, setILiked ] = useState(false)
   const [ descCollapsed, setDescCollapsed ] = useState(true)
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'POSITION', desc: false })
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
+  const listLocalCopyRef = useRef(null)
+  const likeRequestRef = useRef(0)
 
   const openMenu2 = () => {
     setMenuShown2(true)
@@ -64,8 +67,7 @@ const List = () => {
         const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}&UserId=${user.userId}`)
         if (res.ok) {
           const json = await res.json()
-          setBase(json.list)
-          setILiked(json.iLiked)
+          setBase({...json.list, iLiked: json.iLiked})
           setServer(Response.ok)
         } else if (res.status === 404) {
           setServer(Response.notFound)
@@ -78,7 +80,7 @@ const List = () => {
         const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}`)
         if (res.ok) {
           const json = await res.json()
-          setBase(json)
+          setBase({...json, iLiked: false})
           setServer(Response.ok)
         } else if (res.status === 404) {
           setServer(Response.notFound)
@@ -118,9 +120,9 @@ const List = () => {
       setServer(Response.forbidden)
       return
     }
-    const delta = iLiked ? -1 : 1
-    setILiked(prev => !prev)
-    setBase(prev => ({...prev, likeCount: prev.likeCount + delta}))
+    const currentList = listLocalCopyRef.current
+    setBase(prev => ({...prev, likeCount: Math.max(currentList.likeCount + (currentList.iLiked ? -1 : 1), 0), iLiked: !currentList.iLiked}))
+    const requestId = ++likeRequestRef.current
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/like`, {
@@ -129,46 +131,40 @@ const List = () => {
         body: JSON.stringify({
           UserId: user.userId,
           UserName: user.name,
-          AuthorId: base?.authorId,
+          AuthorId: currentList.authorId,
           ReviewId: null,
           FilmTitle: null,
           ListId: listId,
-          ListName: base?.name,
-          LikeChange: delta
+          ListName: currentList.name,
+          LikeChange: currentList.iLiked ? -1 : 1
         })
       })
+      if (requestId !== likeRequestRef.current) return
       if (!res.ok) {
         console.log(`${res.status}: list like failed.`)
       }
     } catch {
+      if (requestId !== likeRequestRef.current) return
       console.log('like list failed; network error.')
     }
-  }, [user, iLiked, base, listId])
+  }, [user, likeRequestRef, listId])
 
   useEffect(() => {
     loadBaseData()
   }, [loadBaseData])
-
-  useEffect(() => {
-    if (!base?.id) return
-    loadDataPage(1)
-  }, [base?.id, currentFilter, currentSort])
 
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
     if (!base) return
     navigation.setOptions({
-      headerTitle: `${base.authorName}'s list`,
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
       headerRight: () => {
         return (
           <>
             {user && <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} />}
             {
               !base.ranked && 
-              <Pressable onPress={openMenu2} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
+              <Pressable onPress={openMenu2} style={{marginLeft: user ? 15 : null, marginRight: widescreen ? 15 : null}}>
                 <Ionicons name='options' size={24} color={Colors.text} />
               </Pressable>
             }
@@ -176,7 +172,16 @@ const List = () => {
         )
       }
     })
-  }, [navigation, widescreen, base, openMenu2])
+  }, [navigation, user, widescreen, base, openMenu2])
+
+  useEffect(() => {
+    if (!base?.id) return
+    loadDataPage(1)
+  }, [base?.id, currentFilter, currentSort])
+
+  useEffect(() => {
+    listLocalCopyRef.current = base
+  }, [base])
 
   const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
@@ -195,26 +200,33 @@ const List = () => {
     return padded
   }, [data.entries])
 
-  const Header = () => (
+  const Header = useMemo(() => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
-      <Text style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: 20}]}>{base?.name}</Text>
+      <Author
+        userId={base?.authorId}
+        url={base?.authorProfilePictureUrl}
+        username={format.sliceText(base?.authorName || 'Anonymous', widescreen ? 50 : 25)}
+        admin={base?.admin}
+        router={router}
+        widescreen={widescreen}
+        dim={widescreen ? 40 : 30}
+      />
+      <HText style={[styles.title, {fontSize: widescreen ? 30 : 24, marginTop: widescreen ? 20 : 5, marginBottom: widescreen ? 20 : 10}]}>{base?.name || '[nameless list]'}</HText>
       <Pressable onPress={() => setDescCollapsed(prev => !prev)}>
-        <Text style={[styles.desc, {fontSize: widescreen ? 16 : 13}]}>
-          {descCollapsed && base?.description?.length > 300
-            ? `${base?.description.slice(0, 300)}...`
-            : base?.description}
-        </Text>
+        <HText style={[styles.desc, {fontSize: widescreen ? 18 : 14}]}>
+          {format.sliceText(base?.description || '', descCollapsed ? 300 : -1)}
+        </HText>
       </Pressable>
-      <View style={styles.metaRow}>
+      <View style={[styles.metaRow, {marginTop: widescreen ? 40 : 20}]}>
         <Pressable onPress={handleLike} style={styles.likeRow}>
           <MaterialCommunityIcons
-            name={iLiked ? 'cards-heart' : 'cards-heart-outline'}
+            name={base?.iLiked ? 'cards-heart' : 'cards-heart-outline'}
             size={widescreen ? 24 : 20}
-            color={iLiked ? Colors.heteroboxd : Colors.text}
+            color={base?.iLiked ? Colors.heteroboxd : Colors.text}
           />
-          <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</Text>
+          <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</HText>
         </Pressable>
-        <Text style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{data.totalCount > 0 ? `${data.totalCount} entries` : ''}</Text>
+        <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{`${data.totalCount || 'No'} entries`}</HText>
       </View>
       {
         user && server.result > 0 ? (
@@ -222,8 +234,8 @@ const List = () => {
           <View />
           <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'right', paddingTop: 5}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-              <Text style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</Text>
+              <MaterialCommunityIcons name="eye-outline" size={widescreen ? 22 : 18} color={Colors._heteroboxd} />
+              <HText style={{ color: Colors._heteroboxd, fontSize: widescreen ? 18 : 16 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</HText>
             </View>
           </Pressable>
         </View>
@@ -231,7 +243,7 @@ const List = () => {
       }
       <View style={{height: 20}} />
     </View>
-  )
+  ), [maxRowWidth, base, router, widescreen, descCollapsed, user, data, fadeSeen])
 
   const Film = ({ item }) => {
     if (!item) {
@@ -264,7 +276,7 @@ const List = () => {
               alignSelf: 'center'
             }}
           >
-            <Text
+            <HText
               style={{
                 color: Colors.text_title,
                 fontSize: widescreen ? 12 : 8,
@@ -273,7 +285,7 @@ const List = () => {
               }}
             >
               {item.position}
-            </Text>
+            </HText>
           </View>
         )}
       </Pressable>
@@ -320,7 +332,7 @@ const List = () => {
         ListEmptyComponent={
           server.result === 0
           ? <View style={{padding: 50, alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
-          : <Text style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</Text>
+          : <HText style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</HText>
         }
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
@@ -375,8 +387,7 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8
+    justifyContent: 'space-between'
   },
   likeRow: {
     flexDirection: 'row',

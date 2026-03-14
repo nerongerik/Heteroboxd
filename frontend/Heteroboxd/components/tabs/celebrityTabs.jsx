@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from "react"
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native"
+import { useMemo, useRef } from "react"
+import { FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import * as format from '../../helpers/format'
 import { Colors } from "../../constants/colors"
 import { Headshot } from '../headshot'
+import HText from '../htext'
 import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 
@@ -31,14 +32,14 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
     return padded
   }, [activeTab, currentTabData])
 
-  const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize);
+  const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize)
 
   const TabButton = ({ title, active, onPress }) => (
     <Pressable
       onPress={onPress}
-      style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 10 : 5 }, active && styles.activeTabButton]}
+      style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 15 : 5 }, active && styles.activeTabButton]}
     >
-      <Text style={[styles.tabText, active && styles.activeTabText]}>{title}</Text>
+      <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
   )
 
@@ -48,22 +49,22 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
       <>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth}}>
           <View style={{padding: 5}}>
-            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 16}}>
               {currentTabData?.totalCount || 0} films
-            </Text>
+            </HText>
           </View>
           {
             showSeen ? (
               <Pressable onPress={flipShowSeen}>
                 <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-                  <MaterialCommunityIcons name='eye-outline' size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-                  <Text style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</Text>
+                  <MaterialCommunityIcons name='eye-outline' size={widescreen ? 22 : 18} color={Colors._heteroboxd} />
+                  <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 18 : 16 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</HText>
                 </View>
               </Pressable>
             ) : <View />
           }
         </View>
-        <View style={{ height: 20 }} />
+        <View style={{ height: widescreen ? 20 : 10 }} />
       </>
     )
   }
@@ -166,7 +167,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
               alignSelf: widescreen ? 'auto' : 'center'
             }}
           />
-          <Text style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</Text>
+          <HText style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</HText>
         </ScrollView>
       ) : (
         <FlatList
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     justifyContent: 'flex-start',
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   tabRowWeb: {
     flexDirection: 'row',

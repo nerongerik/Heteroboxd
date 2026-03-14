@@ -359,7 +359,7 @@ namespace Heteroboxd.Repository
                 .Where(ul => ul.Id == ListId)
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     ul => ul.LikeCount,
-                    ul => ul.LikeCount + Delta
+                    ul => Math.Max(ul.LikeCount + Delta, 0)
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
         }

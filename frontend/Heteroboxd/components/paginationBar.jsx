@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 
 const PaginationBar = ({page, totalPages, onPagePress }) => {
   const getPages = () => {
@@ -27,12 +28,12 @@ const PaginationBar = ({page, totalPages, onPagePress }) => {
     <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 12}}>
       {getPages().map((item, index) =>
         item === '…' ? (
-          <Text key={`ellipsis-${index}`} style={styles.ellipsis}>
+          <HText key={`ellipsis-${index}`} style={styles.ellipsis}>
             …
-          </Text>
+          </HText>
         ) : (
           <Pressable key={item} onPress={() => onPagePress(item)} style={[styles.page, item === page && styles.currentPage]}>
-            <Text style={[ styles.pageText, item === page && styles.currentPageText]}>{item}</Text>
+            <HText style={[ styles.pageText, item === page && styles.currentPageText]}>{item}</HText>
           </Pressable>
         )
       )}

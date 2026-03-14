@@ -37,18 +37,16 @@ namespace Heteroboxd.Service
         private readonly IUserRepository _repo;
         private readonly IFilmRepository _filmRepo;
         private readonly IReviewRepository _reviewRepo;
-        private readonly IUserListRepository _listRepo;
         private readonly IAuthService _authService;
         private readonly UserManager<User> _userManager;
         private readonly INotificationService _notificationService;
         private readonly IR2Handler _r2Handler;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IUserListRepository listRepo, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler)
         {
             _repo = repo;
             _filmRepo = filmRepo;
             _reviewRepo = reviewRepository;
-            _listRepo = listRepo;
             _authService = authService;
             _userManager = userManager;
             _notificationService = notificationService;
@@ -286,7 +284,7 @@ namespace Heteroboxd.Service
 
         public async Task VerifyUser(string UserId, string Token)
         {
-            var User = await _repo.LightweightFetcherAsync(Guid.Parse(UserId));
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
 
             var Result = await _userManager.ConfirmEmailAsync(User, Token);
@@ -352,7 +350,7 @@ namespace Heteroboxd.Service
                     if (SendNotif)
                     {
                         await _notificationService.AddNotification(
-                            $"{UserName} just followed you!",
+                            $"{TruncateName(UserName)} just followed you!",
                             Models.Enums.NotificationType.Follow,
                             Guid.Parse(TargetId)
                         );
@@ -362,7 +360,7 @@ namespace Heteroboxd.Service
                     await _repo.BlockUnblockAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
                     break;
                 case ("remove-follower"):
-                    await _repo.FollowUnfollowAsync(Guid.Parse(TargetId), Guid.Parse(UserId));
+                    await _repo.RemoveFollowerAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
                     break;
             }
         }
@@ -371,31 +369,24 @@ namespace Heteroboxd.Service
         {
             if (LikeRequest.ReviewId != null)
             {
+                var NotificationsOn = await _repo.UpdateLikedReviewsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ReviewId));
 
-                var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(LikeRequest.ReviewId));
-                if (Review == null) throw new KeyNotFoundException();
-
-                await _repo.UpdateLikedReviewsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ReviewId));
-
-                if (LikeRequest.LikeChange < 0 || !Review!.NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
+                if (LikeRequest.LikeChange < 0 || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
                 
                 await _notificationService.AddNotification(
-                    $"{LikeRequest.UserName} liked your review of {LikeRequest.FilmTitle!}",
+                    $"{TruncateName(LikeRequest.UserName)} liked your review of {TruncateTitle(LikeRequest.FilmTitle!)}",
                     Models.Enums.NotificationType.Review,
                     Guid.Parse(LikeRequest.AuthorId)
                 );
             }
             else if (LikeRequest.ListId != null)
             {
-                var UserList = await _listRepo.GetByIdAsync(Guid.Parse(LikeRequest.ListId));
-                if (UserList == null) throw new KeyNotFoundException();
+                var NotificationsOn = await _repo.UpdateLikedListsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ListId));
 
-                await _repo.UpdateLikedListsAsync(Guid.Parse(LikeRequest.UserId), Guid.Parse(LikeRequest.ListId));
-
-                if (LikeRequest.LikeChange < 0 || !UserList!.NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
+                if (LikeRequest.LikeChange < 0 || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
 
                 await _notificationService.AddNotification(
-                    $"{LikeRequest.UserName} liked your list '{LikeRequest.ListName!}'",
+                    $"{TruncateName(LikeRequest.UserName)} liked your list {TruncateTitle(LikeRequest.ListName!)}",
                     Models.Enums.NotificationType.List,
                     Guid.Parse(LikeRequest.AuthorId)
                 );
@@ -419,12 +410,12 @@ namespace Heteroboxd.Service
                         AlreadyWatchedFilm.TimesWatched++;
                         AlreadyWatchedFilm.DateWatched = DateTime.UtcNow;
                         await _repo.UpdateUserWatchedFilmAsync(AlreadyWatchedFilm);
-                        await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, 1);
+                        await _filmRepo.UpdateWatchCountAsync(Film.Id, 1);
                     }
                     else
                     {
                         await _repo.CreateUserWatchedFilmAsync(new UserWatchedFilm(User.Id, Film.Id));
-                        await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, 1);
+                        await _filmRepo.UpdateWatchCountAsync(Film.Id, 1);
                     }
                     //remove film from watchlist (if there)
                     var (Entry, _) = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
@@ -435,14 +426,17 @@ namespace Heteroboxd.Service
                     break;
                 case ("unwatched"):
                     //decrement watchcount
-                    await _filmRepo.UpdateFilmWatchCountEfCore7Async(Film.Id, -1);
+                    await _filmRepo.UpdateWatchCountAsync(Film.Id, -1);
                     //delete uwf
-                    await _repo.DeleteUserWatchedFilmAsync(AlreadyWatchedFilm!.Id);
-                    //delete associated review (if any)
-                    var Response = await _reviewRepo.GetByUserFilmAsync(AlreadyWatchedFilm.UserId, Film.Id);
-                    if (Response?.Review != null)
+                    if (AlreadyWatchedFilm != null)
                     {
-                        await _reviewRepo.DeleteAsync(Response.Review.Id);
+                        await _repo.DeleteUserWatchedFilmAsync(AlreadyWatchedFilm.Id);
+                        //delete associated review (if any)
+                        var Response = await _reviewRepo.GetByUserFilmAsync(AlreadyWatchedFilm.UserId, Film.Id);
+                        if (Response?.Review != null)
+                        {
+                            await _reviewRepo.DeleteAsync(Response.Review.Id);
+                        }
                     }
                     break;
                 default:
@@ -457,5 +451,11 @@ namespace Heteroboxd.Service
             await _repo.DeleteAsync(Id);
             await _authService.RevokeAllUserTokens(Id);
         }
+
+        private string TruncateName(string Name, int MaxLength = 25) =>
+             Name.Length <= MaxLength ? Name : $"{Name[..MaxLength]}...";
+
+        private string TruncateTitle(string Title, int MaxLength = 50) =>
+             Title.Length <= MaxLength ? $"\"{Title}\"" : $"\"{Title[..MaxLength]}...\"";
     }
 }

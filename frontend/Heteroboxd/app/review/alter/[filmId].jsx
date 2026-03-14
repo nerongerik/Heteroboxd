@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { KeyboardAvoidingView, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native'
+import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../../helpers/auth'
@@ -8,6 +8,7 @@ import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
 import Divider from '../../../components/divider'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import ParsedInput from '../../../components/parsedInput'
 import { Poster } from '../../../components/poster'
@@ -110,22 +111,26 @@ const AlterReview = () => {
     }
   }, [filmId, user, isValidSession, review, router])
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
+  const widescreen = useMemo(() => width > 1000, [width])
+  
   useEffect(() => {
     navigation.setOptions({
+      headerTitle: 'Rate and review',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
-        <Pressable onPress={handleSubmit}>
+        <Pressable onPress={handleSubmit} style={{marginRight: widescreen ? 15 : null}}>
           <Ionicons name='checkmark' size={24} color={Colors.text_title} />
         </Pressable>
       )
     })
   }, [navigation, handleSubmit])
 
-  const widescreen = useMemo(() => width > 1000, [width])
-  const posterWidth = useMemo(() => widescreen ? 100 : 80, [widescreen])
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  const posterWidth = useMemo(() => widescreen ? 120 : 80, [widescreen])
   const posterHeight = useMemo(() => posterWidth * 3 / 2, [posterWidth])
 
   return (
@@ -136,7 +141,6 @@ const AlterReview = () => {
           keyboardShouldPersistTaps='handled'
           showsVerticalScrollIndicator={false}
         >
-          <Text style={{marginBottom: 20, color: Colors.text_title, fontWeight: '600', fontSize: 24}}>Rate and review</Text>
           <View style={{flexDirection: 'row', alignItems: 'center', width: '95%', justifyContent: 'flex-start'}}>
             <Poster
               posterUrl={film.posterUrl}
@@ -149,9 +153,9 @@ const AlterReview = () => {
                 borderColor: Colors.border_color
               }}
             />
-            <Text style={{color: Colors.text_title, fontWeight: '400', fontSize: widescreen ? 20 : 16, textAlign: 'left', flex: 1, flexWrap: 'wrap'}}>
-              {film.title}
-            </Text>
+            <HText style={{color: Colors.text_title, fontWeight: '400', fontSize: widescreen ? 20 : 16, textAlign: 'left', flex: 1, flexWrap: 'wrap'}}>
+              {film.title} <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14}}>{film.year || ''}</HText>
+            </HText>
           </View>
 
           <Divider marginVertical={15} />
@@ -168,12 +172,12 @@ const AlterReview = () => {
                 !review.spoiler ? (
                   <>
                     <Ionicons name='warning-outline' size={widescreen ? 30 : 24} color={Colors.text} />
-                    <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
+                    <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</HText>
                   </>
                 ) : (
                   <>
                     <Ionicons name='warning' size={widescreen ? 30 : 24} color={Colors.heteroboxd} />
-                    <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</Text>
+                    <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</HText>
                   </>
                 )
               }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as format from '../../helpers/format'
@@ -8,6 +8,7 @@ import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
 import FilterSort from '../../components/filterSort'
+import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import PaginationBar from '../../components/paginationBar'
 import Popup from '../../components/popup'
@@ -74,6 +75,21 @@ const Explore = () => {
     }
   }, [user, currentFilter, currentSort])
 
+  const widescreen = useMemo(() => width > 1000, [width])
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Explore',
+      headerTitleAlign: 'center',
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
+      headerRight: () => (
+        <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
+          <Ionicons name='options' size={24} color={Colors.text} />
+        </Pressable>
+      ),
+    })
+  }, [navigation, widescreen, openMenu])
+
   useEffect(() => {
     if (!filter || !value) return;
     setCurrentFilter({field: filter, value: value});
@@ -90,21 +106,6 @@ const Explore = () => {
   useEffect(() => {
     loadDataPage(1)
   }, [loadDataPage])
-
-  const widescreen = useMemo(() => width > 1000, [width])
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: 'Explore',
-      headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
-      headerRight: () => (
-        <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='options' size={24} color={Colors.text} />
-        </Pressable>
-      ),
-    })
-  }, [navigation, widescreen, openMenu])
 
   const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
@@ -129,13 +130,13 @@ const Explore = () => {
         server.result > 0 &&
         <View style={{width: maxRowWidth, alignSelf: 'center'}}>
           <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10}}>
-            <Text style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>Exploring {data.totalCount} films</Text>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 13}}>Exploring {data.totalCount} films</HText>
             {
               user ? (
                 <Pressable onPress={() => setFadeSeen(prev => !prev)}>
                   <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
                     <MaterialCommunityIcons name='eye-outline' size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-                    <Text style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13}}> {format.roundSeen(seenCount, data.totalCount)}% seen</Text>
+                    <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13}}> {format.roundSeen(seenCount, data.totalCount)}% seen</HText>
                   </View>
                 </Pressable>
               ) : <View />
@@ -194,7 +195,7 @@ const Explore = () => {
         numColumns={4}
         ListHeaderComponent={Header}
         renderItem={Film}
-        ListEmptyComponent={server.result > 0 && <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no films matching this criteria...</Text>}
+        ListEmptyComponent={server.result > 0 && <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>There are currently no films matching this criteria...</HText>}
         ListFooterComponent={Footer}
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}

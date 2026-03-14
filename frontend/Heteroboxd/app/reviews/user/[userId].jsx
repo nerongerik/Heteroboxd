@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -9,6 +9,7 @@ import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
 import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
+import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import PaginationBar from '../../../components/paginationBar'
 import ParsedRead from '../../../components/parsedRead'
@@ -27,7 +28,6 @@ const UserReviews = () => {
   const [ data, setData ] = useState({ page: 1, reviews: [], totalCount: 0 })
   const [ author, setAuthor ] = useState({ authorPic: '', authorName: '', authorAdmin: false })
   const [ server, setServer ] = useState(Response.initial)
-  const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE CREATED', desc: true })
   const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
@@ -56,13 +56,13 @@ const UserReviews = () => {
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/reviews/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
+      const res = await fetch(`${BaseUrl.api}/reviews/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=ALL&Sort=${currentSort.field}&Desc=${currentSort.desc}`)
       if (res.ok) {
         const json = await res.json()
         setData({ page: json.page, reviews: json.items, totalCount: json.totalCount })
         setAuthor({
           authorPic: json.items[0]?.authorProfilePictureUrl || null,
-          authorName: json.items[0]?.authorName || '',
+          authorName: json.items[0]?.authorName || 'Anonymous',
           authorAdmin: json.items[0]?.admin || false
         })
         setServer(Response.ok)
@@ -72,7 +72,7 @@ const UserReviews = () => {
     } catch {
       setServer(Response.networkError)
     }
-  }, [userId, currentFilter, currentSort])
+  }, [userId, currentSort])
 
   useEffect(() => {
     loadDataPage(1)
@@ -82,9 +82,9 @@ const UserReviews = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: `${author.authorName || 'User'}'s Reviews`,
+      headerTitle: author.authorName?.length > 0 ? `${author.authorName}'s reviews` : '',
       headerTitleAlign: 'center',
-      headerTitleStyle: {color: Colors.text_title},
+      headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
           <Ionicons name='options' size={24} color={Colors.text} />
@@ -101,10 +101,11 @@ const UserReviews = () => {
     <Author
       userId={userId}
       url={author.authorPic}
-      username={author.authorName}
+      username={format.sliceText(author.authorName, widescreen ? 50 : 25)}
       admin={author.authorAdmin}
       router={router}
       widescreen={widescreen}
+      dim={widescreen ? 40 : 30}
     />,
   [userId, author, router, widescreen])
 
@@ -115,7 +116,7 @@ const UserReviews = () => {
         <Stars size={widescreen ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
       </View>
       <Pressable onPress={() => router.push(`/review/${item.id}`)}>
-        <Text style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title}}>{item.filmTitle}</Text>
+        <HText style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title}}>{format.sliceText(item.filmTitle || '', widescreen ? 100 : 50)}</HText>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
           <View style={{width: posterWidth, height: posterHeight, marginRight: 5}}>
             <Poster
@@ -131,18 +132,18 @@ const UserReviews = () => {
           </View>
           {
             item.text?.length > 0 ?
-              <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-                <ParsedRead html={`${item.text.replace(/\n{2,}/g, '\n').trim().slice(0, 200)}${item.text.length > 200 ? '...' : ''}`} />
-              </View>
+            <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
+              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
+            </View>
             :
-              <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-                <Text style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>{author.authorName || 'User'} wrote no review regarding this film.</Text>
-              </View>
+            <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
+              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
+            </View>
           }
         </View>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
           <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
-          <Text style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</Text>
+          <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -168,7 +169,7 @@ const UserReviews = () => {
         ref={listRef}
         data={data.reviews}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={server.result > 0 && <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</Text>}
+        ListEmptyComponent={server.result > 0 && <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</HText>}
         renderItem={Review}
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}
@@ -190,10 +191,7 @@ const UserReviews = () => {
         width={width}
       >
         <FilterSort
-          key={`${currentFilter.field}-${currentSort.field}`}
           context={'userReviews'}
-          currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
           currentSort={currentSort}
           onSortChange={(newSort) => setCurrentSort(newSort)}
         />

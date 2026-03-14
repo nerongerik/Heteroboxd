@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as format from '../helpers/format'
 import { useCountries } from '../hooks/useCountries'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 
 const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSortChange}) => {
   const [ expandedFilter, setExpandedFilter ] = useState(null)
@@ -13,12 +14,12 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     explore: ['ALL', 'GENRE', 'YEAR', 'POPULAR', 'COUNTRY'],
     watchlist: ['ALL', 'GENRE', 'YEAR', 'COUNTRY'],
     userWatched: ['ALL', 'GENRE', 'YEAR', 'COUNTRY'],
-    list: ['ALL'],
-    celebrity: ['ALL'],
-    userLists: ['ALL'],
+    list: [],
+    celebrity: [],
+    userLists: [],
     filmLists: ['ALL', 'FRIENDS'],
     exploreLists: ['ALL', 'FRIENDS'],
-    userReviews: ['ALL'],
+    userReviews: [],
     filmReviews: ['ALL', 'FRIENDS']
   }
 
@@ -93,19 +94,19 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
               style={{ marginRight: 6, width: 20, height: 15 }}
               alt=''
             />
-            <Text style={{fontSize: 12, color: Colors.text_title}}>{value.name}</Text>
+            <HText style={{fontSize: 12, color: Colors.text_title}}>{value.name}</HText>
           </View>
         )
       } else if (flagCode) {
         return (
-          <Text style={{fontSize: 12, color: Colors.text_title}}>
+          <HText style={{fontSize: 12, color: Colors.text_title}}>
             {flagCode} {value.name}
-          </Text>
+          </HText>
         )
       }
-      return <Text style={{fontSize: 12, color: Colors.text_title}}>{value.name}</Text>
+      return <HText style={{fontSize: 12, color: Colors.text_title}}>{value.name}</HText>
     }
-    return <Text style={{fontSize: 12, color: Colors.text_title}}>{value}</Text>
+    return <HText style={{fontSize: 12, color: Colors.text_title}}>{value}</HText>
   }
 
   const renderFilterButton = (item) => {
@@ -117,21 +118,21 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
       <View key={item}>
         <Pressable onPress={() => handleFilterSelect(item)} style={[{paddingVertical: 12, paddingHorizontal: 5, marginVertical: 0}]}>
           <View style={styles.filterRow}>
-            <Text style={[
+            <HText style={[
               {fontSize: 14, color: Colors.text, fontWeight: '500'},
               isSelected && {color: Colors.heteroboxd, paddingRight: 5}
             ]}>
               {item}
-            </Text>
+            </HText>
             {isSelected && currentFilter.value && (
-              <Text style={{fontSize: 14, color: Colors.heteroboxd}}>
+              <HText style={{fontSize: 14, color: Colors.heteroboxd}}>
                 ({currentFilter.value})
-              </Text>
+              </HText>
             )}
             {needsValue && (
-              <Text style={{fontSize: 10, color: isSelected ? Colors.heteroboxd : Colors.text, paddingLeft: isSelected ? 5 : 10}}>
+              <HText style={{fontSize: 10, color: isSelected ? Colors.heteroboxd : Colors.text, paddingLeft: isSelected ? 5 : 10}}>
                 {isExpanded ? '▲' : '▼'}
-              </Text>
+              </HText>
             )}
           </View>
         </Pressable>
@@ -143,7 +144,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
               nestedScrollEnabled={true}
               showsVerticalScrollIndicator={false}
             >
-              {getValueOptions(item).map((value, index) => {
+              {getValueOptions(item).map((value) => {
                 const displayValue = item === 'COUNTRY' ? value.name : value.toString();
                 const storedValue = item === 'COUNTRY' ? value.code : value.toString();
                 const isValueSelected = isSelected && currentFilter.value === storedValue;
@@ -174,10 +175,15 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
   return (
     <ScrollView style={{flex: 1}} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        <Text style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>FILTERS</Text>
-        {filterOptions[context].map((item) => renderFilterButton(item))}
+        { filterOptions[context].length > 0 && (
+          <>
+            <HText style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>FILTERS</HText>
+            {filterOptions[context].map((item) => renderFilterButton(item))}
+          </>
+        )
+        }
 
-        <Text style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>SORT</Text>
+        <HText style={{fontSize: 16, fontWeight: '600', color: Colors.text_title, marginVertical: 5}}>SORT</HText>
         {sortOptions[context].map((item) => {
           const isSelected = currentSort.field === item
           return (
@@ -189,12 +195,12 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
               ]}
             >
               <View style={styles.sortRow}>
-                <Text style={[
+                <HText style={[
                   {fontSize: 14, color: Colors.text, fontWeight: '500'},
                   isSelected && {color: Colors.heteroboxd, paddingRight: 10}
                 ]}>
                   {item}
-                </Text>
+                </HText>
                 {isSelected && <MaterialCommunityIcons name={currentSort.desc ? "sort-descending" : "sort-ascending"} size={20} color={Colors.heteroboxd} />}
               </View>
             </Pressable>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Snackbar } from 'react-native-paper'
@@ -10,7 +10,8 @@ import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
-import Divider from '../components/divider'
+import Divider from './divider'
+import HText from './htext'
 import Stars from './stars'
 import SlidingMenu from './slidingMenu'
 import { UserAvatar } from './userAvatar'
@@ -22,14 +23,16 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const [ seenLocalCopy, setSeenLocalCopy ] = useState(null)
   const [ watchlistedLocalCopy, setWatchlistedLocalCopy ] = useState(null)
   const [ reviewLocalCopy, setReviewLocalCopy ] = useState({ id: null, rating: null, text: null, spoiler: null })
-  const reviewLocalCopyRef = useRef(null)
   const [ seenPressed, setSeenPressed ] = useState(false)
-  const ratingRequestRef = useRef(0)
   const { user, isValidSession } = useAuth()
   const [ server, setServer ] = useState(Response.initial)
   const [ listsClicked, setListsClicked ] = useState(false)
   const [ usersLists, setUsersLists ] = useState([])
   const router = useRouter()
+  const reviewLocalCopyRef = useRef(null)
+  const watchlistLocalCopyRef = useRef(null)
+  const ratingRequestRef = useRef(0)
+  const watchlistRequestRef = useRef(0)
 
   const openMenu = () => {
     setMenuShown(true)
@@ -109,17 +112,17 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setServer(Response.forbidden)
       return
     }
+    setSeenPressed(false)
+    setSeenLocalCopy(true)
+    setWatchlistedLocalCopy(false)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/track/${filmId}?Action=watched`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setSeenPressed(false)
-        setSeenLocalCopy(true)
-        setWatchlistedLocalCopy(false)
-      } else if (res.status === 400) {
+      if (res.ok) return
+      if (res.status === 400) {
         setServer(Response.badRequest)
       } else if (res.status === 404) {
         setServer(Response.notFound)
@@ -136,17 +139,17 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setServer(Response.forbidden)
       return
     }
+    setSeenPressed(false)
+    setSeenLocalCopy(false)
+    setReviewLocalCopy(null)
     try {
       const jwt = await auth.getJwt();
       const res = await fetch(`${BaseUrl.api}/users/track/${filmId}?Action=unwatched`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setSeenPressed(false)
-        setSeenLocalCopy(false)
-        setReviewLocalCopy(null)
-      } else if (res.status === 400) {
+      if (res.ok) return
+      if (res.status === 400) {
         setServer(Response.badRequest)
       } else if (res.status === 404) {
         setServer(Response.notFound)
@@ -163,23 +166,27 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setServer(Response.forbidden)
       return
     }
+    const currentWl = watchlistLocalCopyRef.current
+    setWatchlistedLocalCopy(!currentWl)
+    const requestId = ++watchlistRequestRef.current
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/watchlist?FilmId=${filmId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setWatchlistedLocalCopy(prev => !prev)
-      } else if (res.status === 404) {
+      if (requestId !== watchlistRequestRef.current) return
+      if (res.ok) return
+      if (res.status === 404) {
         setServer(Response.notFound)
       } else {
         setServer(Response.internalServerError)
       }
     } catch {
+      if (requestId !== watchlistRequestRef.current) return
       setServer(Response.networkError)
     }
-  }, [user, filmId])
+  }, [user, watchlistRequestRef, filmId])
 
   const fetchLists = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -256,12 +263,16 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     reviewLocalCopyRef.current = reviewLocalCopy
   }, [reviewLocalCopy])
 
+  useEffect(() => {
+    watchlistLocalCopyRef.current = watchlistedLocalCopy
+  }, [watchlistedLocalCopy])
+
   const button = 
-    <View style={[styles.card, {minWidth: widescreen ? '50%' : '90%', maxWidth: widescreen ? '50%' : '90%', borderWidth: widescreen ? 0 : 2, borderColor: widescreen ? 'transparent' : Colors._heteroboxd}]}>
+    <View style={[styles.card, {minWidth: widescreen ? '50%' : '90%', maxWidth: widescreen ? '50%' : '90%', borderWidth: 2, borderColor: Colors._heteroboxd}]}>
       <Pressable onPress={openMenu}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 10, alignItems: 'center' }}>
-          <UserAvatar pictureUrl={user?.pictureUrl || null} style={[styles.avatar, {width: widescreen ? 28 : 24, height: widescreen ? 28 : 24, borderRadius: widescreen ? 14 : 12}]} />
-          <Text style={{color: Colors.text_button, fontSize: widescreen ? 16 : 13}}>
+          <UserAvatar pictureUrl={user?.pictureUrl || null} style={[styles.avatar, {width: widescreen ? 32 : 26, height: widescreen ? 32 : 26, borderRadius: widescreen ? 16 : 13}]} />
+          <HText style={{color: Colors.text_button, fontSize: widescreen ? 16 : 12}}>
             {
               seenLocalCopy
                 ? (reviewLocalCopy?.rating != null)
@@ -271,7 +282,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
                   ? "This film is in your watchlist."
                   : "Watch, review, or add this film to your lists"
             }
-          </Text>
+          </HText>
           <MaterialIcons name="more-horiz" size={widescreen ? 24 : 20} color={Colors.text_button} />
         </View>
       </Pressable>
@@ -282,7 +293,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       <Pressable onPress={handleWatch}>
         <MaterialCommunityIcons name="eye-outline" size={widescreen ? 50 : 35} color={Colors.text} />
       </Pressable>
-      <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Watch</Text>
+      <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Watch</HText>
     </View>
 
   const watched =
@@ -290,7 +301,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       <Pressable onPress={() => {setSeenPressed(true)}}>
         <MaterialCommunityIcons name="eye-check" size={widescreen ? 50 : 35} color={Colors._heteroboxd} />
       </Pressable>
-      <Text style={{color: Colors._heteroboxd, fontSize: widescreen ? 20 : 18}}>Watched</Text>
+      <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 20 : 18}}>Watched</HText>
     </View>
 
   const rewatch =
@@ -298,7 +309,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       <Pressable onPress={handleWatch}>
         <MaterialCommunityIcons name="eye-refresh" size={widescreen ? 50 : 35} color={Colors.text} />
       </Pressable>
-      <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Rewatch</Text>
+      <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Rewatch</HText>
     </View>
 
   const unwatch =
@@ -306,7 +317,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       <Pressable onPress={handleUnwatch}>
         <MaterialCommunityIcons name="eye-off" size={widescreen ? 50 : 35} color={Colors.heteroboxd} />
       </Pressable>
-      <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Remove</Text>
+      <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Remove</HText>
     </View>
 
   const watchlist =
@@ -314,7 +325,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       <Pressable onPress={handleWatchlist}>
         <MaterialCommunityIcons name="bookmark-plus-outline" size={widescreen ? 50 : 35} color={Colors.text} />
       </Pressable>
-      <Text style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Watchlist</Text>
+      <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Watchlist</HText>
     </View>
 
   const unwatchlist =
@@ -322,7 +333,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       <Pressable onPress={handleWatchlist}>
         <MaterialCommunityIcons name="bookmark-remove" size={widescreen ? 50 : 35} color={Colors.heteroboxd} />
       </Pressable>
-      <Text style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Watchlist</Text>
+      <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Watchlist</HText>
     </View>
 
   const selectLists =
@@ -348,23 +359,23 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
                     );
                   }}
                 />
-                <Text style={{ marginLeft: 8, marginRight: 8, color: Colors.text, fontSize: widescreen ? 24 : 20 }}>{item.listName}</Text>
+                <HText style={{ marginLeft: 8, marginRight: 8, color: Colors.text, fontSize: widescreen ? 24 : 20 }}>{item.listName}</HText>
               </View>
             ))}
             <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15}}>
               <Pressable style={{marginRight: 20, backgroundColor: Colors.heteroboxd, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4}} onPress={() => setListsClicked(false)}>
-                <Text style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Cancel</Text>
+                <HText style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Cancel</HText>
               </Pressable>
               <Pressable style={{backgroundColor: Colors._heteroboxd, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 2}} onPress={addToLists}>
-                <Text style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Add</Text>
+                <HText style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Add</HText>
               </Pressable>
             </View>
           </ScrollView>
         ) : (
-          <Text style={{color: Colors.text_placeholder, textAlign: 'center', paddingHorizontal: 10, paddingBottom: 15, fontSize: 14}}>
+          <HText style={{color: Colors.text_placeholder, textAlign: 'center', paddingHorizontal: 10, paddingBottom: 15, fontSize: 14}}>
             You have not created any lists. 
             <Link href="/list/create" style={{color: Colors.text_link}}> Create one now?</Link>
-          </Text>
+          </HText>
         )
       }
     </>
@@ -390,11 +401,11 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
           onRatingChange={handleRatingChange}
           padding={true}
         />
-        <Text style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</Text>
+        <HText style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</HText>
         <Divider marginVertical={20} />
         <Pressable onPress={() => { closeMenu(); reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/alter/${filmId}`) }}>
           <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
-            <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</Text>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</HText>
             <MaterialCommunityIcons name="typewriter" size={24} color={Colors.text} />
           </View>
         </Pressable>
@@ -405,7 +416,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         ) : (
           <Pressable onPress={() => { fetchLists(); setListsClicked(true) }}>
             <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
-              <Text style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</Text>
+              <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</HText>
               <MaterialCommunityIcons name="playlist-plus" size={28} color={Colors.text} />
             </View>
           </Pressable>

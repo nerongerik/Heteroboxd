@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import * as format from '../helpers/format'
 import { Colors } from '../constants/colors'
+import HText from './htext'
 
 const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, widescreen, router }) => {
   return (
@@ -12,8 +13,8 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         disabled={watchCount === 0}
       >
         <MaterialCommunityIcons name="eye-outline" size={widescreen ? 32 : 24} color={Colors.text_title} />
-        <Text style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Watched</Text>
-        <Text style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{format.formatCount(watchCount)}</Text>
+        <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Watched</HText>
+        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(watchCount)}</HText>
       </Pressable>
 
       <Pressable
@@ -22,8 +23,8 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         disabled={reviewCount === 0}
       >
         <MaterialCommunityIcons name="text-box" size={widescreen ? 32 : 24} color={Colors.text_title} />
-        <Text style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Reviews</Text>
-        <Text style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{format.formatCount(reviewCount)}</Text>
+        <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Reviews</HText>
+        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(reviewCount)}</HText>
       </Pressable>
 
       <Pressable
@@ -32,8 +33,8 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         disabled={listsIncluded === 0}
       >
         <MaterialCommunityIcons name="format-list-bulleted-square" size={widescreen ? 32 : 24} color={Colors.text_title} />
-        <Text style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Lists</Text>
-        <Text style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}>{format.formatCount(listsIncluded)}</Text>
+        <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Lists</HText>
+        <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(listsIncluded)}</HText>
       </Pressable>
     </View>
   )
