@@ -15,7 +15,7 @@ import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import SlidingMenu from '../../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 
 const Watchlist = () => {
   const { userId } = useLocalSearchParams()

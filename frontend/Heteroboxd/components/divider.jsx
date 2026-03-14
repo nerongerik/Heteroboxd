@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
 import { Colors } from '../constants/colors'
 
 const Divider = ({ marginVertical }) => {
@@ -7,7 +7,7 @@ const Divider = ({ marginVertical }) => {
       style={{
         width: '75%',
         alignSelf: 'center',
-        height: StyleSheet.hairlineWidth,
+        height: 1.5,
         backgroundColor: Colors.border_color,
         opacity: 0.5,
         marginVertical: marginVertical

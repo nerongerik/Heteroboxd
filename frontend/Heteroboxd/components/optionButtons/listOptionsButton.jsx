@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Octicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
@@ -162,7 +163,7 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
               </Pressable>
               <Pressable style={styles.option} onPress={handleDelete}>
                 <HText style={styles.optionText}>Delete List </HText>
-                <MaterialIcons name="delete-forever" size={20} color={Colors.text} />
+                <MaterialCommunityIcons name="delete" size={20} color={Colors.text} />
               </Pressable>
             </>
           )

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Link } from 'expo-router'
 import * as Linking from 'expo-linking'
 import { Colors } from '../constants/colors'
@@ -19,9 +19,9 @@ const Contact = () => {
         <HText style={styles.text}>
           Whether it's feedback, troubleshooting, business proposals, or general inquiries, we're here to help! Reach out to us at:
         </HText>
-        <HText style={[styles.link, {alignSelf: 'center'}]} onPress={() => Linking.openURL('mailto:support@heteroboxd.com')}>
-          support@heteroboxd.com
-        </HText>
+        <Pressable style={{alignSelf: 'center'}} onPress={() => Linking.openURL('mailto:support@heteroboxd.com')}>
+          <HText style={[styles.link, {textAlign: 'center'}]}>support@heteroboxd.com</HText>
+        </Pressable>
 
         <Divider marginVertical={20} />
 

@@ -131,7 +131,7 @@ const Notifications = () => {
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
       {
         data.totalCount > 0 &&
-        <HText style={{color: Colors.text, padding: 30, textAlign: 'center', fontSize: 14}}>
+        <HText style={{color: Colors.text, padding: 30, textAlign: 'center', fontSize: width > 1000 ? 18 : 14}}>
           Tip: to delete a notification for good, you can just press and hold on it!
         </HText>
       }

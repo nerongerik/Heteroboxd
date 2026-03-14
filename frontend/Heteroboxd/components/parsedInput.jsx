@@ -99,14 +99,15 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
           borderColor: Colors.border_color,
           borderTopLeftRadius: 5,
           borderTopRightRadius: 5,
-          padding: 20,
+          padding: width > 1000 ? 20 : 10,
           overflow: 'hidden',
           outlineStyle: 'none',
           outlineWidth: 0,
           outlineColor: 'transparent',
           color: Colors.text_input,
           fontSize: 16,
-          height: 250
+          height: 250,
+          fontFamily: 'Inter_400Regular'
         }}
       />
       <View

@@ -8,7 +8,7 @@ const Gotcha = () => {
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}>
-        <HText style={styles.title}>Why would you ever need to see which specific users watched the same film as you? Weirdo.</HText>
+        <HText style={styles.title}>Why would you ever need to see which specific users watched the same movie as you? Weirdo.</HText>
         <Image style={{alignSelf: 'center'}} source={require('../assets/gotcha.png')} />
         <HText style={styles.text}>When we tell you the watch count, just trust us. You stick to the movies, and we'll handle the numbers {';)'}</HText>
       </View>

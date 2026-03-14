@@ -30,7 +30,6 @@ const UsersLists = () => {
   const { width } = useWindowDimensions()
   const [ data, setData ] = useState({ page: 1, lists: [], totalCount: 0 })
   const [ server, setServer ] = useState(Response.initial)
-  const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE CREATED', desc: true })
   const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
@@ -59,7 +58,7 @@ const UsersLists = () => {
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
     try {
-      const res = await fetch(`${BaseUrl.api}/lists/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
+      const res = await fetch(`${BaseUrl.api}/lists/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=ALL&Sort=${currentSort.field}&Desc=${currentSort.desc}`)
       if (res.ok) {
         const json = await res.json()
         setData({ page: json.page, lists: json.items, totalCount: json.totalCount })
@@ -72,7 +71,7 @@ const UsersLists = () => {
     } catch {
       setServer(Response.networkError)
     }
-  }, [userId, currentFilter, currentSort])
+  }, [userId, currentSort])
 
   useEffect(() => {
     loadDataPage(1)
@@ -81,7 +80,7 @@ const UsersLists = () => {
   useEffect(() => {
     const first = data.lists[0]
     if (!first) return
-    setAuthor({ username: first.authorName, avatar: first.authorProfilePictureUrl, admin: first.admin })
+    setAuthor({ username: first.authorName || 'Anonymous', avatar: first.authorProfilePictureUrl || null, admin: first.admin })
   }, [data.lists])
 
   const widescreen = useMemo(() => width > 1000, [width])
@@ -118,7 +117,7 @@ const UsersLists = () => {
       <Author
         userId={userId}
         url={author.avatar}
-        username={author.username}
+        username={format.sliceText(author.username, widescreen ? 50 : 25)}
         admin={author.admin}
         router={router}
         widescreen={widescreen}
@@ -127,10 +126,10 @@ const UsersLists = () => {
   [userId, author, widescreen, router])
 
   const List = ({ item }) => (
-    <View style={[styles.card, { marginBottom: spacing * 1.25 }]}>
+    <View style={[styles.card, { marginBottom: 5 }]}>
       {AuthorSection}
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
-        <HText style={[styles.listTitle, {fontSize: widescreen ? 22 : 18}]}>{item.name}</HText>
+        <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
             const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
@@ -168,16 +167,14 @@ const UsersLists = () => {
             ))
           })()}
         </View>
-        <HText style={[styles.description, {fontSize: widescreen ? 18 : 14}]}>
-          {item.description.slice(0, widescreen ? 500 : 150)}
-          {widescreen && item.description.length > 500 && '...'}
-          {!widescreen && item.description.length > 150 && '...'}
+        <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
+          {format.sliceText(item.description || '', widescreen ? 500 : 150)}
         </HText>
         <View style={styles.statsRow}>
-          <Fontisto name='nav-icon-list-a' size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
-          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </HText>
-          <Fontisto name='heart' size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
-          <HText style={[styles.statText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</HText>
+          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
+          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -225,10 +222,7 @@ const UsersLists = () => {
         width={width}
       >
         <FilterSort
-          key={`${currentFilter.field}-${currentSort.field}`}
           context={'userLists'}
-          currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
           currentSort={currentSort}
           onSortChange={(newSort) => setCurrentSort(newSort)}
         />

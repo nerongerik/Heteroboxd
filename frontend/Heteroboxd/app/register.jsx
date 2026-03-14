@@ -106,17 +106,17 @@ const Register = () => {
               source={profileUri ? { uri: profileUri } : require('../assets/before-pick.png')}
               style={styles.profileImage}
             />
-            <HText style={styles.changePicText}>Profile Picture (optional)</HText>
+            <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 14}]}>Profile Picture (optional)</HText>
           </Pressable>
           <TextInput
-            style={styles.input}
+            style={[styles.input, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Name*'
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.text_placeholder}
           />
           <TextInput
-            style={[styles.input, styles.bioInput]}
+            style={[styles.input, styles.bioInput, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Bio (optional)'
             value={bio}
             onChangeText={setBio}
@@ -125,7 +125,7 @@ const Register = () => {
             placeholderTextColor={Colors.text_placeholder}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Email*'
             keyboardType='email-address'
             value={email}
@@ -135,7 +135,7 @@ const Register = () => {
           />
           <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Repeat Password*'
             secureTextEntry
             value={repeatPassword}

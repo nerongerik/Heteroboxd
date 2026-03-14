@@ -25,9 +25,10 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         return { page: 1, items: [], totalCount: 0 }
     }
   }, [activeTab, reviews, lists])
+  const widescreen = useMemo(() => width > 1000, [width])
   const totalPages = Math.ceil(currentData.totalCount / pageSize)
-  const maxRowWidth = useMemo(() => width > 1000 ? 900 : width*0.95, [width])
-  const spacing = useMemo(() => (width > 1000 ? 30 : 5), [width])
+  const maxRowWidth = useMemo(() => widescreen ? 900 : width*0.95, [widescreen])
+  const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
@@ -56,16 +57,17 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl}
-          username={item.authorName}
+          url={item.authorProfilePictureUrl || null}
+          username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
-          widescreen={width > 1000}
+          widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
-        <Stars size={width > 1000 ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
+        <Stars size={widescreen ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
       </View>
       <Pressable onPress={() => router.push(`/review/${item.id}`)}>
-        <HText style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: width > 1000 ? 20 : 16, color: Colors.text_title}}>{item.filmTitle}</HText>
+        <HText style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title}}>{format.sliceText(item.filmTitle || '', widescreen ? 100 : 50)}</HText>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
           <View style={{width: posterWidth, height: posterHeight, marginRight: 5}}>
             <Poster
@@ -82,17 +84,17 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
           {
             item.text?.length > 0 ?
             <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${item.text.replace(/\n{2,}/g, '\n').trim().slice(0, 200)}${item.text.length > 200 ? '...' : ''}`} />
+              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
             </View>
             :
             <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>The author was left speechless.</HText>
+              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
             </View>
           }
         </View>
         <View style={styles.statsRow}>
-          <Fontisto name='heart' size={width > 1000 ? 16 : 12} color={Colors.heteroboxd} />
-          <HText style={[styles.statText, {fontSize: width > 1000 ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
+          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -103,15 +105,16 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl}
-          username={item.authorName}
+          url={item.authorProfilePictureUrl || null}
+          username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
-          widescreen={width > 1000}
+          widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
-        <HText style={[styles.listTitle, {fontSize: width > 1000 ? 22 : 18}]}>{item.name}</HText>
+        <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
                       
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
@@ -131,7 +134,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
                   style={{
                     width: posterWidth,
                     height: posterHeight,
-                    marginRight: i % 4 === 3 ? 0 : width > 1000 ? spacing : spacing / 2,
+                    marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing / 2,
                     borderWidth: 2,
                     borderColor: Colors.border_color,
                     borderRadius: 6
@@ -143,23 +146,21 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
                   style={{
                     width: posterWidth,
                     height: posterHeight,
-                    marginRight: i % 4 === 3 ? 0 : width > 1000 ? spacing : spacing / 2
+                    marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing / 2
                   }}
                 />
               )
             ))
           })()}
         </View>        
-        <HText style={[styles.description, {fontSize: width > 1000 ? 18 : 14}]}>
-          {item.description?.slice(0, width > 1000 ? 500 : 150)}
-          {width > 1000 && item.description.length > 500 && '...'}
-          {width <= 1000 && item.description.length > 150 && '...'}
+        <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
+          {format.sliceText(item.description || '', widescreen ? 500 : 150)}
         </HText>         
         <View style={styles.statsRow}>
-          <Fontisto name='nav-icon-list-a' size={width > 1000 ? 18 : 14} color={Colors._heteroboxd} />
-          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </HText>
-          <Fontisto name='heart' size={width > 1000 ? 18 : 14} color={Colors.heteroboxd} />
-          <HText style={[styles.statText, {fontSize: width > 1000 ? 18 : 14}]}>{format.formatCount(item.likeCount)}</HText>
+          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
+          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>
@@ -167,7 +168,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
 
   return (
     <View style={{flex: 1}}>
-      <View style={[width > 1000 ? styles.wideRow : styles.narrowRow]}>
+      <View style={[widescreen ? styles.wideRow : styles.narrowRow]}>
         <TabButton title='Reviews' active={activeTab === 'reviews'} onPress={() => setActiveTab('reviews')} />
         <TabButton title='Lists' active={activeTab === 'lists'} onPress={() => setActiveTab('lists')} />
       </View>

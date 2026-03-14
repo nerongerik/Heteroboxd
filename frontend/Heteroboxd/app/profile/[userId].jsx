@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Foundation from '@expo/vector-icons/Foundation'
 import { Snackbar } from 'react-native-paper'
@@ -43,6 +43,8 @@ const Profile = () => {
   const [ favIndex, setFavIndex ] = useState(-1)
   const [ searchResults, setSearchResults ] = useState({items: [], totalCount: 0, page: 1})
   const [ searchInit, setSearchInit ] = useState(true)
+  const followingLocalCopyRef = useRef(null)
+  const followRequestRef = useRef(0)
 
   const openMenu2 = () => {
     setMenuShown2(true)
@@ -159,20 +161,24 @@ const Profile = () => {
       setSnack({ shown: true, msg: 'Session expired! Try logging in again.' })
       return
     }
-    if (following) {
-      setFollowing(false)
-    } else {
-      setFollowing(true)
+    const currentFollowing = followingLocalCopyRef.current
+    setFollowing(!currentFollowing)
+    const requestId = ++followRequestRef.current
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=follow-unfollow`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (requestId !== followRequestRef.current) return
+      if (!res.ok) {
+        console.log('follow/unfollow failed; internal server error...')
+      }
+    } catch {
+      if (requestId !== followRequestRef.current) return
+      console.log('follow/unfollow failed; network error...')
     }
-    const jwt = await auth.getJwt()
-    const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=follow-unfollow`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${jwt}` }
-    })
-    if (!res.ok) {
-      console.log('follow/unfollow failed; debugging...')
-    }
-  }, [user, userId, following])
+  }, [user, followRequestRef, userId])
 
   const updateFavorites = useCallback(async (filmId, index) => {
     if (!user || !isOwnProfile || !(await isValidSession())) {
@@ -209,6 +215,10 @@ const Profile = () => {
     if (!data) return
     loadFilmData()
   }, [data, loadFilmData])
+
+  useEffect(() => {
+    followingLocalCopyRef.current = following
+  }, [following])
 
   const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
   const widescreen = useMemo(() => width > 1000, [width])
@@ -282,16 +292,16 @@ const Profile = () => {
           {
             data.gender?.toLowerCase() === 'male' ? (
               <Foundation name='male-symbol' size={24} color={Colors.male} />
-            ) : (
+            ) : data.gender?.toLowerCase() === 'male' ? (
               <Foundation name='female-symbol' size={24} color={Colors.female} />
-            )
+            ) : null
           }
-          <HText style={styles.text}>{data.bio}</HText>
+          <HText style={[styles.text, {fontSize: widescreen ? 18 : 16}]}>{data.bio || ''}</HText>
         </View>
 
         <Divider marginVertical={20} />
 
-        <HText style={styles.subtitle}>Favorites</HText>
+        <HText style={[styles.subtitle, {marginBottom: 10}]}>Favorites</HText>
         <FlatList
           horizontal
           data={favorites}
@@ -344,7 +354,7 @@ const Profile = () => {
         <Divider marginVertical={20} />
 
         <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
-          <HText style={styles.subtitle}>Recents</HText>
+          <HText style={[styles.subtitle, {marginBottom: 10}]}>Recents</HText>
         </Pressable>
         <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
           {
@@ -413,7 +423,7 @@ const Profile = () => {
               </Pressable>
             )
           })}
-          <HText style={[styles.text, {marginTop: 50}]}>joined {data.joined}</HText>
+          <HText style={[styles.text, {marginTop: widescreen ? 50 : 100, fontSize: widescreen ? 16 : 14}]}>joined {data.joined}</HText>
         </View>
       </ScrollView>
 
@@ -467,10 +477,10 @@ const Profile = () => {
             numColumns={1}
             renderItem={({item, index}) => (
               <Pressable key={index} onPress={() => {
-                setSearchResults({items: [], totalCount: 0, page: 1});
+                setSearchResults({items: [], totalCount: 0, page: 1})
                 setSearchInit(true)
-                updateFavorites(item.filmId);
-                closeMenu2();
+                updateFavorites(item.filmId)
+                closeMenu2()
               }}>
                 <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
                   <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
@@ -551,7 +561,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontWeight: "500",
     marginBottom: 5,
-    marginLeft: 12,
+    marginLeft: 6,
     fontSize: 20,
     color: Colors.text_title,
     textAlign: "left",
@@ -563,13 +573,6 @@ const styles = StyleSheet.create({
     textAlign: "justify",
     fontStyle: 'italic',
     marginTop: 0,
-  },
-  divider: {
-    width: "75%",
-    alignSelf: "center",
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border_color,
-    opacity: 0.5,
   },
   profileImage: {
     width: 150,

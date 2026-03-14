@@ -36,15 +36,15 @@ const Verify = () => {
 
   return (
     <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, paddingBottom: 50, backgroundColor: Colors.background, paddingHorizontal: 5}}>
-      {server.response <= 0 ? (
+      {server.result <= 0 ? (
         <ActivityIndicator size={'large'} color={Colors.text_link} />
       ) : (
-        <HText style={styles.title}>{server.message}</HText>
+        <HText style={[styles.title, {fontSize: 20}]}>{server.message}</HText>
       )}
       <Pressable
-        style={[styles.button, server.response <= 0 && { opacity: 0.5 }]}
+        style={[styles.button, server.result <= 0 && { opacity: 0.5 }]}
         onPress={() => server.result === 200 ? router.replace('/login') : router.replace('/contact')}
-        disabled={server.response <= 0}
+        disabled={server.result <= 0}
       >
         <HText style={styles.buttonText}>Proceed</HText>
       </Pressable>
@@ -56,7 +56,6 @@ export default Verify
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 28,
     fontWeight: "700",
     marginBottom: 30,
     color: Colors.text_title,

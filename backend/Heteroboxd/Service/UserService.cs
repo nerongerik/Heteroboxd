@@ -37,18 +37,16 @@ namespace Heteroboxd.Service
         private readonly IUserRepository _repo;
         private readonly IFilmRepository _filmRepo;
         private readonly IReviewRepository _reviewRepo;
-        private readonly IUserListRepository _listRepo;
         private readonly IAuthService _authService;
         private readonly UserManager<User> _userManager;
         private readonly INotificationService _notificationService;
         private readonly IR2Handler _r2Handler;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IUserListRepository listRepo, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler)
         {
             _repo = repo;
             _filmRepo = filmRepo;
             _reviewRepo = reviewRepository;
-            _listRepo = listRepo;
             _authService = authService;
             _userManager = userManager;
             _notificationService = notificationService;
@@ -286,7 +284,7 @@ namespace Heteroboxd.Service
 
         public async Task VerifyUser(string UserId, string Token)
         {
-            var User = await _repo.LightweightFetcherAsync(Guid.Parse(UserId));
+            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
 
             var Result = await _userManager.ConfirmEmailAsync(User, Token);
@@ -352,7 +350,7 @@ namespace Heteroboxd.Service
                     if (SendNotif)
                     {
                         await _notificationService.AddNotification(
-                            $"{UserName} just followed you!",
+                            $"{TruncateName(UserName)} just followed you!",
                             Models.Enums.NotificationType.Follow,
                             Guid.Parse(TargetId)
                         );
@@ -376,7 +374,7 @@ namespace Heteroboxd.Service
                 if (LikeRequest.LikeChange < 0 || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
                 
                 await _notificationService.AddNotification(
-                    $"{LikeRequest.UserName} liked your review of {LikeRequest.FilmTitle!}",
+                    $"{TruncateName(LikeRequest.UserName)} liked your review of {TruncateTitle(LikeRequest.FilmTitle!)}",
                     Models.Enums.NotificationType.Review,
                     Guid.Parse(LikeRequest.AuthorId)
                 );
@@ -388,7 +386,7 @@ namespace Heteroboxd.Service
                 if (LikeRequest.LikeChange < 0 || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
 
                 await _notificationService.AddNotification(
-                    $"{LikeRequest.UserName} liked your list '{LikeRequest.ListName!}'",
+                    $"{TruncateName(LikeRequest.UserName)} liked your list {TruncateTitle(LikeRequest.ListName!)}",
                     Models.Enums.NotificationType.List,
                     Guid.Parse(LikeRequest.AuthorId)
                 );
@@ -453,5 +451,11 @@ namespace Heteroboxd.Service
             await _repo.DeleteAsync(Id);
             await _authService.RevokeAllUserTokens(Id);
         }
+
+        private string TruncateName(string Name, int MaxLength = 25) =>
+             Name.Length <= MaxLength ? Name : $"{Name[..MaxLength]}...";
+
+        private string TruncateTitle(string Title, int MaxLength = 50) =>
+             Title.Length <= MaxLength ? $"\"{Title}\"" : $"\"{Title[..MaxLength]}...\"";
     }
 }

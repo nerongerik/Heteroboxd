@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, TextInput, View } from 'react-native'
+import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Feather from '@expo/vector-icons/Feather'
 import { Colors } from '../constants/colors'
@@ -8,6 +8,7 @@ import HText from './htext'
 const Password = ({ value, onChangeText, onValidityChange }) => {
   const [ showRequirements, setShowRequirements ] = useState(false)
   const [ showPassword, setShowPassword ] = useState(false)
+  const { width } = useWindowDimensions()
 
   const checkRequirements = (pw) => ({
     length: pw.length >= 8,
@@ -39,7 +40,7 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
     <View style={{width: '100%'}}>
       <View style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, , {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           placeholder='Password*'
           secureTextEntry={!showPassword}
           value={value}

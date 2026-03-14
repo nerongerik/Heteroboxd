@@ -43,7 +43,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
       <>
         <KeyboardAvoidingView style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, {fontFamily: 'Inter_400Regular'}]}
             placeholder='Search films...'
             value={query}
             onChangeText={setQuery}

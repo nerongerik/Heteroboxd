@@ -1,24 +1,15 @@
-import { Platform } from 'react-native'
-import * as SecureStore from 'expo-secure-store'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { jwtDecode } from 'jwt-decode'
 import { BaseUrl } from '../constants/api'
 
-export const handleWebLogin = (jwt, refresh) => {
+export const handleLogin = async (jwt, refresh) => {
   if (!jwt || !refresh) return
-  localStorage.setItem('token', jwt)
-  localStorage.setItem('refresh', refresh)
-}
-
-export const handleMobileLogin = async (jwt, refresh) => {
-  if (!jwt || !refresh) return
-  await SecureStore.setItemAsync('token', jwt)
-  await SecureStore.setItemAsync('refresh', refresh)
+  await AsyncStorage.setItem('token', jwt)
+  await AsyncStorage.setItem('refresh', refresh)
 }
 
 export const getJwt = async () => {
-  return Platform.OS === 'web'
-    ? localStorage.getItem('token')
-    : await SecureStore.getItemAsync('token')
+  return await AsyncStorage.getItem('token')
 }
 
 export const isJwtExpired = (token) => {
@@ -28,27 +19,25 @@ export const isJwtExpired = (token) => {
     return exp * 1000 < Date.now()
   } catch {
     return true
-  }    
+  }
 }
 
 export const refreshToken = async () => {
   try {
-    const refresh = Platform.OS === 'web' ? localStorage.getItem('refresh') : await SecureStore.getItemAsync('refresh')
-    if (!refresh) {
-      return false
-    }
+    const refresh = await AsyncStorage.getItem('refresh')
+    if (!refresh) return false
+
     const res = await fetch(`${BaseUrl.api}/auth/refresh?Token=${encodeURIComponent(refresh)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
     })
-    if (!res.ok) {
-      return false
-    }
+    if (!res.ok) return false
+
     const json = await res.json()
     const jwt = json?.jwt ?? json?.token ?? null
     const newRefresh = json?.refresh ?? json?.refreshToken ?? null
     if (jwt) {
-      Platform.OS === 'web' ? handleWebLogin(jwt, newRefresh) : await handleMobileLogin(jwt, newRefresh)
+      await handleLogin(jwt, newRefresh)
       return true
     }
     return false
@@ -59,22 +48,14 @@ export const refreshToken = async () => {
 
 export const logout = async (userId) => {
   try {
-    const refresh = Platform.OS === 'web' ? localStorage.getItem('refresh') : await SecureStore.getItemAsync('refresh')
+    const refresh = await AsyncStorage.getItem('refresh')
     const res = await fetch(`${BaseUrl.api}/auth/logout/${userId}?Token=${encodeURIComponent(refresh)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
     })
-    if (!res.ok) {
-      console.log(`logout failed; ${res.status}`)
-    }
-    if (Platform.OS === 'web') {
-      localStorage.removeItem('token')
-      localStorage.removeItem('refresh')
-    }
-    else {
-      await SecureStore.deleteItemAsync('token')
-      await SecureStore.deleteItemAsync('refresh')
-    }
+    if (!res.ok) console.log(`logout failed; ${res.status}`)
+    await AsyncStorage.removeItem('token')
+    await AsyncStorage.removeItem('refresh')
     return res.ok
   } catch {
     return false
@@ -82,7 +63,7 @@ export const logout = async (userId) => {
 }
 
 export function decodeUser(token) {
-  let decoded = jwtDecode(token)
+  const decoded = jwtDecode(token)
   return {
     userId: decoded.sub,
     name: decoded.name,

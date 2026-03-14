@@ -19,7 +19,7 @@ const Guidelines = () => {
           Rule 1: No Doxxing!
         </HText>
         <HText style={styles.text}>
-          You like free speech? Great! Let's all help each other keep our rights to it — as on the internet, so in reality.
+          You like free speech? Great! Let's try and keep our right to it — as on the internet, so in reality.
           We allow our users to share or withhold as much about themselves as they like, which doesn't extend to sharing private
           information about others.
         </HText>
@@ -28,8 +28,8 @@ const Guidelines = () => {
           Rule 2: No Queershipping!
         </HText>
         <HText style={styles.text}>
-          Heteroboxd is a social film discovery platform, not a mental institution. There are plenty of other places on the internet
-          that seem to be specifically suited to the alphabet community and their various fetishes — this isn't one of them. "Shipping"
+          Heteroboxd is a social film discovery platform, not a mental institution. There a plethora of other places on the internet
+          specifically suited to the alphabet community and their various fetishes — this isn't one of them. "Shipping"
           film characters of the same gender (or their actors, for that matter) is strictly prohibited.
         </HText>
 
@@ -37,7 +37,7 @@ const Guidelines = () => {
           Rule 3: No Simping!
         </HText>
         <HText style={styles.text}>
-          We firmly believe that we should ALL know less about each other. Keep your sexual preferences, kinks, and fetishes to yourself.
+          We firmly believe that we should ALL know less about each other. Keep your sexual preferences and kinks to yourself.
           This is an app for MOVIES, not a Red-light district — drooling over fictional characters doesn't constitute a critique.{'\n\n'}
           <HText style={[styles.text, { fontStyle: "italic" }]}>(this rule doesn't apply for Ryan Gosling, of course)</HText>
         </HText>
@@ -53,10 +53,9 @@ const Guidelines = () => {
           Rule 5: No One-Liners!
         </HText>
         <HText style={styles.text}>
-          The trend of "quirky" one-liners consisting entirely of millenial humor that prevails in reviews on
+          The trend of "quirky" one-liners consisting entirely of millennial humor that prevails in reviews on
           <HText style={[styles.text, { fontStyle: "italic" }]}> *certain* </HText>
-          platforms will not be allowed to spread here. If the other users find your reviews to lack quality and/or humor, we encourage them
-          to report it, so you can be properly penalized.
+          platforms will not be allowed to spread here. The internet is cursed with one Reddit too many already...
         </HText>
 
         <HText style={styles.subtitle}>

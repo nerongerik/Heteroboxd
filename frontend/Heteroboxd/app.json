@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/master.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#0075ff"
+      "resizeMode": "contain",
+      "backgroundColor": "#191d1f"
     },
     "ios": {
       "supportsTablet": true,
@@ -26,6 +26,11 @@
       "backgroundColor": "#191d1f",
       "statusBar": {
         "barStyle": "light-content",
+        "backgroundColor": "#191d1f"
+      },
+      "splash": {
+        "image": "./assets/master.png",
+        "resizeMode": "contain",
         "backgroundColor": "#191d1f"
       },
       "googleServicesFile": "./google-services.json",

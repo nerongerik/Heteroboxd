@@ -23,7 +23,7 @@ const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth }) => {
           onChangeText={setText}
           placeholder='Add a comment…'
           placeholderTextColor={Colors.text_placeholder}
-          style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 60 : 40}]}
+          style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 60 : 50}]}
           onSubmitEditing={() => {
             if (text.trim().length > 0 && text.trim().length < 500) {
               handleSubmit()

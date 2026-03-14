@@ -69,7 +69,7 @@ const Login = () => {
         <View style={[styles.form, {width: width > 1000 ? 1000 : width*0.95}]}>
           <HText style={styles.title}>Welcome Back</HText>
           <TextInput
-            style={styles.input}
+            style={[styles.input, {fontFamily: 'Inter_400Regular'}]}
             placeholder='Email'
             keyboardType='email-address'
             value={email}
@@ -79,7 +79,7 @@ const Login = () => {
           />
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.inputInner}
+              style={[styles.inputInner, {fontFamily: 'Inter_400Regular'}]}
               placeholder='Password'
               secureTextEntry={!showPassword}
               value={password}

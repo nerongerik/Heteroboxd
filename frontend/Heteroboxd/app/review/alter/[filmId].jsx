@@ -130,7 +130,7 @@ const AlterReview = () => {
     loadData()
   }, [loadData])
 
-  const posterWidth = useMemo(() => widescreen ? 100 : 80, [widescreen])
+  const posterWidth = useMemo(() => widescreen ? 120 : 80, [widescreen])
   const posterHeight = useMemo(() => posterWidth * 3 / 2, [posterWidth])
 
   return (
@@ -154,7 +154,7 @@ const AlterReview = () => {
               }}
             />
             <HText style={{color: Colors.text_title, fontWeight: '400', fontSize: widescreen ? 20 : 16, textAlign: 'left', flex: 1, flexWrap: 'wrap'}}>
-              {film.title}
+              {film.title} <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14}}>{film.year || ''}</HText>
             </HText>
           </View>
 

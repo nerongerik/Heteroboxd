@@ -72,7 +72,6 @@ namespace Heteroboxd.Repository
 
         public async Task<User?> GetByIdAsync(Guid Id) =>
             await _context.Users
-                .AsNoTracking()
                 .AsSplitQuery()
                 .Include(u => u.Watchlist).ThenInclude(wl => wl!.Films)
                 .Include(u => u.Followers)

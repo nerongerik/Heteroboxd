@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Entypo, Fontisto, FontAwesome, FontAwesome6, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons'
 import { Link, useFocusEffect, useNavigation, useRouter } from 'expo-router'
@@ -9,7 +9,6 @@ import { useTrending } from '../hooks/useTrending'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import Author from '../components/author'
-import Divider from '../components/divider'
 import HText from '../components/htext'
 import ParsedRead from '../components/parsedRead'
 import { Poster } from '../components/poster'
@@ -33,11 +32,6 @@ const Home = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const [ refreshing, setRefreshing ] = useState(false)
   const [ refreshKey, setRefreshKey ] = useState(0)
-  const [dropdownShown, setDropdownShown] = useState(false)
-  const [dropdownModalVisible, setDropdownModalVisible] = useState(false)
-  const dropdownAnimValue = useRef(new Animated.Value(0)).current
-  const dropdownTriggerRef = useRef(null)
-  const [dropdownTriggerLayout, setDropdownTriggerLayout] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
   const openMenu = () => {
     setMenuShown(true)
@@ -58,22 +52,8 @@ const Home = () => {
     inputRange: [0, 1],
     outputRange: [-300, 0]
   })
-  const openDropdown = () => {
-    dropdownTriggerRef.current?.measureInWindow((x, y, width, height) => {
-      setDropdownTriggerLayout({ x, y, width, height })
-      setDropdownModalVisible(true)
-      setDropdownShown(true)
-      dropdownAnimValue.setValue(0)
-      Animated.timing(dropdownAnimValue, { toValue: 1, duration: 180, useNativeDriver: true }).start()
-    })
-  }
-  const closeDropdown = () => {
-    Animated.timing(dropdownAnimValue, { toValue: 0, duration: 150, useNativeDriver: true })
-      .start(() => { setDropdownModalVisible(false); setDropdownShown(false) })
-  }
   const navPress = (path) => {
     setMenuShown(false)
-    closeDropdown()
     router.push(path)
   }
 
@@ -204,7 +184,7 @@ const Home = () => {
             width={width} 
             footerImage={require('../assets/foreground.png')}
           >
-            <View style={{flex: 1, justifyContent: 'flex-start', paddingRight: 10, paddingVertical: 5}}>
+            <View style={{flex: 1, justifyContent: 'flex-start', paddingLeft: 5, paddingTop: 10}}>
               <Pressable onPress={() => navPress(`/films/explore?filter=${'ALL'}&value=${'RELEASE DATE'}`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <MaterialIcons name='explore' size={32} color={Colors.text} />
@@ -242,7 +222,7 @@ const Home = () => {
                 )
               }
 
-              <Divider marginVertical={20} />
+              <View style={{height: 1, width: '90%', alignSelf: 'center', marginVertical: 20, backgroundColor: Colors.text}} />
 
               <Pressable onPress={() => navPress(`/about`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
@@ -488,22 +468,21 @@ const Home = () => {
                           <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
                             <View style={{ width: Math.min(width * 0.95, 1000), paddingBottom: 10, alignItems: 'center' }}>
                               {reviews.map((item) => (
-                                <View key={item.id.toString()} style={[styles.card, { marginBottom: 10 }]}>
+                                <View key={item.id.toString()} style={[styles.card, { marginBottom: 5 }]}>
                                   <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
                                     <Author
                                       userId={item.authorId}
-                                      url={item.authorProfilePictureUrl}
-                                      username={item.authorName}
+                                      url={item.authorProfilePictureUrl || null}
+                                      username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
                                       admin={item.admin}
                                       router={router}
                                       widescreen={widescreen}
+                                      dim={widescreen ? 40 : 30}
                                     />
                                     <Stars size={widescreen ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
                                   </View>
                                   <Pressable onPress={() => router.push(`/review/${item.id}`)}>
-                                    <HText style={{ padding: 5, fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title }}>
-                                      {item.filmTitle}
-                                    </HText>
+                                    <HText style={{ padding: 5, fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title }}>{format.sliceText(item.filmTitle || '', widescreen ? 100 : 50)}</HText>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
                                       <View style={{ width: colPosterWidth, height: colPosterHeight, marginRight: 5 }}>
                                         <Poster
@@ -518,14 +497,12 @@ const Home = () => {
                                         />
                                       </View>
                                       {item.text?.length > 0 ? (
-                                        <View style={{ width: maxRowWidth - colPosterWidth - 10, maxHeight: colPosterHeight, overflow: 'hidden' }}>
-                                          <ParsedRead html={`${item.text.replace(/\n{2,}/g, '\n').trim().slice(0, 200)}${item.text.length > 200 ? '...' : ''}`} />
+                                        <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
+                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
                                         </View>
                                       ) : (
                                         <View style={{ width: maxRowWidth - colPosterWidth - 10 }}>
-                                          <HText style={{ color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center' }}>
-                                            The author was left speechless.
-                                          </HText>
+                                          <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
                                         </View>
                                       )}
                                     </View>
@@ -546,19 +523,20 @@ const Home = () => {
                           <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
                             <View style={{width: Math.min(width * 0.95, 1000), paddingBottom: 10, alignItems: 'center'}}>
                               {lists.map((item) => (
-                                <View key={item.id.toString()} style={[styles.card, {marginBottom: 10}]}>
+                                <View key={item.id.toString()} style={[styles.card, {marginBottom: 5}]}>
                                   <View style={{marginLeft: 5, marginBottom: -5}}>
                                     <Author
                                       userId={item.authorId}
-                                      url={item.authorProfilePictureUrl}
-                                      username={item.authorName}
+                                      url={item.authorProfilePictureUrl || null}
+                                      username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
                                       admin={item.admin}
                                       router={router}
                                       widescreen={widescreen}
+                                      dim={widescreen ? 40 : 30}
                                     />
                                   </View>
                                   <Pressable onPress={() => router.push(`/list/${item.id}`)}>
-                                    <HText style={[styles.listTitle, {fontSize: widescreen ? 22 : 18}]}>{item.name}</HText>
+                                    <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
                                     <View style={{flexDirection: 'row', justifyContent: 'center'}}>
                                       {(() => {
                                         const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
@@ -596,16 +574,14 @@ const Home = () => {
                                         ))
                                       })()}
                                     </View>
-                                    <HText style={[styles.description, {fontSize: widescreen ? 18 : 14}]}>
-                                      {item.description?.slice(0, widescreen ? 500 : 150)}
-                                      {widescreen && item.description.length > 500 && '...'}
-                                      {!widescreen && item.description.length > 150 && '...'}
+                                    <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
+                                      {format.sliceText(item.description || '', widescreen ? 500 : 150)}
                                     </HText>
                                     <View style={styles.statsRow}>
-                                      <Fontisto name='nav-icon-list-a' size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
-                                      <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </HText>
-                                      <Fontisto name='heart' size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
-                                      <HText style={[styles.statText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</HText>
+                                      <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+                                      <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
+                                      <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+                                      <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
                                     </View>
                                   </Pressable>
                                 </View>
@@ -679,21 +655,5 @@ const styles = StyleSheet.create({
   description: {
     color: Colors.text,
     padding: 10,
-  },
-  dropdownBackdrop: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    backgroundColor: Colors.card,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    minWidth: 220,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
   }
 })

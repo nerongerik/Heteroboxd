@@ -23,14 +23,16 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const [ seenLocalCopy, setSeenLocalCopy ] = useState(null)
   const [ watchlistedLocalCopy, setWatchlistedLocalCopy ] = useState(null)
   const [ reviewLocalCopy, setReviewLocalCopy ] = useState({ id: null, rating: null, text: null, spoiler: null })
-  const reviewLocalCopyRef = useRef(null)
   const [ seenPressed, setSeenPressed ] = useState(false)
-  const ratingRequestRef = useRef(0)
   const { user, isValidSession } = useAuth()
   const [ server, setServer ] = useState(Response.initial)
   const [ listsClicked, setListsClicked ] = useState(false)
   const [ usersLists, setUsersLists ] = useState([])
   const router = useRouter()
+  const reviewLocalCopyRef = useRef(null)
+  const watchlistLocalCopyRef = useRef(null)
+  const ratingRequestRef = useRef(0)
+  const watchlistRequestRef = useRef(0)
 
   const openMenu = () => {
     setMenuShown(true)
@@ -110,17 +112,17 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setServer(Response.forbidden)
       return
     }
+    setSeenPressed(false)
+    setSeenLocalCopy(true)
+    setWatchlistedLocalCopy(false)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/track/${filmId}?Action=watched`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setSeenPressed(false)
-        setSeenLocalCopy(true)
-        setWatchlistedLocalCopy(false)
-      } else if (res.status === 400) {
+      if (res.ok) return
+      if (res.status === 400) {
         setServer(Response.badRequest)
       } else if (res.status === 404) {
         setServer(Response.notFound)
@@ -137,17 +139,17 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setServer(Response.forbidden)
       return
     }
+    setSeenPressed(false)
+    setSeenLocalCopy(false)
+    setReviewLocalCopy(null)
     try {
       const jwt = await auth.getJwt();
       const res = await fetch(`${BaseUrl.api}/users/track/${filmId}?Action=unwatched`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setSeenPressed(false)
-        setSeenLocalCopy(false)
-        setReviewLocalCopy(null)
-      } else if (res.status === 400) {
+      if (res.ok) return
+      if (res.status === 400) {
         setServer(Response.badRequest)
       } else if (res.status === 404) {
         setServer(Response.notFound)
@@ -164,23 +166,27 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setServer(Response.forbidden)
       return
     }
+    const currentWl = watchlistLocalCopyRef.current
+    setWatchlistedLocalCopy(!currentWl)
+    const requestId = ++watchlistRequestRef.current
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/watchlist?FilmId=${filmId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setWatchlistedLocalCopy(prev => !prev)
-      } else if (res.status === 404) {
+      if (requestId !== watchlistRequestRef.current) return
+      if (res.ok) return
+      if (res.status === 404) {
         setServer(Response.notFound)
       } else {
         setServer(Response.internalServerError)
       }
     } catch {
+      if (requestId !== watchlistRequestRef.current) return
       setServer(Response.networkError)
     }
-  }, [user, filmId])
+  }, [user, watchlistRequestRef, filmId])
 
   const fetchLists = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -256,6 +262,10 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   useEffect(() => {
     reviewLocalCopyRef.current = reviewLocalCopy
   }, [reviewLocalCopy])
+
+  useEffect(() => {
+    watchlistLocalCopyRef.current = watchlistedLocalCopy
+  }, [watchlistedLocalCopy])
 
   const button = 
     <View style={[styles.card, {minWidth: widescreen ? '50%' : '90%', maxWidth: widescreen ? '50%' : '90%', borderWidth: 2, borderColor: Colors._heteroboxd}]}>

@@ -97,19 +97,19 @@ const ExploreLists = () => {
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
 
   const List = ({ item }) => (
-    <View style={[styles.card, {marginBottom: spacing * 1.25}]}>
+    <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl}
-          username={item.authorName}
+          url={item.authorProfilePictureUrl || null}
+          username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
           widescreen={widescreen}
         />
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
-        <HText style={[styles.listTitle, {fontSize: widescreen ? 22 : 18}]}>{item.name}</HText>
+        <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           {(() => {
             const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
@@ -147,16 +147,14 @@ const ExploreLists = () => {
             ))
           })()}
         </View>
-        <HText style={[styles.description, {fontSize: widescreen ? 18 : 14}]}>
-          {item.description.slice(0, widescreen ? 500 : 150)}
-          {widescreen && item.description.length > 500 && '...'}
-          {!widescreen && item.description.length > 150 && '...'}
+        <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
+          {format.sliceText(item.description || '', widescreen ? 500 : 150)}
         </HText>
         <View style={styles.statsRow}>
-          <Fontisto name='nav-icon-list-a' size={widescreen ? 18 : 14} color={Colors._heteroboxd} />
-          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.listEntryCount)} </HText>
-          <Fontisto name='heart' size={widescreen ? 18 : 14} color={Colors.heteroboxd} />
-          <HText style={[styles.statText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(item.likeCount)}</HText>
+          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
+          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
     </View>

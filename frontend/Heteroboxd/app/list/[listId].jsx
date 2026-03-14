@@ -19,12 +19,12 @@ import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 
 const List = () => {
   const { listId } = useLocalSearchParams()
   const router = useRouter()
-  const navigation = useNavigation();
+  const navigation = useNavigation()
   const { width } = useWindowDimensions()
   const { user, isValidSession } = useAuth()
   const [ server, setServer ] = useState(Response.initial)
@@ -37,6 +37,8 @@ const List = () => {
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
+  const listLocalCopyRef = useRef(null)
+  const likeRequestRef = useRef(0)
 
   const openMenu2 = () => {
     setMenuShown2(true)
@@ -118,8 +120,9 @@ const List = () => {
       setServer(Response.forbidden)
       return
     }
-    const likeChange = base.iLiked ? -1 : 1
-    setBase(prev => ({...prev, likeCount: Math.max(prev.likeCount + (prev.iLiked ? -1 : 1), 0), iLiked: !prev.iLiked}))
+    const currentList = listLocalCopyRef.current
+    setBase(prev => ({...prev, likeCount: Math.max(currentList.likeCount + (currentList.iLiked ? -1 : 1), 0), iLiked: !currentList.iLiked}))
+    const requestId = ++likeRequestRef.current
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/like`, {
@@ -128,21 +131,23 @@ const List = () => {
         body: JSON.stringify({
           UserId: user.userId,
           UserName: user.name,
-          AuthorId: base?.authorId,
+          AuthorId: currentList.authorId,
           ReviewId: null,
           FilmTitle: null,
           ListId: listId,
-          ListName: base?.name,
-          LikeChange: likeChange
+          ListName: currentList.name,
+          LikeChange: currentList.iLiked ? -1 : 1
         })
       })
+      if (requestId !== likeRequestRef.current) return
       if (!res.ok) {
         console.log(`${res.status}: list like failed.`)
       }
     } catch {
+      if (requestId !== likeRequestRef.current) return
       console.log('like list failed; network error.')
     }
-  }, [user, base, listId])
+  }, [user, likeRequestRef, listId])
 
   useEffect(() => {
     loadBaseData()
@@ -174,6 +179,10 @@ const List = () => {
     loadDataPage(1)
   }, [base?.id, currentFilter, currentSort])
 
+  useEffect(() => {
+    listLocalCopyRef.current = base
+  }, [base])
+
   const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
   const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
@@ -196,21 +205,19 @@ const List = () => {
       <Author
         userId={base?.authorId}
         url={base?.authorProfilePictureUrl}
-        username={base?.authorName}
+        username={format.sliceText(base?.authorName || 'Anonymous', widescreen ? 50 : 25)}
         admin={base?.admin}
         router={router}
         widescreen={widescreen}
         dim={widescreen ? 40 : 30}
       />
-      <HText style={[styles.title, {fontSize: widescreen ? 24 : 20, marginTop: widescreen ? 20 : 5, marginBottom: widescreen ? 40 : 10}]}>{base?.name}</HText>
+      <HText style={[styles.title, {fontSize: widescreen ? 30 : 24, marginTop: widescreen ? 20 : 5, marginBottom: widescreen ? 20 : 10}]}>{base?.name || '[nameless list]'}</HText>
       <Pressable onPress={() => setDescCollapsed(prev => !prev)}>
-        <HText style={[styles.desc, {fontSize: widescreen ? 20 : 16}]}>
-          {descCollapsed && base?.description?.length > 300
-            ? `${base?.description.slice(0, 300)}...`
-            : base?.description}
+        <HText style={[styles.desc, {fontSize: widescreen ? 18 : 14}]}>
+          {format.sliceText(base?.description || '', descCollapsed ? 300 : -1)}
         </HText>
       </Pressable>
-      <View style={styles.metaRow}>
+      <View style={[styles.metaRow, {marginTop: widescreen ? 40 : 20}]}>
         <Pressable onPress={handleLike} style={styles.likeRow}>
           <MaterialCommunityIcons
             name={base?.iLiked ? 'cards-heart' : 'cards-heart-outline'}
@@ -219,7 +226,7 @@ const List = () => {
           />
           <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</HText>
         </Pressable>
-        <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{data.totalCount > 0 ? `${data.totalCount} entries` : ''}</HText>
+        <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{`${data.totalCount || 'No'} entries`}</HText>
       </View>
       {
         user && server.result > 0 ? (
@@ -227,8 +234,8 @@ const List = () => {
           <View />
           <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'right', paddingTop: 5}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <MaterialCommunityIcons name="eye-outline" size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
-              <HText style={{ color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</HText>
+              <MaterialCommunityIcons name="eye-outline" size={widescreen ? 22 : 18} color={Colors._heteroboxd} />
+              <HText style={{ color: Colors._heteroboxd, fontSize: widescreen ? 18 : 16 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</HText>
             </View>
           </Pressable>
         </View>
@@ -380,8 +387,7 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8
+    justifyContent: 'space-between'
   },
   likeRow: {
     flexDirection: 'row',

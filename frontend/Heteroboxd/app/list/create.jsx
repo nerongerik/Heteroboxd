@@ -128,7 +128,7 @@ const CreateList = () => {
   const Header = useMemo(() => (
     <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
       <TextInput
-        style={[styles.input, {marginBottom: 15}]}
+        style={[styles.input, {marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
         placeholder="List name*"
         value={listName}
         onChangeText={setListName}
@@ -136,7 +136,7 @@ const CreateList = () => {
       />
       <View style={styles.descWrapper}>
         <TextInput
-          style={[styles.input, styles.bioInput]}
+          style={[styles.input, styles.bioInput, {fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           placeholder="Description (optional)"
           value={desc}
           onChangeText={setDesc}
@@ -150,6 +150,7 @@ const CreateList = () => {
           {desc.length}/1000
         </HText>
       </View>
+      <View style={{height: widescreen ? 30 : null}} />
       <HText style={{color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 20 : 18}}> Entries</HText>
       <View style={{height: 15}} />
     </View>
@@ -203,8 +204,8 @@ const CreateList = () => {
 
   const Footer = useMemo(() => (
     <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
-      <FontAwesome5 name="trophy" size={widescreen ? 40 : 30} color={ranked ? Colors.heteroboxd : Colors.text} />
-      <HText style={{textAlign: 'center', fontSize: widescreen ? 20 : 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
+      <FontAwesome5 name="trophy" size={30} color={ranked ? Colors.heteroboxd : Colors.text} />
+      <HText style={{textAlign: 'center', fontSize: 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
     </Pressable>
   ), [ranked, widescreen])
 
@@ -262,7 +263,7 @@ const CreateList = () => {
                   <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
                   <View style={{flexShrink: 1, maxWidth: '100%'}}>
                     <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                      {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear}</HText>
+                      {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
                     </HText>
                     <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
                       item.castAndCrew?.map((d, i) => (
@@ -329,7 +330,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
     color: Colors.text_input,
-    fontSize: 16,
     height: 45,
     paddingHorizontal: 12,
     width: '100%',

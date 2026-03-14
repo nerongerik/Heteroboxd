@@ -64,8 +64,8 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
             <Pressable style={styles.userRow} onPress={() => onUserPress(item.id)}>
               <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <UserAvatar pictureUrl={item.pictureUrl} style={styles.picture} />
-                <HText style={styles.username}>{item.name}{item.admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}</HText>
+                <UserAvatar pictureUrl={item.pictureUrl} style={[styles.picture, {width: width > 1000 ? 50 : 30, height: width > 1000 ? 50 : 30, borderRadius: width > 1000 ? 25 : 15}]} />
+                <HText style={[styles.username, {fontSize: width > 1000 ? 22 : 18}]}>{item.name}{item.admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}</HText>
               </View>
             </Pressable>
             { isMyProfile && activeTab === 'followers' &&
@@ -124,15 +124,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5
   },
   username: {
-    fontSize: 18,
     marginLeft: 10,
     color: Colors.text
   },
   picture: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
     borderColor: Colors.border_color,
-    borderWidth: 1.5,
+    borderWidth: 1,
   }
 })

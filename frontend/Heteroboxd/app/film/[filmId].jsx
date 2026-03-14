@@ -425,13 +425,14 @@ const Film = () => {
                     <Author
                       userId={r.authorId}
                       url={r.authorProfilePictureUrl}
-                      username={r.authorName}
+                      username={format.sliceText(r.authorName || 'Anonymous', widescreen ? 50 : 25)}
                       admin={r.admin}
                       router={router}
                       widescreen={widescreen}
+                      dim={widescreen ? 32 : 26}
                     />
                     <Pressable onPress={() => router.push(`/review/${r.id}`)}>
-                      <Stars size={widescreen ? 30 : 20} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
+                      <Stars size={widescreen ? 30 : 22} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
                       <ParsedRead html={`${r.text.slice(0, 450)}${r.text.length > 450 ? '...' : ''}`} />
                     </Pressable>
                   </View>

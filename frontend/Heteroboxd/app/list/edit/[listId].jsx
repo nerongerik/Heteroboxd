@@ -6,6 +6,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../../helpers/auth'
+import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
@@ -182,7 +183,7 @@ const EditList = () => {
     <>
       <View style={{width: widescreen ? 1000 : width*0.9, alignSelf: 'center'}}>
         <TextInput
-          style={[styles.input, {marginBottom: 15}]}
+          style={[styles.input, {marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           value={base?.listName ?? ''}
           onChangeText={(newName) => setBase(prev => ({...prev, listName: newName}))}
           placeholderTextColor={Colors.text_placeholder}
@@ -190,8 +191,8 @@ const EditList = () => {
         />
         <View style={[styles.descWrapper, {marginBottom: 15}]}>
           <TextInput
-            style={[styles.input, styles.bioInput]}
-            value={base?.desc ?? ''}
+            style={[styles.input, styles.bioInput, {fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+            value={base?.desc || ''}
             onChangeText={(newDesc) => setBase(prev => ({...prev, desc: newDesc}))}
             multiline
             placeholderTextColor={Colors.text_placeholder}
@@ -201,12 +202,12 @@ const EditList = () => {
             styles.counterText,
             { color: base?.desc?.length < 1001 ? Colors.text_title : Colors.password_meager }
           ]}>
-            {base?.desc?.length ?? 0}/1000
+            {base?.desc?.length || 0}/1000
           </HText>
         </View>
         <Pressable onPress={() => setBase(prev => ({...prev, ranked: !prev.ranked}))} style={{alignItems: 'center'}}>
-          <FontAwesome5 name='trophy' size={widescreen ? 30 : 20} color={base?.ranked ? Colors.heteroboxd : Colors.text} />
-          <HText style={{textAlign: 'center', fontSize: widescreen ? 16 : 12, color: base?.ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
+          <FontAwesome5 name='trophy' size={30} color={base?.ranked ? Colors.heteroboxd : Colors.text} />
+          <HText style={{textAlign: 'center', fontSize: 16, color: base?.ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
         </Pressable>
       </View>
     </>
@@ -230,7 +231,7 @@ const EditList = () => {
           />
           <View style={{flexShrink: 1, maxWidth: '100%'}}>
             <HText style={{color: Colors.text_title, fontWeight: '600', fontSize: widescreen ? 24 : 16, textAlign: 'center'}}>
-              {item.filmTitle}
+              {format.sliceText(item.filmTitle || '', widescreen ? 100 : 30)}
               <HText style={{color: Colors.text, fontWeight: '400', fontSize: widescreen ? 20 : 12}}> {item.filmYear || ''}</HText>
             </HText>
           </View>
@@ -261,7 +262,7 @@ const EditList = () => {
         <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} other={true} />
         <View style={{flexShrink: 1, maxWidth: '100%'}}>
           <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-            {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
+            {format.sliceText(item.title || '', widescreen ? 200 : 100)} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
           </HText>
           <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
             item.castAndCrew?.map((d, i) => (
@@ -420,7 +421,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
     color: Colors.text_input,
-    fontSize: 16,
     height: 45,
     paddingHorizontal: 12,
     width: '100%',

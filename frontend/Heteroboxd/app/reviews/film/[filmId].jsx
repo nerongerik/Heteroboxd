@@ -127,11 +127,12 @@ const FilmsReviews = () => {
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl}
-          username={item.authorName}
+          url={item.authorProfilePictureUrl || null}
+          username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
           widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
         <Stars size={widescreen ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
       </View>
@@ -139,17 +140,17 @@ const FilmsReviews = () => {
         {
           item.text?.length > 0 ?
             !item.spoiler || uwf || isRevealed(item.id) ? (
-              <View style={{marginVertical: 7.5}}>
-                <ParsedRead html={`${item.text.replace(/\n{3,}/g, '\n\n').trim().slice(0, 350)}${item.text.length > 350 ? '...' : ''}`} />
+              <View style={{marginVertical: 7.5, overflow: 'hidden'}}>
+                <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 600 : 300)}`} />
               </View>
             ) : (
             <Pressable onPress={() => revealSpoiler(item.id)}>
               <View style={{width: '95%', alignSelf: 'center', padding: 10, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center'}}>
                 <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
-                <HText style={{color: Colors.text, fontSize: 16, textAlign: 'center'}}>This review contains spoilers.<HText style={{color: Colors.text_link}}> Read anyway?</HText></HText>
+                <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>
               </View>
             </Pressable>
-            ) : <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: 16, textAlign: 'center'}}>The author was left speechless.</HText>
+            ) : <HText style={{paddingVertical: 10, color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
         }
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
           <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
