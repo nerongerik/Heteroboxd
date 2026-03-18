@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Models;
+﻿using Azure;
+using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 
@@ -78,16 +79,13 @@ namespace Heteroboxd.Service
                 UsersFriends = await _userRepo.GetFriendsAsync(Guid.Parse(UserId));
             }
 
-            var Film = await _filmRepo.LightweightFetcherAsync(FilmId);
-            if (Film == null) return new PagedResponse<ReviewInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
-
             var (Responses, TotalCount) = await _repo.GetByFilmAsync(FilmId, UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<ReviewInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Items = Responses.Select(x => new ReviewInfoResponse(x.Item, x.Joined, Film)).ToList()
+                Items = Responses.Select(x => new ReviewInfoResponse(x.Item, x.Joined)).ToList()
             };
         }
 
@@ -125,12 +123,18 @@ namespace Heteroboxd.Service
                 return new ReviewInfoResponse(DuplicateCheck.Review); //fail silently
             }
 
+            var Film = await _filmRepo.LightweightFetcherAsync(ReviewRequest.FilmId);
+            if (Film == null) throw new KeyNotFoundException(); //fail loudly
+
             var Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, Flag(ReviewRequest.Text), ReviewRequest.Spoiler, UserId, ReviewRequest.FilmId);
             await _repo.CreateAsync(Review);
+            await _filmRepo.UpdateAverageRatingAsync(Film.Id, ((Film.AverageRating * Film.RatingCount) + Review.Rating) / (Film.RatingCount + 1));
+            await _filmRepo.UpdateRatingCountAsync(ReviewRequest.FilmId, 1);
+
             //if user never clicked "Watched" on this title, we add it here for their lazy arse
             if ((await _userRepo.GetUserWatchedFilmAsync(UserId, ReviewRequest.FilmId)) == null)
             {
-                var (Existing, _) = await _userRepo.IsWatchlistedAsync(ReviewRequest.FilmId, UserId);
+                var Existing = await _userRepo.IsWatchlistedAsync(ReviewRequest.FilmId, UserId);
                 if (Existing != null)
                 {
                     await _userRepo.RemoveFromWatchlistAsync(Existing.Id);
@@ -143,18 +147,34 @@ namespace Heteroboxd.Service
 
         public async Task<ReviewInfoResponse> UpdateReview(UpdateReviewRequest ReviewRequest)
         {
-            var Review = await _repo.GetByIdAsync(Guid.Parse(ReviewRequest.ReviewId));
-            if (Review == null) throw new KeyNotFoundException();
+            var Response = await _repo.GetJoinedByIdAsync(Guid.Parse(ReviewRequest.ReviewId));
+            if (Response == null) throw new KeyNotFoundException();
 
-            Review.UpdateFields(ReviewRequest);
-            Review.Flags = Flag(Review.Text); //reflag after update
-            await _repo.UpdateAsync(Review);
+            if (ReviewRequest.Rating != null && ReviewRequest.Rating != Response.Item.Review.Rating)
+            {
+                await _filmRepo.UpdateAverageRatingAsync(Response.Item.Film.Id, ((Response.Item.Film.AverageRating * Response.Item.Film.RatingCount) - Response.Item.Review.Rating + ReviewRequest.Rating.Value) / Response.Item.Film.RatingCount);
+            }
 
-            return new ReviewInfoResponse(Review);
+            Response.Item.Review.UpdateFields(ReviewRequest);
+            Response.Item.Review.Flags = Flag(Response.Item.Review.Text); //reflag after update
+            await _repo.UpdateAsync(Response.Item.Review);
+
+            return new ReviewInfoResponse(Response.Item.Review);
         }
 
-        public async Task DeleteReview(string ReviewId) =>
+        public async Task DeleteReview(string ReviewId)
+        {
+            var Response = await _repo.GetJoinedByIdAsync(Guid.Parse(ReviewId));
+            if (Response == null) throw new KeyNotFoundException();
+
+            await _filmRepo.UpdateAverageRatingAsync(
+                Response.Item.Film.Id,
+                Response.Item.Film.RatingCount <= 1 ? 0 : ((Response.Item.Film.AverageRating * Response.Item.Film.RatingCount) - Response.Item.Review.Rating) / (Response.Item.Film.RatingCount - 1)
+            );
+            await _filmRepo.UpdateRatingCountAsync(Response.Item.Film.Id, -1);
+
             await _repo.DeleteAsync(Guid.Parse(ReviewId));
+        }
 
         private int Flag(string? Text)
         {

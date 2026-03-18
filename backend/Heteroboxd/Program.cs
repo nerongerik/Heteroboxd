@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using EFCore.BulkExtensions;
 using Microsoft.IdentityModel.Tokens;
 //using FirebaseAdmin;
 //using Google.Apis.Auth.OAuth2;
@@ -99,8 +100,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services.AddScoped<ITMDBSerializer, TMDBSerializer>();
-builder.Services.AddScoped<ITMDBLoader, TMDBLoader>();
+builder.Services.AddScoped<ITMDBParser, TMDBParser>();
 builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 {
     client.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -115,7 +115,6 @@ builder.Services.AddHostedService<TrendingSyncService>();
 builder.Services.AddHostedService<RefreshPurgeService>();
 builder.Services.AddHostedService<NotificationPurgeService>();
 builder.Services.AddHostedService<UserPurgeService>();
-builder.Services.AddHostedService<ListPurgeService>();
 builder.Services.AddHostedService<FilmSyncService>();
 builder.Services.AddHostedService<CelebritySyncService>();
 builder.Services.AddHostedService<CountrySyncService>();
@@ -146,88 +145,77 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-/*
-using var Scope = app.Services.CreateScope();
-var TmdbClient = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
-var TmdbService = Scope.ServiceProvider.GetRequiredService<ITMDBSerializer>();
+/*//database population script - comment out in prod
 
-var FilePath = "C:/Code/Heteroboxd/ids.txt";
+using var Scope = app.Services.CreateScope();
+var _client = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
+var FilePath = "D:/Code/Heteroboxd/ids.txt";
 
 if (File.Exists(FilePath))
 {
-    Console.WriteLine("=== DOWNLOAD STARTED ===");
+    Console.WriteLine("=== IMPORT STARTED ===");
 
-    foreach (var Line in File.ReadLines(FilePath))
+    var Lines = File.ReadLines(FilePath).ToList();
+    int Total = Lines.Count;
+    int Counter = 0;
+
+    await Parallel.ForEachAsync(Lines, new ParallelOptions { MaxDegreeOfParallelism = 20 }, async (l, _) =>
     {
-        if (!int.TryParse(Line, out int TmdbId)) continue;
+        if (!int.TryParse(l.Trim(), out int TmdbId)) return;
 
-        Console.WriteLine($"Importing film {TmdbId}...");
+        int Current = Interlocked.Increment(ref Counter);
+        Console.WriteLine($"\n== PROCESSING FILM {Current}/{Total} (TMDB: {TmdbId}) ==\n");
 
         try
         {
-            var Response = await TmdbClient.FilmDetailsCall(TmdbId);
-            await TmdbService.ParseResponse(Response);
+            var Response = await _client.FilmDetailsCall(TmdbId);
+            if (Response == null) return;
+
+            var AllNewIds = (Response.credits?.cast?.Select(c => c.id!.Value) ?? []).Concat(Response.credits?.crew?.Select(c => c.id!.Value) ?? []).Distinct().ToHashSet();
+
+            using var _scope = app.Services.CreateScope();
+            var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
+            var _parser = _scope.ServiceProvider.GetRequiredService<ITMDBParser>();
+
+            var ExistingCelebs = await _context.Celebrities.Where(c => AllNewIds.Contains(c.Id)).ToListAsync();
+
+            var (Film, Celebrities, Credits) = await _parser.ParseResponse(Response, ExistingCelebs, true);
+
+            _context.Films.Add(Film);
+            await _context.SaveChangesAsync();
+            if (Celebrities.Any())
+            {
+                await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
+                {
+                    SetOutputIdentity = false,
+                    UpdateByProperties = new List<string> { nameof(Celebrity.Id) },
+                    PropertiesToExcludeOnUpdate = new List<string>
+                    {
+                        nameof(Celebrity.Name),
+                        nameof(Celebrity.Description),
+                        nameof(Celebrity.HeadshotUrl)
+                    }
+                });
+            }
+            if (Credits.Any())
+            {
+                await _context.BulkInsertOrUpdateAsync(Credits, new BulkConfig
+                {
+                    SetOutputIdentity = false,
+                    UpdateByProperties = new List<string> { nameof(CelebrityCredit.Id) }
+                });
+            }
+
+            Console.WriteLine($"SUCCESS: [{Current}/{Total}] Film {TmdbId} saved.");
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"FAILED {TmdbId}: {ex.Message}");
+        catch (Exception e) 
+        { 
+            Console.WriteLine($"FAIL: [{Current}/{Total}] Error on {TmdbId}: {e.Message}");
         }
-    }
+    });
 
-    Console.WriteLine("=== DOWNLOAD FINISHED ===");
-    return;
-}
-*/
-/*
-using var Scope = app.Services.CreateScope();
-var Loader = Scope.ServiceProvider.GetRequiredService<ITMDBLoader>();
-
-Console.WriteLine("=== IMPORT STARTED ===");
-
-try
-{
-    // Step size determines how many JSON files per batch
-    int Step = 50;
-
-    Console.WriteLine("Loading Films...");
-    Loader.LoadFilms(Step);
-    Console.WriteLine("Films loaded.");
-
-    Console.WriteLine("Loading Celebrities...");
-    Loader.LoadCelebs(Step);
-    Console.WriteLine("Celebrities loaded.");
-
-    Console.WriteLine("Loading Credits...");
-    Loader.LoadCredits(Step);
-    Console.WriteLine("Credits loaded.");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"IMPORT FAILED: {ex.Message}");
-}
-
-Console.WriteLine("=== IMPORT FINISHED ===");
-return;
-*/
-/*
-using var Scope = app.Services.CreateScope();
-var TmdbClient = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
-var HeteroboxdContext = Scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
-
-Console.WriteLine("=== DOWNLOAD STARTED ===");
-try
-{
-    var Response = await TmdbClient.CountryConfigurationCall();
-    var Countries = Response.Select(r => new Country(r.english_name!, r.iso_3166_1!)).ToList();
-    HeteroboxdContext.Countries.AddRange(Countries);
-    await HeteroboxdContext.SaveChangesAsync();
     Console.WriteLine("=== IMPORT FINISHED ===");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"FAILED: {ex.Message}");
-}
-return;
-*/
+    return;
+}*/
 
 app.Run();

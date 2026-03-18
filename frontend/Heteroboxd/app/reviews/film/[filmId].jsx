@@ -36,25 +36,22 @@ const FilmsReviews = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
@@ -90,13 +87,9 @@ const FilmsReviews = () => {
       next.add(reviewId)
       return next
     })
-  }, [revealedSpoilers])
+  }, [])
 
   const isRevealed = useCallback((reviewId) => revealedSpoilers.has(reviewId), [revealedSpoilers])
-
-  useEffect(() => {
-    setCurrentSort({field: 'POPULARITY', desc: true})
-  }, [currentFilter.field])
 
   useEffect(() => {
     loadDataPage(1)
@@ -119,15 +112,15 @@ const FilmsReviews = () => {
     })
   }, [data, navigation, widescreen, openMenu])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
 
-  const Review = ({ item }) => (
+  const Review = useCallback(({ item }) => (
     <View style={{borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 5, marginBottom: 5}}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -158,9 +151,9 @@ const FilmsReviews = () => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, router, uwf, isRevealed, revealSpoiler])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
@@ -172,7 +165,7 @@ const FilmsReviews = () => {
         })
       }}
     />
-  )
+  ), [data.page, totalPages, loadDataPage])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>

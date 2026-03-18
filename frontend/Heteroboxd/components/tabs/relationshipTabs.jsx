@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import { Colors } from '../../constants/colors'
@@ -23,17 +23,17 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
         return { items: [], totalCount: 0, page: 1 }
     }
   }, [activeTab, followers, following, blocked])
-  const totalPages = Math.ceil(currentData.totalCount / pageSize)
+  const totalPages = useMemo(() => Math.ceil(currentData.totalCount / pageSize), [currentData.totalCount, pageSize])
 
-  const TabButton = ({ title, active, onPress }) => {
+  const TabButton = useCallback(({ title, active, onPress }) => {
     return (
       <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
         <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
       </Pressable>
     )
-  }
+  }, [])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={currentData.page}
       totalPages={totalPages}
@@ -45,7 +45,7 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
         })
       }}
     />
-  )
+  ), [currentData.page, totalPages])
 
   return (
     <View style={{flex: 1}}>

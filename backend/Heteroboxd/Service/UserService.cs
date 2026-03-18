@@ -3,6 +3,7 @@ using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Identity.Client;
 
 namespace Heteroboxd.Service
 {
@@ -10,7 +11,7 @@ namespace Heteroboxd.Service
     {
         Task<PagedResponse<UserInfoResponse>> GetUsers(int Page, int PageSize);
         Task<UserInfoResponse> GetUser(string UserId);
-        Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
@@ -67,26 +68,26 @@ namespace Heteroboxd.Service
 
         public async Task<UserInfoResponse> GetUser(string UserId)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
-            return new UserInfoResponse(User);
+            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount);
         }
 
-        public async Task<PagedResponse<WatchlistEntryInfoResponse>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var (WatchlistPage, TotalCount) = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
-            return new PagedResponse<WatchlistEntryInfoResponse>
+            var (Responses, TotalCount) = await _repo.GetUserWatchlistAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
+            return new PagedResponse<WatchlistEntryInfoResponse?>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Items = WatchlistPage.Select(wle => new WatchlistEntryInfoResponse(wle)).ToList()
+                Items = PageUtils.AddPadding(Responses.Select(x => (WatchlistEntryInfoResponse?) new WatchlistEntryInfoResponse(x.Item, x.Joined)).ToList())
             };
         }
 
         public async Task<bool> IsFilmWatchlisted(string UserId, int FilmId)
         {
-            var (Existing, _) = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
+            var Existing = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
             return Existing != null;
         }
 
@@ -103,25 +104,25 @@ namespace Heteroboxd.Service
             if (Favorites.Film1 != null)
             {
                 var Film1 = await _filmRepo.LightweightFetcherAsync(Favorites.Film1.Value);
-                if (Film1 != null)  Film1IR = new FilmInfoResponse(Film1, false);
+                if (Film1 != null)  Film1IR = new FilmInfoResponse(Film1);
                 else Film1IR = "error";
             }
             if (Favorites.Film2 != null)
             {
                 var Film2 = await _filmRepo.LightweightFetcherAsync(Favorites.Film2.Value);
-                if (Film2 != null) Film2IR = new FilmInfoResponse(Film2, false);
+                if (Film2 != null) Film2IR = new FilmInfoResponse(Film2);
                 else Film2IR = "error";
             }
             if (Favorites.Film3 != null)
             {
                 var Film3 = await _filmRepo.LightweightFetcherAsync(Favorites.Film3.Value);
-                if (Film3 != null) Film3IR = new FilmInfoResponse(Film3, false);
+                if (Film3 != null) Film3IR = new FilmInfoResponse(Film3);
                 else Film3IR = "error";
             }
             if (Favorites.Film4 != null)
             {
                 var Film4 = await _filmRepo.LightweightFetcherAsync(Favorites.Film4.Value);
-                if (Film4 != null) Film4IR = new FilmInfoResponse(Film4, false);
+                if (Film4 != null) Film4IR = new FilmInfoResponse(Film4);
                 else Film4IR = "error";
             }
 
@@ -193,7 +194,7 @@ namespace Heteroboxd.Service
                 },
                 LikedLists = new PagedResponse<UserListInfoResponse>
                 {
-                    Items = ListResponses.Select(x => new UserListInfoResponse(x.Item, x.Joined, 4)).ToList(),
+                    Items = ListResponses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList(),
                     Page = ListsPage,
                     PageSize = PageSize,
                     TotalCount = ListCount
@@ -229,18 +230,9 @@ namespace Heteroboxd.Service
                 .Select(f => new DelimitedUserFilmInfoResponse
                 {
                     FriendId = f.Id.ToString(),
-                    FriendProfilePictureUrl = f.PictureUrl,
-                    DateWatched = f.WatchedFilms
-                        .First(uwf => uwf.FilmId == FilmId)
-                        .DateWatched
-                        .ToString("dd/MM/yyyy HH:mm"),
-                    Rating = Reviews
-                        .FirstOrDefault(r => r.AuthorId == f.Id)?
-                        .Rating ?? null,
-                    ReviewId = Reviews
-                        .FirstOrDefault(r => r.AuthorId == f.Id)?
-                        .Id
-                        .ToString() ?? null
+                    FriendPictureUrl = f.PictureUrl,
+                    Rating = Reviews.FirstOrDefault(r => r.AuthorId == f.Id)?.Rating ?? null,
+                    ReviewId = Reviews.FirstOrDefault(r => r.AuthorId == f.Id)?.Id.ToString() ?? null
                 })
                 .ToList();
         }
@@ -284,7 +276,7 @@ namespace Heteroboxd.Service
 
         public async Task VerifyUser(string UserId, string Token)
         {
-            var User = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
 
             var Result = await _userManager.ConfirmEmailAsync(User, Token);
@@ -296,7 +288,7 @@ namespace Heteroboxd.Service
 
         public async Task UpdateWatchlist(string UserId, int FilmId)
         {
-            var (Existing, WatchlistId) = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
+            var Existing = await _repo.IsWatchlistedAsync(FilmId, Guid.Parse(UserId));
             if (Existing != null)
             {
                 await _repo.RemoveFromWatchlistAsync(Existing.Id);
@@ -305,7 +297,7 @@ namespace Heteroboxd.Service
             {
                 var Film = await _filmRepo.LightweightFetcherAsync(FilmId);
                 if (Film == null) throw new KeyNotFoundException();
-                await _repo.AddToWatchlistAsync(new WatchlistEntry(Film.PosterUrl, FilmId, Guid.Parse(UserId), WatchlistId));
+                await _repo.AddToWatchlistAsync(new WatchlistEntry(FilmId, Guid.Parse(UserId)));
             }
         }
 
@@ -351,7 +343,6 @@ namespace Heteroboxd.Service
                     {
                         await _notificationService.AddNotification(
                             $"{TruncateName(UserName)} just followed you!",
-                            Models.Enums.NotificationType.Follow,
                             Guid.Parse(TargetId)
                         );
                     }
@@ -375,7 +366,6 @@ namespace Heteroboxd.Service
                 
                 await _notificationService.AddNotification(
                     $"{TruncateName(LikeRequest.UserName)} liked your review of {TruncateTitle(LikeRequest.FilmTitle!)}",
-                    Models.Enums.NotificationType.Review,
                     Guid.Parse(LikeRequest.AuthorId)
                 );
             }
@@ -387,7 +377,6 @@ namespace Heteroboxd.Service
 
                 await _notificationService.AddNotification(
                     $"{TruncateName(LikeRequest.UserName)} liked your list {TruncateTitle(LikeRequest.ListName!)}",
-                    Models.Enums.NotificationType.List,
                     Guid.Parse(LikeRequest.AuthorId)
                 );
             }
@@ -408,7 +397,7 @@ namespace Heteroboxd.Service
                     if (AlreadyWatchedFilm != null)
                     {
                         AlreadyWatchedFilm.TimesWatched++;
-                        AlreadyWatchedFilm.DateWatched = DateTime.UtcNow;
+                        AlreadyWatchedFilm.Date = DateTime.UtcNow;
                         await _repo.UpdateUserWatchedFilmAsync(AlreadyWatchedFilm);
                         await _filmRepo.UpdateWatchCountAsync(Film.Id, 1);
                     }
@@ -418,7 +407,7 @@ namespace Heteroboxd.Service
                         await _filmRepo.UpdateWatchCountAsync(Film.Id, 1);
                     }
                     //remove film from watchlist (if there)
-                    var (Entry, _) = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
+                    var Entry = await _repo.IsWatchlistedAsync(Film.Id, User.Id);
                     if (Entry != null)
                     {
                         await _repo.RemoveFromWatchlistAsync(Entry.Id);
@@ -436,6 +425,11 @@ namespace Heteroboxd.Service
                         if (Response?.Review != null)
                         {
                             await _reviewRepo.DeleteAsync(Response.Review.Id);
+                            await _filmRepo.UpdateAverageRatingAsync(
+                                Film.Id,
+                                Film.RatingCount <= 1 ? 0 : ((Film.AverageRating * Film.RatingCount) - Response.Review.Rating) / (Film.RatingCount - 1)
+                            );
+                            await _filmRepo.UpdateRatingCountAsync(Film.Id, -1);
                         }
                     }
                     break;

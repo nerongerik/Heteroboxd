@@ -34,7 +34,7 @@ const Celebrity = () => {
   const { celebrityId, t } = useLocalSearchParams()
   const [ bio, setBio ] = useState(null)
   const [ availableRoles, setAvailableRoles ] = useState([])
-  const [ currentTabData, setCurrentTabData ] = useState({ films: [], totalCount: 0, page: 1 })
+  const [ currentTabData, setCurrentTabData ] = useState({ page: 1, films: [], totalCount: 0 })
   const [ seenFilms, setSeenFilms ] = useState([])
   const [ seenCount, setSeenCount ] = useState(0)
   const [ fadeSeen, setFadeSeen ] = useState(true)
@@ -46,26 +46,23 @@ const Celebrity = () => {
   const navigation = useNavigation()
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
-
-  const openMenu = () => {
+  
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true,
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0],
-  })
+  }, [slideAnim])
 
   const loadBioData = useCallback(async () => {
     setServer(Response.loading)
@@ -89,7 +86,7 @@ const Celebrity = () => {
   const loadCreditsData = useCallback(async (filter, page = 1) => {
     setServer(Response.loading)
     if (!filter || filter === 'Bio') {
-      setCurrentTabData({ films: [], totalCount: 0, page: 1 })
+      setCurrentTabData({ page: 1, films: [], totalCount: 0 })
       setServer(Response.ok)
       return
     }
@@ -104,7 +101,7 @@ const Celebrity = () => {
       const res = await fetch(url)
       if (res.ok) {
         const json = await res.json()
-        setCurrentTabData({ films: json.items, totalCount: json.totalCount, page: json.page })
+        setCurrentTabData({ page: json.page, films: json.items, totalCount: json.totalCount })
         setSeenFilms(json.seen)
         setSeenCount(json.seenCount)
         setServer(Response.ok)
@@ -137,7 +134,7 @@ const Celebrity = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: format.sliceText(bio?.celebrityName || '', widescreen ? -1 : 18),
+      headerTitle: format.sliceText(bio?.name || '', widescreen ? -1 : 18),
       headerTitleAlign: 'center',
       headerTitleStyle: { color: Colors.text_title, fontFamily: 'Inter_400Regular' },
       headerRight: () => (
@@ -146,7 +143,7 @@ const Celebrity = () => {
         </Pressable>
       ),
     })
-  }, [navigation, bio?.celebrityName, widescreen, openMenu])
+  }, [navigation, bio?.name, widescreen, openMenu])
 
   useEffect(() => {
     if (!t || t.length === 0) {
@@ -188,7 +185,7 @@ const Celebrity = () => {
   return (
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <CelebrityTabs
-        bio={{text: bio.celebrityDescription || 'This individual is indescribable.', url: bio.celebrityPictureUrl || null}}
+        bio={{text: bio.description || 'This individual is indescribable.', url: bio.headshotUrl || null}}
         currentTabData={currentTabData}
         availableRoles={availableRoles}
         activeTab={currentFilter}

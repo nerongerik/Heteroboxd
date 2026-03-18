@@ -10,7 +10,7 @@ import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
 import RelationshipTabs from '../../components/tabs/relationshipTabs'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 32
 
 const Relationships = () => {
   const { userId, t } = useLocalSearchParams()

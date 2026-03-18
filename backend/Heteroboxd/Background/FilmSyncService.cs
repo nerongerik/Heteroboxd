@@ -1,3 +1,4 @@
+using EFCore.BulkExtensions;
 using Heteroboxd.Data;
 using Heteroboxd.Integrations;
 using Heteroboxd.Models;
@@ -10,7 +11,7 @@ namespace Heteroboxd.Background
     {
         private readonly ILogger<FilmSyncService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _scheduledTime = new TimeSpan(15, 0, 0);
+        private readonly TimeSpan _scheduledTime = new TimeSpan(14, 30, 0);
 
         public FilmSyncService(ILogger<FilmSyncService> logger, IServiceScopeFactory scopeFactory)
         {
@@ -55,22 +56,22 @@ namespace Heteroboxd.Background
                 {
                     HeteroboxdContext _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
                     ITMDBClient _client = _scope.ServiceProvider.GetRequiredService<ITMDBClient>();
-                    ITMDBSerializer _parser = _scope.ServiceProvider.GetRequiredService<ITMDBSerializer>();
+                    ITMDBParser _parser = _scope.ServiceProvider.GetRequiredService<ITMDBParser>();
 
                     //fetch changes
                     int Page = 1;
-                    List<TMDBChangesResponse> Responses = new List<TMDBChangesResponse>();
+                    var Responses = new List<TMDBChangesResponse>();
                     while (true)
                     {
-                        TMDBChangesResponse Response = await _client.ChangesListCall("movie", Page);
+                        var Response = await _client.ChangesListCall("movie", Page);
                         if (Response.results == null || Response.results.Count == 0) break;
                         Responses.Add(Response);
                         if (Page >= Response.total_pages) break;
                         Page++;
                     }
                     //process changes
-                    List<int> DeletedFilms = new List<int>();
-                    List<int> UpdatedFilms = new List<int>();
+                    var DeletedFilms = new List<int>();
+                    var UpdatedFilms = new List<int>();
                     foreach (var r in Responses)
                     {
                         DeletedFilms.AddRange(r.results.Where(co => co.adult == null).Select(co => co.id));
@@ -93,32 +94,71 @@ namespace Heteroboxd.Background
                         try
                         {
                             var Details = await _client.FilmDetailsCall(uf);
+                            if (Details == null) continue;
 
                             var NewCastIds = Details.credits?.cast?.Select(c => c.id!.Value).ToList() ?? new();
                             var NewCrewIds = Details.credits?.crew?.Select(c => c.id!.Value).ToList() ?? new();
                             var AllNewIds = NewCastIds.Concat(NewCrewIds).Distinct().ToHashSet();
 
                             var ExistingCelebs = await _context.Celebrities.Where(c => AllNewIds.Contains(c.Id)).ToListAsync(CancellationToken);
-                            var (Film, Celebrities, Credits) = await _parser.ParseResponseInMemory(Details, ExistingCelebs);
+                            var (Film, Celebrities, Credits) = await _parser.ParseResponse(Details, ExistingCelebs);
 
-                            Film? Existing = ExistingFilms.FirstOrDefault(ef => ef.Id == uf);
+                            var Existing = ExistingFilms.FirstOrDefault(ef => ef.Id == uf);
                             if (Existing == null) //create new film and handle the associated celebrities, collections, etc.
                             {
                                 _context.Films.Add(Film);
-                                _context.Celebrities.AddRange(Celebrities);
-                                await _context.SaveChangesAsync(); //foreign keys restraints *might* cause CelebrityCredits to crash if Film and Celebs not saved first
-                                _context.CelebrityCredits.AddRange(Credits);
-                                await _context.SaveChangesAsync();
+                                await _context.SaveChangesAsync(CancellationToken);
+                                if (Celebrities.Any())
+                                {
+                                    await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
+                                    {
+                                        SetOutputIdentity = false,
+                                        UpdateByProperties = new List<string> { nameof(Celebrity.Id) },
+                                        PropertiesToExcludeOnUpdate = new List<string>
+                                        {
+                                            nameof(Celebrity.Name),
+                                            nameof(Celebrity.Description),
+                                            nameof(Celebrity.HeadshotUrl)
+                                        }
+                                    });
+                                }
+                                if (Credits.Any())
+                                {
+                                    await _context.BulkInsertOrUpdateAsync(Credits, new BulkConfig
+                                    {
+                                        SetOutputIdentity = false,
+                                        UpdateByProperties = new List<string> { nameof(CelebrityCredit.Id) }
+                                    });
+                                }
                             }
                             else //carefully update existing film
-                            {   
+                            {
                                 Existing.UpdateFields(Film);
                                 _context.Films.Update(Existing);
-                                _context.Celebrities.AddRange(Celebrities);
-                                await _context.SaveChangesAsync(); //foreign keys restraints *might* cause CelebrityCredits to crash if Film and Celebs not saved first
+                                await _context.SaveChangesAsync(CancellationToken);
                                 await _context.CelebrityCredits.Where(cc => cc.FilmId == Existing.Id).ExecuteDeleteAsync(CancellationToken);
-                                _context.CelebrityCredits.AddRange(Credits);
-                                await _context.SaveChangesAsync();
+                                if (Celebrities.Any())
+                                {
+                                    await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
+                                    {
+                                        SetOutputIdentity = false,
+                                        UpdateByProperties = new List<string> { nameof(Celebrity.Id) },
+                                        PropertiesToExcludeOnUpdate = new List<string>
+                                        {
+                                            nameof(Celebrity.Name),
+                                            nameof(Celebrity.Description),
+                                            nameof(Celebrity.HeadshotUrl)
+                                        }
+                                    });
+                                }
+                                if (Credits.Any())
+                                {
+                                    await _context.BulkInsertOrUpdateAsync(Credits, new BulkConfig
+                                    {
+                                        SetOutputIdentity = false,
+                                        UpdateByProperties = new List<string> { nameof(CelebrityCredit.Id) }
+                                    });
+                                }
                             }
                         }
                         catch (Exception e)

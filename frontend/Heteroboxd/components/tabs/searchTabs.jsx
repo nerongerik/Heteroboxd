@@ -56,22 +56,22 @@ const SearchTabs = ({ widescreen, router }) => {
     setSearching(0)
   }, [])
 
-  const totalPages = Math.ceil(results.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(results.totalCount / PAGE_SIZE), [results.totalCount])
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const posterWidth = useMemo(() => widescreen ? 150 : 100, [widescreen])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
   const headshotDim = useMemo(() => widescreen ? 100 : 72, [widescreen])
-  const maxRowWidth = useMemo(() => (widescreen ? 900 : width*0.95), [widescreen])
+  const maxRowWidth = useMemo(() => (widescreen ? 900 : width*0.95), [widescreen, width])
   const listPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const listPosterHeight = useMemo(() => listPosterWidth * (3 / 2), [listPosterWidth])
 
-  const TabButton = ({ title, active, onPress }) => (
+  const TabButton = useCallback(({ title, active, onPress }) => (
     <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
       <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
-  )
+  ), [])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={results.page}
       totalPages={totalPages}
@@ -83,9 +83,9 @@ const SearchTabs = ({ widescreen, router }) => {
         })
       }}
     />
-  )
+  ), [results.page, totalPages, search])
 
-  const RenderItem = ({ item }) => {
+  const RenderItem = useCallback(({ item }) => {
     switch (tab) {
       case 'films':
         return RenderFilm({ item })
@@ -98,16 +98,16 @@ const SearchTabs = ({ widescreen, router }) => {
       default:
         return null
     }
-  }
+  }, [tab])
 
   const RenderFilm = ({ item }) => {
     return (
       <>
-        <Pressable onPress={() => router.push(`/film/${item.filmId}`)}>
+        <Pressable onPress={() => router.push(`/film/${item.id}`)}>
           <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', padding: 3}}>
             <View>
               <Poster
-                posterUrl={item.posterUrl}
+                posterUrl={item.posterUrl || 'noposter'}
                 style={{
                   width: posterWidth,
                   height: posterHeight,
@@ -122,12 +122,12 @@ const SearchTabs = ({ widescreen, router }) => {
               <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text_title, fontWeight: '700'}}>
                 {format.sliceText(item.title || '', widescreen ? -1 : 100)}
               </HText>
-              {item.originalTitle !== item.title && <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400', fontStyle: 'italic'}}>{item.originalTitle}</HText>}
+              {item.originalTitle && <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 18 : 14, color: Colors.text, fontWeight: '400', fontStyle: 'italic'}}>{item.originalTitle}</HText>}
               <HText style={{fontSize: widescreen ? 16 : 12, color: Colors.text, fontWeight: '400'}}>
-                {item.releaseYear || ''}
-                {item.castAndCrew?.length > 0 && item.releaseYear > 0 && ' • '}
+                {format.parseOutYear(item.date)}
+                {item.castAndCrew?.length > 0 && format.parseOutYear(item.date).length > 0 && ' • '}
                 {item.castAndCrew?.map((director, index) => (
-                  `${director.celebrityName}${index < item.castAndCrew?.length - 1 ? ', ' : ''}`
+                  `${director.name}${index < item.castAndCrew?.length - 1 ? ', ' : ''}`
                 ))}
               </HText>
             </View>
@@ -140,11 +140,11 @@ const SearchTabs = ({ widescreen, router }) => {
 
   const RenderCeleb = ({ item }) => (
     <>
-      <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}`)}>
+      <Pressable onPress={() => router.push(`/celebrity/${item.id}`)}>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', padding: 3}}>
           <View>
             <Headshot
-              pictureUrl={item.celebrityPictureUrl || null}
+              pictureUrl={item.headshotUrl || null}
               style={{
                 width: headshotDim,
                 height: headshotDim,
@@ -156,7 +156,7 @@ const SearchTabs = ({ widescreen, router }) => {
             />
           </View>
           <View>
-            <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text, fontWeight: '700'}}>{item.celebrityName}</HText>
+            <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text, fontWeight: '700'}}>{item.name}</HText>
           </View>
         </View>
       </Pressable>
@@ -181,7 +181,7 @@ const SearchTabs = ({ widescreen, router }) => {
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || 0}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -192,20 +192,12 @@ const SearchTabs = ({ widescreen, router }) => {
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
         <HText style={[{color: Colors.text_title, fontWeight: '500', padding: 10}, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          {(() => {
-            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
-            const remainder = paddedFilms.length % 4
-            if (remainder !== 0) {
-              const placeholdersToAdd = 4 - remainder
-              for (let i = 0; i < placeholdersToAdd; i++) {
-                paddedFilms.push(null)
-              }
-            }
-            return paddedFilms.map((film, i) => (
+          {
+            item.films.map((film, i) => (
               film ? (
                 <Poster
                   key={`${item.name}-${film.filmId}-${i}`}
-                  posterUrl={film.filmPosterUrl}
+                  posterUrl={film.filmPosterUrl || 'noposter'}
                   style={{
                     width: listPosterWidth,
                     height: listPosterHeight,
@@ -226,7 +218,7 @@ const SearchTabs = ({ widescreen, router }) => {
                 />
               )
             ))
-          })()}
+          }
         </View>
                 
         <HText style={[{color: Colors.text, padding: 10,}, {fontSize: widescreen ? 16 : 14}]}>

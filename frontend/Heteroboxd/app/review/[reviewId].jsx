@@ -74,7 +74,7 @@ const ReviewWithComments = () => {
       setServer(Response.networkError)
       setReview({})
     }
-  }, [reviewId])
+  }, [user, reviewId])
 
   const loadCommentsDataPage = useCallback(async (page) => {
     try {
@@ -229,7 +229,7 @@ const ReviewWithComments = () => {
       <View style={{marginBottom: -5}}>
         <Author
           userId={review?.authorId}
-          url={review?.authorProfilePictureUrl || null}
+          url={review?.authorPictureUrl || null}
           username={format.sliceText(review?.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={review?.admin}
           router={router}
@@ -240,12 +240,12 @@ const ReviewWithComments = () => {
       <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignSelf: 'center', marginBottom: widescreen ? 15 : 10}}>
         <View style={{flex: 1, justifyContent: 'space-around'}}>
           <HText style={{paddingLeft: 3, color: Colors.text_title, fontWeight: '500', fontSize: widescreen ? 24 : 20, textAlign: 'left', flexShrink: 1}}>{review?.filmTitle}</HText>
-          <Stars size={widescreen ? 40 : 30} rating={review?.rating ?? 0} readonly={true} padding={false} align={'flex-start'} />
+          <Stars size={widescreen ? 40 : 30} rating={review?.rating || 0} readonly={true} padding={false} align={'flex-start'} />
           <HText style={{paddingLeft: 3, fontWeight: '400', fontSize: widescreen ? 16 : 13, color: Colors.text, textAlign: 'left'}}>{`Reviewed on ${format.parseDate(review?.date)}`}</HText>
         </View>
         <Pressable onPress={() => router.push(`/film/${review?.filmId}`)}>
           <Poster
-            posterUrl={review?.filmPosterUrl}
+            posterUrl={review?.filmPosterUrl || 'noposter'}
             style={{
               width: widescreen ? 200 : 100,
               height: widescreen ? 200*3/2 : 100*3/2,
@@ -292,9 +292,9 @@ const ReviewWithComments = () => {
 
       <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</HText>
     </View>
-  ), [review, router, widescreen, user, maxRowWidth, comments?.totalCount, showText])
+  ), [review, router, widescreen, user, maxRowWidth, showText, handleCreate])
 
-  const Comment = ({ item }) => (
+  const Comment = useCallback(({ item }) => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
       <View>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
@@ -302,7 +302,7 @@ const ReviewWithComments = () => {
             <>
             <Author
               userId={item.authorId}
-              url={item.authorProfilePictureUrl || null}
+              url={item.authorPictureUrl || null}
               username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
               admin={item.admin}
               router={router}
@@ -336,15 +336,15 @@ const ReviewWithComments = () => {
       </View>
       <Divider marginVertical={spacing} />
     </View>
-  )
+  ), [spacing, widescreen, user, handleDelete, handleReport, router, maxRowWidth])
 
-  const NoComments = () => (
+  const NoComments = useMemo(() => (
     <View style={{width: maxRowWidth, height: 200, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
       <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center'}}>No comments yet. Be the first to respond!</HText>
     </View>
-  )
+  ), [maxRowWidth, widescreen])
 
-  const Footer = () => {
+  const Footer = useMemo(() => {
     if (comments?.comments.length === 0) return null
     return (
       <View style={{paddingBottom: 100}}>
@@ -362,7 +362,7 @@ const ReviewWithComments = () => {
         />
       </View>
     )
-  }
+  }, [comments, loadCommentsDataPage])
 
   if (!review) {
     return (

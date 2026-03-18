@@ -15,12 +15,12 @@ import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 
 const Explore = () => {
   const { user } = useAuth()
   const { filter, value } = useLocalSearchParams()
-  const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
+  const [ currentFilter, setCurrentFilter ] = useState((filter && value) ? { field: filter, value: value } : { field: 'ALL', value: null })
   const [currentSort, setCurrentSort] = useState({ field: 'RELEASE DATE', desc: true })
   const router = useRouter()
   const navigation = useNavigation()
@@ -34,25 +34,22 @@ const Explore = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true,
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0],
-  })
+  }, [slideAnim])
 
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
@@ -91,40 +88,16 @@ const Explore = () => {
   }, [navigation, widescreen, openMenu])
 
   useEffect(() => {
-    if (!filter || !value) return;
-    setCurrentFilter({field: filter, value: value});
-  }, [filter, value])
-
-  useEffect(() => {
-    if (currentFilter.field === 'POPULAR' || currentFilter.field === 'YEAR') {
-      setCurrentSort({field: 'POPULARITY', desc: true})
-    } else if (currentFilter.field === 'ALL' || currentFilter.field === 'GENRE' || currentFilter.field === 'COUNTRY') {
-      setCurrentSort({field: 'RELEASE DATE', desc: true})
-    }
-  }, [currentFilter.field])
-
-  useEffect(() => {
     loadDataPage(1)
   }, [loadDataPage])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
   const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
-  const paddedFilms = useMemo(() => {
-    const padded = [...data.films]
-    const remainder = padded.length % 4
-    if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder
-      for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null)
-      }
-    }
-    return padded
-  }, [data.films])
 
-  const Header = () => (
+  const Header = useMemo(() => (
     <>
       {
         server.result > 0 &&
@@ -146,19 +119,19 @@ const Explore = () => {
         </View>
       }
     </>
-  )
+  ), [server, maxRowWidth, data.totalCount, user, seenCount, widescreen])
 
-  const Film = ({item}) => {
+  const Film = useCallback(({item}) => {
     if (!item) {
       return (
         <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
       )
     }
-    const isSeen = fadeSeen && (seenFilms?.includes(item.filmId) ?? false)
+    const isSeen = fadeSeen && (seenFilms?.includes(item.id) ?? false)
     return (
-      <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{margin: spacing / 2}}>
+      <Pressable onPress={() => router.push(`/film/${item.id}`)} style={{margin: spacing / 2}}>
         <Poster
-          posterUrl={item.posterUrl}
+          posterUrl={item.posterUrl || 'noposter'}
           style={{
             width: posterWidth,
             height: posterHeight,
@@ -170,9 +143,9 @@ const Explore = () => {
         />
       </Pressable>
     )
-  }
+  }, [posterWidth, posterHeight, spacing, fadeSeen, seenFilms, router])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
@@ -184,14 +157,14 @@ const Explore = () => {
         })
       }}
     />
-  )
+  ), [data.page, totalPages, loadDataPage])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
         ref={listRef}
-        data={paddedFilms}
-        keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
+        data={data.films}
+        keyExtractor={(item, index) => item ? item.id.toString() : `placeholder-${index}`}
         numColumns={4}
         ListHeaderComponent={Header}
         renderItem={Film}
@@ -199,7 +172,7 @@ const Explore = () => {
         ListFooterComponent={Footer}
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
-        columnWrapperStyle={{alignSelf: 'center'}}
+        columnWrapperStyle={{justifyContent: 'center'}}
         showsVerticalScrollIndicator={false}
       />
 

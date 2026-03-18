@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { FlatList, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Fontisto } from '@expo/vector-icons'
 import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
@@ -26,19 +26,19 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
     }
   }, [activeTab, reviews, lists])
   const widescreen = useMemo(() => width > 1000, [width])
-  const totalPages = Math.ceil(currentData.totalCount / pageSize)
-  const maxRowWidth = useMemo(() => widescreen ? 900 : width*0.95, [widescreen])
+  const totalPages = useMemo(() => Math.ceil(currentData.totalCount / pageSize), [currentData.totalCount, pageSize])
+  const maxRowWidth = useMemo(() => widescreen ? 900 : width*0.95, [widescreen, width])
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
-  const TabButton = ({ title, active, onPress }) => (
-    <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
+  const TabButton = useCallback(({ title, active, onPress }) => (
+    <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
       <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
-    </TouchableOpacity>
-  )
+    </Pressable>
+  ), [])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={currentData.page}
       totalPages={totalPages}
@@ -50,14 +50,14 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         })
       }}
     />
-  )
+  ), [currentData.page, totalPages, activeTab])
 
-  const RenderReview = ({ item }) => (
+  const RenderReview = useCallback(({ item }) => (
     <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -71,7 +71,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
           <View style={{width: posterWidth, height: posterHeight, marginRight: 5}}>
             <Poster
-              posterUrl={item.filmPosterUrl}
+              posterUrl={item.filmPosterUrl || 'noposter'}
               style={{
                 width: posterWidth,
                 height: posterHeight,
@@ -98,14 +98,14 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, router, posterWidth, posterHeight, maxRowWidth])
 
-  const RenderList = ({ item }) => (
+  const RenderList = useCallback(({ item }) => (
     <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -117,20 +117,12 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
                       
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          {(() => {
-            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
-            const remainder = paddedFilms.length % 4
-            if (remainder !== 0) {
-              const placeholdersToAdd = 4 - remainder
-              for (let i = 0; i < placeholdersToAdd; i++) {
-                paddedFilms.push(null)
-              }
-            }
-            return paddedFilms.map((film, i) => (
+          {
+            item.films.map((film, i) => (
               film ? (
                 <Poster
                   key={film.filmId}
-                  posterUrl={film.filmPosterUrl}
+                  posterUrl={film.filmPosterUrl || 'noposter'}
                   style={{
                     width: posterWidth,
                     height: posterHeight,
@@ -151,7 +143,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
                 />
               )
             ))
-          })()}
+          }
         </View>        
         <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
@@ -164,7 +156,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, router, posterWidth, posterHeight, spacing])
 
   return (
     <View style={{flex: 1}}>
@@ -176,7 +168,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         ref={listRef}
         data={currentData.items ?? []}
         key={activeTab}
-        keyExtractor={(item) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-${item.listId}`}
+        keyExtractor={(item) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-${item.id}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
         ListEmptyComponent={<HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</HText>}
         ListFooterComponent={Footer}

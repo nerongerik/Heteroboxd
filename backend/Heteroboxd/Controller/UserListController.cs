@@ -59,7 +59,7 @@ namespace Heteroboxd.Controller
 
         [HttpGet("entries")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetListEntries(string UserListId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
+        public async Task<IActionResult> GetListEntries(string UserListId, string? UserId = null, int Page = 1, int PageSize = 48, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
         {
             _logger.LogInformation($"GetListEntries endpoint hit for ListId: {UserListId}");
             try

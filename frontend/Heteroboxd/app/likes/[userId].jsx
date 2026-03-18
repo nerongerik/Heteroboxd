@@ -41,7 +41,7 @@ const UserLikes = () => {
   const loadPage = useCallback((tab, page) => {
     const pages = { reviews: tab === 'reviews' ? page : reviews.page, lists: tab === 'lists' ? page : lists.page }
     loadData(pages)
-  }, [loadData])
+  }, [reviews.page, lists.page, loadData])
 
   useEffect(() => {
     navigation.setOptions({
@@ -60,7 +60,7 @@ const UserLikes = () => {
       <LikeTabs
         reviews={reviews}
         lists={lists}
-        onPageChange={(tab, page) => loadPage(tab, page)}
+        onPageChange={loadPage}
         router={router}
         pageSize={PAGE_SIZE}
       />

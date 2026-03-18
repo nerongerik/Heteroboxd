@@ -1,33 +1,30 @@
 ﻿using Heteroboxd.Models.DTO;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Heteroboxd.Models
 {
     public class UserList
     {
-        [Key]
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
         public bool Ranked { get; set; }
-        public DateTime DateCreated { get; set; }
+        public DateTime Date { get; set; }
         public int Flags { get; set; }
         public bool NotificationsOn { get; set; }
-        public ICollection<ListEntry> Films { get; set; }
+        public int Size { get; set; }
         public int LikeCount { get; set; }
         public Guid AuthorId { get; set; }
 
-        public UserList(string Name, string? Description, bool Ranked, Guid AuthorId)
+        public UserList(string Name, string? Description, bool Ranked, int Size, Guid AuthorId)
         {
             this.Id = Guid.NewGuid();
             this.Name = Name;
             this.Description = Description;
             this.Ranked = Ranked;
-            this.DateCreated = DateTime.UtcNow;
+            this.Date = DateTime.UtcNow;
             this.Flags = 0;
             this.NotificationsOn = true;
-            this.Films = new List<ListEntry>();
+            this.Size = Size;
             this.LikeCount = 0;
             this.AuthorId = AuthorId;
         }
@@ -37,7 +34,8 @@ namespace Heteroboxd.Models
             this.Name = string.IsNullOrEmpty(Request.Name) ? this.Name : Request.Name;
             this.Description = string.IsNullOrEmpty(Request.Description) ? this.Description : Request.Description;
             this.Ranked = Request.Ranked;
-            this.DateCreated = DateTime.UtcNow;
+            this.Date = DateTime.UtcNow;
+            this.Size = Request.Entries.Count;
         }
     }
 }

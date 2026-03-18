@@ -32,25 +32,22 @@ const ExploreLists = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
@@ -90,18 +87,18 @@ const ExploreLists = () => {
     loadDataPage(1)
   }, [loadDataPage])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const spacing = useMemo(() => widescreen ? 30 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 800 : width * 0.9, [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4)/4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
 
-  const List = ({ item }) => (
+  const List = useCallback(({ item }) => (
     <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -111,20 +108,12 @@ const ExploreLists = () => {
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
         <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          {(() => {
-            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
-            const remainder = paddedFilms.length % 4
-            if (remainder !== 0) {
-              const placeholdersToAdd = 4 - remainder
-              for (let i = 0; i < placeholdersToAdd; i++) {
-                paddedFilms.push(null)
-              }
-            }
-            return paddedFilms.map((film, i) => (
+          {
+            item.films.map((film, i) => (
               film ? (
                 <Poster
                   key={film.filmId}
-                  posterUrl={film.filmPosterUrl}
+                  posterUrl={film.filmPosterUrl || 'noposter'}
                   style={{
                     width: posterWidth,
                     height: posterHeight,
@@ -145,7 +134,7 @@ const ExploreLists = () => {
                 />
               )
             ))
-          })()}
+          }
         </View>
         <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
@@ -158,9 +147,9 @@ const ExploreLists = () => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, spacing, posterHeight, posterWidth, router])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
@@ -172,7 +161,7 @@ const ExploreLists = () => {
         })
       }}
     />
-  )
+  ), [data.page, totalPages, loadDataPage])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -203,7 +192,7 @@ const ExploreLists = () => {
       >
         <FilterSort
           key={`${currentFilter.field}-${currentSort.field}`}
-          context={'filmLists'}
+          context={'exploreLists'}
           currentFilter={currentFilter}
           onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
           currentSort={currentSort}

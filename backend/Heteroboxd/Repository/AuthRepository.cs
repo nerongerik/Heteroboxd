@@ -8,6 +8,7 @@ namespace Heteroboxd.Repository
     {
         Task<List<Country>> GetCountriesAsync();
         Task CreateAsync(RefreshToken Token);
+        Task InitFavoritesAsync(UserFavorites UserFavorites);
         Task<RefreshToken?> GetValidAsync(string Token);
         Task<Guid?> UseAsync(string Token);
         Task InvalidateAsync(Guid UserId, string Token);
@@ -31,6 +32,12 @@ namespace Heteroboxd.Repository
         public async Task CreateAsync(RefreshToken Token)
         {
             _context.RefreshTokens.Add(Token);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task InitFavoritesAsync(UserFavorites UserFavorites)
+        {
+            _context.UserFavorites.Add(UserFavorites);
             await _context.SaveChangesAsync();
         }
 

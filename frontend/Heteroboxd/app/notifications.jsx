@@ -13,7 +13,7 @@ import LoadingResponse from '../components/loadingResponse'
 import PaginationBar from '../components/paginationBar'
 import Popup from '../components/popup'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 
 const Notifications = () => {
   const { user, isValidSession } = useAuth()
@@ -124,10 +124,10 @@ const Notifications = () => {
     loadDataPage(1)
   }, [loadDataPage])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const maxRowWidth = useMemo(() => Math.min(1000, width*0.95), [width])
 
-  const Header = () => (
+  const Header = useMemo(() => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
       {
         data.totalCount > 0 &&
@@ -137,9 +137,9 @@ const Notifications = () => {
       }
       <View style={{height: 20}} />
     </View>
-  )
+  ), [maxRowWidth, data.totalCount, width])
 
-  const Notif = ( {item, index} ) => {
+  const Notif = useCallback(({item, index}) => {
     return (
       <Pressable
         style={{
@@ -162,9 +162,9 @@ const Notifications = () => {
         <HText style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'center', fontSize: 12, marginRight: 10}}>{format.parseDateShort(item.date)}</HText>
       </Pressable>
     )
-  }
+  }, [handleNotifRead, handleNotifDelete, maxRowWidth])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
@@ -172,7 +172,7 @@ const Notifications = () => {
         loadDataPage(num)
       }}
     />
-  )
+  ), [data.page, totalPages, loadDataPage])
   
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>

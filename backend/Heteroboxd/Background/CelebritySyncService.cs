@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Data;
+﻿using EFCore.BulkExtensions;
+using Heteroboxd.Data;
 using Heteroboxd.Integrations;
 using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
@@ -10,7 +11,8 @@ namespace Heteroboxd.Background
     {
         private readonly ILogger<CelebritySyncService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _scheduledTime = new TimeSpan(14, 30, 0);
+        private readonly TimeSpan _scheduledTime = new TimeSpan(13, 15, 0);
+        private const int BatchSize = 100;
 
         public CelebritySyncService(ILogger<CelebritySyncService> logger, IServiceScopeFactory scopeFactory)
         {
@@ -55,9 +57,8 @@ namespace Heteroboxd.Background
                 {
                     HeteroboxdContext _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
                     ITMDBClient _client = _scope.ServiceProvider.GetRequiredService<ITMDBClient>();
-                    ITMDBSerializer _parser = _scope.ServiceProvider.GetRequiredService<ITMDBSerializer>();
+                    ITMDBParser _parser = _scope.ServiceProvider.GetRequiredService<ITMDBParser>();
 
-                    //fetch changes
                     int Page = 1;
                     List<TMDBChangesResponse> Responses = new List<TMDBChangesResponse>();
                     while (true)
@@ -68,55 +69,64 @@ namespace Heteroboxd.Background
                         if (Page >= Response.total_pages) break;
                         Page++;
                     }
-                    //process changes
-                    List<int> DeletedCelebs = new List<int>();
-                    List<int> UpdatedCelebs = new List<int>();
+
+                    var DeletedCelebs = new List<int>();
+                    var UpdatedCelebs = new List<int>();
                     foreach (var r in Responses)
                     {
                         DeletedCelebs.AddRange(r.results.Where(co => co.adult == null).Select(co => co.id));
                         UpdatedCelebs.AddRange(r.results.Where(co => co.adult == false).Select(co => co.id));
                     }
-                    //delete celebrities
+                    UpdatedCelebs = UpdatedCelebs.Distinct().ToList();
+
                     await _context.Celebrities
                         .Where(c => DeletedCelebs.Contains(c.Id))
                         .ExecuteDeleteAsync(CancellationToken);
-                    //update celebrities
-                    var ExistingCelebs = await _context.Celebrities
-                        .Where(f => UpdatedCelebs.Contains(f.Id))
-                        .ToListAsync(CancellationToken);
 
+                    // fetch and parse all updated celebrities first, accumulating into a list
                     int Counter = 0;
                     int Total = UpdatedCelebs.Count;
+                    var ParsedCelebrities = new List<Celebrity>();
+
                     foreach (int uc in UpdatedCelebs)
                     {
+                        Counter++;
                         _logger.LogInformation($"\n== PROCESSING CELEBRITY {Counter}/{Total} ==\n");
                         try
                         {
-                            var Details = await _client.CelebrityDetailsCall(uc);
-
-                            Celebrity Celebrity = _parser.ParseCelebrity(Details);
-
-                            Celebrity? Existing = ExistingCelebs.FirstOrDefault(ec => ec.Id == uc);
-                            if (Existing == null) //create new celebrity
+                            TMDBCelebrityResponse? Details = null;
+                            for (int Attempt = 1; Attempt <= 3; Attempt++)
                             {
-                                _context.Celebrities.Add(Celebrity);
+                                try
+                                {
+                                    Details = await _client.CelebrityDetailsCall(uc);
+                                    break;
+                                }
+                                catch
+                                {
+                                    if (Attempt == 3) throw;
+                                    await Task.Delay(1000 * Attempt, CancellationToken);
+                                }
                             }
-                            else //update existing celebrity
-                            {
-                                Existing.UpdateFields(Celebrity);
-                                _context.Celebrities.Update(Existing);
-                            }
-                            await _context.SaveChangesAsync();
+                            if (Details == null) continue;
+                            ParsedCelebrities.Add(_parser.ParseCelebrity(Details));
                         }
                         catch (Exception e)
                         {
                             _logger.LogError(e, $"Error processing celebrity with TMDB ID {uc}.");
-                            continue; //silent fail
+                            continue; //faily silently
                         }
-                        finally
+
+                        if (ParsedCelebrities.Count >= BatchSize)
                         {
-                            Counter++;
+                            await BulkUpsertCelebritiesAsync(_context, ParsedCelebrities);
+                            ParsedCelebrities.Clear();
                         }
+                    }
+
+                    if (ParsedCelebrities.Any())
+                    {
+                        await BulkUpsertCelebritiesAsync(_context, ParsedCelebrities);
                     }
 
                     _logger.LogInformation("Celebrity sync completed successfully.");
@@ -126,6 +136,15 @@ namespace Heteroboxd.Background
             {
                 _logger.LogError(e, "Error occurred while executing celebrity sync.");
             }
+        }
+
+        private static async Task BulkUpsertCelebritiesAsync(HeteroboxdContext _context, List<Celebrity> Celebrities)
+        {
+            await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
+            {
+                SetOutputIdentity = false,
+                UpdateByProperties = new List<string> { nameof(Celebrity.Id) }
+            });
         }
     }
 }

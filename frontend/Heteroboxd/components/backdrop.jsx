@@ -8,7 +8,7 @@ export const Backdrop = ({ backdropUrl }) => {
   const { width } = useWindowDimensions()
   
   useEffect(() => {
-    if (!backdropUrl || backdropUrl.length === 0 || backdropUrl === 'error') {
+    if (!backdropUrl || backdropUrl.length === 0) {
       setResolvedUrl(null)
       return
     }

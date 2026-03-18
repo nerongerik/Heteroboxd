@@ -74,7 +74,6 @@ namespace Heteroboxd.Service
             if (!Review.NotificationsOn || Review.AuthorId == Guid.Parse(CommentRequest.AuthorId)) return;
             await _notificationService.AddNotification(
                 $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
-                Models.Enums.NotificationType.Comment,
                 Review.AuthorId
             );
         }

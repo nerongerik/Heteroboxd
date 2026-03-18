@@ -1,5 +1,4 @@
 using Heteroboxd.Data;
-using Heteroboxd.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heteroboxd.Background
@@ -8,7 +7,7 @@ namespace Heteroboxd.Background
     {
         private readonly ILogger<NotificationPurgeService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _scheduledTime = new TimeSpan(14, 0, 0);
+        private readonly TimeSpan _scheduledTime = new TimeSpan(13, 0, 0);
 
         public NotificationPurgeService(ILogger<NotificationPurgeService> logger, IServiceScopeFactory scopeFactory)
         {

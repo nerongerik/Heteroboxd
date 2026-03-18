@@ -16,5 +16,13 @@
         public T2 Joined { get; set; }
     }
 
+    public static class PageUtils
+    {
+        public static List<T?> AddPadding<T>(List<T?> Items) where T : class =>
+            Items.Concat(Enumerable.Repeat<T?>(null, (4 - Items.Count % 4) % 4)).ToList();
+    }
+
     public record JoinedReviewFilm(Review Review, Film Film);
+
+    public record JoinedListEntries(JoinResponse<UserList, User?> List, List<JoinResponse<ListEntry, Film>?> Entries);
 }

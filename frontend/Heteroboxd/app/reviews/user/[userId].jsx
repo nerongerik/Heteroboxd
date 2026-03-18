@@ -17,11 +17,13 @@ import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import Stars from '../../../components/stars'
 import SlidingMenu from '../../../components/slidingMenu'
+import { useAuth } from '../../../hooks/useAuth'
 
 const PAGE_SIZE = 20
 
 const UserReviews = () => {
   const { userId } = useLocalSearchParams()
+  const { user } = useAuth()
   const navigation = useNavigation()
   const router = useRouter()
   const { width } = useWindowDimensions()
@@ -33,25 +35,22 @@ const UserReviews = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
@@ -60,11 +59,13 @@ const UserReviews = () => {
       if (res.ok) {
         const json = await res.json()
         setData({ page: json.page, reviews: json.items, totalCount: json.totalCount })
-        setAuthor({
-          authorPic: json.items[0]?.authorProfilePictureUrl || null,
-          authorName: json.items[0]?.authorName || 'Anonymous',
-          authorAdmin: json.items[0]?.admin || false
-        })
+        if (author.authorName.length === 0) {
+          setAuthor({
+            authorPic: json.items[0]?.authorPictureUrl || null,
+            authorName: json.items[0]?.authorName || 'Anonymous',
+            authorAdmin: json.items[0]?.admin || false
+          })
+        }
         setServer(Response.ok)
       } else {
         setServer(Response.internalServerError)
@@ -82,7 +83,7 @@ const UserReviews = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: author.authorName?.length > 0 ? `${author.authorName}'s reviews` : '',
+      headerTitle: userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`,
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
@@ -93,7 +94,7 @@ const UserReviews = () => {
     })
   }, [navigation, author, widescreen, openMenu])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
   const posterWidth = useMemo(() => widescreen ? 150 : 100, [widescreen])
   const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth])
@@ -109,7 +110,7 @@ const UserReviews = () => {
     />,
   [userId, author, router, widescreen])
 
-  const Review = ({ item }) => (
+  const Review = useCallback(({ item }) => (
     <View style={{borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 5, marginBottom: 10}}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         {AuthorMemo}
@@ -120,7 +121,7 @@ const UserReviews = () => {
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
           <View style={{width: posterWidth, height: posterHeight, marginRight: 5}}>
             <Poster
-              posterUrl={item.filmPosterUrl}
+              posterUrl={item.filmPosterUrl || 'noposter'}
               style={{
                 width: posterWidth,
                 height: posterHeight,
@@ -147,9 +148,9 @@ const UserReviews = () => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, posterWidth, posterHeight, maxRowWidth, router, AuthorMemo])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={data.page}
       totalPages={totalPages}
@@ -161,7 +162,7 @@ const UserReviews = () => {
         })
       }}
     />
-  )
+  ), [data.page, totalPages, loadDataPage])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>

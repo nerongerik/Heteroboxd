@@ -34,15 +34,16 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const ratingRequestRef = useRef(0)
   const watchlistRequestRef = useRef(0)
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
@@ -51,11 +52,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setMenuShown(false)
       setListsClicked(false)
     })
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const handleRatingChange = useCallback(async (newRating) => {
     if (!user || !(await isValidSession())) {
@@ -65,7 +62,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     const currentReview = reviewLocalCopyRef.current
     setSeenLocalCopy(true)
     setWatchlistedLocalCopy(false)
-    setReviewLocalCopy({ id: currentReview?.id ?? null, rating: newRating, text: currentReview?.text ?? null, spoiler: currentReview?.spoiler ?? false })
+    setReviewLocalCopy({ id: currentReview?.id || null, rating: newRating, text: currentReview?.text || null, spoiler: currentReview?.spoiler || false })
     const requestId = ++ratingRequestRef.current
     try {
       const jwt = await auth.getJwt()
@@ -78,7 +75,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
             ReviewId: currentReview.id,
             Rating: newRating,
             Text: currentReview.text || null,
-            Spoiler: currentReview.spoiler ?? false
+            Spoiler: currentReview.spoiler || false
           })
         })
       } else {
@@ -222,7 +219,6 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
         body: JSON.stringify({
-          AuthorId: user.userId,
           FilmId: filmId,
           Lists: lists
         })
@@ -230,6 +226,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       if (!res.ok) {
         setListsClicked(false)
         setServer(Response.internalServerError)
+        return
       }
       setListsClicked(false)
       setServer({ result: 201, message: 'Added successfully.' })

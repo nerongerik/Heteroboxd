@@ -3,9 +3,26 @@ using Newtonsoft.Json;
 
 namespace Heteroboxd.Integrations
 {
+    public sealed class RateLimiter
+    {
+        private readonly SemaphoreSlim _semaphore;
+        private readonly TimeSpan _window;
+
+        public RateLimiter(int maxPerWindow, TimeSpan window)
+        {
+            _semaphore = new SemaphoreSlim(maxPerWindow, maxPerWindow);
+            _window = window;
+        }
+
+        public async Task ThrottleAsync()
+        {
+            await _semaphore.WaitAsync();
+            _ = Task.Delay(_window).ContinueWith(_ => _semaphore.Release());
+        }
+    }
     public interface ITMDBClient
     {
-        Task<TMDBInfoResponse> FilmDetailsCall(int? TmdbId);
+        Task<TMDBInfoResponse?> FilmDetailsCall(int? TmdbId);
         Task<TMDBCollectionResponse> CollectionDetailsCall(int? TmdbId);
         Task<TMDBCelebrityResponse> CelebrityDetailsCall(int? TmdbId);
         Task<List<TMDBCountryResponse>> CountryConfigurationCall();
@@ -17,6 +34,7 @@ namespace Heteroboxd.Integrations
         private readonly HttpClient _httpClient;
         private readonly ILogger<TMDBClient> _logger;
         private readonly IConfiguration _configuration;
+        private static readonly RateLimiter _rateLimiter = new(40, TimeSpan.FromSeconds(1));
 
         public TMDBClient(HttpClient httpClient, ILogger<TMDBClient> logger, IConfiguration configuration)
         {
@@ -25,48 +43,48 @@ namespace Heteroboxd.Integrations
             _configuration = configuration;
         }
 
-        public async Task<TMDBInfoResponse> FilmDetailsCall(int? TmdbId)
+        public async Task<TMDBInfoResponse?> FilmDetailsCall(int? TmdbId)
         {
-            _logger.LogInformation($"Calling the GET /details/ endpoint for Film of TmdbID: {TmdbId}");
             try
             {
+                await _rateLimiter.ThrottleAsync();
+                _logger.LogInformation($"Calling the GET /details/ endpoint for Film of TmdbID: {TmdbId}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/movie/{TmdbId!}?append_to_response=credits");
                 Response.EnsureSuccessStatusCode();
 
                 var Json = await Response.Content.ReadAsStringAsync();
                 var Result = JsonConvert.DeserializeObject<TMDBInfoResponse>(Json)!;
 
-                //keep only top 50 cast members
-                if (Result?.credits?.cast != null && Result.credits.cast.Count > 50)
-                {
-                    Result.credits.cast = Result.credits.cast
-                                             .OrderBy(c => c.order)
-                                             .Take(50)
-                                             .ToList();
-                }
+                if (Result == null || string.IsNullOrEmpty(Result.poster_path) || (Result.runtime < 40 && Result.vote_count < 500)) return null;
+                if (Result.credits?.cast?.Any() != true || Result.credits?.crew?.Any() != true) return null;
+
+                //scale kept cast according to popularity
+                int Count = Math.Min(Result.credits.cast.Count, Result.vote_count > 5000 ? 50 : 25);
+                Result.credits.cast = Result.credits.cast
+                    .OrderBy(c => c.order)
+                    .Take(Count)
+                    .ToList();
                 //filter and map crew members
-                if (Result?.credits?.crew != null)
+                var FilteredCrew = new List<CrewMember>();
+                foreach (var Crewer in Result.credits.crew)
                 {
-                    var FilteredCrew = new List<CrewMember>();
-                    foreach (var Crewer in Result.credits.crew)
+                    if (Crewer?.id == null) continue;
+                    switch (Crewer.job?.ToLower())
                     {
-                        if (Crewer == null || Crewer.id == null) continue;
-                        switch (Crewer.job?.ToLower())
-                        {
-                            case "director":
-                            case "producer":
-                            case "screenplay":
-                            case "writer":
-                            case "story":
-                            case "original music composer":
-                                FilteredCrew.Add(Crewer);
-                                break;
-                            default:
-                                continue;
-                        }
+                        case "director":
+                        case "producer":
+                        case "screenplay":
+                        case "writer":
+                        case "story":
+                        case "original music composer":
+                            FilteredCrew.Add(Crewer);
+                            break;
+                        default:
+                            continue;
                     }
-                    Result.credits.crew = FilteredCrew;
                 }
+                Result.credits.crew = FilteredCrew;
+
                 return Result;
             }
             catch (Exception ex)
@@ -78,9 +96,10 @@ namespace Heteroboxd.Integrations
 
         public async Task<TMDBCollectionResponse> CollectionDetailsCall(int? TmdbId)
         {
-            _logger.LogInformation($"Calling the GET /details/ endpoint for Collection of TmdbID: {TmdbId}");
             try
             {
+                await _rateLimiter.ThrottleAsync();
+                _logger.LogInformation($"Calling the GET /details/ endpoint for Collection of TmdbID: {TmdbId}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/collection/{TmdbId!}");
                 Response.EnsureSuccessStatusCode();
 
@@ -96,9 +115,10 @@ namespace Heteroboxd.Integrations
 
         public async Task<TMDBCelebrityResponse> CelebrityDetailsCall(int? TmdbId)
         {
-            _logger.LogInformation($"Calling the GET /details/ endpoint for Celebrity of TmdbID: {TmdbId}");
             try
             {
+                await _rateLimiter.ThrottleAsync();
+                _logger.LogInformation($"Calling the GET /details/ endpoint for Celebrity of TmdbID: {TmdbId}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/person/{TmdbId!}");
                 Response.EnsureSuccessStatusCode();
 
@@ -114,9 +134,10 @@ namespace Heteroboxd.Integrations
 
         public async Task<List<TMDBCountryResponse>> CountryConfigurationCall()
         {
-            _logger.LogInformation($"Calling the GET /configuration/ endpoint for Countries");
             try
             {
+                await _rateLimiter.ThrottleAsync();
+                _logger.LogInformation($"Calling the GET /configuration/ endpoint for Countries");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/configuration/countries?language=en-US");
                 Response.EnsureSuccessStatusCode();
 
@@ -132,9 +153,10 @@ namespace Heteroboxd.Integrations
 
         public async Task<TMDBChangesResponse> ChangesListCall(string Path, int Page)
         {
-            _logger.LogInformation($"Calling the GET /changes/ endpoint for {Path} at Page: {Page}");
             try
             {
+                await _rateLimiter.ThrottleAsync();
+                _logger.LogInformation($"Calling the GET /changes/ endpoint for {Path} at Page: {Page}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/{Path}/changes?page={Page}");
                 Response.EnsureSuccessStatusCode();
 
@@ -150,9 +172,10 @@ namespace Heteroboxd.Integrations
 
         public async Task<TMDBTrendingResponse> TrendingFilmsCall()
         {
-            _logger.LogInformation("Calling the GET /trending/ endpoint");
             try
             {
+                await _rateLimiter.ThrottleAsync();
+                _logger.LogInformation("Calling the GET /trending/ endpoint");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/movie/popular");
                 Response.EnsureSuccessStatusCode();
 

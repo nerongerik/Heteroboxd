@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Heteroboxd.Models
+﻿namespace Heteroboxd.Models
 {
     public class Trending
     {
-        [Key]
         public int FilmId { get; set; }
         public string Title { get; set; }
         public string PosterUrl { get; set; }

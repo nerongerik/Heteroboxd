@@ -7,19 +7,20 @@ namespace Heteroboxd.Repository
 {
     public interface IUserListRepository
     {
-        Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserList?> GetByIdAsync(Guid ListId);
         Task<JoinResponse<UserList, User>?> GetJoinedByIdAsync(Guid ListId);
-        Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId);
-        Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<UserList>> SummarizeListsAsync(Guid UserId);
-        Task<(List<JoinResponse<UserList, User>> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinResponse<ListEntry, Film>> Responses, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<List<JoinResponse<ListEntry, Film>>> PowerGetEntriesAsync(Guid ListId);
+        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<List<DelimitedUserListInfoResponse>> SummarizeByUserAsync(Guid UserId, int FilmId);
+        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetFeaturingFilmCountAsync(int FilmId);
-        Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
+        Task<(List<JoinedListEntries> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
         Task CreateAsync(UserList UserList);
         Task CreateEntriesAsync(IReadOnlyCollection<ListEntry> ListEntry);
         Task UpdateAsync(UserList UserList);
+        Task IncrementSize(Guid UserListId);
         Task UpdateLikeCountAsync(Guid ListId, int Delta);
         Task ToggleNotificationsAsync(Guid ListId);
         Task ReportAsync(Guid ListId);
@@ -36,11 +37,10 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var Query = _context.UserLists
                 .AsNoTracking()
-                .Include(ul => ul.Films)
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
                 .AsQueryable();
 
@@ -62,10 +62,10 @@ namespace Heteroboxd.Repository
                     Query = Desc ? Query.OrderByDescending(x => x.ul.LikeCount) : Query.OrderBy(x => x.ul.LikeCount);
                     break;
                 case "date created":
-                    Query = Desc ? Query.OrderByDescending(x => x.ul.DateCreated) : Query.OrderBy(x => x.ul.DateCreated);
+                    Query = Desc ? Query.OrderByDescending(x => x.ul.Date) : Query.OrderBy(x => x.ul.Date);
                     break;
                 case "size":
-                    Query = Desc ? Query.OrderByDescending(x => x.ul.Films.Count) : Query.OrderBy(x => x.ul.Films.Count);
+                    Query = Desc ? Query.OrderByDescending(x => x.ul.Size) : Query.OrderBy(x => x.ul.Size);
                     break;
                 case "flags":
                     Query = Query.OrderByDescending(x => x.ul.Flags);
@@ -80,10 +80,31 @@ namespace Heteroboxd.Repository
             var Responses = await Query
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u })
                 .ToListAsync();
 
-            return (Responses, TotalCount);
+            var ListIds = Responses.Select(x => x.ul.Id).ToHashSet();
+            var Entries = await _context.ListEntries
+                .AsNoTracking()
+                .Where(le => ListIds.Contains(le.UserListId))
+                .OrderBy(le => le.Position)
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                .ToListAsync();
+            var EntriesByList = Entries
+                .GroupBy(x => x.le.UserListId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Take(4)
+                         .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
+                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
+                         .ToList()
+                );
+
+            return (Responses.Select(x => new JoinedListEntries(
+                new JoinResponse<UserList, User?> { Item = x.ul, Joined = x.u },
+                EntriesByList.TryGetValue(x.ul.Id, out var entries)
+                    ? entries
+                    : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
+            )).ToList(), TotalCount);
         }
 
         public async Task<UserList?> GetByIdAsync(Guid ListId) =>
@@ -101,7 +122,7 @@ namespace Heteroboxd.Repository
             return Result == null ? null : new JoinResponse<UserList, User> { Item = Result.ul, Joined = Result.u };
         }
 
-        public async Task<(List<ListEntry> ListEntries, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinResponse<ListEntry, Film>> Responses, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             if (UserId == null)
             {
@@ -119,7 +140,7 @@ namespace Heteroboxd.Repository
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
                         break;
                     case "date added":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.DateAdded) : EntriesQuery.OrderBy(x => x.Entry.DateAdded);
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Date) : EntriesQuery.OrderBy(x => x.Entry.Date);
                         break;
                     case "popularity":
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
@@ -128,10 +149,10 @@ namespace Heteroboxd.Repository
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
                         break;
                     case "release date":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.ReleaseYear) : EntriesQuery.OrderBy(x => x.Film.ReleaseYear);
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Date) : EntriesQuery.OrderBy(x => x.Film.Date);
                         break;
                     case "average rating":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount);
                         break;
                     default:
                         //error fallback
@@ -140,13 +161,13 @@ namespace Heteroboxd.Repository
                 }
 
                 var TotalCount = await EntriesQuery.CountAsync();
-                var Entries = await EntriesQuery
+                var Responses = await EntriesQuery
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
-                    .Select(x => x.Entry)
+                    .Select(x => new JoinResponse<ListEntry, Film> { Item = x.Entry, Joined = x.Film })
                     .ToListAsync();
 
-                return (Entries, TotalCount, null, null);
+                return (Responses, TotalCount, null, null);
             }
             else
             {
@@ -171,7 +192,7 @@ namespace Heteroboxd.Repository
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
                         break;
                     case "date added":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.DateAdded) : EntriesQuery.OrderBy(x => x.Entry.DateAdded);
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Date) : EntriesQuery.OrderBy(x => x.Entry.Date);
                         break;
                     case "popularity":
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
@@ -180,10 +201,10 @@ namespace Heteroboxd.Repository
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
                         break;
                     case "release date":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.ReleaseYear) : EntriesQuery.OrderBy(x => x.Film.ReleaseYear);
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Date) : EntriesQuery.OrderBy(x => x.Film.Date);
                         break;
                     case "average rating":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount);
                         break;
                     default:
                         //error fallback
@@ -193,28 +214,29 @@ namespace Heteroboxd.Repository
 
                 var TotalCount = await EntriesQuery.CountAsync();
                 var SeenCount = await EntriesQuery.Where(x => x.Uwf != null).CountAsync();
-                var JoinResult = await EntriesQuery
+                var Responses = await EntriesQuery
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();
 
-                return (JoinResult.Select(x => x.Entry).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount)!;
+                return (Responses.Select(x => new JoinResponse<ListEntry, Film> { Item = x.Entry, Joined = x.Film }).ToList(), TotalCount, Responses.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount)!;
             }
         }
 
-        public async Task<List<ListEntry>> PowerGetEntriesAsync(Guid ListId) =>
+        public async Task<List<JoinResponse<ListEntry, Film>>> PowerGetEntriesAsync(Guid ListId) =>
             await _context.ListEntries
                 .AsNoTracking()
                 .Where(le => le.UserListId == ListId)
-                .OrderBy(le => le.Position)
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                .OrderBy(x => x.le.Position)
+                .Select(x => new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
                 .ToListAsync();
 
-        public async Task<(List<UserList> Lists, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var UserQuery = _context.UserLists
                 .AsNoTracking()
                 .Where(ul => ul.AuthorId == UserId)
-                .Include(ul => ul.Films)
                 .AsQueryable();
 
             //filtering - querying by User already filters out enough
@@ -226,14 +248,14 @@ namespace Heteroboxd.Repository
                     UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.LikeCount) : UserQuery.OrderBy(ul => ul.LikeCount);
                     break;
                 case "date created":
-                    UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.DateCreated) : UserQuery.OrderBy(ul => ul.DateCreated);
+                    UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.Date) : UserQuery.OrderBy(ul => ul.Date);
                     break;
                 case "size":
-                    UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.Films.Count) : UserQuery.OrderBy(ul => ul.Films.Count);
+                    UserQuery = Desc ? UserQuery.OrderByDescending(ul => ul.Size) : UserQuery.OrderBy(ul => ul.Size);
                     break;
                 default:
                     //error handling
-                    UserQuery = UserQuery.OrderByDescending(ul => ul.DateCreated);
+                    UserQuery = UserQuery.OrderByDescending(ul => ul.Date);
                     break;
             }
 
@@ -243,30 +265,59 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .ToListAsync();
 
-            return (Lists, TotalCount);
+            var ListIds = Lists.Select(ul => ul.Id).ToHashSet();
+            var Entries = await _context.ListEntries
+                .AsNoTracking()
+                .Where(le => ListIds.Contains(le.UserListId))
+                .OrderBy(le => le.Position)
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                .ToListAsync();
+            var EntriesByList = Entries
+                .GroupBy(x => x.le.UserListId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Take(4)
+                         .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
+                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
+                         .ToList()
+                );
+
+            return (Lists.Select(ul => new JoinedListEntries(
+                new JoinResponse<UserList, User?> { Item = ul, Joined = null },
+                EntriesByList.TryGetValue(ul.Id, out var entries)
+                    ? entries
+                    : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
+            )).ToList(), TotalCount);
         }
 
-        public async Task<List<UserList>> SummarizeListsAsync(Guid UserId) =>
+        public async Task<List<DelimitedUserListInfoResponse>> SummarizeByUserAsync(Guid UserId, int FilmId) =>
             await _context.UserLists
                 .AsNoTracking()
                 .Where(ul => ul.AuthorId == UserId)
-                .Include(ul => ul.Films)
+                .Select(ul => new DelimitedUserListInfoResponse
+                {
+                    ListId = ul.Id.ToString(),
+                    ListName = ul.Name,
+                    ContainsFilm = _context.ListEntries.Any(le => le.UserListId == ul.Id && le.FilmId == FilmId),
+                    Size = ul.Size
+                })
                 .ToListAsync();
 
-        public async Task<(List<JoinResponse<UserList, User>> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var FilmQuery = _context.UserLists
+            var ListQuery = _context.ListEntries
                 .AsNoTracking()
-                .Include(ul => ul.Films)
-                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
-                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                .Where(le => le.FilmId == FilmId)
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                .Join(_context.UserLists, x => x.le.UserListId, ul => ul.Id, (x, ul) => new { jle = new { x.le, x.f }, ul })
+                .Join(_context.Users, y => y.ul.AuthorId, u => u.Id, (y, u) => new { y.jle, y.ul, u })
                 .AsQueryable();
 
             //filtering
             switch (Filter.ToLower())
             {
                 case "friends":
-                    FilmQuery = FilmQuery.Where(x => UsersFriends!.Contains(x.ul.AuthorId));
+                    ListQuery = ListQuery.Where(x => UsersFriends!.Contains(x.ul.AuthorId));
                     break;
                 default:
                     //error handling
@@ -277,42 +328,54 @@ namespace Heteroboxd.Repository
             switch (Sort.ToLower())
             {
                 case "popularity":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.ul.LikeCount) : FilmQuery.OrderBy(x => x.ul.LikeCount);
+                    ListQuery = Desc ? ListQuery.OrderByDescending(x => x.ul.LikeCount) : ListQuery.OrderBy(x => x.ul.LikeCount);
                     break;
                 case "date created":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.ul.DateCreated) : FilmQuery.OrderBy(x => x.ul.DateCreated);
+                    ListQuery = Desc ? ListQuery.OrderByDescending(x => x.ul.Date) : ListQuery.OrderBy(x => x.ul.Date);
                     break;
                 case "size":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.ul.Films.Count) : FilmQuery.OrderBy(x => x.ul.Films.Count);
+                    ListQuery = Desc ? ListQuery.OrderByDescending(x => x.ul.Size) : ListQuery.OrderBy(x => x.ul.Size);
                     break;
                 default:
                     //error handling
-                    FilmQuery = FilmQuery.OrderByDescending(x => x.ul.LikeCount);
+                    ListQuery = ListQuery.OrderByDescending(x => x.ul.LikeCount);
                     break;
             }
 
-            var TotalCount = await FilmQuery.CountAsync();
-            var Responses = await FilmQuery
+            var TotalCount = await ListQuery.CountAsync();
+            var Responses = await ListQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u })
                 .ToListAsync();
 
-            return (Responses, TotalCount);
+            var EntriesByList = Responses.Select(x => x.jle)
+                .GroupBy(jle => jle.le.UserListId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Take(4)
+                         .Select(jle => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = jle.le, Joined = jle.f })
+                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
+                         .ToList()
+                );
+
+            return (Responses.Select(x => new JoinedListEntries(
+                new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
+                EntriesByList.TryGetValue(x.ul.Id, out var entries)
+                    ? entries
+                    : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
+            )).ToList(), TotalCount);
         }
 
         public async Task<int> GetFeaturingFilmCountAsync(int FilmId) =>
-            await _context.UserLists
+            await _context.ListEntries
                 .AsNoTracking()
-                .Include(ul => ul.Films)
-                .Where(ul => ul.Films.Any(le => le.FilmId == FilmId))
+                .Where(le => le.FilmId == FilmId)
                 .CountAsync();
 
-        public async Task<(List<JoinResponse<UserList, User>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
+        public async Task<(List<JoinedListEntries> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
             var Query = _context.UserLists
                 .AsNoTracking()
-                .Include(ul => ul.Films)
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
                 .AsQueryable();
 
@@ -323,15 +386,35 @@ namespace Heteroboxd.Repository
             }
 
             int TotalCount = await Query.CountAsync();
-
-            var Results = await Query
+            var Responses = await Query
                 .OrderByDescending(x => EF.Functions.TrigramsSimilarity(x.ul.Name, Search))
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u })
                 .ToListAsync();
 
-            return (Results, TotalCount);
+            var ListIds = Responses.Select(x => x.ul.Id).ToHashSet();
+            var Entries = await _context.ListEntries
+                .AsNoTracking()
+                .Where(le => ListIds.Contains(le.UserListId))
+                .OrderBy(le => le.Position)
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                .ToListAsync();
+            var EntriesByList = Entries
+                .GroupBy(x => x.le.UserListId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Take(4)
+                         .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
+                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
+                         .ToList()
+                );
+
+            return (Responses.Select(x => new JoinedListEntries(
+                new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
+                EntriesByList.TryGetValue(x.ul.Id, out var entries)
+                    ? entries
+                    : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
+            )).ToList(), TotalCount);
         }
 
 
@@ -351,6 +434,17 @@ namespace Heteroboxd.Repository
         {
             _context.UserLists.Update(UserList);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task IncrementSize(Guid UserListId)
+        {
+            var Rows = await _context.UserLists
+                .Where(ul => ul.Id == UserListId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    ul => ul.Size,
+                    ul => ul.Size + 1
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
         }
 
         public async Task UpdateLikeCountAsync(Guid ListId, int Delta)

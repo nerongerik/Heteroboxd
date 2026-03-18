@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react"
+import { useCallback, useMemo, useRef } from "react"
 import { FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import * as format from '../../helpers/format'
@@ -8,7 +8,7 @@ import HText from '../htext'
 import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 
-const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, seenCount, fadeSeen}) => {
+const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, seenCount, fadeSeen }) => {
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
 
@@ -19,31 +19,19 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
   const headshotWidth = useMemo(() => widescreen ? posterWidth - 20 : posterWidth + 20, [widescreen, posterWidth])
   const headshotHeight = useMemo(() => headshotWidth * 3 / 2, [headshotWidth])
-  const paddedEntries = useMemo(() => {
-    if (activeTab === 'Bio') return []
-    const padded = [...(currentTabData?.films || [])]
-    const remainder = padded.length % 4
-    if (remainder !== 0) {
-      const toAdd = 4 - remainder
-      for (let i = 0; i < toAdd; i++) {
-        padded.push(null)
-      }
-    }
-    return padded
-  }, [activeTab, currentTabData])
 
   const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize)
 
-  const TabButton = ({ title, active, onPress }) => (
+  const TabButton = useCallback(({ title, active, onPress }) => (
     <Pressable
       onPress={onPress}
       style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 15 : 5 }, active && styles.activeTabButton]}
     >
       <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
-  )
+  ), [widescreen])
 
-  const Header = () => {
+  const Header = useMemo(() => {
     if (activeTab === 'Bio') return null
     return (
       <>
@@ -67,9 +55,9 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
         <View style={{ height: widescreen ? 20 : 10 }} />
       </>
     )
-  }
+  }, [activeTab, maxRowWidth, currentTabData?.totalCount, showSeen, widescreen, seenCount])
 
-  const Footer = () => (
+  const Footer = useMemo(() => (
     <PaginationBar
       page={currentTabData?.page || 1}
       totalPages={totalPages}
@@ -78,17 +66,17 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
         listRef.current?.scrollToOffset({ offset: 0, animated: true })
       }}
     />
-  )
+  ), [currentTabData?.page, totalPages])
 
-  const Filmography = ({ item }) => {
+  const Filmography = useCallback(({ item }) => {
     if (!item) {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
-    const isSeen = fadeSeen && (seenFilms?.includes(item.filmId) ?? false)
+    const isSeen = fadeSeen && (seenFilms?.includes(item.id) ?? false)
     return (
-      <Pressable onPress={() => onFilmPress(item.filmId)} style={{margin: spacing / 2}}>
+      <Pressable onPress={() => onFilmPress(item.id)} style={{margin: spacing / 2}}>
         <Poster
-          posterUrl={item.posterUrl}
+          posterUrl={item.posterUrl || 'noposter'}
           style={{
             width: posterWidth,
             height: posterHeight,
@@ -100,7 +88,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
         />
       </Pressable>
     )
-  }
+  }, [posterWidth, posterHeight, spacing, fadeSeen, seenFilms])
 
   return (
     <View style={{flex: 1}}>
@@ -166,15 +154,16 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
               margin: widescreen ? 10 : 0,
               alignSelf: widescreen ? 'auto' : 'center'
             }}
+            wcp={true}
           />
           <HText style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</HText>
         </ScrollView>
       ) : (
         <FlatList
           ref={listRef}
-          data={paddedEntries}
+          data={currentTabData?.films || []}
           key={activeTab}
-          keyExtractor={(item, index) => item?.filmId ? `${activeTab}-${item.filmId}` : `${activeTab}-placeholder-${index}`}
+          keyExtractor={(item, index) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-placeholder-${index}`}
           ListHeaderComponent={Header}
           ListFooterComponent={Footer}
           renderItem={Filmography}

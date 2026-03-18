@@ -1,3 +1,4 @@
+using EFCore.BulkExtensions;
 using Heteroboxd.Data;
 using Heteroboxd.Integrations;
 using Heteroboxd.Models;
@@ -9,7 +10,7 @@ namespace Heteroboxd.Background
     {
         private readonly ILogger<TrendingSyncService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _scheduledTime = new TimeSpan(14, 0, 0);
+        private readonly TimeSpan _scheduledTime = new TimeSpan(13, 0, 0);
 
         public TrendingSyncService(ILogger<TrendingSyncService> logger, IServiceScopeFactory scopeFactory)
         {
@@ -54,7 +55,7 @@ namespace Heteroboxd.Background
                 {
                     HeteroboxdContext _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
                     ITMDBClient _client = _scope.ServiceProvider.GetRequiredService<ITMDBClient>();
-                    ITMDBSerializer _parser = _scope.ServiceProvider.GetRequiredService<ITMDBSerializer>();
+                    ITMDBParser _parser = _scope.ServiceProvider.GetRequiredService<ITMDBParser>();
 
                     await _context.Trendings.ExecuteDeleteAsync(CancellationToken);
 
@@ -66,18 +67,39 @@ namespace Heteroboxd.Background
                         if (Existing == null)
                         {
                             var Details = await _client.FilmDetailsCall(tf);
+                            if (Details == null) continue;
 
                             var NewCastIds = Details.credits?.cast?.Select(c => c.id!.Value).ToList() ?? new();
                             var NewCrewIds = Details.credits?.crew?.Select(c => c.id!.Value).ToList() ?? new();
                             var AllNewIds = NewCastIds.Concat(NewCrewIds).Distinct().ToHashSet();
 
                             var ExistingCelebs = await _context.Celebrities.Where(c => AllNewIds.Contains(c.Id)).ToListAsync(CancellationToken);
-                            var (Film, Celebrities, Credits) = await _parser.ParseResponseInMemory(Details, ExistingCelebs);
+                            var (Film, Celebrities, Credits) = await _parser.ParseResponse(Details, ExistingCelebs);
 
                             _context.Films.Add(Film);
-                            _context.Celebrities.AddRange(Celebrities);
-                            await _context.SaveChangesAsync();
-                            _context.CelebrityCredits.AddRange(Credits);
+                            await _context.SaveChangesAsync(CancellationToken);
+                            if (Celebrities.Any())
+                            {
+                                await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
+                                {
+                                    SetOutputIdentity = false,
+                                    UpdateByProperties = new List<string> { nameof(Celebrity.Id) },
+                                    PropertiesToExcludeOnUpdate = new List<string>
+                                    {
+                                        nameof(Celebrity.Name),
+                                        nameof(Celebrity.Description),
+                                        nameof(Celebrity.HeadshotUrl)
+                                    }
+                                });
+                            }
+                            if (Credits.Any())
+                            {
+                                await _context.BulkInsertOrUpdateAsync(Credits, new BulkConfig
+                                {
+                                    SetOutputIdentity = false,
+                                    UpdateByProperties = new List<string> { nameof(CelebrityCredit.Id) }
+                                });
+                            }
                             _context.Trendings.Add(new Trending(Film, Rank));
                         }
                         else

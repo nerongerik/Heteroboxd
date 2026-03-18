@@ -10,7 +10,7 @@ namespace Heteroboxd.Background
     {
         private readonly ILogger<CountrySyncService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _scheduledTime = new TimeSpan(14, 0, 0);
+        private readonly TimeSpan _scheduledTime = new TimeSpan(13, 0, 0);
 
         public CountrySyncService(ILogger<CountrySyncService> logger, IServiceScopeFactory scopeFactory)
         {
@@ -58,6 +58,7 @@ namespace Heteroboxd.Background
 
                     List<TMDBCountryResponse> Response = await _client.CountryConfigurationCall();
                     List<Country> Countries = Response.Select(r => new Country(r.english_name!, r.iso_3166_1!)).ToList();
+                    Countries.RemoveAll(c => c.Code == "XK");
                     await _context.Countries.ExecuteDeleteAsync(CancellationToken);
                     await _context.Countries.AddRangeAsync(Countries, CancellationToken);
                     await _context.SaveChangesAsync(CancellationToken);

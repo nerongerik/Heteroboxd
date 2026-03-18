@@ -5,6 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { Snackbar } from 'react-native-paper'
 import { useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
+import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
@@ -15,7 +16,7 @@ import { Poster } from '../../components/poster'
 import SearchBox from '../../components/searchBox'
 import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 24
 
 const CreateList = () => {
   const { user, isValidSession } = useAuth()
@@ -33,25 +34,22 @@ const CreateList = () => {
   const [ searchResults, setSearchResults ] = useState({ items: [], totalCount: 0, page: 1 })
   const [ searchInit, setSearchInit ] = useState(true)
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown(false));
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const handleSubmit = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -108,9 +106,9 @@ const CreateList = () => {
     })
   }, [navigation, widescreen, handleSubmit])
 
-  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(searchResults.totalCount / PAGE_SIZE), [searchResults.totalCount])
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
-  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen])
+  const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3/2), [posterWidth])
   const paddedEntries = useMemo(() => {
@@ -163,7 +161,7 @@ const CreateList = () => {
     return (
       <Pressable key={index} onPress={() => {setEntries(prev => prev.filter((_, i) => i !== index))}} style={{alignItems: 'center'}}>
         <Poster
-          posterUrl={item.posterUrl}
+          posterUrl={item.posterUrl || 'noposter'}
           style={{
             width: posterWidth,
             height: posterHeight,
@@ -207,7 +205,7 @@ const CreateList = () => {
       <FontAwesome5 name="trophy" size={30} color={ranked ? Colors.heteroboxd : Colors.text} />
       <HText style={{textAlign: 'center', fontSize: 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
     </Pressable>
-  ), [ranked, widescreen])
+  ), [ranked])
 
   return (
     <View style={{backgroundColor: Colors.background, flex: 1, justifyContent: 'center'}}>
@@ -252,23 +250,23 @@ const CreateList = () => {
           <FlatList
             data={searchResults.items}
             numColumns={1}
-            renderItem={({item, index}) => (
-              <Pressable key={index} onPress={() => {
-                if (!entries.some(e => e.filmId === item.filmId)) setEntries(prev => [...prev, { filmId: item.filmId, posterUrl: item.posterUrl }])
+            renderItem={({item}) => (
+              <Pressable onPress={() => {
+                if (!entries.some(e => e.filmId === item.id)) setEntries(prev => [...prev, { filmId: item.id, posterUrl: item.posterUrl }])
                 setSearchResults({items: [], totalCount: 0, page: 1})
                 setSearchInit(true)
                 closeMenu()
               }}>
                 <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
-                  <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
+                  <Poster posterUrl={item.posterUrl || 'noposter'} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
                   <View style={{flexShrink: 1, maxWidth: '100%'}}>
                     <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
-                      {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
+                      {format.sliceText(item.title || '', widescreen ? -1 : 100)} <HText style={{color: Colors.text, fontSize: 14}}>{format.parseOutYear(item.date) || ''}</HText>
                     </HText>
                     <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
                       item.castAndCrew?.map((d, i) => (
                         <HText key={i} style={{}}>
-                          {d.celebrityName ?? ""}{i < item.castAndCrew.length - 1 && ", "}
+                          {d.name || ''}{i < item.castAndCrew?.length - 1 && ", "}
                         </HText>
                       ))
                     }</HText>

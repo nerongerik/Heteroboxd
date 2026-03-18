@@ -15,7 +15,7 @@ export const Poster = ({ posterUrl, style, other }) => {
   } else {
     return (
       <Image
-        source={posterUrl === 'error' ? require("../assets/error.png") : posterUrl === 'noposter' ? require("../assets/noposter.png") : { uri: posterUrl.replace('original', replacer) }}
+        source={posterUrl === 'noposter' ? require("../assets/noposter.png") : { uri: posterUrl.replace('original', replacer) }}
         style={style}
         contentFit="cover"
         cachePolicy="disk"

@@ -46,25 +46,22 @@ const Profile = () => {
   const followingLocalCopyRef = useRef(null)
   const followRequestRef = useRef(0)
 
-  const openMenu2 = () => {
+  const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu2 = useCallback(() => {
     setMenuShown2(true)
     Animated.timing(slideAnim2, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu2 = () => {
+  }, [slideAnim2])
+  const closeMenu2 = useCallback(() => {
     Animated.timing(slideAnim2, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown2(false))
-  }
-  const translateY2 = slideAnim2.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim2])
 
   const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
@@ -87,9 +84,9 @@ const Profile = () => {
         }
         setData({ 
           name: json.profile.name, pictureUrl: json.profile.pictureUrl, bio: json.profile.bio, gender: json.profile.gender, admin: json.profile.admin,
-          joined: format.parseDate(json.profile.joined), flags: json.profile.flags, watchlistCount: json.profile.watchlistCount,
+          joined: format.parseDate(json.profile.date), flags: json.profile.flags, watchlistCount: json.profile.watchlistCount,
           listsCount: json.profile.listsCount, followersCount: json.profile.followersCount, followingCount: json.profile.followingCount,
-          blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount, likes: json.profile.likes, watched: json.profile.watched
+          blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount, likes: json.profile.likesCount, watched: json.profile.watchedCount
         })
         setServer(Response.ok)
       } else if (res.status === 404) {
@@ -111,7 +108,7 @@ const Profile = () => {
       if (res.ok) {
         const json = await res.json()
         setFavorites([json.favorites["1"] || null, json.favorites["2"] || null, json.favorites["3"] || null, json.favorites["4"] || null])
-        setRecent({ films: json.recents.items, totalCount: json.recents.totalCount })
+        setRecent({ films: json.recents.items.filter(x => x), totalCount: json.recents.totalCount })
       } else {
         setFavorites([null, null, null, null])
         setRecent({ films: [], totalCount: 0 })
@@ -124,7 +121,7 @@ const Profile = () => {
     }
   }, [userId])
 
-  const handleButtons = (button) => {
+  const handleButtons = useCallback((button) => {
     switch (button) {
       case 'Watched':
         router.push(`/films/user-watched/${userId}`)
@@ -136,7 +133,7 @@ const Profile = () => {
         router.push(`/reviews/user/${userId}`)
         break
       case 'Lists':
-        if (data.listsCount === '0') router.push(`/list/create`)
+        if (data.listsCount === '0' || data.listsCount === 0) router.push(`/list/create`)
         else router.push(`/lists/user/${userId}`)
         break
       case 'Likes':
@@ -154,7 +151,7 @@ const Profile = () => {
       default:
         setSnack({ shown: true, msg: 'You cannot access that functionality.' })
     }
-  }
+  }, [router, userId, data?.listsCount])
 
   const handleFollow = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -212,15 +209,14 @@ const Profile = () => {
   }, [navigation, blocked, data, user, userId])
 
   useEffect(() => {
-    if (!data) return
     loadFilmData()
-  }, [data, loadFilmData])
+  }, [loadFilmData])
 
   useEffect(() => {
     followingLocalCopyRef.current = following
   }, [following])
 
-  const totalPages = Math.ceil(searchResults.totalCount / PAGE_SIZE)
+  const totalPages = useMemo(() => Math.ceil(searchResults.totalCount / PAGE_SIZE), [searchResults.totalCount])
   const widescreen = useMemo(() => width > 1000, [width])
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
@@ -230,6 +226,84 @@ const Profile = () => {
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
   const followButtonColor = useMemo(() => following ? Colors.heteroboxd : Colors._heteroboxd, [following])
   const followLabel = useMemo(() => following ? 'UNFOLLOW' : 'FOLLOW', [following])
+
+  const Favorite = useCallback(({item, index}) => (
+    <Pressable
+      onLongPress={() => isOwnProfile ? updateFavorites(-1, index + 1) : null}
+      onPress={() => {
+        if (item?.id) {
+          router.push(`/film/${item.id}`)
+        } else if (!isOwnProfile) {
+          setSnack({ shown:  true, msg: 'You cannot choose favorites for other people!' })
+        } else {
+          setFavIndex(index + 1)
+          openMenu2()
+        }
+      }}
+    >
+      <Poster
+        posterUrl={item?.posterUrl || null}
+        style={{
+          width: posterWidth,
+          height: posterHeight,
+          borderRadius: 6,
+          borderWidth: 2,
+          borderColor: Colors.border_color
+        }}
+        other={!isOwnProfile}
+      />
+    </Pressable>
+  ), [isOwnProfile, updateFavorites, router, openMenu2])
+
+  const Recent = useCallback(({item}) => (
+    <Pressable onPress={() => router.push(`/film/${item.id}`)} style={{marginRight: spacing}}>
+      <Poster
+        posterUrl={item?.posterUrl || 'noposter'}
+        style={{
+          width: colPosterWidth,
+          height: colPosterHeight,
+          borderRadius: 6,
+          borderWidth: 2,
+          borderColor: Colors.border_color
+        }}
+      />
+    </Pressable>
+  ), [router, spacing, colPosterWidth, colPosterHeight])
+
+  const SearchResult = useCallback(({item, index}) => (
+    <Pressable key={index} onPress={() => {
+      setSearchResults({items: [], totalCount: 0, page: 1})
+      setSearchInit(true)
+      updateFavorites(item.id)
+      closeMenu2()
+    }}>
+      <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
+        <Poster posterUrl={item.posterUrl || 'noposter'} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
+        <View style={{flexShrink: 1, maxWidth: '100%'}}>
+          <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
+            {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{format.parseOutYear(item.date)}</HText>
+          </HText>
+          <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
+            item.castAndCrew?.map((d, i) => (
+              <HText key={i} style={{}}>
+                {d.name ?? ''}{i < item.castAndCrew.length - 1 && ', '}
+              </HText>
+            ))
+          }</HText>
+        </View>
+      </View>
+    </Pressable>
+  ), [updateFavorites, closeMenu2])
+
+  const SearchFooter = useMemo(() => (
+    <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>
+      <PaginationBar
+        page={searchResults.page}
+        totalPages={totalPages}
+        onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
+      />
+    </View>
+  ), [widescreen, width, searchResults.page, totalPages])
 
   if (!data) {
     return (
@@ -292,7 +366,7 @@ const Profile = () => {
           {
             data.gender?.toLowerCase() === 'male' ? (
               <Foundation name='male-symbol' size={24} color={Colors.male} />
-            ) : data.gender?.toLowerCase() === 'male' ? (
+            ) : data.gender?.toLowerCase() === 'female' ? (
               <Foundation name='female-symbol' size={24} color={Colors.female} />
             ) : null
           }
@@ -307,35 +381,7 @@ const Profile = () => {
           data={favorites}
           keyExtractor={(_, index) => index.toString()}
           ListEmptyComponent={<View style={{width: maxRowWidth, paddingVertical: 30, alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>}
-          renderItem={({ item, index }) => (
-            <Pressable
-              onLongPress={() => isOwnProfile ? updateFavorites(-1, index + 1) : null}
-              onPress={() => {
-                if (item === 'error') {
-                  setSnack({ shown:  true, msg: 'There was an error loading this film.' })
-                } else if (item?.filmId) {
-                  router.push(`/film/${item.filmId}`)
-                } else if (!isOwnProfile) {
-                  setSnack({ shown:  true, msg: 'You cannot choose favorites for other people!' })
-                } else {
-                  setFavIndex(index + 1)
-                  openMenu2()
-                }
-              }}
-            >
-              <Poster
-                posterUrl={item === 'error' ? 'error' : (item?.posterUrl || null)}
-                style={{
-                  width: posterWidth,
-                  height: posterHeight,
-                  borderRadius: 6,
-                  borderWidth: 2,
-                  borderColor: Colors.border_color
-                }}
-                other={!isOwnProfile}
-              />
-            </Pressable>
-          )}
+          renderItem={Favorite}
           contentContainerStyle={{width: maxRowWidth, justifyContent: 'space-between'}}
           showsHorizontalScrollIndicator={false}
         />
@@ -369,24 +415,9 @@ const Profile = () => {
                 style={{width: maxRowWidth, paddingBottom: 10}}
                 contentContainerStyle={{alignItems: 'center'}}
                 data={recent.films}
-                keyExtractor={(item) => item.filmId.toString()}
+                keyExtractor={(item) => item.id.toString()}
                 ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>}
-                renderItem={({ item }) => {
-                  return (
-                    <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{marginRight: spacing}}>
-                      <Poster
-                        posterUrl={item?.posterUrl ?? null}
-                        style={{
-                          width: colPosterWidth,
-                          height: colPosterHeight,
-                          borderRadius: 6,
-                          borderWidth: 2,
-                          borderColor: Colors.border_color
-                        }}
-                      />
-                    </Pressable>
-                  )
-                }}
+                renderItem={Recent}
               />
             )
           }
@@ -475,42 +506,9 @@ const Profile = () => {
           <FlatList
             data={searchResults.items}
             numColumns={1}
-            renderItem={({item, index}) => (
-              <Pressable key={index} onPress={() => {
-                setSearchResults({items: [], totalCount: 0, page: 1})
-                setSearchInit(true)
-                updateFavorites(item.filmId)
-                closeMenu2()
-              }}>
-                <View style={{flexDirection: 'row', alignItems: 'center', maxWidth: '100%'}}>
-                  <Poster posterUrl={item.posterUrl} style={{width: 75, height: 75*3/2, borderRadius: 6, borderColor: Colors.border_color, borderWidth: 1, marginRight: 5, marginBottom: 3}} />
-                  <View style={{flexShrink: 1, maxWidth: '100%'}}>
-                    <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
-                      {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{item.releaseYear || ''}</HText>
-                    </HText>
-                    <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
-                      item.castAndCrew?.map((d, i) => (
-                        <HText key={i} style={{}}>
-                          {d.celebrityName ?? ''}{i < item.castAndCrew.length - 1 && ', '}
-                        </HText>
-                      ))
-                    }</HText>
-                  </View>
-                </View>
-              </Pressable>
-            )}
-            ListEmptyComponent={
-              !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>
-            }
-            ListFooterComponent={
-              <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>
-                <PaginationBar
-                  page={searchResults.page}
-                  totalPages={totalPages}
-                  onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
-                />
-              </View>
-            }
+            renderItem={SearchResult}
+            ListEmptyComponent={!searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
+            ListFooterComponent={SearchFooter}
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />

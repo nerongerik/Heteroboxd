@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Data;
 using Heteroboxd.Models;
+using Heteroboxd.Models.DTO;
 using Heteroboxd.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,7 @@ namespace Heteroboxd.Repository
 {
     public interface ICelebrityRepository
     {
-        Task<Celebrity?> GetByIdAsync(int Id);
+        Task<JoinResponse<Celebrity, List<CelebrityCredit>>?> GetByIdAsync(int Id);
         Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetCreditsAsync(int CelebrityId, Guid? UserId, int Page, int PageSize, Role Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
     }
@@ -21,11 +22,12 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<Celebrity?> GetByIdAsync(int Id) =>
+        public async Task<JoinResponse<Celebrity, List<CelebrityCredit>>?> GetByIdAsync(int Id) =>
             await _context.Celebrities
                 .AsNoTracking()
-                .Include(c => c.Credits)
-                .FirstOrDefaultAsync(c => c.Id == Id);
+                .Where(c => c.Id == Id)
+                .Select(c => new JoinResponse<Celebrity, List<CelebrityCredit>> { Item = c, Joined = _context.CelebrityCredits.Where(cc => cc.CelebrityId == c.Id).ToList() })
+                .FirstOrDefaultAsync();
 
         public async Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetCreditsAsync(int CelebrityId, Guid? UserId, int Page, int PageSize, Role Filter, string Sort, bool Desc, string? FilterValue)
         {
@@ -53,14 +55,14 @@ namespace Heteroboxd.Repository
                         CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Length) : CreditsQuery.OrderBy(f => f.Length);
                         break;
                     case "release date":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.ReleaseYear) : CreditsQuery.OrderBy(f => f.ReleaseYear);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Date) : CreditsQuery.OrderBy(f => f.Date);
                         break;
                     case "average rating":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => _context.Reviews.Where(r => r.FilmId == f.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(f => f.WatchCount) : CreditsQuery.OrderBy(f => _context.Reviews.Where(r => r.FilmId == f.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(f => f.WatchCount);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.AverageRating).ThenByDescending(f => f.WatchCount) : CreditsQuery.OrderBy(f => f.AverageRating).ThenByDescending(f => f.WatchCount);
                         break;
                     default:
                         //error handling
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.ReleaseYear) : CreditsQuery.OrderBy(f => f.ReleaseYear);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Date) : CreditsQuery.OrderBy(f => f.Date);
                         break;
                 }
 
@@ -101,14 +103,14 @@ namespace Heteroboxd.Repository
                         CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Length) : CreditsQuery.OrderBy(x => x.Film.Length);
                         break;
                     case "release date":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.ReleaseYear) : CreditsQuery.OrderBy(x => x.Film.ReleaseYear);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Date) : CreditsQuery.OrderBy(x => x.Film.Date);
                         break;
                     case "average rating":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount) : CreditsQuery.OrderBy(x => _context.Reviews.Where(r => r.FilmId == x.Film.Id).Select(r => (double?)r.Rating).Average() ?? 0).ThenByDescending(x => x.Film.WatchCount);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount) : CreditsQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount);
                         break;
                     default:
                         //error handling
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.ReleaseYear) : CreditsQuery.OrderBy(x => x.Film.ReleaseYear);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Date) : CreditsQuery.OrderBy(x => x.Film.Date);
                         break;
                 }
 

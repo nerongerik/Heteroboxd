@@ -23,7 +23,7 @@ import { Poster } from '../../components/poster'
 import Stars from '../../components/stars'
 import { UserAvatar } from '../../components/userAvatar'
 
-const TOP_COUNT = 3
+const TOP_COUNT = 5
 
 const Film = () => {
   const { filmId } = useLocalSearchParams()
@@ -51,9 +51,9 @@ const Film = () => {
       if (res.ok) {
         const json = await res.json()
         setFilm({
-          id: json.film.filmId, title: json.film.title, originalTitle: json.film.originalTitle, country: format.parseCountry(json.film.country, Platform.OS),
+          id: json.film.id, title: json.film.title, originalTitle: json.film.originalTitle, country: format.parseCountry(json.film.country, Platform.OS),
           genres: json.film.genres, tagline: json.film.tagline, synopsis: json.film.synopsis, posterUrl: json.film.posterUrl, backdropUrl: json.film.backdropUrl,
-          length: json.film.length, releaseYear: json.film.releaseYear, watchCount: json.film.watchCount, collection: json.film.collection, castAndCrew: json.film.castAndCrew
+          length: json.film.length, releaseYear: format.parseOutYear(json.film.date), watchCount: json.film.watchCount, collection: json.film.collection, castAndCrew: json.film.castAndCrew
         })
         setRatings(json.ratings)
         setServer(Response.ok)
@@ -79,8 +79,8 @@ const Film = () => {
       })
       if (res.ok) {
         const json = await res.json()
-        if (json.uwf?.dateWatched && json.uwf?.timesWatched) {
-          setUwf({ dateWatched: `Last watched on ${format.parseDate(json.uwf.dateWatched)}`, timesWatched: json.uwf.timesWatched })
+        if (json.uwf?.date && json.uwf?.timesWatched) {
+          setUwf({ dateWatched: `Last watched on ${format.parseDate(json.uwf.date)}`, timesWatched: json.uwf.timesWatched })
         }
         if (json.watchlisted) {
           setWatchlisted(json.watchlisted)
@@ -97,7 +97,7 @@ const Film = () => {
     } catch {
       console.log('network error in loadUserData; handled above.')
     }
-  }, [filmId, user, isValidSession])
+  }, [filmId, user])
 
   const loadSubsequentData = useCallback(async () => {
     try {
@@ -152,13 +152,13 @@ const Film = () => {
   
   const widescreen = useMemo(() => width > 1000, [width])
   const actors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film.castAndCrew])
-  const directors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.celebrityName && credit.celebrityId) ?? [], [film.castAndCrew])
+  const directors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'director' && credit.name && credit.id) ?? [], [film.castAndCrew])
   const crew = useMemo(() => film.castAndCrew?.filter(credit => !['actor', 'director'].includes(credit.role.toLowerCase())) ?? [], [film.castAndCrew])
   const posterWidth = useMemo(() => Math.min(width * 0.3, 225), [width])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
-  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
+  const colPosterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4.1, [maxRowWidth, spacing])
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
   const headshotSize = useMemo(() => widescreen ? 100 : 72, [widescreen])
   const expansionScaling = useMemo(() => widescreen ? 30 : 20, [widescreen])
@@ -194,25 +194,26 @@ const Film = () => {
           <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
             <View>
               <HText style={{fontWeight: '700', color: Colors.text_title, textAlign: 'left', fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33, paddingHorizontal: 1 }}>{film.title}</HText>
-              { film.originalTitle !== film.title && <HText style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</HText> }
+              { film.originalTitle && <HText style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</HText> }
             </View>
             <View>
               <HText style={[styles.subtitle, { fontSize: widescreen ? 20 : 14 }]}>DIRECTED BY</HText>
               <HText style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
                 {directors.map((director, index) => (
-                  <React.Fragment key={director.celebrityId}>
-                    <Link href={`/celebrity/${director.celebrityId}?t=directed`} style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
-                      {director.celebrityName}
+                  <React.Fragment key={director.id}>
+                    <Link href={`/celebrity/${director.id}?t=directed`} style={[styles.link, { fontSize: widescreen ? 20 : 14 }]}>
+                      {director.name}
                     </Link>
                     {index < directors.length - 1 && <HText>, </HText>}
                   </React.Fragment>
                 ))}
+                {directors.length === 0 && <HText style={{fontWeight: '300', color: Colors.text}}>no one, apparently?</HText>}
               </HText>
             </View>
             
             <View style={{flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap'}}>
               <HText style={[styles.text, {fontSize: widescreen ? 20 : 14}]}>
-                {film.releaseYear > 0 && film.releaseYear}
+                {film.releaseYear}
                 {film.length > 0 && ` • ${film.length} min`}
                 {film.country?.length > 0 && ' • '}
               </HText>
@@ -225,7 +226,7 @@ const Film = () => {
               )}
             </View>
           </View>
-          <Poster posterUrl={film.posterUrl} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} />
+          <Poster posterUrl={film.posterUrl || 'noposter'} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} />
         </View>
         
         <Divider marginVertical={15} />
@@ -234,7 +235,7 @@ const Film = () => {
         <HText style={[styles.text, {fontSize: widescreen ? 18 : 14, paddingHorizontal: 10}]}>{film.synopsis}</HText>
 
         {
-          film.genres && film.genres.length > 0 &&
+          film.genres?.length > 0 &&
           <>
             <View style={{flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: widescreen ? 15 : 10}}>
               {
@@ -255,7 +256,7 @@ const Film = () => {
           Object.entries(ratings).length > 0 ? (
             <Histogram histogram={ratings} />
           ) : (
-            <HText style={{padding: widescreen ? 20 : 10, color: Colors.text, fontSize: widescreen ? 24 : 18, textAlign: 'center'}}>
+            <HText style={{padding: widescreen ? 20 : 10, color: Colors.text, fontSize: widescreen ? 22 : 18, textAlign: 'center'}}>
               This film hasn't been rated yet.
             </HText>
           )
@@ -273,7 +274,7 @@ const Film = () => {
 
         <Divider marginVertical={20} />
 
-        <FilmDataLoaders filmId={film.id} watchCount={film.watchCount ?? 0} reviewCount={reviewCount} listsIncluded={listsCount} widescreen={widescreen} router={router} />
+        <FilmDataLoaders filmId={film.id} watchCount={film.watchCount || 0} reviewCount={reviewCount} listsIncluded={listsCount} widescreen={widescreen} router={router} />
         
         <Divider marginVertical={20} />
 
@@ -290,12 +291,12 @@ const Film = () => {
               style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center'}}
               contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={actors}
-              keyExtractor={(item, index) => `${item.celebrityId}-${item.character}-${index}`}
+              keyExtractor={(item, index) => `${item.id}-${item.character}-${index}`}
               renderItem={({item}) => (
-                <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}?t=starred`)} style={{marginRight: 15}}>
+                <Pressable onPress={() => router.push(`/celebrity/${item.id}?t=starred`)} style={{marginRight: 15}}>
                   <View style={{width: headshotSize + expansionScaling, alignItems: 'center'}}>
                     <Headshot
-                      pictureUrl={item.celebrityPictureUrl || null}
+                      pictureUrl={item.headshotUrl || null}
                       style={{
                         width: headshotSize,
                         height: headshotSize,
@@ -305,9 +306,9 @@ const Film = () => {
                       }}
                     />
                     <HText style={[styles.subtitle, { textAlign: 'center', marginTop: 5, fontSize: widescreen ? 16 : 12 }]}>
-                      {item.celebrityName || 'N/A'}
+                      {item.name}
                     </HText>
-                    <HText style={[styles.text, { textAlign: 'center', fontSize: widescreen ? 15 : 11 }, ]}>
+                    <HText style={[styles.text, { textAlign: 'center', fontSize: widescreen ? 15 : 11 }]}>
                       {item.character.replace('(uncredited)', '') || 'N/A'}
                     </HText>
                   </View>
@@ -330,12 +331,12 @@ const Film = () => {
               style={{width: Math.min(width * 0.95, 1000), alignSelf: 'center'}}
               contentContainerStyle={{alignItems: 'flex-start', justifyContent: 'flex-start'}}
               data={[...directors, ...crew]}
-              keyExtractor={(item, index) => `${item.celebrityId}-${item.role}-${index}`}
+              keyExtractor={(item, index) => `${item.id}-${item.role}-${index}`}
               renderItem={({item}) => (
-                <Pressable onPress={() => router.push(`/celebrity/${item.celebrityId}${item.role.toLowerCase() === 'director' ? '?t=directed' : item.role.toLowerCase() === 'producer' ? '?t=produced' : item.role.toLowerCase() === 'writer' ? '?t=wrote' : item.role.toLowerCase() === 'composer' ? '?t=composed' : ''}`)} style={{marginRight: 15}}>
+                <Pressable onPress={() => router.push(`/celebrity/${item.id}${item.role.toLowerCase() === 'director' ? '?t=directed' : item.role.toLowerCase() === 'producer' ? '?t=produced' : item.role.toLowerCase() === 'writer' ? '?t=wrote' : item.role.toLowerCase() === 'composer' ? '?t=composed' : ''}`)} style={{marginRight: 15}}>
                   <View style={{ width: headshotSize + expansionScaling, alignItems: "center", }}>
                     <Headshot
-                      pictureUrl={item.celebrityPictureUrl}
+                      pictureUrl={item.headshotUrl}
                       style={{
                         width: headshotSize,
                         height: headshotSize,
@@ -345,7 +346,7 @@ const Film = () => {
                       }}
                     />
                     <HText style={[styles.subtitle, {textAlign: 'center', marginTop: 5, fontSize: widescreen ? 16 : 12}]}>
-                      {item.celebrityName}
+                      {item.name}
                     </HText>
                     <HText style={[styles.text, {textAlign: 'center', fontSize: widescreen ? 15 : 11 }]}>
                       {`(${item.role})`}
@@ -358,7 +359,7 @@ const Film = () => {
         }
 
         {
-          friends && friends.length > 0 && (
+          friends?.length > 0 && (
             <>
               <Divider marginVertical={20} />
 
@@ -375,7 +376,7 @@ const Film = () => {
                   <Pressable onPress={() => item.reviewId ? router.push(`/review/${item.reviewId}`) : router.push(`/profile/${item.friendId}`)} style={{marginRight: 15}}>
                     <View style={{width: headshotSize + expansionScaling, alignItems: 'center'}}>
                       <UserAvatar
-                        pictureUrl={item.friendProfilePictureUrl}
+                        pictureUrl={item.friendPictureUrl}
                         style={{
                           width: friendSize,
                           height: friendSize,
@@ -424,7 +425,7 @@ const Film = () => {
                     }}>
                     <Author
                       userId={r.authorId}
-                      url={r.authorProfilePictureUrl}
+                      url={r.authorPictureUrl || null}
                       username={format.sliceText(r.authorName || 'Anonymous', widescreen ? 50 : 25)}
                       admin={r.admin}
                       router={router}
@@ -433,7 +434,7 @@ const Film = () => {
                     />
                     <Pressable onPress={() => router.push(`/review/${r.id}`)}>
                       <Stars size={widescreen ? 30 : 22} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
-                      <ParsedRead html={`${r.text.slice(0, 450)}${r.text.length > 450 ? '...' : ''}`} />
+                      <ParsedRead html={`${format.sliceText(r.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
                     </Pressable>
                   </View>
                 )
@@ -451,7 +452,7 @@ const Film = () => {
           <>
             <Divider marginVertical={20} />
             <HText style={[styles.regionalTitle, {fontSize: widescreen ? 24 : 20}]}>Related Films</HText>
-            <View style={{width: colPosterWidth * 4 + spacing * 3, maxWidth: '100%', alignSelf: 'center'}}>
+            <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
               <FlatList
                 horizontal
                 showsHorizontalScrollIndicator={widescreen}
@@ -461,7 +462,7 @@ const Film = () => {
                 renderItem={({ item: [tmdbId, posterLink], index }) => (
                   <Pressable onPress={() => router.push(`/film/${tmdbId}`)} style={{marginRight: index < Object.entries(film.collection).length - 1 ? spacing : 0}}>
                     <Poster
-                      posterUrl={posterLink}
+                      posterUrl={posterLink || 'noposter'}
                       style={{
                         width: colPosterWidth,
                         height: colPosterHeight,
@@ -478,7 +479,7 @@ const Film = () => {
         )}
 
         <HText style={[styles.text, {marginTop: widescreen ? 250 : 100, textAlign: 'center', alignSelf: 'center', fontSize: widescreen ? 18 : 14}]}>
-          This film's metadata was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link>, bearing no endorsment whatsoever.
+          This film's metadata was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link>, bearing no endorsement whatsoever.
         </HText>
       </ScrollView>
 

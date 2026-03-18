@@ -7,8 +7,8 @@ namespace Heteroboxd.Service
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<TrendingInfoResponse>> GetTrending(string? LastSync);
-        Task<PagedResponse<FilmInfoResponse>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<PagedResponse<FilmInfoResponse>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<FilmInfoResponse?>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<FilmInfoResponse?>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
         Task<PagedResponse<FilmInfoResponse>> SearchFilms(string Search, int Page, int PageSize);
     }
@@ -42,48 +42,48 @@ namespace Heteroboxd.Service
 
         public async Task<FilmInfoResponse?> GetFilm(int FilmId)
         {
-            var Film = await _repo.GetByIdAsync(FilmId);
-            if (Film == null) throw new KeyNotFoundException();
-            return new FilmInfoResponse(Film, true);
+            var Response = await _repo.GetByIdAsync(FilmId);
+            if (Response == null) throw new KeyNotFoundException();
+            return new FilmInfoResponse(Response.Item, Response.Joined);
         }
 
-        public async Task<PagedResponse<FilmInfoResponse>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<PagedResponse<FilmInfoResponse?>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             if (UserId == null)
             {
                 var (Films, TotalCount, _, _) = await _repo.GetAllAsync(null, Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return new PagedResponse<FilmInfoResponse>
+                return new PagedResponse<FilmInfoResponse?>
                 {
                     TotalCount = TotalCount,
                     Page = Page,
                     PageSize = PageSize,
-                    Items = Films.Select(f => new FilmInfoResponse(f)).ToList()
+                    Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList())
                 };
             }
             else
             {
                 var (Films, TotalCount, Seen, SeenCount) = await _repo.GetAllAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
-                return new PagedResponse<FilmInfoResponse>
+                return new PagedResponse<FilmInfoResponse?>
                 {
                     TotalCount = TotalCount,
                     Page = Page,
                     PageSize = PageSize,
-                    Items = Films.Select(f => new FilmInfoResponse(f)).ToList(),
+                    Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList()),
                     Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
                 };
             }
         }
 
-        public async Task<PagedResponse<FilmInfoResponse>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<PagedResponse<FilmInfoResponse?>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var (Films, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
-            return new PagedResponse<FilmInfoResponse>
+            return new PagedResponse<FilmInfoResponse?>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Items = Films.Select(f => new FilmInfoResponse(f)).ToList()
+                Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList())
             };
         }
 
@@ -92,13 +92,13 @@ namespace Heteroboxd.Service
 
         public async Task<PagedResponse<FilmInfoResponse>> SearchFilms(string Search, int Page, int PageSize)
         {
-            var (Results, TotalCount) = await _repo.SearchAsync(Search.ToLower(), Page, PageSize);
+            var (Response, TotalCount) = await _repo.SearchAsync(Search.ToLower(), Page, PageSize);
             return new PagedResponse<FilmInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
                 PageSize = PageSize,
-                Items = Results.Select(f => new FilmInfoResponse(f, true)).ToList()
+                Items = Response.Select(x => new FilmInfoResponse(x.Item, x.Joined)).ToList()
             };
         }
     }

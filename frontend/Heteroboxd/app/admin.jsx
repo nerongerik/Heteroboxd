@@ -542,7 +542,7 @@ const Admin = () => {
               <View style={{backgroundColor: Colors.card, padding: 10, borderRadius: 5, marginBottom: 20, width: width/4.1 - 20, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
                 <Pressable style={{width: (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/review/${item.id}`)}>
                   <View>
-                    <HText style={{fontSize: 20, color: Colors.text_title, fontWeight: '500'}}>{format.sliceText(item.filmTitle, 30)} <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{item.filmReleaseYear || ''}</HText></HText>
+                    <HText style={{fontSize: 20, color: Colors.text_title, fontWeight: '500'}}>{format.sliceText(item.filmTitle, 30)} <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{format.parseOutYear(item.filmDate) || ''}</HText></HText>
                     <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{format.sliceText(item.text || '', 100)}</HText>
                   </View>
                 </Pressable>
@@ -578,7 +578,7 @@ const Admin = () => {
                 <Pressable style={{width: (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/review/${item.reviewId}`)}>
                   <View style={{alignItems: 'center', justifyContent: 'flex-start', flexDirection: 'row'}}>
                     <UserAvatar
-                      pictureUrl={item.authorProfilePictureUrl || null}
+                      pictureUrl={item.authorPictureUrl || null}
                       style={{width: 50, height: 50, borderRadius: 25, marginRight: 10}}
                     />
                     <HText style={{color: Colors.text_title, fontSize: 20, fontWeight: '500'}}>{item.authorName}</HText>
