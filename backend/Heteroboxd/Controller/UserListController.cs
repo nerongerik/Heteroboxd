@@ -108,13 +108,13 @@ namespace Heteroboxd.Controller
 
         [HttpGet("film-interact")]
         [Authorize]
-        public async Task<IActionResult> GetAuthorsListsDelimitedFilm(int FilmId)
+        public async Task<IActionResult> GetAuthorsListsDelimitedFilm(int FilmId, int Page = 1, int PageSize = 20)
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"GetAuthorsListsDelimitedFilm endpoint hit for User: {UserId} delimited by Film: {FilmId}");
             try
             {
-                return Ok(await _service.GetDelimitedLists(UserId!, FilmId));
+                return Ok(await _service.GetDelimitedLists(UserId!, FilmId, Page, PageSize));
             }
             catch (KeyNotFoundException)
             {

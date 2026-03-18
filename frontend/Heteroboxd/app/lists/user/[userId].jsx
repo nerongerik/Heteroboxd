@@ -118,6 +118,7 @@ const UsersLists = () => {
         admin={author.admin}
         router={router}
         widescreen={widescreen}
+        dim={widescreen ? 40 : 30}
       />
     </View>,
   [userId, author, widescreen, router])

@@ -59,6 +59,7 @@ const FilmsLists = () => {
       const res = await fetch(url)
       if (res.ok) {
         const json = await res.json()
+        console.log(json)
         setData({ page: json.page, lists: json.items, totalCount: json.totalCount })
         setServer(Response.ok)
       } else {
@@ -104,6 +105,7 @@ const FilmsLists = () => {
           admin={item.admin}
           router={router}
           widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>

@@ -62,7 +62,7 @@ export const logout = async (userId) => {
   }
 }
 
-export function decodeUser(token) {
+export const decodeUser = (token) => {
   const decoded = jwtDecode(token)
   return {
     userId: decoded.sub,

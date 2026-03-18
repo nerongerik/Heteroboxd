@@ -11,7 +11,7 @@ namespace Heteroboxd.Service
         Task<PagedResponse<ListEntryInfoResponse?>> GetListEntries(string ListId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId);
         Task<PagedResponse<UserListInfoResponse>> GetListsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<DelimitedUserListInfoResponse>> GetDelimitedLists(string UserId, int FilmId);
+        Task<PagedResponse<DelimitedUserListInfoResponse>> GetDelimitedLists(string UserId, int FilmId, int Page, int PageSize);
         Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetListsFeaturingFilmCount(int FilmId);
         Task<PagedResponse<UserListInfoResponse>> SearchLists(string Search, int Page, int PageSize);
@@ -114,8 +114,17 @@ namespace Heteroboxd.Service
             };
         }
 
-        public async Task<List<DelimitedUserListInfoResponse>> GetDelimitedLists(string UserId, int FilmId) =>
-            await _repo.SummarizeByUserAsync(Guid.Parse(UserId), FilmId);
+        public async Task<PagedResponse<DelimitedUserListInfoResponse>> GetDelimitedLists(string UserId, int FilmId, int Page, int PageSize)
+        {
+            var (Response, TotalCount) = await _repo.SummarizeByUserAsync(Guid.Parse(UserId), FilmId, Page, PageSize);
+            return new PagedResponse<DelimitedUserListInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                PageSize = PageSize,
+                Items = Response
+            };
+        }
 
         public async Task<PagedResponse<UserListInfoResponse>> GetListsFeaturingFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {

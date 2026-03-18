@@ -13,7 +13,7 @@ namespace Heteroboxd.Repository
         Task<(List<JoinResponse<ListEntry, Film>> Responses, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<JoinResponse<ListEntry, Film>>> PowerGetEntriesAsync(Guid ListId);
         Task<(List<JoinedListEntries> Responses, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<DelimitedUserListInfoResponse>> SummarizeByUserAsync(Guid UserId, int FilmId);
+        Task<(List<DelimitedUserListInfoResponse> Response, int TotalCount)> SummarizeByUserAsync(Guid UserId, int FilmId, int Page, int PageSize);
         Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetFeaturingFilmCountAsync(int FilmId);
         Task<(List<JoinedListEntries> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -290,10 +290,16 @@ namespace Heteroboxd.Repository
             )).ToList(), TotalCount);
         }
 
-        public async Task<List<DelimitedUserListInfoResponse>> SummarizeByUserAsync(Guid UserId, int FilmId) =>
-            await _context.UserLists
+        public async Task<(List<DelimitedUserListInfoResponse> Response, int TotalCount)> SummarizeByUserAsync(Guid UserId, int FilmId, int Page, int PageSize)
+        {
+            var TotalCount = await _context.UserLists
+                .AsNoTracking()
+                .CountAsync(ul => ul.AuthorId == UserId);
+            var Response = await _context.UserLists
                 .AsNoTracking()
                 .Where(ul => ul.AuthorId == UserId)
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
                 .Select(ul => new DelimitedUserListInfoResponse
                 {
                     ListId = ul.Id.ToString(),
@@ -302,16 +308,22 @@ namespace Heteroboxd.Repository
                     Size = ul.Size
                 })
                 .ToListAsync();
+            return (Response, TotalCount);
+        }
 
         public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var ListQuery = _context.ListEntries
+            var ListIdsQuery = _context.ListEntries
                 .AsNoTracking()
                 .Where(le => le.FilmId == FilmId)
-                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
-                .Join(_context.UserLists, x => x.le.UserListId, ul => ul.Id, (x, ul) => new { jle = new { x.le, x.f }, ul })
-                .Join(_context.Users, y => y.ul.AuthorId, u => u.Id, (y, u) => new { y.jle, y.ul, u })
-                .AsQueryable();
+                .Select(le => le.UserListId)
+                .Distinct();
+
+            // STEP 2: Base list query
+            var ListQuery = _context.UserLists
+                .AsNoTracking()
+                .Where(ul => ListIdsQuery.Contains(ul.Id))
+                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u });
 
             //filtering
             switch (Filter.ToLower())
@@ -348,15 +360,35 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .ToListAsync();
 
-            var EntriesByList = Responses.Select(x => x.jle)
-                .GroupBy(jle => jle.le.UserListId)
+            var ListIds = Responses.Select(x => x.ul.Id).ToHashSet();
+
+            var Entries = await _context.ListEntries
+                .AsNoTracking()
+                .Where(le => ListIds.Contains(le.UserListId))
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                .ToListAsync();
+
+            var EntriesByList = Entries
+                .GroupBy(x => x.le.UserListId)
                 .ToDictionary(
-                    g => g.Key,
-                    g => g.Take(4)
-                         .Select(jle => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = jle.le, Joined = jle.f })
-                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
-                         .ToList()
-                );
+                g => g.Key,
+                g =>
+                {
+                    var Top = g
+                        .OrderBy(x => x.le.Position)
+                        .Take(4)
+                        .Select(x => (JoinResponse<ListEntry, Film>?) new JoinResponse<ListEntry, Film>
+                        {
+                            Item = x.le,
+                            Joined = x.f
+                        })
+                        .ToList();
+                    if (Top.Count < 4)
+                    {
+                        Top.AddRange(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4 - Top.Count));
+                    }
+                    return Top;
+                });
 
             return (Responses.Select(x => new JoinedListEntries(
                 new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -30,7 +30,6 @@ const Explore = () => {
   const [ seenCount, setSeenCount ] = useState(0)
   const [ fadeSeen, setFadeSeen ] = useState(true)
   const [ server, setServer ] = useState(Response.initial)
-  const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
 
@@ -151,10 +150,6 @@ const Explore = () => {
       totalPages={totalPages}
       onPagePress={(num) => {
         loadDataPage(num)
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        })
       }}
     />
   ), [data.page, totalPages, loadDataPage])
@@ -162,7 +157,6 @@ const Explore = () => {
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
-        ref={listRef}
         data={data.films}
         keyExtractor={(item, index) => item ? item.id.toString() : `placeholder-${index}`}
         numColumns={4}
