@@ -199,6 +199,7 @@ namespace Heteroboxd.Integrations
                 if (FetchedThisRun.Add(Celebrity.Id)) Celebrities.Add(Celebrity);
                 CelebrityCredits.Add(Credit);
             }
+            CelebrityCredits = CelebrityCredits.GroupBy(c => (c.CelebrityId, c.FilmId, c.Role)).Select(g => g.First()).ToList(); //dedupe
             return (Celebrities, CelebrityCredits);
         }
 

@@ -7,14 +7,14 @@ namespace Heteroboxd.Repository
 {
     public interface IUserListRepository
     {
-        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserList?> GetByIdAsync(Guid ListId);
         Task<JoinResponse<UserList, User>?> GetJoinedByIdAsync(Guid ListId);
         Task<(List<JoinResponse<ListEntry, Film>> Responses, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<JoinResponse<ListEntry, Film>>> PowerGetEntriesAsync(Guid ListId);
         Task<(List<JoinedListEntries> Responses, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<DelimitedUserListInfoResponse> Response, int TotalCount)> SummarizeByUserAsync(Guid UserId, int FilmId, int Page, int PageSize);
-        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<int> GetFeaturingFilmCountAsync(int FilmId);
         Task<(List<JoinedListEntries> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
         Task CreateAsync(UserList UserList);
@@ -37,7 +37,7 @@ namespace Heteroboxd.Repository
             _context = context;
         }
 
-        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var Query = _context.UserLists
                 .AsNoTracking()
@@ -82,22 +82,7 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .ToListAsync();
 
-            var ListIds = Responses.Select(x => x.ul.Id).ToHashSet();
-            var Entries = await _context.ListEntries
-                .AsNoTracking()
-                .Where(le => ListIds.Contains(le.UserListId))
-                .OrderBy(le => le.Position)
-                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
-                .ToListAsync();
-            var EntriesByList = Entries
-                .GroupBy(x => x.le.UserListId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Take(4)
-                         .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
-                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
-                         .ToList()
-                );
+            var EntriesByList = await GetTopEntriesByListAsync(Responses.Select(x => x.ul.Id));
 
             return (Responses.Select(x => new JoinedListEntries(
                 new JoinResponse<UserList, User?> { Item = x.ul, Joined = x.u },
@@ -265,22 +250,7 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .ToListAsync();
 
-            var ListIds = Lists.Select(ul => ul.Id).ToHashSet();
-            var Entries = await _context.ListEntries
-                .AsNoTracking()
-                .Where(le => ListIds.Contains(le.UserListId))
-                .OrderBy(le => le.Position)
-                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
-                .ToListAsync();
-            var EntriesByList = Entries
-                .GroupBy(x => x.le.UserListId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Take(4)
-                         .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
-                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
-                         .ToList()
-                );
+            var EntriesByList = await GetTopEntriesByListAsync(Lists.Select(ul => ul.Id));
 
             return (Lists.Select(ul => new JoinedListEntries(
                 new JoinResponse<UserList, User?> { Item = ul, Joined = null },
@@ -311,7 +281,7 @@ namespace Heteroboxd.Repository
             return (Response, TotalCount);
         }
 
-        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetFeaturingFilmAsync(int FilmId, IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var ListIdsQuery = _context.ListEntries
                 .AsNoTracking()
@@ -360,35 +330,7 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .ToListAsync();
 
-            var ListIds = Responses.Select(x => x.ul.Id).ToHashSet();
-
-            var Entries = await _context.ListEntries
-                .AsNoTracking()
-                .Where(le => ListIds.Contains(le.UserListId))
-                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
-                .ToListAsync();
-
-            var EntriesByList = Entries
-                .GroupBy(x => x.le.UserListId)
-                .ToDictionary(
-                g => g.Key,
-                g =>
-                {
-                    var Top = g
-                        .OrderBy(x => x.le.Position)
-                        .Take(4)
-                        .Select(x => (JoinResponse<ListEntry, Film>?) new JoinResponse<ListEntry, Film>
-                        {
-                            Item = x.le,
-                            Joined = x.f
-                        })
-                        .ToList();
-                    if (Top.Count < 4)
-                    {
-                        Top.AddRange(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4 - Top.Count));
-                    }
-                    return Top;
-                });
+            var EntriesByList = await GetTopEntriesByListAsync(Responses.Select(x => x.ul.Id));
 
             return (Responses.Select(x => new JoinedListEntries(
                 new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
@@ -424,22 +366,7 @@ namespace Heteroboxd.Repository
                 .Take(PageSize)
                 .ToListAsync();
 
-            var ListIds = Responses.Select(x => x.ul.Id).ToHashSet();
-            var Entries = await _context.ListEntries
-                .AsNoTracking()
-                .Where(le => ListIds.Contains(le.UserListId))
-                .OrderBy(le => le.Position)
-                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
-                .ToListAsync();
-            var EntriesByList = Entries
-                .GroupBy(x => x.le.UserListId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Take(4)
-                         .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
-                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
-                         .ToList()
-                );
+            var EntriesByList = await GetTopEntriesByListAsync(Responses.Select(x => x.ul.Id));
 
             return (Responses.Select(x => new JoinedListEntries(
                 new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
@@ -448,7 +375,6 @@ namespace Heteroboxd.Repository
                     : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
             )).ToList(), TotalCount);
         }
-
 
         public async Task CreateAsync(UserList UserList)
         {
@@ -521,5 +447,37 @@ namespace Heteroboxd.Repository
             await _context.ListEntries
                 .Where(le => le.UserListId == ListId)
                 .ExecuteDeleteAsync();
+
+        private async Task<Dictionary<Guid, List<JoinResponse<ListEntry, Film>?>>> GetTopEntriesByListAsync(IEnumerable<Guid> ListIds)
+        {
+            var Entries = await _context.ListEntries
+                .AsNoTracking()
+                .Where(le => ListIds.Contains(le.UserListId))
+                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                .ToListAsync();
+
+            return Entries
+                .GroupBy(x => x.le.UserListId)
+                .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var Top = g
+                        .OrderBy(x => x.le.Position)
+                        .Take(4)
+                        .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film>
+                        {
+                            Item = x.le,
+                            Joined = x.f
+                        })
+                        .ToList();
+                    if (Top.Count < 4)
+                    {
+                        Top.AddRange(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4 - Top.Count));
+                    }
+                    return Top;
+                }
+                );
+        }
     }
 }

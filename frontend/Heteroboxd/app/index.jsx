@@ -400,8 +400,10 @@ const Home = () => {
             />
           )}
         </View>
-
-        <HText style={[styles.regionalTitle, {marginBottom: 10, marginTop: widescreen ? 50 : 30}]}>Popular on Heteroboxd</HText>
+        
+        <Pressable onPress={() => router.push(`/films/explore?filter=${'ALL'}&value=${'POPULARITY'}`)}>
+          <HText style={[styles.regionalTitle, {marginBottom: 10, marginTop: widescreen ? 50 : 30}]}>Popular on Heteroboxd</HText>
+        </Pressable>
         <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
           {popular.length === 0 ? (
             <View style={{width: '100%', alignItems: 'center', paddingVertical: 30}}>

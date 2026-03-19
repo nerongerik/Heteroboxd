@@ -41,7 +41,7 @@ namespace Heteroboxd.Service
         {
             if (UserId == null && Filter.ToLower() == "friends") throw new KeyNotFoundException();
 
-            List<Guid>? UsersFriends = null;
+            IEnumerable<Guid>? UsersFriends = null;
             if (UserId != null && Filter.ToLower() == "friends")
             {
                 UsersFriends = await _userRepo.GetFriendsAsync(Guid.Parse(UserId));
@@ -130,7 +130,7 @@ namespace Heteroboxd.Service
         {
             if (UserId == null && Filter.ToLower() == "friends") throw new KeyNotFoundException();
 
-            List<Guid>? UsersFriends = null;
+            IEnumerable<Guid>? UsersFriends = null;
             if (UserId != null && Filter.ToLower() == "friends")
             {
                 UsersFriends = await _userRepo.GetFriendsAsync(Guid.Parse(UserId));
