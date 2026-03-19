@@ -71,6 +71,27 @@ const Explore = () => {
     }
   }, [user, currentFilter, currentSort])
 
+  const shuffle = useCallback(async () => {
+    setServer(Response.loading)
+    try {
+      const url = user
+        ? `${BaseUrl.api}/films/shuffle?UserId=${user.userId}&PageSize=${PAGE_SIZE}`
+        : `${BaseUrl.api}/films/shuffle?PageSize=${PAGE_SIZE}`
+      const res = await fetch(url)
+      if (res.ok) {
+        const json = await res.json()
+        setData({ page: json.page, films: json.items, totalCount: json.items.length })
+        setSeenFilms(json.seen)
+        setSeenCount(json.seenCount)
+        setServer(Response.ok)
+      } else {
+        loadDataPage(1)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, loadDataPage])
+
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
@@ -79,12 +100,17 @@ const Explore = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
-        <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='options' size={24} color={Colors.text} />
-        </Pressable>
+        <>
+          <Pressable onPress={shuffle}>
+            <Ionicons name='shuffle-outline' size={24} color={Colors.text} />
+          </Pressable>
+          <Pressable onPress={openMenu} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
+            <Ionicons name='options' size={24} color={Colors.text} />
+          </Pressable>
+        </>
       ),
     })
-  }, [navigation, widescreen, openMenu])
+  }, [navigation, widescreen, openMenu, shuffle])
 
   useEffect(() => {
     loadDataPage(1)

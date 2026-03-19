@@ -104,7 +104,6 @@ const Film = () => {
       const res = await fetch(`${BaseUrl.api}/films/subsequent?FilmId=${filmId}&PageSize=${TOP_COUNT}`)
       if (res.ok) {
         const json = await res.json()
-        console.log(json.reviews)
         if (json.reviews?.items?.length > 0) {
           setTopReviews(json.reviews.items.filter(r => !r.spoiler && r.text?.length > 0))
         }

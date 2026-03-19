@@ -71,6 +71,29 @@ const Watchlist = () => {
     }
   }, [user, userId, currentFilter, currentSort])
 
+  const shuffle = useCallback(async () => {
+    if (user?.userId !== userId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    setServer(Response.loading)
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/shuffle?PageSize=${PAGE_SIZE}`, {
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        setData({ page: json.page, entries: json.items, totalCount: json.totalCount })
+        setServer(Response.ok)
+      } else {
+        loadDataPage(1)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, userId, loadDataPage])
+
   const handleDelete = useCallback(async (filmId) => {
     if (user?.userId !== userId || !(await isValidSession())) {
       setServer(Response.forbidden)
@@ -100,12 +123,17 @@ const Watchlist = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
-        <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='options' size={24} color={Colors.text} />
-        </Pressable>
+        <>
+          <Pressable onPress={shuffle}>
+            <Ionicons name='shuffle-outline' size={24} color={Colors.text} />
+          </Pressable>
+          <Pressable onPress={openMenu} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
+            <Ionicons name='options' size={24} color={Colors.text} />
+          </Pressable>
+        </>
       ),
     })
-  }, [navigation, widescreen, openMenu])
+  }, [navigation, widescreen, openMenu, shuffle])
 
   useEffect(() => {
     loadDataPage(1)

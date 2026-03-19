@@ -3,7 +3,6 @@ using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Identity.Client;
 
 namespace Heteroboxd.Service
 {
@@ -12,6 +11,7 @@ namespace Heteroboxd.Service
         Task<PagedResponse<UserInfoResponse>> GetUsers(int Page, int PageSize);
         Task<UserInfoResponse> GetUser(string UserId);
         Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<WatchlistEntryInfoResponse?>> ShuffleWatchlist(string UserId, int PageSize);
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
@@ -82,6 +82,18 @@ namespace Heteroboxd.Service
                 Page = Page,
                 PageSize = PageSize,
                 Items = PageUtils.AddPadding(Responses.Select(x => (WatchlistEntryInfoResponse?) new WatchlistEntryInfoResponse(x.Item, x.Joined)).ToList())
+            };
+        }
+
+        public async Task<PagedResponse<WatchlistEntryInfoResponse?>> ShuffleWatchlist(string UserId, int PageSize)
+        {
+            var (Responses, TotalCount) = await _repo.ShuffleWatchlistAsync(Guid.Parse(UserId), PageSize);
+            return new PagedResponse<WatchlistEntryInfoResponse?>
+            {
+                TotalCount = TotalCount,
+                Page = 1,
+                PageSize = PageSize,
+                Items = PageUtils.AddPadding(Responses.Select(x => (WatchlistEntryInfoResponse?)new WatchlistEntryInfoResponse(x.Item, x.Joined)).ToList())
             };
         }
 

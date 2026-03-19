@@ -13,6 +13,7 @@ namespace Heteroboxd.Repository
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
         Task<List<Trending>> GetTrendingAsync();
         Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetAllAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<Film> Films, List<UserWatchedFilm>? Seen, int? SeenCount)> ShuffleAsync(Guid? UserId, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<(List<JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -197,6 +198,32 @@ namespace Heteroboxd.Repository
                     .ToListAsync();
 
                 return (JoinResult.Select(x => x.Film).ToList(), TotalCount, JoinResult.Where(x => x.Uwf != null).Select(x => x.Uwf).ToList(), SeenCount)!;
+            }
+        }
+
+        public async Task<(List<Film> Films, List<UserWatchedFilm>? Seen, int? SeenCount)> ShuffleAsync(Guid? UserId, int PageSize)
+        {
+            if (UserId == null)
+            {
+                var Films = await _context.Films
+                    .AsNoTracking()
+                    .OrderBy(f => EF.Functions.Random())
+                    .Take(PageSize)
+                    .ToListAsync();
+                return (Films, null, null);
+            }
+            else
+            {
+                var FilmsQuery = _context.Films
+                    .AsNoTracking()
+                    .OrderBy(f => EF.Functions.Random())
+                    .Take(PageSize)
+                    .GroupJoin(_context.UserWatchedFilms.Where(uwf => uwf.UserId == UserId), f => f.Id, uwf => uwf.FilmId, (f, uwfs) => new { f, uwfs })
+                    .SelectMany(x => x.uwfs.DefaultIfEmpty(), (x, uwf) => new { x.f, uwf })
+                    .AsQueryable();
+                var SeenCount = await FilmsQuery.Where(x => x.uwf != null).CountAsync();
+                var Films = await FilmsQuery.ToListAsync();
+                return (Films.Select(x => x.f).ToList(), Films.Where(x => x.uwf != null).Select(x => x.uwf).ToList(), SeenCount)!;
             }
         }
 

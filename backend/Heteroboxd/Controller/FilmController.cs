@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Service;
+﻿using Amazon.S3.Model;
+using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -87,6 +88,21 @@ namespace Heteroboxd.Controller
             try
             {
                 return Ok(await _service.GetFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("shuffle")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ShuffleFilms(string? UserId = null, int PageSize = 20)
+        {
+            _logger.LogInformation("ShuffleFilms endpoint hit.");
+            try
+            {
+                return Ok(await _service.ShuffleFilms(UserId, PageSize));
             }
             catch
             {

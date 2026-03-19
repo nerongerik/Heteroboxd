@@ -8,6 +8,7 @@ namespace Heteroboxd.Service
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<TrendingInfoResponse>> GetTrending(string? LastSync);
         Task<PagedResponse<FilmInfoResponse?>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<FilmInfoResponse?>> ShuffleFilms(string? UserId, int PageSize); 
         Task<PagedResponse<FilmInfoResponse?>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetFilmRatings(int FilmId);
         Task<PagedResponse<FilmInfoResponse>> SearchFilms(string Search, int Page, int PageSize);
@@ -69,6 +70,34 @@ namespace Heteroboxd.Service
                     Page = Page,
                     PageSize = PageSize,
                     Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList()),
+                    Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
+                    SeenCount = SeenCount!.Value
+                };
+            }
+        }
+
+        public async Task<PagedResponse<FilmInfoResponse?>> ShuffleFilms(string? UserId, int PageSize)
+        {
+            if (UserId == null)
+            {
+                var (Films, _, _) = await _repo.ShuffleAsync(null, PageSize);
+                return new PagedResponse<FilmInfoResponse?>
+                {
+                    TotalCount = 0, //no pagination
+                    Page = 1,
+                    PageSize = PageSize,
+                    Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?)new FilmInfoResponse(f)).ToList())
+                };
+            }
+            else
+            {
+                var (Films, Seen, SeenCount) = await _repo.ShuffleAsync(Guid.Parse(UserId), PageSize);
+                return new PagedResponse<FilmInfoResponse?>
+                {
+                    TotalCount = 0, //no pagination
+                    Page = 1,
+                    PageSize = PageSize,
+                    Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?)new FilmInfoResponse(f)).ToList()),
                     Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
                 };

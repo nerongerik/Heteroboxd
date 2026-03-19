@@ -16,6 +16,7 @@ namespace Heteroboxd.Repository
         Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
 
         Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> ShuffleWatchlistAsync(Guid UserId, int PageSize);
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
@@ -197,6 +198,19 @@ namespace Heteroboxd.Repository
                 .ToListAsync();
 
             return (Responses, TotalCount);
+        }
+
+        public async Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> ShuffleWatchlistAsync(Guid UserId, int PageSize)
+        {
+            var TotalCount = await _context.WatchlistEntries.CountAsync(wle => wle.UserId == UserId);
+            var Responses = await _context.WatchlistEntries
+                .AsNoTracking()
+                .Where(wle => wle.UserId == UserId)
+                .OrderBy(wle => EF.Functions.Random())
+                .Take(PageSize)
+                .Join(_context.Films, wle => wle.FilmId, f => f.Id, (wle, f) => new { wle, f })
+                .ToListAsync();
+            return (Responses.Select(x => new JoinResponse<WatchlistEntry, Film> { Item = x.wle, Joined = x.f }).ToList(), TotalCount);
         }
 
         public async Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId) =>
