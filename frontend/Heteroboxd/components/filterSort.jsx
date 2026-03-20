@@ -27,7 +27,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     explore: ['POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
     watchlist: ['DATE ADDED', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
     userWatched: ['DATE WATCHED', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
-    list: ['POSITION', 'DATE ADDED', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
+    list: ['POSITION', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
     celebrity: ['POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'], 
     userLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
     filmLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],

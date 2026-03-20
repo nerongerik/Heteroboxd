@@ -295,39 +295,61 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.Films
-                .AsNoTracking()
-                .AsQueryable();
+            IQueryable<Film> Query;
 
             if (!string.IsNullOrEmpty(Search))
             {
-                Query = Query.Where(f =>
-                    EF.Functions.TrigramsSimilarity(f.Title, Search) > 0.3f ||
-                    EF.Functions.TrigramsSimilarity(f.OriginalTitle ?? "", Search) > 0.3f);
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                var PrefixQuery = _context.Films
+                    .AsNoTracking()
+                    .Where(f => EF.Functions.ILike(f.Title, PrefixPattern) || EF.Functions.ILike(f.OriginalTitle ?? "", PrefixPattern));
+                var PrefixCount = await PrefixQuery.CountAsync();
+
+                if (PrefixCount > 0)
+                {
+                    Query = PrefixQuery;
+                }
+                else
+                {
+                    Query = _context.Films
+                        .AsNoTracking()
+                        .Where(f => 
+                            EF.Functions.ToTsVector("english", f.Title).Matches(EF.Functions.PhraseToTsQuery("english", Search))
+                            ||
+                            EF.Functions.ToTsVector("english", f.OriginalTitle ?? "").Matches(EF.Functions.PhraseToTsQuery("english", Search))
+                        );
+                }
+
+                var TotalCount = await Query.CountAsync();
+
+                var Films = await Query
+                    .OrderByDescending(f => f.WatchCount)
+                    .Skip((Page - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToListAsync();
+
+                var FilmIds = Films.Select(f => f.Id).ToHashSet();
+
+                var DirectorsByFilm = await _context.CelebrityCredits
+                    .AsNoTracking()
+                    .Where(cc => FilmIds.Contains(cc.FilmId) && cc.Role == Role.Director)
+                    .Join(_context.Celebrities, cc => cc.CelebrityId, c => c.Id, (cc, c) => new { cc.FilmId, Celebrity = c, Credit = cc })
+                    .GroupBy(x => x.FilmId)
+                    .ToDictionaryAsync(
+                        g => g.Key,
+                        g => g.Select(x => new JoinResponse<Celebrity, List<CelebrityCredit>> { Item = x.Celebrity, Joined = [x.Credit] }).ToList()
+                    );
+
+                var Results = Films
+                    .Select(f => new JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>> { Item = f, Joined = DirectorsByFilm.TryGetValue(f.Id, out var Directors) ? Directors : new() })
+                    .ToList();
+
+                return (Results, TotalCount);
             }
-
-            var TotalCount = await Query.CountAsync();
-
-            var Films = await Query
-                .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Search)).ThenByDescending(f => f.WatchCount)
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            var FilmIds = Films.Select(f => f.Id).ToHashSet();
-
-            var DirectorsByFilm = await _context.CelebrityCredits
-                .AsNoTracking()
-                .Where(cc => FilmIds.Contains(cc.FilmId) && cc.Role == Role.Director)
-                .Join(_context.Celebrities, cc => cc.CelebrityId, c => c.Id, (cc, c) => new { cc.FilmId, Celebrity = c, Credit = cc })
-                .GroupBy(x => x.FilmId)
-                .ToDictionaryAsync(
-                    g => g.Key,
-                    g => g.Select(x => new JoinResponse<Celebrity, List<CelebrityCredit>> { Item = x.Celebrity, Joined = [x.Credit] }).ToList()
-                );
-
-            var Results = Films.Select(f => new JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>> { Item = f, Joined = DirectorsByFilm.TryGetValue(f.Id, out var directors) ? directors : [] }).ToList();
-            return (Results, TotalCount);
+            else
+            {
+                return (new(), 0);
+            }
         }
 
         public async Task UpdateAverageRatingAsync(int FilmId, double AvgRating)

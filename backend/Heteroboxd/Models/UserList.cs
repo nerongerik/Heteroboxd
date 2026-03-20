@@ -29,13 +29,13 @@ namespace Heteroboxd.Models
             this.AuthorId = AuthorId;
         }
 
-        public void UpdateFields(UpdateUserListRequest Request)
+        public void UpdateFields(UpdateUserListRequest Request, int Count)
         {
             this.Name = string.IsNullOrEmpty(Request.Name) ? this.Name : Request.Name;
             this.Description = string.IsNullOrEmpty(Request.Description) ? this.Description : Request.Description;
             this.Ranked = Request.Ranked;
             this.Date = DateTime.UtcNow;
-            this.Size = Request.Entries.Count;
+            this.Size = Count;
         }
     }
 }

@@ -29,6 +29,11 @@ const Admin = () => {
   const [ reviews, setReviews ] = useState({ page: 1, items: [], totalCount: 0 })
   const [ comments, setComments ] = useState({ page: 1, items: [], totalCount: 0 })
   const [ search, setSearch ] = useState({ users: ['user', ''], lists: ['list', ''], reviews: ['review', ''], comments: ['comment', ''] })
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
+  const [ border3, setBorder3 ] = useState(false)
+  const [ border4, setBorder4 ] = useState(false)
+  const [ border5, setBorder5 ] = useState(false)
 
   const handleSubmitKey = useCallback(async () => {
     if (!(await isValidSession())) {
@@ -203,10 +208,12 @@ const Admin = () => {
         value={search.users[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, users: ['user', q]}))}
         placeholder='ID of User to find...'
+        onFocus={() => setBorder1(true)}
+        onBlur={() => setBorder1(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border1 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -239,7 +246,7 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border1])
 
   const ListHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
@@ -250,10 +257,12 @@ const Admin = () => {
         value={search.lists[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, lists: ['list', q]}))}
         placeholder='ID of List to find...'
+        onFocus={() => setBorder2(true)}
+        onBlur={() => setBorder2(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border2 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -286,7 +295,7 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border2])
 
   const ReviewHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
@@ -297,10 +306,12 @@ const Admin = () => {
         value={search.reviews[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, reviews: ['review', q]}))}
         placeholder='ID of Review to find...'
+        onFocus={() => setBorder3(true)}
+        onBlur={() => setBorder3(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border3 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -333,7 +344,7 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border3])
 
   const CommentHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
@@ -344,10 +355,12 @@ const Admin = () => {
         value={search.comments[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, comments: ['comment', q]}))}
         placeholder='ID of Comment to find...'
+        onFocus={() => setBorder4(true)}
+        onBlur={() => setBorder4(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border4 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -380,7 +393,7 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border4])
 
   if (!aJwt) {
     return (
@@ -392,7 +405,7 @@ const Admin = () => {
           style={{
             backgroundColor: 'transparent',
             borderWidth: 2,
-            borderColor: Colors.border_color,
+            borderColor: border5 ? Colors.heteroboxd : Colors.border_color,
             borderRadius: 7,
             padding: 10,
             paddingHorizontal: 10,
@@ -408,6 +421,8 @@ const Admin = () => {
           }}
           onSubmitEditing={handleSubmitKey}
           returnKeyType='search'
+          onFocus={() => setBorder5(true)}
+          onBlur={() => setBorder5(false)}
         />
         <Pressable
           style={[{backgroundColor: Colors.heteroboxd, width: 'auto', padding: 10, borderRadius: 10, alignSelf: 'center'}, key.length === 0 && { opacity: 0.5 }]}

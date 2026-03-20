@@ -122,24 +122,38 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.Users
-                .AsNoTracking()
-                .AsQueryable();
-
+            IQueryable<User> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                Query = Query.Where(u =>
-                    EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3f);
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                var PrefixQuery = _context.Users
+                    .AsNoTracking()
+                    .Where(u => EF.Functions.Like(u.Name, PrefixPattern));
+                var PrefixCount = await PrefixQuery.CountAsync();
+
+                if (PrefixCount > 0)
+                {
+                    Query = PrefixQuery;
+                }
+                else
+                {
+                    Query = _context.Users
+                        .AsNoTracking()
+                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                }
+
+                var TotalCount = await Query.CountAsync();
+                var Results = await Query
+                    .OrderBy(u => u.Date)
+                    .Skip((Page - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToListAsync();
+                return (Results, TotalCount);
             }
-
-            int TotalCount = await Query.CountAsync();
-            var Results = await Query
-                .OrderByDescending(u => EF.Functions.TrigramsSimilarity(u.Name, Search))
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            return (Results, TotalCount);
+            else
+            {
+                return (new(), 0);
+            }
         }
 
         public async Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)

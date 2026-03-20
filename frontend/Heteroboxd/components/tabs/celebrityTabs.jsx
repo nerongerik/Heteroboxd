@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from "react"
-import { FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
+import { FlatList, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import * as format from '../../helpers/format'
 import { Colors } from "../../constants/colors"
@@ -21,6 +21,34 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
   const headshotHeight = useMemo(() => headshotWidth * 3 / 2, [headshotWidth])
 
   const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize)
+
+  const allTabs = useMemo(() => {
+    const tabs = []
+    if (bio) tabs.push('Bio')
+    if (availableRoles.includes('Starred')) tabs.push('Starred')
+    if (availableRoles.includes('Directed')) tabs.push('Directed')
+    if (availableRoles.includes('Produced')) tabs.push('Produced')
+    if (availableRoles.includes('Wrote')) tabs.push('Wrote')
+    if (availableRoles.includes('Composed')) tabs.push('Composed')
+    return tabs
+  }, [bio, availableRoles])
+
+  const panResponder = useMemo(() => {
+    if (widescreen) return null
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, { dx, dy }) =>
+        Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 2,
+      onPanResponderRelease: (_, { dx }) => {
+        if (Math.abs(dx) < 50) return
+        const currentIndex = allTabs.indexOf(activeTab)
+        if (dx < 0 && currentIndex < allTabs.length - 1) {
+          onTabChange(allTabs[currentIndex + 1])
+        } else if (dx > 0 && currentIndex > 0) {
+          onTabChange(allTabs[currentIndex - 1])
+        }
+      }
+    })
+  }, [widescreen, allTabs, activeTab, onTabChange])
 
   const TabButton = useCallback(({ title, active, onPress }) => (
     <Pressable
@@ -91,7 +119,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
   }, [posterWidth, posterHeight, spacing, fadeSeen, seenFilms])
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{flex: 1}} {...(panResponder?.panHandlers ?? {})}>
       <View style={widescreen ? styles.tabRowWeb : styles.tabRowMobile}>
         {bio && (
           <TabButton 

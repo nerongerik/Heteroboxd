@@ -98,10 +98,8 @@ const FilmsReviews = () => {
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
-    const first = data.reviews[0]
-    if (!first) return
     navigation.setOptions({
-      headerTitle: `Reviews of ${format.sliceText(first.filmTitle || '', widescreen ? 20 : 12)}`,
+      headerTitle: `Film's Reviews`,
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
@@ -110,7 +108,7 @@ const FilmsReviews = () => {
         </Pressable>
       ),
     })
-  }, [data, navigation, widescreen, openMenu])
+  }, [navigation, widescreen, openMenu])
 
   const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
@@ -134,7 +132,7 @@ const FilmsReviews = () => {
           item.text?.length > 0 ?
             !item.spoiler || uwf || isRevealed(item.id) ? (
               <View style={{marginVertical: 7.5, overflow: 'hidden'}}>
-                <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 600 : 300)}`} />
+                <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 600 : 300)}`} contentWidth={maxRowWidth} />
               </View>
             ) : (
             <Pressable onPress={() => revealSpoiler(item.id)}>

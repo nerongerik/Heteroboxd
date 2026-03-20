@@ -134,7 +134,7 @@ const UserReviews = () => {
           {
             item.text?.length > 0 ?
             <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
+              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={maxRowWidth - posterWidth - 10} />
             </View>
             :
             <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>

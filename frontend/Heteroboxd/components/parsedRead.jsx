@@ -2,12 +2,13 @@ import RenderHTML from 'react-native-render-html'
 import { Colors } from '../constants/colors'
 import { useWindowDimensions } from 'react-native'
 
-const ParsedRead = ({ html }) => {
+const ParsedRead = ({ html, contentWidth }) => {
   const { width } = useWindowDimensions()
   const normalized = `${html.replace(/\n/g, '<br />')}`
 
   return (
     <RenderHTML
+      contentWidth={contentWidth || width }
       source={{ html: normalized }}
       defaultTextProps={{
         selectable: true,

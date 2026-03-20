@@ -172,12 +172,12 @@ namespace Heteroboxd.Service
         {
             var List = await _repo.GetByIdAsync(Guid.Parse(ListRequest.ListId));
             if (List == null) throw new KeyNotFoundException();
-            
-            List.UpdateFields(ListRequest);
-            await _repo.UpdateAsync(List);
 
             await _repo.DeleteAllEntriesAsync(List.Id);
-            await AddListEntries(List.Id, ListRequest.Entries);
+            var Count = await AddListEntries(List.Id, ListRequest.Entries);
+
+            List.UpdateFields(ListRequest, Count);
+            await _repo.UpdateAsync(List);
         }
         
         public async Task UpdateListsBulk(UpdateUserListBulkRequest Request)
@@ -205,7 +205,7 @@ namespace Heteroboxd.Service
         public async Task DeleteList(string ListId) =>
             await _repo.DeleteAsync(Guid.Parse(ListId));
 
-        private async Task AddListEntries(Guid ListId, List<CreateListEntryRequest> Entries)
+        private async Task<int> AddListEntries(Guid ListId, List<CreateListEntryRequest> Entries)
         {
             var FilmIds = Entries.Select(e => e.FilmId).ToList();
             var Films = await _filmRepo.GetByIdsAsync(FilmIds);
@@ -217,6 +217,7 @@ namespace Heteroboxd.Service
                 .ToList();
 
             await _repo.CreateEntriesAsync(Created);
+            return Created.Count;
         }
     }
 }

@@ -126,24 +126,37 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.Celebrities
-                .AsNoTracking()
-                .AsQueryable();
-
+            IQueryable<Celebrity> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                Query = Query.Where(c =>
-                    EF.Functions.TrigramsSimilarity(c.Name, Search) > 0.3f);
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                var PrefixQuery = _context.Celebrities
+                    .AsNoTracking()
+                    .Where(c => EF.Functions.Like(c.Name, PrefixPattern));
+                var PrefixCount = await PrefixQuery.CountAsync();
+
+                if (PrefixCount > 0)
+                {
+                    Query = PrefixQuery;
+                }
+                else
+                {
+                    Query = _context.Celebrities
+                        .AsNoTracking()
+                        .Where(c => EF.Functions.ToTsVector("english", c.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                }
+
+                var TotalCount = await Query.CountAsync();
+                var Results = await Query
+                    .Skip((Page - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToListAsync();
+                return (Results, TotalCount);
             }
-
-            var TotalCount = await Query.CountAsync();
-            var Results = await Query
-                .OrderByDescending(c => EF.Functions.TrigramsSimilarity(c.Name, Search))
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            return (Results, TotalCount);
+            else
+            {
+                return (new(), 0);
+            }
         }
 
     }

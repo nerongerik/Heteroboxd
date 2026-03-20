@@ -238,7 +238,7 @@ const Home = () => {
                 <View style={{width: 40, alignItems: 'center'}}>
                 <FontAwesome6 name='circle-dollar-to-slot' size={28} color={Colors.text} />
                 </View>
-                <HText style={{fontSize: 20, fontWeight: '700', color: Colors.text}}>Donate</HText>
+                <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Donate</HText>
               </Pressable>
               {
                 user?.userId ? (
@@ -500,7 +500,7 @@ const Home = () => {
                                       </View>
                                       {item.text?.length > 0 ? (
                                         <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
+                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={maxRowWidth - posterWidth - 10} />
                                         </View>
                                       ) : (
                                         <View style={{ width: maxRowWidth - colPosterWidth - 10 }}>

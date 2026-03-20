@@ -124,9 +124,6 @@ namespace Heteroboxd.Repository
                     case "position":
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
                         break;
-                    case "date added":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Date) : EntriesQuery.OrderBy(x => x.Entry.Date);
-                        break;
                     case "popularity":
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
                         break;
@@ -175,9 +172,6 @@ namespace Heteroboxd.Repository
                 {
                     case "position":
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Position) : EntriesQuery.OrderBy(x => x.Entry.Position);
-                        break;
-                    case "date added":
-                        EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Date) : EntriesQuery.OrderBy(x => x.Entry.Date);
                         break;
                     case "popularity":
                         EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
@@ -348,32 +342,48 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<JoinedListEntries> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.UserLists
-                .AsNoTracking()
-                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
-                .AsQueryable();
-
+            IQueryable<UserList> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                Query = Query.Where(x =>
-                    EF.Functions.TrigramsSimilarity(x.ul.Name, Search) > 0.3f);
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                var PrefixQuery = _context.UserLists
+                    .AsNoTracking()
+                    .Where(ul => EF.Functions.Like(ul.Name, PrefixPattern));
+                var PrefixCount = await PrefixQuery.CountAsync();
+
+                if (PrefixCount > 0)
+                {
+                    Query = PrefixQuery;
+                }
+                else
+                {
+                    Query = _context.UserLists
+                        .AsNoTracking()
+                        .Where(ul => EF.Functions.ToTsVector("english", ul.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                }
+
+                var TotalCount = await Query.CountAsync();
+
+                var Responses = await Query
+                    .OrderByDescending(u => u.LikeCount)
+                    .Skip((Page - 1) * PageSize)
+                    .Take(PageSize)
+                    .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                    .ToListAsync();
+
+                var EntriesByList = await GetTopEntriesByListAsync(Responses.Select(x => x.ul.Id));
+
+                return (Responses.Select(x => new JoinedListEntries(
+                    new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
+                    EntriesByList.TryGetValue(x.ul.Id, out var entries)
+                        ? entries
+                        : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
+                )).ToList(), TotalCount);
             }
-
-            int TotalCount = await Query.CountAsync();
-            var Responses = await Query
-                .OrderByDescending(x => EF.Functions.TrigramsSimilarity(x.ul.Name, Search))
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            var EntriesByList = await GetTopEntriesByListAsync(Responses.Select(x => x.ul.Id));
-
-            return (Responses.Select(x => new JoinedListEntries(
-                new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
-                EntriesByList.TryGetValue(x.ul.Id, out var entries)
-                    ? entries
-                    : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
-            )).ToList(), TotalCount);
+            else
+            {
+                return (new(), 0);
+            }
         }
 
         public async Task CreateAsync(UserList UserList)

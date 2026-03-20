@@ -11,6 +11,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
   const lastQuery = useRef('')
   const [ server, setServer ] = useState(Response.initial)
   const { width } = useWindowDimensions()
+  const [ border, setBorder ] = useState(false)
 
   useEffect(() => {
     if (lastQuery.current) handleSearch()
@@ -43,11 +44,13 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
       <>
         <KeyboardAvoidingView style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
           <TextInput
-            style={[styles.input, {fontFamily: 'Inter_400Regular'}]}
+            style={[styles.input, {fontFamily: 'Inter_400Regular', borderColor: border ? Colors.heteroboxd : Colors.border_color}]}
             placeholder='Search films...'
             value={query}
             onChangeText={setQuery}
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder(true)}
+            onBlur={() => setBorder(false)}
             onSubmitEditing={() => {
               if (query.length > 0) {
                 lastQuery.current = query
@@ -58,7 +61,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
             returnKeyType='search'
           />
           <Pressable
-            style={[{backgroundColor: Colors.heteroboxd, padding: 10, borderTopRightRadius: 10, borderBottomRightRadius: 10}, (query.length === 0) && {opacity: 0.8}]}
+            style={[{backgroundColor: Colors.heteroboxd, padding: 10, height: 45, borderLeftWidth: 0, borderTopRightRadius: 10, borderBottomRightRadius: 10, borderWidth: 2, borderColor: border ? Colors.heteroboxd : Colors.border_color}, (query.length === 0) && {opacity: 0.8}]}
             disabled={query.length === 0}
             onPress={() => { lastQuery.current = query; setQuery(''); handleSearch() }}
           >
@@ -102,9 +105,9 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     borderWidth: 1.5,
-    borderColor: Colors.border_color,
     borderTopLeftRadius: 10,
     borderBottomLeftRadius: 10,
+    borderRightWidth: 0,
     paddingHorizontal: 12,
     height: 45,
     color: Colors.text_input,

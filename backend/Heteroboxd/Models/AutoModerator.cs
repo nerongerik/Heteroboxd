@@ -49,7 +49,8 @@
         {
             "jesus fuck", "christ fuck", "fucking christ", "god damn", "goddamn",
             "jesus fucking", "fuck the holy", "holy shit", "holy fuck", "jesus h christ",
-            "christ on a bike", "for fuck's sake jesus", "holy mother of god", "fuck mother"
+            "christ on a bike", "for fuck's sake jesus", "holy mother of god", "fuck mother",
+            "hell", "helly"
         };
     }
 }

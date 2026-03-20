@@ -260,7 +260,7 @@ const ReviewWithComments = () => {
       {
         review?.text?.length > 0 ? (
           showText ?
-            <ParsedRead html={review.text} />
+            <ParsedRead html={review.text} contentWidth={maxRowWidth} />
           : (
             <Pressable onPress={() => setShowText(true)}>
               <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>

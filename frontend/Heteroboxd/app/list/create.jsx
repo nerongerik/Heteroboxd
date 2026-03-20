@@ -33,6 +33,8 @@ const CreateList = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const [ searchResults, setSearchResults ] = useState({ items: [], totalCount: 0, page: 1 })
   const [ searchInit, setSearchInit ] = useState(true)
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -126,20 +128,24 @@ const CreateList = () => {
   const Header = useMemo(() => (
     <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
       <TextInput
-        style={[styles.input, {marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+        style={[styles.input, {borderColor: border1 ? Colors.heteroboxd : Colors.border_color, marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
         placeholder="List name*"
         value={listName}
         onChangeText={setListName}
         placeholderTextColor={Colors.text_placeholder}
+        onFocus={() => setBorder1(true)}
+        onBlur={() => setBorder1(false)}
       />
       <View style={styles.descWrapper}>
         <TextInput
-          style={[styles.input, styles.bioInput, {fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+          style={[styles.input, styles.bioInput, {borderColor: border2 ? Colors.heteroboxd : Colors.border_color, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           placeholder="Description (optional)"
           value={desc}
           onChangeText={setDesc}
           multiline
           placeholderTextColor={Colors.text_placeholder}
+          onFocus={() => setBorder2(true)}
+          onBlur={() => setBorder2(false)}
         />
         <HText style={[
           styles.counterText,
@@ -152,7 +158,7 @@ const CreateList = () => {
       <HText style={{color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 20 : 18}}> Entries</HText>
       <View style={{height: 15}} />
     </View>
-  ), [listName, desc, widescreen, width]);
+  ), [listName, desc, widescreen, width, border1, border2]);
 
   const Render = useCallback(({ item, index }) => {
     if (!item) {

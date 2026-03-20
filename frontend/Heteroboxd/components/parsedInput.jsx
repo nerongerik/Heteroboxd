@@ -11,6 +11,8 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
   const inputRef = useRef(null)
   const [ selection, setSelection ] = useState({ start: 0, end: 0 })
   const [ pendingTag, setPendingTag ] = useState(null)
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
 
   const applyTag = (openTag, closeTag) => {
     const { start, end } = selection
@@ -96,7 +98,7 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
           backgroundColor: 'transparent',
           borderWidth: 2,
           borderBottomWidth: 0,
-          borderColor: Colors.border_color,
+          borderColor: border1 ? Colors.heteroboxd : Colors.border_color,
           borderTopLeftRadius: 5,
           borderTopRightRadius: 5,
           padding: width > 1000 ? 20 : 10,
@@ -109,11 +111,14 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
           height: 250,
           fontFamily: 'Inter_400Regular'
         }}
+        onFocus={() => setBorder1(true)}
+        onBlur={() => setBorder1(false)}
       />
       <View
         style={{
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderTopColor: Colors.border_color,
+          borderColor: border1 ? Colors.heteroboxd : Colors.border_color,
           borderBottomLeftRadius: 5,
           borderBottomRightRadius: 5,
           width: width*0.9,
@@ -154,7 +159,7 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
               style={{
                 backgroundColor: 'transparent',
                 borderWidth: 2,
-                borderColor: Colors.border_color,
+                borderColor: border2 ? Colors.heteroboxd : Colors.border_color,
                 borderRadius: 3,
                 padding: 7,
                 paddingHorizontal: 10,
@@ -167,6 +172,8 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
                 width: width >= 1000 ? width/4 : width/2,
                 marginBottom: 20
               }}
+              onFocus={() => setBorder2(true)}
+              onBlur={() => setBorder2(false)}
               onSubmitEditing={() => {
                 if (URL.canParse(currentLink)) {
                   confirmLink()
