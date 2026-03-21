@@ -14,7 +14,6 @@ import FilterSort from '../../components/filterSort'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
-import PaginationBar from '../../components/paginationBar'
 import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import SlidingMenu from '../../components/slidingMenu'
@@ -39,6 +38,8 @@ const List = () => {
   const listRef = useRef(null)
   const listLocalCopyRef = useRef(null)
   const likeRequestRef = useRef(0)
+  const requestRef = useRef(0)
+  const seenFilmsRef = useRef(new Set())
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback(() => {
@@ -97,20 +98,37 @@ const List = () => {
     setServer(Response.loading)
     try {
       const url = user
-        ? `${BaseUrl.api}/lists/entries?UserListId=${listId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-        : `${BaseUrl.api}/lists/entries?UserListId=${listId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      ? `${BaseUrl.api}/lists/entries?UserListId=${listId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      : `${BaseUrl.api}/lists/entries?UserListId=${listId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      const requestId = ++requestRef.current
       const res = await fetch(url)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setData({ page: json.page, entries: json.items, totalCount: json.totalCount, seenFilms: json.seen, seenCount: json.seenCount })
+        if (page === 1) {
+          setData({ page: json.page, entries: json.items, totalCount: json.totalCount, seenCount: json.seenCount })
+          seenFilmsRef.current = new Set(json.seen)
+        } else {
+          setData(prev => ({...prev, page: json.page, entries: prev.entries.length > 1000 ? [...prev.entries.slice(-980), ...json.items] : [...prev.entries, ...json.items]}))
+          json.seen.forEach(id => seenFilmsRef.current.add(id))
+        }
         setServer(Response.ok)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
   }, [user, listId, currentFilter, currentSort])
+
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (data.page < totalPages && server.result !== 0) {
+      loadDataPage(data.page + 1)
+    }
+  }, [data.page, totalPages, loadDataPage, server.result])
 
   const handleLike = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -180,7 +198,6 @@ const List = () => {
     listLocalCopyRef.current = base
   }, [base])
 
-  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
   const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
@@ -235,7 +252,7 @@ const List = () => {
     if (!item) {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
-    const isSeen = fadeSeen && (data.seenFilms?.includes(item.filmId) ?? false)
+    const isSeen = fadeSeen && seenFilmsRef.current.has(item.filmId)
     return (
       <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{ margin: spacing / 2 }}>
         <Poster
@@ -276,21 +293,11 @@ const List = () => {
         )}
       </Pressable>
     )
-  }, [posterWidth, posterHeight, spacing, fadeSeen, data, router, widescreen])
+  }, [posterWidth, posterHeight, spacing, fadeSeen, router, widescreen, base?.ranked])
 
-  const Footer = useMemo(() => (
-    <PaginationBar
-      page={data.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        loadDataPage(num)
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        })
-      }}
-    />
-  ), [data.page, totalPages, loadDataPage])
+  const Footer = useMemo(() => server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [server])
 
   if (!base) {
     return (
@@ -324,6 +331,8 @@ const List = () => {
         columnWrapperStyle={{justifyContent: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
 
       <Popup

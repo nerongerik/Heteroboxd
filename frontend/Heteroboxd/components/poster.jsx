@@ -3,7 +3,7 @@ import { Image } from 'expo-image'
 
 export const Poster = ({ posterUrl, style, other }) => {
   const { width } = useWindowDimensions()
-  const replacer = width > 1000 ? 'w342' : 'w154'
+  const replacer = width > 800 ? 'w342' : 'w154'
 
   if (!posterUrl) {
     return (

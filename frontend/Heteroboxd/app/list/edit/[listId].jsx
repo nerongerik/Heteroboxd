@@ -13,13 +13,12 @@ import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
-import PaginationBar from '../../../components/paginationBar'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import SearchBox from '../../../components/searchBox'
 import SlidingMenu from '../../../components/slidingMenu'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 const EditList = () => {
   const { listId } = useLocalSearchParams()
@@ -179,7 +178,6 @@ const EditList = () => {
     loadEntriesData()
   }, [base?.id])
 
-  const totalPages = useMemo(() => Math.ceil(searchResults.totalCount / PAGE_SIZE), [searchResults.totalCount])
   const posterWidth = useMemo(() => widescreen ? 150 : 75, [widescreen])
   const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth])
 
@@ -282,16 +280,6 @@ const EditList = () => {
     </Pressable>
   ), [entries, closeMenu, widescreen])
 
-  const Footer = useMemo(() => (
-    <View style={{width: widescreen ? width*0.5 : width*0.95}}>
-      <PaginationBar
-        page={searchResults.page}
-        totalPages={totalPages}
-        onPagePress={(num) => setSearchResults(prev => ({...prev, page: num}))}
-      />
-    </View>
-  ), [widescreen, width, searchResults.page, totalPages])
-
   if (!base) {
     return (
       <View style={{
@@ -376,7 +364,6 @@ const EditList = () => {
             numColumns={1}
             renderItem={SearchResult}
             ListEmptyComponent={!searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
-            ListFooterComponent={Footer}
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />

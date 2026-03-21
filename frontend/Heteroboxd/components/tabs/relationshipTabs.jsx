@@ -3,7 +3,6 @@ import { FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, Vie
 import Feather from '@expo/vector-icons/Feather'
 import { Colors } from '../../constants/colors'
 import HText from '../htext'
-import PaginationBar from '../paginationBar'
 import { UserAvatar } from '../userAvatar'
 
 const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, pageSize }) => {
@@ -30,6 +29,12 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
 
   const totalPages = useMemo(() => Math.ceil(currentData.totalCount / pageSize), [currentData.totalCount, pageSize])
 
+  const loadNextPage = useCallback(() => {
+    if (currentData.page < totalPages) {
+      onPageChange(activeTab, currentData.page + 1)
+    }
+  }, [currentData.page, totalPages, activeTab, onPageChange])
+
   const panResponder = useMemo(() => {
     if (widescreen) return null
     return PanResponder.create({
@@ -52,17 +57,6 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
       <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
   ), [])
-
-  const Footer = useMemo(() => (
-    <PaginationBar
-      page={currentData.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        onPageChange(activeTab, num)
-        listRef.current?.scrollToOffset({ offset: 0, animated: true })
-      }}
-    />
-  ), [currentData.page, totalPages, activeTab])
 
   return (
     <View style={{flex: 1}} {...(panResponder?.panHandlers ?? {})}>
@@ -102,9 +96,10 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
             )}
           </View>
         )}
-        ListFooterComponent={Footer}
         contentContainerStyle={{width: Math.min(width, 1000), alignSelf: widescreen ? 'center' : 'stretch', paddingHorizontal: 10, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
     </View>
   )

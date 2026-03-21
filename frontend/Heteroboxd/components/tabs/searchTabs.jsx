@@ -10,7 +10,6 @@ import Author from '../author'
 import Divider from '../../components/divider'
 import { Headshot } from '../headshot'
 import HText from '../htext'
-import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 import { UserAvatar } from '../userAvatar'
 
@@ -19,6 +18,7 @@ const TABS = ['films', 'celebrities', 'lists', 'users']
 
 const SearchTabs = ({ widescreen, router }) => {
   const [ query, setQuery ] = useState('')
+  const queryRef = useRef('')
   const [ searching, setSearching ] = useState(0)
   const { width } = useWindowDimensions()
   const { searches: history, saveSearch } = useSearchHistory()
@@ -28,6 +28,12 @@ const SearchTabs = ({ widescreen, router }) => {
   const listRef = useRef(null)
   const debounceRef = useRef(null)
   const [ searchMode, setSearchMode ] = useState('')
+  const requestRef = useRef(0)
+
+  const setQueryAndRef = (text) => {
+    setQuery(text)
+    queryRef.current = text
+  }
 
   const incrementalSearch = useCallback(async (overrideQuery) => {
     const activeQuery = overrideQuery || query
@@ -46,32 +52,46 @@ const SearchTabs = ({ widescreen, router }) => {
   }, [query, tab])
 
   const fullSearch = useCallback(async (page, overrides = {}) => {
-    const activeQuery = overrides.query || query
+    const activeQuery = overrides.query ?? queryRef.current
     const activeTab = overrides.tab || tab
+    const requestId = ++requestRef.current
     setSearching(1)
     if (page === 1) saveSearch(activeQuery, activeTab)
     try {
       const res = await fetch(`${BaseUrl.api}/${activeTab}/search?Search=${activeQuery}&Page=${page}&PageSize=${PAGE_SIZE}`)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setResults({ page: json.page, items: json.items, totalCount: json.totalCount })
+        if (page === 1) {
+          setResults({ page: json.page, items: json.items, totalCount: json.totalCount })
+        } else {
+          setResults(prev => ({...prev, page: json.page, items: prev.items.length > 100 ? [...prev.items.slice(-80), ...json.items] : [...prev.items, ...json.items]}))
+        }
         setSearchMode('full')
       }
     } finally {
       setSearching(2)
     }
-  }, [query, tab])
+  }, [tab, saveSearch])
+
+  const totalPages = useMemo(() => Math.ceil(results.totalCount / PAGE_SIZE), [results.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (results.page < totalPages && searching !== 1) {
+      fullSearch(results.page + 1)
+    }
+  }, [results.page, totalPages, fullSearch, searching])
 
   const repeatSearch = useCallback((s) => {
     setTab(s.tab)
-    setQuery(s.query)
+    setQueryAndRef(s.query)
     fullSearch(1, { query: s.query, tab: s.tab })
   }, [fullSearch])
 
   const resetParams = useCallback((tab) => {
     setTab(tab)
     setResults({ page: 1, items: [], totalCount: 0 })
-    setQuery('')
+    setQueryAndRef('')
     setSearching(0)
   }, [])
 
@@ -92,7 +112,6 @@ const SearchTabs = ({ widescreen, router }) => {
     })
   }, [widescreen, tab, resetParams])
 
-  const totalPages = useMemo(() => Math.ceil(results.totalCount / PAGE_SIZE), [results.totalCount])
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const posterWidth = useMemo(() => widescreen ? 150 : 100, [widescreen])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
@@ -107,16 +126,9 @@ const SearchTabs = ({ widescreen, router }) => {
     </Pressable>
   ), [])
 
-  const Footer = useMemo(() => searchMode === 'full' ? (
-    <PaginationBar
-      page={results.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        fullSearch(num)
-        listRef.current?.scrollToOffset({ offset: 0, animated: true })
-      }}
-    />
-  ) : null, [searchMode, results.page, totalPages, fullSearch])
+  const Footer = useMemo(() => (searching === 1 && searchMode === 'full') ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [searching, searchMode])
 
   const RenderItem = useCallback(({ item }) => {
     switch (tab) {
@@ -300,8 +312,16 @@ const SearchTabs = ({ widescreen, router }) => {
             placeholder={`Search ${tab}...`}
             value={query}
             onChangeText={(text) => {
-              setQuery(text)
+              const prev = queryRef.current
+              setQueryAndRef(text)
               clearTimeout(debounceRef.current)
+              if (text.length === 0) {
+                setResults({ page: 1, items: [], totalCount: 0 })
+                setSearching(0)
+                setSearchMode('')
+                return
+              }
+              if (text.length < prev.length) return
               debounceRef.current = setTimeout(() => {
                 incrementalSearch(text)
               }, 250)
@@ -346,7 +366,7 @@ const SearchTabs = ({ widescreen, router }) => {
             </View>
           ))}
         </ScrollView>
-      ) : searching === 1 ? (
+      ) : searching === 1 && searchMode !== 'full' ? (
         <View style={{width: '100%', alignItems: 'center', paddingVertical: 30}}>
           <ActivityIndicator size='large' color={Colors.text_link} />
         </View>
@@ -363,6 +383,8 @@ const SearchTabs = ({ widescreen, router }) => {
           contentContainerStyle={{paddingBottom: 80}}
           showsVerticalScrollIndicator={false}
           scrollEnabled={true}
+          onEndReachedThreshold={0.2}
+          onEndReached={loadNextPage}
         />
       )}
     </View>

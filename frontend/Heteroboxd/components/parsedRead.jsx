@@ -19,14 +19,13 @@ const ParsedRead = ({ html, contentWidth }) => {
         color: Colors.text_input,
         lineHeight: 24,
         paddingHorizontal: 3,
-        userSelect: 'text',
-        cursor: 'text'
+        userSelect: 'text'
       }}
       tagsStyles={{
         strong: { fontWeight: 'bold' },
         i: { fontStyle: 'italic' },
         u: { textDecorationLine: 'underline' },
-        a: { color: Colors.text_link, textDecorationLine: 'none', cursor: 'pointer' }
+        a: { color: Colors.text_link, textDecorationLine: 'none' }
       }}
     />
   )

@@ -62,7 +62,7 @@ namespace Heteroboxd.Controller
 
         [HttpGet("subsequent")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetFilmSubsequent(int FilmId, int PageSize = 3)
+        public async Task<IActionResult> GetFilmSubsequent(int FilmId, int PageSize = 5)
         {
             _logger.LogInformation($"GetFilmSubsequent endpoint hit for: {FilmId}");
             try
@@ -70,7 +70,7 @@ namespace Heteroboxd.Controller
                 return Ok(
                 new 
                 {
-                    Reviews = await _reviewService.GetReviewsByFilm(FilmId, null, 1, PageSize, "ALL", "POPULARITY", true, null), 
+                    Reviews = await _reviewService.GetTopX(FilmId, PageSize), 
                     Lists = await _userListService.GetListsFeaturingFilmCount(FilmId) 
                 });
             }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -20,6 +20,7 @@ const Relationships = () => {
   const [ blocked, setBlocked ] = useState({ page: 1, items: [], totalCount: 0 })
   const [ server, setServer ] = useState(Response.initial)
   const router = useRouter()
+  const requestRef = useRef(0)
 
   const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
@@ -32,45 +33,79 @@ const Relationships = () => {
       PageSize: PAGE_SIZE
     })
     try {
+      const requestId = ++requestRef.current
       const res = await fetch(`${BaseUrl.api}/users/relationships?UserId=${userId}&${params}`)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setFollowers({
-          page: json.followers.page,
-          items: json.followers.items.map(uir => ({
-            id: uir.id, 
-            name: uir.name, 
-            pictureUrl: uir.pictureUrl, 
-            admin: uir.admin
-          })),
-          totalCount: json.followers.totalCount
-        })
-        setFollowing({
-          page: json.following.page,
-          items: json.following.items.map(uir => ({
-            id: uir.id, 
-            name: uir.name, 
-            pictureUrl: uir.pictureUrl, 
-            admin: uir.admin
-          })),
-          totalCount: json.following.totalCount
-        })
-        if (isOwnProfile) {
-          setBlocked({
-            page: json.blocked.page,
-            items: json.blocked.items.map(uir => ({
+        if (pages.followers === 0) {
+          console.log('followers sleeping')
+        } else if (!pages.followers || pages.followers === 1) {
+          setFollowers({
+            page: json.followers.page,
+            items: json.followers.items.map(uir => ({
               id: uir.id, 
               name: uir.name, 
               pictureUrl: uir.pictureUrl, 
               admin: uir.admin
             })),
-            totalCount: json.blocked.totalCount
+            totalCount: json.followers.totalCount
           })
+        } else {
+          setFollowers(prev => ({
+            ...prev,
+            page: json.followers.page,
+            items: [...prev.items, ...json.followers.items.map(uir => ({ id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl, admin: uir.admin }))]
+          }))
+        }
+        if (pages.following === 0) {
+          console.log('following sleeping')
+        } else if (!pages.following || pages.following === 1) {
+          setFollowing({
+            page: json.following.page,
+            items: json.following.items.map(uir => ({
+              id: uir.id, 
+              name: uir.name, 
+              pictureUrl: uir.pictureUrl, 
+              admin: uir.admin
+            })),
+            totalCount: json.following.totalCount
+          })
+        } else {
+          setFollowing(prev => ({
+            ...prev,
+            page: json.following.page,
+            items: [...prev.items, ...json.following.items.map(uir => ({ id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl, admin: uir.admin }))]
+          }))
+        }
+        if (isOwnProfile) {
+          if (pages.blocked === 0) {
+            console.log('blocked sleeping')
+          } else if (!pages.blocked || pages.blocked === 1) {
+            setBlocked({
+              page: json.blocked.page,
+              items: json.blocked.items.map(uir => ({
+                id: uir.id, 
+                name: uir.name, 
+                pictureUrl: uir.pictureUrl, 
+                admin: uir.admin
+              })),
+              totalCount: json.blocked.totalCount
+            })
+          } else {
+            setBlocked(prev => ({
+              ...prev,
+              page: json.blocked.page,
+              items: [...prev.items, ...json.blocked.items.map(uir => ({ id: uir.id, name: uir.name, pictureUrl: uir.pictureUrl, admin: uir.admin }))]
+            }))
+          }
         }
         setServer(Response.ok)
       } else if (res.status === 404) {
+        if (requestId !== requestRef.current) return
         setServer(Response.notFound)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
@@ -79,8 +114,11 @@ const Relationships = () => {
   }, [userId, isOwnProfile])
 
   const loadPage = useCallback((tab, page) => {
-    const pages = { followers: tab === 'followers' ? page : followers.page, following: tab === 'following' ? page : following.page, blocked: tab === 'blocked' ? page : blocked.page }
-    loadData(pages)
+    loadData({
+      followers: tab === 'followers' ? page : 0,
+      following: tab === 'following' ? page : 0,
+      blocked:   tab === 'blocked'   ? page : 0,
+    })
   }, [loadData])
 
   const handleRemoveFollower = useCallback(async (followerId) => {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useWindowDimensions, FlatList, View, Pressable } from 'react-native'
+import { ActivityIndicator, useWindowDimensions, FlatList, View, Pressable } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { useRouter, useLocalSearchParams, useNavigation, Link } from 'expo-router'
 import AntDesign from '@expo/vector-icons/AntDesign'
@@ -11,7 +11,6 @@ import { Response } from '../../../constants/response'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
-import PaginationBar from '../../../components/paginationBar'
 import { UserAvatar } from '../../../components/userAvatar'
 
 const PAGE_SIZE = 20
@@ -26,6 +25,7 @@ const AddToLists = () => {
   const navigation = useNavigation()
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
+  const requestRef = useRef(0)
 
   const fetchLists = useCallback(async (page) => {
     if (!user || !(await isValidSession())) {
@@ -35,20 +35,35 @@ const AddToLists = () => {
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
+      const requestId = ++requestRef.current
       const res = await fetch(`${BaseUrl.api}/lists/film-interact?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setUsersLists({ page: json.page, lists: json.items, totalCount: json.totalCount })
+        if (page === 1) {
+          setUsersLists({ page: json.page, lists: json.items, totalCount: json.totalCount })
+        } else {
+          setUsersLists(prev => ({...prev, page: json.page, lists: prev.lists.length > 1000 ? [...prev.lists.slice(-980), ...json.items] : [...prev.lists, ...json.items]}))
+        }
         setServer(Response.ok)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
   }, [user, filmId])
+
+  const totalPages = useMemo(() => Math.ceil(usersLists.totalCount / PAGE_SIZE), [usersLists.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (usersLists.page < totalPages && server.result !== 0) {
+      fetchLists(usersLists.page + 1)
+    }
+  }, [usersLists.page, totalPages, fetchLists, server.result])
 
   const addToLists = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -104,8 +119,6 @@ const AddToLists = () => {
       )
     })
   }, [navigation, widescreen, addToLists])
-
-  const totalPages = useMemo(() => Math.ceil(usersLists.totalCount / PAGE_SIZE), [usersLists.totalCount])
 
   const List = useCallback(({item}) => {
     if (item.containsFilm) {
@@ -182,19 +195,9 @@ const AddToLists = () => {
     }
   }, [user, widescreen, isToggled, toggle])
 
-  const Footer = useMemo(() => (
-    <PaginationBar
-      page={usersLists.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        fetchLists(num)
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        })
-      }}
-    />
-  ), [usersLists.page, totalPages, fetchLists])
+  const Footer = useMemo(() => server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -214,9 +217,11 @@ const AddToLists = () => {
         ListFooterComponent={Footer}
         contentContainerStyle={{paddingBottom: 80, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={server.result <= 0} />
+      <LoadingResponse visible={usersLists.page === 1 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

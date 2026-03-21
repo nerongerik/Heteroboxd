@@ -22,6 +22,7 @@ import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import Stars from '../../components/stars'
 import { UserAvatar } from '../../components/userAvatar'
+import { Fontisto } from '@expo/vector-icons'
 
 const TOP_COUNT = 5
 
@@ -104,17 +105,11 @@ const Film = () => {
       const res = await fetch(`${BaseUrl.api}/films/subsequent?FilmId=${filmId}&PageSize=${TOP_COUNT}`)
       if (res.ok) {
         const json = await res.json()
-        if (json.reviews?.items?.length > 0) {
-          setTopReviews(json.reviews.items.filter(r => !r.spoiler && r.text?.length > 0))
-        }
-        if (json.reviews?.totalCount > 0) {
-          setReviewCount(json.reviews.totalCount)
-        }
-        if (json.lists > 0) {
-          setListsCount(json.lists)
-        }
+        setListsCount(json.lists)
+        setTopReviews(json.reviews.items)
+        setReviewCount(json.reviews.totalCount)
       } else {
-        console.log('internal server error in loadUserData; debugging...')
+        console.log('internal server error in loadSubsequentData; debugging...')
       }
     } catch {
       console.log('network error in loadSubsequentData; handled above.')
@@ -434,6 +429,10 @@ const Film = () => {
                     <Pressable onPress={() => router.push(`/review/${r.id}`)}>
                       <Stars size={widescreen ? 30 : 22} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
                       <ParsedRead html={`${format.sliceText(r.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
+                      <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
+                        <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+                        <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(r.likeCount)}</HText>
+                      </View>
                     </Pressable>
                   </View>
                 )

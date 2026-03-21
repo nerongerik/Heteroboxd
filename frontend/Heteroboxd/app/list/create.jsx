@@ -11,12 +11,11 @@ import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
-import PaginationBar from '../../components/paginationBar'
 import { Poster } from '../../components/poster'
 import SearchBox from '../../components/searchBox'
 import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 50
 
 const CreateList = () => {
   const { user, isValidSession } = useAuth()
@@ -108,7 +107,6 @@ const CreateList = () => {
     })
   }, [navigation, widescreen, handleSubmit])
 
-  const totalPages = useMemo(() => Math.ceil(searchResults.totalCount / PAGE_SIZE), [searchResults.totalCount])
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing])
@@ -282,15 +280,6 @@ const CreateList = () => {
             )}
             ListEmptyComponent={
               !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>
-            }
-            ListFooterComponent={
-              <View style={{width: widescreen ? width*0.5 : width*0.95}}>
-                <PaginationBar
-                  page={searchResults.page}
-                  totalPages={totalPages}
-                  onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
-                />
-              </View>
             }
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}

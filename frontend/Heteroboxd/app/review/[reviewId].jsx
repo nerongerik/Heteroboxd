@@ -14,7 +14,6 @@ import CommentInput from '../../components/commentInput'
 import Divider from '../../components/divider'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
-import PaginationBar from '../../components/paginationBar'
 import ParsedRead from '../../components/parsedRead'
 import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
@@ -37,6 +36,7 @@ const ReviewWithComments = () => {
   const listRef = useRef(null)
   const reviewLocalCopyRef = useRef(null)
   const likeRequestRef = useRef(0)
+  const requestRef = useRef(0)
 
   const loadReviewData = useCallback(async () => {
     setServer(Response.loading)
@@ -78,11 +78,18 @@ const ReviewWithComments = () => {
 
   const loadCommentsDataPage = useCallback(async (page) => {
     try {
+      const requestId = ++requestRef.current
       const res = await fetch(`${BaseUrl.api}/comments/review?ReviewId=${reviewId}&Page=${page}&PageSize=${PAGE_SIZE}`)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setComments({ page: json.page, comments: json.items, totalCount: json.totalCount })
+        if (page === 1) {
+          setComments({ page: json.page, comments: json.items, totalCount: json.totalCount })
+        } else {
+          setComments(prev => ({...prev, page: json.page, comments: prev.comments.length > 1000 ? [...prev.comments.slice(-980), ...json.items] : [...prev.comments, ...json.items]}))
+        }
       } else {
+        if (requestId !== requestRef.current) return
         setComments({ page: 1, comments: [], totalCount: 0 })
         console.log('load comments failed; internal server error.')
       }
@@ -91,6 +98,14 @@ const ReviewWithComments = () => {
       console.log('load comments failed; network error.')
     }
   }, [reviewId])
+
+  const totalPages = useMemo(() => Math.ceil(comments?.totalCount / PAGE_SIZE), [comments?.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (comments?.page < totalPages) {
+      loadCommentsDataPage(comments?.page + 1)
+    }
+  }, [comments?.page, totalPages, loadCommentsDataPage])
 
   const handleLike = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -145,7 +160,7 @@ const ReviewWithComments = () => {
         })
       })
       if (res.ok) {
-        loadCommentsDataPage(Math.ceil(comments?.totalCount / PAGE_SIZE) || 1)
+        loadCommentsDataPage(1)
         if (listRef.current) listRef.current.scrollToOffset({ offset: 0, animated: true })
       } else {
         setSnack({ shown: true, msg: `${res.status}: Something went wrong! Try reloading Heteroboxd.` })
@@ -160,19 +175,22 @@ const ReviewWithComments = () => {
       setServer(Response.forbidden)
       return
     }
+    const prevComments = comments.comments
+    const prevCount = comments.totalCount
+    setComments(prev => ({...prev, comments: prev.comments.filter(c => c.id !== id), totalCount: prev.totalCount - 1}))
+    setSnack({ shown: true, msg: 'Comment deleted!' })
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/comments/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setSnack({ shown: true, msg: 'Comment deleted!' })
-        loadCommentsDataPage(comments?.page || 1)
-      } else {
+      if (!res.ok) {
+        setComments(prev => ({ ...prev, comments: prevComments, totalCount: prevCount }))
         setSnack({ shown: true, msg: `${res.status}: Something went wrong! Try reloading Heteroboxd.` })
       }
     } catch {
+      setComments(prev => ({ ...prev, comments: prevComments, totalCount: prevCount }))
       setSnack({ shown: true, msg: 'Network error! Please check your internet connection and try again.' })
     }
   }, [user, comments])
@@ -344,26 +362,6 @@ const ReviewWithComments = () => {
     </View>
   ), [maxRowWidth, widescreen])
 
-  const Footer = useMemo(() => {
-    if (comments?.comments.length === 0) return null
-    return (
-      <View style={{paddingBottom: 100}}>
-        <PaginationBar
-          page={comments?.page}
-          totalPages={Math.ceil(comments?.totalCount / PAGE_SIZE)}
-          onPagePress={(num) => {
-            setComments(null)
-            loadCommentsDataPage(num)
-            listRef.current?.scrollToOffset({
-              offset: 0,
-              animated: true,
-            })
-          }}
-        />
-      </View>
-    )
-  }, [comments, loadCommentsDataPage])
-
   if (!review) {
     return (
       <View style={{
@@ -392,10 +390,11 @@ const ReviewWithComments = () => {
             ListHeaderComponent={Header}
             renderItem={Comment}
             ListEmptyComponent={NoComments}
-            ListFooterComponent={Footer}
             contentContainerStyle={{flexGrow: 1, paddingBottom: 100}}
             scrollEnabled={true}
             showsVerticalScrollIndicator={false}
+            onEndReachedThreshold={0.2}
+            onEndReached={loadNextPage}
           />
         )
       }

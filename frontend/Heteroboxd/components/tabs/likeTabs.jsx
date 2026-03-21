@@ -5,7 +5,6 @@ import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
 import Author from '../author'
 import HText from '../htext'
-import PaginationBar from '../paginationBar'
 import ParsedRead from '../parsedRead'
 import { Poster } from '../poster'
 import Stars from '../stars'
@@ -25,8 +24,15 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
     }
   }, [activeTab, reviews, lists])
 
-  const widescreen = useMemo(() => width > 1000, [width])
   const totalPages = useMemo(() => Math.ceil(currentData.totalCount / pageSize), [currentData.totalCount, pageSize])
+
+  const loadNextPage = useCallback(() => {
+    if (currentData.page < totalPages) {
+      onPageChange(activeTab, currentData.page + 1)
+    }
+  }, [currentData.page, totalPages, activeTab, onPageChange])
+
+  const widescreen = useMemo(() => width > 1000, [width])
   const maxRowWidth = useMemo(() => widescreen ? 900 : width * 0.95, [widescreen, width])
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
@@ -54,17 +60,6 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
       <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
   ), [])
-
-  const Footer = useMemo(() => (
-    <PaginationBar
-      page={currentData.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        onPageChange(activeTab, num)
-        listRef.current?.scrollToOffset({ offset: 0, animated: true })
-      }}
-    />
-  ), [currentData.page, totalPages, activeTab])
 
   const RenderReview = useCallback(({ item }) => (
     <View style={[styles.card, {marginBottom: 5}]}>
@@ -183,10 +178,11 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         keyExtractor={(item) => `${activeTab}-${item.id}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
         ListEmptyComponent={<HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</HText>}
-        ListFooterComponent={Footer}
         style={{width: maxRowWidth, alignSelf: 'center'}}
         contentContainerStyle={{paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
     </View>
   )

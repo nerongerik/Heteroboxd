@@ -11,7 +11,7 @@ namespace Heteroboxd.Repository
         Task<Review?> GetByIdAsync(Guid Id);
         Task<JoinResponse<JoinedReviewFilm, User>?> GetJoinedByIdAsync(Guid Id);
         Task<(List<JoinResponse<Review, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<List<JoinResponse<Review, User>>> GetTopAsync(int FilmId, int Top);
+        Task<(List<JoinResponse<Review, User>> Responses, int TotalCount)> GetTopAsync(int FilmId, int PageSize);
         Task<(List<JoinResponse<Review, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<JoinedReviewFilm?> GetByUserFilmAsync(Guid AuthorId, int FilmId);
         Task UpdateLikeCountAsync(Guid ReviewId, int Delta);
@@ -141,15 +141,19 @@ namespace Heteroboxd.Repository
             return (Responses, TotalCount);
         }
 
-        public async Task<List<JoinResponse<Review, User>>> GetTopAsync(int FilmId, int Top) =>
-            await _context.Reviews
+        public async Task<(List<JoinResponse<Review, User>> Responses, int TotalCount)> GetTopAsync(int FilmId, int PageSize)
+        {
+            var Responses = await _context.Reviews
                 .AsNoTracking()
-                .Where(r => r.FilmId == FilmId && r.Text != null && !r.Spoiler)
+                .Where(r => r.FilmId == FilmId && r.Text != null && r.Text.Length > 0 && !r.Spoiler)
+                .OrderByDescending(r => r.LikeCount)
+                .Take(PageSize)
                 .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
-                .OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Date)
-                .Take(Top)
                 .Select(x => new JoinResponse<Review, User> { Item = x.r, Joined = x.u })
                 .ToListAsync();
+            var TotalCount = await _context.Reviews.AsNoTracking().CountAsync(r => r.FilmId == FilmId);
+            return (Responses, TotalCount);
+        }
 
         public async Task<(List<JoinResponse<Review, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {

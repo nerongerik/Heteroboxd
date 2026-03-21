@@ -5,7 +5,6 @@ import * as format from '../../helpers/format'
 import { Colors } from "../../constants/colors"
 import { Headshot } from '../headshot'
 import HText from '../htext'
-import PaginationBar from '../paginationBar'
 import { Poster } from '../poster'
 
 const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, seenCount, fadeSeen }) => {
@@ -21,6 +20,12 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
   const headshotHeight = useMemo(() => headshotWidth * 3 / 2, [headshotWidth])
 
   const totalPages = Math.ceil((currentTabData?.totalCount || 0) / pageSize)
+
+  const loadNextPage = useCallback(() => {
+    if (currentTabData?.page < totalPages) {
+      onPageChange(currentTabData?.page + 1)
+    }
+  }, [currentTabData?.page, totalPages, onPageChange])
 
   const allTabs = useMemo(() => {
     const tabs = []
@@ -85,22 +90,11 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
     )
   }, [activeTab, maxRowWidth, currentTabData?.totalCount, showSeen, widescreen, seenCount])
 
-  const Footer = useMemo(() => (
-    <PaginationBar
-      page={currentTabData?.page || 1}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        onPageChange(num)
-        listRef.current?.scrollToOffset({ offset: 0, animated: true })
-      }}
-    />
-  ), [currentTabData?.page, totalPages])
-
   const Filmography = useCallback(({ item }) => {
     if (!item) {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
-    const isSeen = fadeSeen && (seenFilms?.includes(item.id) ?? false)
+    const isSeen = fadeSeen && seenFilms.has(item.id)
     return (
       <Pressable onPress={() => onFilmPress(item.id)} style={{margin: spacing / 2}}>
         <Poster
@@ -193,13 +187,14 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
           key={activeTab}
           keyExtractor={(item, index) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-placeholder-${index}`}
           ListHeaderComponent={Header}
-          ListFooterComponent={Footer}
           renderItem={Filmography}
           numColumns={4}
           columnWrapperStyle={{justifyContent: 'center'}}
           style={{width: maxRowWidth, alignSelf: 'center'}}
           contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
           showsVerticalScrollIndicator={false}
+          onEndReachedThreshold={0.2}
+          onEndReached={loadNextPage}
         />
       )}
     </View>
