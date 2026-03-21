@@ -63,11 +63,15 @@ const Explore = () => {
         const json = await res.json()
         if (page === 1) {
           setData({ page: json.page, films: json.items, totalCount: json.totalCount })
-          seenFilmsRef.current = new Set(json.seen)
-          setSeenCount(json.seenCount)
+          if (user) {
+            seenFilmsRef.current = new Set(json.seen)
+            setSeenCount(json.seenCount)
+          }
         } else {
           setData(prev => ({...prev, page: json.page, films: prev.films.length > 1000 ? [...prev.films.slice(-980), ...json.items] : [...prev.films, ...json.items]}))
-          json.seen.forEach(id => seenFilmsRef.current.add(id))
+          if (user) {
+            json.seen.forEach(id => seenFilmsRef.current.add(id))
+          }
         }
         setServer(Response.ok)
       } else {

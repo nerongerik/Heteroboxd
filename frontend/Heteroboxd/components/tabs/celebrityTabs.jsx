@@ -58,9 +58,9 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
   const TabButton = useCallback(({ title, active, onPress }) => (
     <Pressable
       onPress={onPress}
-      style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 15 : 5 }, active && styles.activeTabButton]}
+      style={[styles.tabButton, {flex: widescreen ? 1 : null, paddingHorizontal: widescreen ? null : title === 'Bio' ? 10 : 5 }, active && styles.activeTabButton]}
     >
-      <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
+      <HText style={[{fontSize: width > 1000 ? 16 : width > 300 ? 14 : 12, color: Colors.text}, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
   ), [widescreen])
 
@@ -223,10 +223,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
-  },
-  tabText: {
-    fontSize: 15,
-    color: Colors.text,
   },
   activeTabText: {
     color: Colors.text_title,

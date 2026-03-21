@@ -106,11 +106,15 @@ const List = () => {
         if (requestId !== requestRef.current) return
         const json = await res.json()
         if (page === 1) {
-          setData({ page: json.page, entries: json.items, totalCount: json.totalCount, seenCount: json.seenCount })
-          seenFilmsRef.current = new Set(json.seen)
+          setData({ page: json.page, entries: json.items, totalCount: json.totalCount, seenCount: json.seenCount || 0 })
+          if (user) {
+            seenFilmsRef.current = new Set(json.seen)
+          }
         } else {
           setData(prev => ({...prev, page: json.page, entries: prev.entries.length > 1000 ? [...prev.entries.slice(-980), ...json.items] : [...prev.entries, ...json.items]}))
-          json.seen.forEach(id => seenFilmsRef.current.add(id))
+          if (user) {
+            json.seen.forEach(id => seenFilmsRef.current.add(id))
+          }
         }
         setServer(Response.ok)
       } else {

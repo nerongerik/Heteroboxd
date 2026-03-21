@@ -5,8 +5,10 @@ import * as format from '../helpers/format'
 import { useCountries } from '../hooks/useCountries'
 import { Colors } from '../constants/colors'
 import HText from './htext'
+import { useAuth } from '../hooks/useAuth'
 
 const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSortChange}) => {
+  const { user } = useAuth()
   const [ expandedFilter, setExpandedFilter ] = useState(null)
   const { countries } = useCountries()
 
@@ -17,10 +19,10 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     list: [],
     celebrity: [],
     userLists: [],
-    filmLists: ['ALL', 'FRIENDS'],
-    exploreLists: ['ALL', 'FRIENDS'],
+    filmLists: user ? ['ALL', 'FRIENDS'] : [],
+    exploreLists: user ? ['ALL', 'FRIENDS'] : [],
     userReviews: [],
-    filmReviews: ['ALL', 'FRIENDS']
+    filmReviews: user ? ['ALL', 'FRIENDS'] : []
   }
 
   const sortOptions = {

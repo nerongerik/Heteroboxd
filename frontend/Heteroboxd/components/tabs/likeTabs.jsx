@@ -57,7 +57,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
 
   const TabButton = useCallback(({ title, active, onPress }) => (
     <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
-      <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
+      <HText style={[{fontSize: width > 1000 ? 16 : width > 300 ? 14 : 12, color: Colors.text}, active && styles.activeTabText]}>{title}</HText>
     </Pressable>
   ), [])
 
@@ -210,10 +210,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 6,
     flex: 1,
-  },
-  tabText: {
-    fontSize: 16,
-    color: Colors.text,
   },
   activeTabText: {
     color: Colors.text_title,

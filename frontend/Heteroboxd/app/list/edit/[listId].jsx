@@ -270,11 +270,19 @@ const EditList = () => {
           <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
             {format.sliceText(item.title || '', widescreen ? 200 : 100)} <HText style={{color: Colors.text, fontSize: 14}}>{format.parseOutYear(item.date) || ''}</HText>
           </HText>
-          <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
-            item.castAndCrew?.map((d, i) => (
-              <HText key={i} style={{}}>{d.name || ''}{i < item.castAndCrew?.length - 1 && ', '}</HText>
-            ))
-          }</HText>
+          {
+            item.castAndCrew?.length > 0 && (
+              <>
+                <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
+                  item.castAndCrew.map((d, i) => (
+                    <HText key={i} style={{}}>
+                      {d.name || ''}{i < item.castAndCrew.length - 1 && ', '}
+                    </HText>
+                  ))
+                }</HText>
+              </>
+            )
+          }
         </View>
       </View>
     </Pressable>
