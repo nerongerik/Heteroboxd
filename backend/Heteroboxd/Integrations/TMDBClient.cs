@@ -50,7 +50,14 @@ namespace Heteroboxd.Integrations
                 await _rateLimiter.ThrottleAsync();
                 _logger.LogInformation($"Calling the GET /details/ endpoint for Film of TmdbID: {TmdbId}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/movie/{TmdbId!}?append_to_response=credits");
-                Response.EnsureSuccessStatusCode();
+                try
+                {
+                    Response.EnsureSuccessStatusCode();
+                }
+                catch
+                {
+                    return null;
+                }
 
                 var Json = await Response.Content.ReadAsStringAsync();
                 var Result = JsonConvert.DeserializeObject<TMDBInfoResponse>(Json)!;
@@ -90,7 +97,7 @@ namespace Heteroboxd.Integrations
             catch (Exception ex)
             {
                 _logger.LogError($"{ex}");
-                throw;
+                return null;
             }
         }
 

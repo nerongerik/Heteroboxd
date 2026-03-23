@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using EFCore.BulkExtensions;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Concurrent;
 //using FirebaseAdmin;
 //using Google.Apis.Auth.OAuth2;
 
@@ -109,15 +110,11 @@ builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 
 builder.Services.AddScoped<IR2Handler, R2Handler>();
 
+builder.Services.AddSingleton<IMaintanenceExecutor, MaintanenceExecutor>();
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
-builder.Services.AddHostedService<TrendingSyncService>();
-builder.Services.AddHostedService<RefreshPurgeService>();
-builder.Services.AddHostedService<NotificationPurgeService>();
-builder.Services.AddHostedService<UserPurgeService>();
-builder.Services.AddHostedService<FilmSyncService>();
-builder.Services.AddHostedService<CelebritySyncService>();
-builder.Services.AddHostedService<CountrySyncService>();
+builder.Services.AddHostedService<MaintanenceScheduler>();
 
 // --- CONTROLLERS ---
 builder.Services.AddControllers();
@@ -145,19 +142,27 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-/*//database population script - comment out in prod
+app.Run();
 
-using var Scope = app.Services.CreateScope();
+
+/*using var Scope = app.Services.CreateScope();
 var _client = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
-var FilePath = "D:/Code/Heteroboxd/ids.txt";
+var FilePath = "C:/Code/Heteroboxd/ids.txt";
 
 if (File.Exists(FilePath))
 {
-    Console.WriteLine("=== IMPORT STARTED ===");
+    var Processed = await Scope.ServiceProvider.GetRequiredService<HeteroboxdContext>()
+        .Films.AsNoTracking().Select(f => f.Id).ToHashSetAsync();
+    var Lines = File.ReadLines(FilePath).Where(l => !Processed.Contains(int.Parse(l.Trim()))).ToList();
 
-    var Lines = File.ReadLines(FilePath).ToList();
-    int Total = Lines.Count;
-    int Counter = 0;
+    int Total = Lines.Count + Processed.Count;
+    int Counter = Processed.Count;
+
+    var ExistingCelebs = await Scope.ServiceProvider.GetRequiredService<HeteroboxdContext>()
+        .Celebrities.AsNoTracking().Select(c => c.Id).ToListAsync();
+    var ThreadsafeCelebs = new ConcurrentDictionary<int, byte>(ExistingCelebs.Select(id => new KeyValuePair<int, byte>(id, 0)));
+
+    Console.WriteLine("=== IMPORT STARTED ===");
 
     await Parallel.ForEachAsync(Lines, new ParallelOptions { MaxDegreeOfParallelism = 20 }, async (l, _) =>
     {
@@ -171,19 +176,15 @@ if (File.Exists(FilePath))
             var Response = await _client.FilmDetailsCall(TmdbId);
             if (Response == null) return;
 
-            var AllNewIds = (Response.credits?.cast?.Select(c => c.id!.Value) ?? []).Concat(Response.credits?.crew?.Select(c => c.id!.Value) ?? []).Distinct().ToHashSet();
-
             using var _scope = app.Services.CreateScope();
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
             var _parser = _scope.ServiceProvider.GetRequiredService<ITMDBParser>();
 
-            var ExistingCelebs = await _context.Celebrities.Where(c => AllNewIds.Contains(c.Id)).ToListAsync();
-
-            var (Film, Celebrities, Credits) = await _parser.ParseResponse(Response, ExistingCelebs, true);
+            var (Film, Celebrities, Credits) = await _parser.ParseResponse(Response, ThreadsafeCelebs, true);
 
             _context.Films.Add(Film);
             await _context.SaveChangesAsync();
-            if (Celebrities.Any())
+            if (Celebrities.Count != 0)
             {
                 await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
                 {
@@ -197,7 +198,7 @@ if (File.Exists(FilePath))
                     }
                 });
             }
-            if (Credits.Any())
+            if (Credits.Count != 0)
             {
                 await _context.BulkInsertOrUpdateAsync(Credits, new BulkConfig
                 {
@@ -217,5 +218,3 @@ if (File.Exists(FilePath))
     Console.WriteLine("=== IMPORT FINISHED ===");
     return;
 }*/
-
-app.Run();

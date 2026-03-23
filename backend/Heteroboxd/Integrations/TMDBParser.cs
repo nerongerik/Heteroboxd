@@ -7,11 +7,11 @@ namespace Heteroboxd.Integrations
 {
     public interface ITMDBParser
     {
-        Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseResponse(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs, bool Parallel = false);
+        Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseResponse(TMDBInfoResponse Response, ConcurrentDictionary<int, byte> ThreadsafeCelebs, bool Parallel = false);
         Task ParseCollection(int TmdbId, Film Film);
-        Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseFilm(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs, bool Parallel);
-        Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsSequential(Credits? Credits, int FilmId, List<Celebrity> ExistingCelebs);
-        Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsParallel(Credits? Credits, int FilmId, List<Celebrity> ExistingCelebs);
+        Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseFilm(TMDBInfoResponse Response, ConcurrentDictionary<int, byte> ThreadsafeCelebs, bool Parallel);
+        Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsSequential(Credits? Credits, int FilmId, ConcurrentDictionary<int, byte> ThreadsafeCelebs);
+        Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsParallel(Credits? Credits, int FilmId, ConcurrentDictionary<int, byte> ThreadsafeCelebs);
         Celebrity ParseCelebrity(TMDBCelebrityResponse CelebrityResponse);
     }
 
@@ -26,10 +26,10 @@ namespace Heteroboxd.Integrations
             _configuration = configuration;
         }
 
-        public async Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseResponse(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs, bool Parallel = false)
+        public async Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseResponse(TMDBInfoResponse Response, ConcurrentDictionary<int, byte> ThreadsafeCelebs, bool Parallel = false)
         {
             if (Response.id == null) throw new ArgumentException("tMDB mustn't be null!");
-            var (Film, Celebrities, Credits) = await ParseFilm(Response, ExistingCelebs, Parallel);
+            var (Film, Celebrities, Credits) = await ParseFilm(Response, ThreadsafeCelebs, Parallel);
             if (Response.belongs_to_collection != null && Response.belongs_to_collection.id != null)
             {
                 await ParseCollection(Response.belongs_to_collection.id.Value, Film);
@@ -65,7 +65,7 @@ namespace Heteroboxd.Integrations
             }
         }
 
-        public async Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseFilm(TMDBInfoResponse Response, List<Celebrity> ExistingCelebs, bool Parallel)
+        public async Task<(Film Film, List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseFilm(TMDBInfoResponse Response, ConcurrentDictionary<int, byte> ThreadsafeCelebs, bool Parallel)
         {
             int TmdbId = Response.id ?? throw new Exception("TMDB response missing ID");
             string Title = Response.title ?? Response.original_title!;
@@ -91,148 +91,42 @@ namespace Heteroboxd.Integrations
 
             if (Parallel)
             {
-                var (Celebrities, Credits) = await ParseCreditsParallel(Response.credits, Film.Id, ExistingCelebs);
+                var (Celebrities, Credits) = await ParseCreditsParallel(Response.credits, Film.Id, ThreadsafeCelebs);
                 return (Film, Celebrities, Credits);
             }
             else
             {
-                var (Celebrities, Credits) = await ParseCreditsSequential(Response.credits, Film.Id, ExistingCelebs);
+                var (Celebrities, Credits) = await ParseCreditsSequential(Response.credits, Film.Id, ThreadsafeCelebs);
                 return (Film, Celebrities, Credits);
             }
         }
 
-        public async Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsSequential(Credits? Credits, int FilmId, List<Celebrity> ExistingCelebs)
-        {
-            if (Credits == null) return (new (), new ());
-
-            var Celebrities = new List<Celebrity>();
-            var CelebrityCredits = new List<CelebrityCredit>();
-            var ExistingCelebsById = ExistingCelebs.ToDictionary(c => c.Id);
-            var FetchedThisRun = new HashSet<int>();
-
-            //cast
-            foreach (var Actor in Credits.cast ?? new List<CastMember>())
-            {
-                if (Actor?.id == null) continue;
-                if (ExistingCelebsById.TryGetValue(Actor.id.Value, out Celebrity? AlreadyFetched))
-                {
-                    CelebrityCredits.Add(new CelebrityCredit(AlreadyFetched.Id, FilmId, Role.Actor, Actor.character ?? "N/A", Actor.order ?? 50));
-                    continue;
-                }
-                //fetch from TMDB with 3 retries
-                int Attempt = 0;
-                bool Success = false;
-                TMDBCelebrityResponse Response = null!;
-                while (Attempt < 3 && !Success)
-                {
-                    Attempt++;
-                    try
-                    {
-                        Response = await _tmdbClient.CelebrityDetailsCall(Actor.id);
-                        Success = true;
-                    }
-                    catch
-                    {
-                        await Task.Delay(1000 * Attempt); //exponential backoff to avoid rate limits
-                        continue;
-                    }
-                }
-                if (Response == null) continue;
-
-                var Celebrity = ParseCelebrity(Response);
-                var Credit = new CelebrityCredit(Celebrity.Id, FilmId, Role.Actor, Actor.character ?? "N/A", Actor.order ?? 50);
-                if (FetchedThisRun.Add(Celebrity.Id)) Celebrities.Add(Celebrity);
-                CelebrityCredits.Add(Credit);
-            }
-            //crew
-            foreach (var Crewer in Credits.crew ?? new List<CrewMember>())
-            {
-                if (Crewer?.id == null) continue;
-                if (ExistingCelebsById.TryGetValue(Crewer.id.Value, out Celebrity? AlreadyFetched))
-                {
-                    Role AdditionalRole = Crewer.job?.ToLower() switch
-                    {
-                        "director" => Role.Director,
-                        "producer" => Role.Producer,
-                        "screenplay" => Role.Writer,
-                        "writer" => Role.Writer,
-                        "story" => Role.Writer,
-                        "original music composer" => Role.Composer,
-                        _ => throw new InvalidOperationException($"Unexpected job type: {Crewer.job}")
-                    };
-                    CelebrityCredits.Add(new CelebrityCredit(AlreadyFetched.Id, FilmId, AdditionalRole, null, null));
-                    continue;
-                }
-                //fetch from TMDB with 3 retries
-                int Attempt = 0;
-                bool Success = false;
-                TMDBCelebrityResponse Response = null!;
-                while (Attempt < 3 && !Success)
-                {
-                    Attempt++;
-                    try
-                    {
-                        Response = await _tmdbClient.CelebrityDetailsCall(Crewer.id);
-                        Success = true;
-                    }
-                    catch
-                    {
-                        await Task.Delay(1000 * Attempt); //exponential backoff to avoid rate limits
-                        continue;
-                    }
-                }
-                if (Response == null) continue;
-
-                Role CrewRole = Crewer.job?.ToLower() switch
-                {
-                    "director" => Role.Director,
-                    "producer" => Role.Producer,
-                    "screenplay" => Role.Writer,
-                    "writer" => Role.Writer,
-                    "story" => Role.Writer,
-                    "original music composer" => Role.Composer,
-                    _ => throw new InvalidOperationException($"Unexpected job type: {Crewer.job}")
-                };
-
-                var Celebrity = ParseCelebrity(Response);
-                var Credit = new CelebrityCredit(Celebrity.Id, FilmId, CrewRole, null, null);
-                if (FetchedThisRun.Add(Celebrity.Id)) Celebrities.Add(Celebrity);
-                CelebrityCredits.Add(Credit);
-            }
-            CelebrityCredits = CelebrityCredits.GroupBy(c => (c.CelebrityId, c.FilmId, c.Role)).Select(g => g.First()).ToList(); //dedupe
-            return (Celebrities, CelebrityCredits);
-        }
-
-        public async Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsParallel(Credits? Credits, int FilmId, List<Celebrity> ExistingCelebs)
+        public async Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsSequential(Credits? Credits, int FilmId, ConcurrentDictionary<int, byte> ThreadsafeCelebs)
         {
             if (Credits == null) return (new(), new());
 
-            var ExistingCelebsById = ExistingCelebs.ToDictionary(c => c.Id);
-            var FetchedThisRun = new ConcurrentDictionary<int, Celebrity>();
-            var CelebrityCredits = new ConcurrentBag<CelebrityCredit>();
+            var Celebrities = new List<Celebrity>();
+            var CelebrityCredits = new List<CelebrityCredit>();
 
-            async Task ProcessMember(int Id, Func<Celebrity, CelebrityCredit> CreditFactory)
+            async Task ProcessMember(int Id, Func<CelebrityCredit> CreditFactory)
             {
-                if (ExistingCelebsById.TryGetValue(Id, out var Existing))
+                if (ThreadsafeCelebs.ContainsKey(Id))
                 {
-                    CelebrityCredits.Add(CreditFactory(Existing));
+                    CelebrityCredits.Add(CreditFactory());
                     return;
                 }
-
                 var Response = await FetchCelebrityWithRetry(Id);
                 if (Response == null) return;
                 var Celeb = ParseCelebrity(Response);
-                FetchedThisRun.TryAdd(Celeb.Id, Celeb);
-                CelebrityCredits.Add(CreditFactory(Celeb));
+                if (ThreadsafeCelebs.TryAdd(Celeb.Id, 0)) Celebrities.Add(Celeb);
+                CelebrityCredits.Add(CreditFactory());
             }
-
-            var Tasks = new List<Task>();
 
             foreach (var Actor in Credits.cast ?? [])
             {
                 if (Actor?.id == null) continue;
                 var a = Actor;
-                Tasks.Add(ProcessMember(a.id.Value, celeb => new CelebrityCredit(celeb.Id, FilmId, Role.Actor, a.character ?? "N/A", a.order ?? 50)));
+                await ProcessMember(a.id.Value, () => new CelebrityCredit(a.id.Value, FilmId, Role.Actor, a.character ?? "N/A", a.order ?? 50));
             }
 
             foreach (var Crewer in Credits.crew ?? [])
@@ -241,11 +135,57 @@ namespace Heteroboxd.Integrations
                 var cr = Crewer;
                 var Job = MapCrewRole(cr.job);
                 if (Job == null) continue;
-                Tasks.Add(ProcessMember(cr.id.Value, celeb => new CelebrityCredit(celeb.Id, FilmId, Job.Value, null, null)));
+                await ProcessMember(cr.id.Value, () => new CelebrityCredit(cr.id.Value, FilmId, Job.Value, null, null));
+            }
+
+            CelebrityCredits = CelebrityCredits
+                .GroupBy(c => (c.CelebrityId, c.FilmId, c.Role))
+                .Select(g => g.First())
+                .ToList();
+            return (Celebrities, CelebrityCredits);
+        }
+
+        public async Task<(List<Celebrity> Celebrities, List<CelebrityCredit> Credits)> ParseCreditsParallel(Credits? Credits, int FilmId, ConcurrentDictionary<int, byte> ThreadsafeCelebs)
+        {
+            if (Credits == null) return (new(), new());
+
+            var NewCelebrities = new ConcurrentDictionary<int, Celebrity>();
+            var CelebrityCredits = new ConcurrentBag<CelebrityCredit>();
+
+            async Task ProcessMember(int Id, Func<CelebrityCredit> CreditFactory)
+            {
+                if (ThreadsafeCelebs.ContainsKey(Id))
+                {
+                    CelebrityCredits.Add(CreditFactory());
+                    return;
+                }
+                var Response = await FetchCelebrityWithRetry(Id);
+                if (Response == null) return;
+                var Celeb = ParseCelebrity(Response);
+                if (ThreadsafeCelebs.TryAdd(Celeb.Id, 0)) NewCelebrities.TryAdd(Celeb.Id, Celeb);
+                CelebrityCredits.Add(CreditFactory());
+            }
+
+            var Tasks = new List<Task>();
+
+            foreach (var Actor in Credits.cast ?? [])
+            {
+                if (Actor?.id == null) continue;
+                var a = Actor;
+                Tasks.Add(ProcessMember(a.id.Value, () => new CelebrityCredit(a.id.Value, FilmId, Role.Actor, a.character ?? "N/A", a.order ?? 50)));
+            }
+
+            foreach (var Crewer in Credits.crew ?? [])
+            {
+                if (Crewer?.id == null) continue;
+                var cr = Crewer;
+                var Job = MapCrewRole(cr.job);
+                if (Job == null) continue;
+                Tasks.Add(ProcessMember(cr.id.Value, () => new CelebrityCredit(cr.id.Value, FilmId, Job.Value, null, null)));
             }
 
             await Task.WhenAll(Tasks);
-            return (FetchedThisRun.Values.ToList(), CelebrityCredits.ToList());
+            return (NewCelebrities.Values.ToList(), CelebrityCredits.ToList());
         }
 
         public Celebrity ParseCelebrity(TMDBCelebrityResponse CelebrityResponse)

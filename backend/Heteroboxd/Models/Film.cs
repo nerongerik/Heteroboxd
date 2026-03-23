@@ -50,8 +50,6 @@
             this.Length = Film.Length;
             this.Date = Film.Date;
             this.Collection = Film.Collection;
-            this.AverageRating = Film.AverageRating;
-            this.RatingCount = Film.RatingCount;
         }
     }
 }
