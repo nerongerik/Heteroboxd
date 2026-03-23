@@ -165,9 +165,9 @@ const FilmsLists = () => {
     </View>
   ), [widescreen, posterHeight, posterWidth, router, spacing])
   
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => data.lists.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [data.lists.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -184,7 +184,7 @@ const FilmsLists = () => {
         onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={data.page === 1 && server.result <= 0} />
+      <LoadingResponse visible={data.lists.length === 0 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

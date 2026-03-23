@@ -195,9 +195,9 @@ const AddToLists = () => {
     }
   }, [user, widescreen, isToggled, toggle])
 
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => usersLists.lists.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [usersLists.lists.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -221,7 +221,7 @@ const AddToLists = () => {
         onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={usersLists.page === 1 && server.result <= 0} />
+      <LoadingResponse visible={usersLists.lists.length === 0 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

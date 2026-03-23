@@ -185,9 +185,9 @@ const UsersLists = () => {
     </View>
   ), [router, posterHeight, posterWidth, spacing, widescreen, AuthorSection])
 
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => data.lists.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [data.lists.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -204,7 +204,7 @@ const UsersLists = () => {
         onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={data.page === 1 && server.result <= 0} />
+      <LoadingResponse visible={data.lists.length === 0 && server.result <= 0} />
       <Popup
         visible={[404, 500].includes(server.result)}
         message={server.message}

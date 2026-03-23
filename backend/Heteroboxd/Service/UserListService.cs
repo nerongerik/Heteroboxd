@@ -52,7 +52,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList()
             };
         }
@@ -74,7 +73,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = TotalCount,
                     Page = Page,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Responses.Select(x => (ListEntryInfoResponse?) new ListEntryInfoResponse(x.Item, x.Joined)).ToList())
                 };
             }
@@ -85,7 +83,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = TotalCount,
                     Page = Page,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Responses.Select(x => (ListEntryInfoResponse?) new ListEntryInfoResponse(x.Item, x.Joined)).ToList()),
                     Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
@@ -109,7 +106,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, Author)).ToList()
             };
         }
@@ -121,7 +117,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Response
             };
         }
@@ -141,7 +136,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList()
             };
         }
@@ -156,7 +150,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Results.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList()
             };
         }

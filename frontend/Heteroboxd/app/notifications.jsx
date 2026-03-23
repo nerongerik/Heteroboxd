@@ -171,9 +171,9 @@ const Notifications = () => {
     )
   }, [handleNotifRead, handleNotifDelete, maxRowWidth])
 
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => data.notifs.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [data.notifs.length, server])
   
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
@@ -209,7 +209,7 @@ const Notifications = () => {
         </View>
       }
 
-      <LoadingResponse visible={data.page === 1 && server.result <= 0} />
+      <LoadingResponse visible={data.notifs.length === 0 && server.result <= 0} />
       <Popup
         visible={[403, 500].includes(server.response)}
         message={server.message}

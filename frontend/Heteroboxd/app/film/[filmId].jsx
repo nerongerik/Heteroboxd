@@ -439,7 +439,7 @@ const Film = () => {
               })}
               <Pressable onPress={() => router.push(`/reviews/film/${film.id}`)}>
                 <HText style={{fontSize: widescreen ? 20 : 16, color: Colors.text_title, textAlign: 'center'}}>
-                  <HText style={{fontWeight: 'bold'}}>SEE ALL ({format.formatCount(reviewCount)})</HText> {'➜'}
+                  <HText style={{fontWeight: 'bold'}}>SEE ALL ({format.formatCount(reviewCount)}) {'➜'}</HText>
                 </HText>
               </Pressable>
             </>

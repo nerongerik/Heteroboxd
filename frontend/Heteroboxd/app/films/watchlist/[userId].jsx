@@ -194,9 +194,9 @@ const Watchlist = () => {
     )
   }, [posterWidth, posterHeight, spacing, router, handleDelete])
 
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => data.entries.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [data.entries.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -217,7 +217,7 @@ const Watchlist = () => {
         onEndReached={loadNextPage}
       />
       
-      <LoadingResponse visible={data.page === 1 && server.result <= 0} />
+      <LoadingResponse visible={data.entries.length === 0 && server.result <= 0} />
       <Popup
         visible={[403, 500].includes(server.result)}
         message={server.message}

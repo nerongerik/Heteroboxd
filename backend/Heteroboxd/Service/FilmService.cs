@@ -57,7 +57,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = TotalCount,
                     Page = Page,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList())
                 };
             }
@@ -68,7 +67,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = TotalCount,
                     Page = Page,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList()),
                     Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
@@ -85,7 +83,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = 0, //no pagination
                     Page = 1,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?)new FilmInfoResponse(f)).ToList())
                 };
             }
@@ -96,7 +93,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = 0, //no pagination
                     Page = 1,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?)new FilmInfoResponse(f)).ToList()),
                     Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
@@ -111,7 +107,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList())
             };
         }
@@ -126,7 +121,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Response.Select(x => new FilmInfoResponse(x.Item, x.Joined)).ToList()
             };
         }

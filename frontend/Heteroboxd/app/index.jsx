@@ -138,11 +138,14 @@ const Home = () => {
           />
         ),
       headerTitleAlign: 'center',
-      headerRight: () => (
-        <Pressable onPress={() => router.push('/search')} style={{marginRight: widescreen ? 15 : null}}>
-          <Fontisto name='search' size={24} color={Colors.text} />
-        </Pressable>
-      ),
+      headerRight: () => {
+        if (widescreen) return null
+        return (
+          <Pressable onPress={() => router.push('/search')}>
+            <Fontisto name='search' size={24} color={Colors.text} />
+          </Pressable>
+        )
+      },
       headerLeft: () => {
         if (widescreen) return null
         return (
@@ -272,6 +275,12 @@ const Home = () => {
           </SideNav>
         ) : (
           <View style={{width: width - 50, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 15, justifyContent: 'center', marginBottom: 15}}>
+            <Pressable onPress={() => navPress('search')} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <View style={{width: 30, alignItems: 'center'}}>
+              <Fontisto name='search' size={24} color={Colors.text} />
+              </View>
+              <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Search</HText>
+            </Pressable>
             <Pressable onPress={() => navPress(`/films/explore?filter=${'ALL'}&value=${'RELEASE DATE'}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
               <MaterialIcons name='explore' size={28} color={Colors.text} />

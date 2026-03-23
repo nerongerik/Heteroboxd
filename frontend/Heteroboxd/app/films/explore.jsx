@@ -189,9 +189,9 @@ const Explore = () => {
     )
   }, [posterWidth, posterHeight, spacing, fadeSeen, router])
 
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => data.films.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [data.films.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
@@ -211,7 +211,7 @@ const Explore = () => {
         onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={data.page === 1 && server.result <= 0} />
+      <LoadingResponse visible={data.films.length === 0 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

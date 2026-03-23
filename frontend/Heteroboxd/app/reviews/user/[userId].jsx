@@ -162,9 +162,9 @@ const UserReviews = () => {
     </View>
   ), [widescreen, posterWidth, posterHeight, maxRowWidth, router, AuthorMemo])
 
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => data.reviews.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [data.reviews.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -181,7 +181,7 @@ const UserReviews = () => {
         onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={data.page === 1 && server.result <= 0} />
+      <LoadingResponse visible={data.reviews.length === 0 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

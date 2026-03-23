@@ -61,7 +61,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Users.Select(u => new UserInfoResponse(u)).ToList()
             };
         }
@@ -80,7 +79,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = PageUtils.AddPadding(Responses.Select(x => (WatchlistEntryInfoResponse?) new WatchlistEntryInfoResponse(x.Item, x.Joined)).ToList())
             };
         }
@@ -92,7 +90,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = 1,
-                PageSize = PageSize,
                 Items = PageUtils.AddPadding(Responses.Select(x => (WatchlistEntryInfoResponse?)new WatchlistEntryInfoResponse(x.Item, x.Joined)).ToList())
             };
         }
@@ -158,21 +155,18 @@ namespace Heteroboxd.Service
                 {
                     Items = Following.Select(u => new UserInfoResponse(u)).ToList(),
                     Page = FollowingPage,
-                    PageSize = PageSize,
                     TotalCount = FollowingCount
                 },
                 Followers = new PagedResponse<UserInfoResponse>
                 {
                     Items = Followers.Select(u => new UserInfoResponse(u)).ToList(),
                     Page = FollowersPage,
-                    PageSize = PageSize,
                     TotalCount = FollowersCount
                 },
                 Blocked = new PagedResponse<UserInfoResponse>
                 {
                     Items = Blocked.Select(u => new UserInfoResponse(u)).ToList(),
                     Page = BlockedPage,
-                    PageSize = PageSize,
                     TotalCount = BlockedCount
                 }
             };
@@ -201,14 +195,12 @@ namespace Heteroboxd.Service
                 {
                     Items = ReviewResponses.Select(x => new ReviewInfoResponse(x.Item.Review, x.Joined, x.Item.Film)).ToList(),
                     Page = ReviewsPage,
-                    PageSize = PageSize,
                     TotalCount = ReviewCount
                 },
                 LikedLists = new PagedResponse<UserListInfoResponse>
                 {
                     Items = ListResponses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList(),
                     Page = ListsPage,
-                    PageSize = PageSize,
                     TotalCount = ListCount
                 }
             };
@@ -262,7 +254,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Result.Select(u => new UserInfoResponse(u)).ToList()
             };
         }

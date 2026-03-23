@@ -299,9 +299,9 @@ const List = () => {
     )
   }, [posterWidth, posterHeight, spacing, fadeSeen, router, widescreen, base?.ranked])
 
-  const Footer = useMemo(() => server.result === 0 ? (
+  const Footer = useMemo(() => data.entries.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [server])
+  ) : null, [data.entries.length, server])
 
   if (!base) {
     return (

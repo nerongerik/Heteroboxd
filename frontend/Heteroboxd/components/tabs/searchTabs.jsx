@@ -126,9 +126,9 @@ const SearchTabs = ({ widescreen, router }) => {
     </Pressable>
   ), [])
 
-  const Footer = useMemo(() => (searching === 1 && searchMode === 'full') ? (
+  const Footer = useMemo(() => (results.items.length > 0 && searching === 1 && searchMode === 'full') ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [searching, searchMode])
+  ) : null, [results.items.length, searching, searchMode])
 
   const RenderItem = useCallback(({ item }) => {
     switch (tab) {

@@ -41,7 +41,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined)).ToList()
             };
         }
@@ -49,14 +48,13 @@ namespace Heteroboxd.Service
         public async Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize)
         {
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(ReviewId));
-            if (Review == null) return new PagedResponse<CommentInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
+            if (Review == null) return new PagedResponse<CommentInfoResponse> { TotalCount = 0, Page = 1, Items = new() };
 
             var (Responses, TotalCount) = await _repo.GetByReviewAsync(Review.Id, Page, PageSize);
             return new PagedResponse<CommentInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined)).ToList()
             };
         }
