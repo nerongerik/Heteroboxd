@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
 import { Stack } from 'expo-router'
 import { Inter_400Regular, useFonts } from '@expo-google-fonts/inter'
 import * as SplashScreen from 'expo-splash-screen'
@@ -11,7 +12,9 @@ import './browser.css'
 SplashScreen.preventAutoHideAsync()
 
 const RootLayout = () => {
-  const [ loaded, error ] = useFonts({ Inter_400Regular })
+  const [loaded, error] = Platform.OS === 'web'
+    ? [true, null]
+    : useFonts({ Inter_400Regular })
 
   useCountrySync()
   useTrendingSync()
@@ -38,7 +41,7 @@ const RootLayout = () => {
           headerTintColor: Colors.text,
           headerShadowVisible: false,
           title: '',
-          headerTitleStyle: {fontFamily: 'Inter_400Regular'}
+          headerTitleStyle: { fontFamily: 'Inter_400Regular' }
         }}
       >
         <Stack.Screen name='login' options={{ headerShown: false }} />
