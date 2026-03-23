@@ -9,6 +9,7 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
   const [ showRequirements, setShowRequirements ] = useState(false)
   const [ showPassword, setShowPassword ] = useState(false)
   const { width } = useWindowDimensions()
+  const [ border, setBorder ] = useState(false)
 
   const checkRequirements = (pw) => ({
     length: pw.length >= 8,
@@ -38,14 +39,16 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
 
   return (
     <View style={{width: '100%'}}>
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, {borderColor: border ? Colors.heteroboxd : Colors.border_color}]}>
         <TextInput
-          style={[styles.input, , {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+          style={[styles.input, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           placeholder='Password*'
           secureTextEntry={!showPassword}
           value={value}
           onChangeText={onChangeText}
           placeholderTextColor={Colors.text}
+          onFocus={() => setBorder(true)}
+          onBlur={() => setBorder(false)}
         />
         <Pressable onPress={() => setShowPassword(showPassword ? false : true)} style={styles.iconBtn}>
           <Feather name={showPassword ? 'eye-off' : 'eye'} size={22} color={Colors.text_input} />
@@ -79,7 +82,6 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: Colors.border_color,
     borderWidth: 1.5,
     borderRadius: 10,
     paddingHorizontal: 12,

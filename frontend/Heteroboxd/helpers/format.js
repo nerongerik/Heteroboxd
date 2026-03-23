@@ -23,7 +23,8 @@ export const parseDate = (date) => {
   if (!date) return date
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   const nums = date.split(" ")[0].split("/")
-  const day = nums[0]; const year = nums[2]
+  const day = nums[0]
+  const year = nums[2]
   const month = months[parseInt(nums[1] - 1)]
   return `${month} ${day}, ${year}`
 }
@@ -32,9 +33,19 @@ export const parseDateShort = (date) => {
   if (!date) return date
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const nums = date.split(" ")[0].split("/")
-  const day = nums[0]; const year = nums[2]
+  const day = nums[0]
+  const year = nums[2]
   const month = months[parseInt(nums[1] - 1)]
   return `${month} ${day},\n${year}`
+}
+
+export const parseOutYear = (date) => {
+  try {
+    const nums = date.split(" ")[0].split("/")
+    return nums[2]
+  } catch {
+    return ''
+  }
 }
 
 export const formatTimestamp = (ts) => {

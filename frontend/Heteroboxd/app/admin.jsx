@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Linking, Platform, Pressable, TextInput, useWindowDimensions, View } from 'react-native'
 import { MaterialCommunityIcons, Fontisto, Ionicons } from '@expo/vector-icons'
 import { Snackbar } from 'react-native-paper'
@@ -29,6 +29,12 @@ const Admin = () => {
   const [ reviews, setReviews ] = useState({ page: 1, items: [], totalCount: 0 })
   const [ comments, setComments ] = useState({ page: 1, items: [], totalCount: 0 })
   const [ search, setSearch ] = useState({ users: ['user', ''], lists: ['list', ''], reviews: ['review', ''], comments: ['comment', ''] })
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
+  const [ border3, setBorder3 ] = useState(false)
+  const [ border4, setBorder4 ] = useState(false)
+  const [ border5, setBorder5 ] = useState(false)
+  const requestRef = useRef(0)
 
   const handleSubmitKey = useCallback(async () => {
     if (!(await isValidSession())) {
@@ -55,77 +61,139 @@ const Admin = () => {
     }
   }, [user, key])
 
-  const getUsers = async (page) => {
-    setServers(prev => ({...prev, users: Response.loading}))
+  const get = useCallback(async (context, page) => {
+    switch (context) {
+      case 'users':
+        setServers(prev => ({...prev, users: Response.loading}))
+        break
+      case 'lists':
+        setServers(prev => ({...prev, lists: Response.loading}))
+        break
+      case 'reviews':
+        setServers(prev => ({...prev, reviews: Response.loading}))
+        break
+      case 'comments':
+        setServers(prev => ({...prev, comments: Response.loading}))
+        break
+      default:
+        return
+    }
     try {
-      const res = await fetch(`${BaseUrl.api}/admin/users?Page=${page}&PageSize=${PAGE_SIZE}`, {
+      const requestId = ++requestRef.current
+      const res = await fetch(`${BaseUrl.api}/admin/${context}?Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${aJwt}` }
       })
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setUsers({ page: json.page, items: json.items, totalCount: json.totalCount })
-        setServers(prev => ({...prev, users: Response.ok}))
+        if (page === 1) {
+          switch (context) {
+            case 'users':
+              setUsers({ page: json.page, items: json.items, totalCount: json.totalCount })
+              break
+            case 'lists':
+              setLists({ page: json.page, items: json.items, totalCount: json.totalCount })
+              break
+            case 'reviews':
+              setReviews({ page: json.page, items: json.items, totalCount: json.totalCount })
+              break
+            case 'comments':
+              setComments({ page: json.page, items: json.items, totalCount: json.totalCount })
+              break
+            default:
+              return
+          }
+        } else {
+          switch (context) {
+            case 'users':
+              setUsers(prev => ({...prev, page: json.page, items: prev.items.length > 250 ? [...prev.items.slice(-230), ...json.items] : [...prev.items, ...json.items]}))
+              break
+            case 'lists':
+              setLists(prev => ({...prev, page: json.page, items: prev.items.length > 250 ? [...prev.items.slice(-230), ...json.items] : [...prev.items, ...json.items]}))
+              break
+            case 'reviews':
+              setReviews(prev => ({...prev, page: json.page, items: prev.items.length > 250 ? [...prev.items.slice(-230), ...json.items] : [...prev.items, ...json.items]}))
+              break
+            case 'comments':
+              setComments(prev => ({...prev, page: json.page, items: prev.items.length > 250 ? [...prev.items.slice(-230), ...json.items] : [...prev.items, ...json.items]}))
+              break
+            default:
+              return
+          }
+        }
+        switch (context) {
+          case 'users':
+            setServers(prev => ({...prev, users: Response.ok}))
+            break
+          case 'lists':
+            setServers(prev => ({...prev, lists: Response.ok}))
+            break
+          case 'reviews':
+            setServers(prev => ({...prev, reviews: Response.ok}))
+            break
+          case 'comments':
+            setServers(prev => ({...prev, comments: Response.ok}))
+            break
+          default:
+            return
+        }
       } else {
-        setServers(prev => ({...prev, users: Response.internalServerError}))
+        if (requestId !== requestRef.current) return
+        switch (context) {
+          case 'users':
+            setServers(prev => ({...prev, users: Response.forbidden}))
+            break
+          case 'lists':
+            setServers(prev => ({...prev, lists: Response.forbidden}))
+            break
+          case 'reviews':
+            setServers(prev => ({...prev, reviews: Response.forbidden}))
+            break
+          case 'comments':
+            setServers(prev => ({...prev, comments: Response.forbidden}))
+            break
+          default:
+            return
+        }
       }
     } catch {
-      setServers(prev => ({...prev, users: Response.networkError}))
+      switch (context) {
+        case 'users':
+          setServers(prev => ({...prev, users: Response.networkError}))
+          break
+        case 'lists':
+          setServers(prev => ({...prev, lists: Response.networkError}))
+          break
+        case 'reviews':
+          setServers(prev => ({...prev, reviews: Response.networkError}))
+          break
+        case 'comments':
+          setServers(prev => ({...prev, comments: Response.networkError}))
+          break
+        default:
+          return
+      }
     }
-  }
+  }, [aJwt])
 
-  const getLists = async (page) => {
-    setServers(prev => ({...prev, lists: Response.loading}))
-    try {
-      const res = await fetch(`${BaseUrl.api}/admin/lists?Page=${page}&PageSize=${PAGE_SIZE}`, {
-        headers: { 'Authorization': `Bearer ${aJwt}` }
-      })
-      if (res.ok) {
-        const json = await res.json()
-        setLists({ page: json.page, items: json.items, totalCount: json.totalCount })
-        setServers(prev => ({...prev, lists: Response.ok}))
-      } else {
-        setServers(prev => ({...prev, lists: Response.internalServerError}))
-      }
-    } catch {
-      setServers(prev => ({...prev, lists: Response.networkError}))
+  const loadNextPage = useCallback((context) => {
+    switch (context) {
+      case 'users':
+        if (users.page < Math.ceil(users.totalCount / PAGE_SIZE) && servers.users.result !== 0) get(context, users.page + 1)
+        break
+      case 'lists':
+        if (lists.page < Math.ceil(lists.totalCount / PAGE_SIZE) && servers.lists.result !== 0) get(context, lists.page + 1)
+        break
+      case 'reviews':
+        if (reviews.page < Math.ceil(reviews.totalCount / PAGE_SIZE) && servers.reviews.result !== 0) get(context, reviews.page + 1)
+        break
+      case 'comments':
+        if (comments.page < Math.ceil(comments.totalCount / PAGE_SIZE) && servers.comments.result !== 0) get(context, comments.page + 1)
+        break
+      default:
+        return
     }
-  }
-
-  const getReviews = async (page) => {
-    setServers(prev => ({...prev, reviews: Response.loading}))
-    try {
-      const res = await fetch(`${BaseUrl.api}/admin/reviews?Page=${page}&PageSize=${PAGE_SIZE}`, {
-        headers: { 'Authorization': `Bearer ${aJwt}` }
-      })
-      if (res.ok) {
-        const json = await res.json()
-        setReviews({ page: json.page, items: json.items, totalCount: json.totalCount })
-        setServers(prev => ({...prev, reviews: Response.ok}))
-      } else {
-        setServers(prev => ({...prev, reviews: Response.internalServerError}))
-      }
-    } catch {
-      setServers(prev => ({...prev, reviews: Response.networkError}))
-    }
-  }
-
-  const getComments = async (page) => {
-    setServers(prev => ({...prev, comments: Response.loading}))
-    try {
-      const res = await fetch(`${BaseUrl.api}/admin/comments?Page=${page}&PageSize=${PAGE_SIZE}`, {
-        headers: { 'Authorization': `Bearer ${aJwt}` }
-      })
-      if (res.ok) {
-        const json = await res.json()
-        setComments({ page: json.page, items: json.items, totalCount: json.totalCount })
-        setServers(prev => ({...prev, comments: Response.ok}))
-      } else {
-        setServers(prev => ({...prev, comments: Response.internalServerError}))
-      }
-    } catch {
-      setServers(prev => ({...prev, comments: Response.networkError}))
-    }
-  }
+  }, [users, lists, reviews, comments, servers])
 
   const handleDelete = async (context, id, callback) => {
     setServers(prev => ({...prev, delete: Response.loading}))
@@ -173,10 +241,12 @@ const Admin = () => {
 
   useEffect(() => {
     if (!aJwt) return
-    getUsers(1)
-    getLists(1)
-    getReviews(1)
-    getComments(1)
+    (async () => {
+      await get('users', 1)
+      await get('lists', 1)
+      await get('reviews', 1)
+      await get('comments', 1)
+    })()
   }, [aJwt])
 
   useEffect(() => {
@@ -196,17 +266,19 @@ const Admin = () => {
 
   const UserHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-      <Pressable onPress={() => {setSearch(prev => ({...prev, users: ['user', '']})); getUsers(1)}} style={{padding: 5, alignContent: 'center'}}>
+      <Pressable onPress={() => {setSearch(prev => ({...prev, users: ['user', '']})); get('users', 1)}} style={{padding: 5, alignContent: 'center'}}>
         <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
       </Pressable>
       <TextInput
         value={search.users[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, users: ['user', q]}))}
         placeholder='ID of User to find...'
+        onFocus={() => setBorder1(true)}
+        onBlur={() => setBorder1(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border1 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -239,21 +311,23 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border1])
 
   const ListHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-      <Pressable onPress={() => {setSearch(prev => ({...prev, lists: ['list', '']})); getLists(1)}} style={{padding: 5, alignContent: 'center'}}>
+      <Pressable onPress={() => {setSearch(prev => ({...prev, lists: ['list', '']})); get('lists', 1)}} style={{padding: 5, alignContent: 'center'}}>
         <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
       </Pressable>
       <TextInput
         value={search.lists[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, lists: ['list', q]}))}
         placeholder='ID of List to find...'
+        onFocus={() => setBorder2(true)}
+        onBlur={() => setBorder2(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border2 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -286,21 +360,23 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border2])
 
   const ReviewHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-      <Pressable onPress={() => {setSearch(prev => ({...prev, reviews: ['review', '']})); getReviews(1)}} style={{padding: 5, alignContent: 'center'}}>
+      <Pressable onPress={() => {setSearch(prev => ({...prev, reviews: ['review', '']})); get('reviews', 1)}} style={{padding: 5, alignContent: 'center'}}>
         <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
       </Pressable>
       <TextInput
         value={search.reviews[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, reviews: ['review', q]}))}
         placeholder='ID of Review to find...'
+        onFocus={() => setBorder3(true)}
+        onBlur={() => setBorder3(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border3 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -333,21 +409,23 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border3])
 
   const CommentHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-      <Pressable onPress={() => {setSearch(prev => ({...prev, comments: ['comment', '']})); getComments(1)}} style={{padding: 5, alignContent: 'center'}}>
+      <Pressable onPress={() => {setSearch(prev => ({...prev, comments: ['comment', '']})); get('comments', 1)}} style={{padding: 5, alignContent: 'center'}}>
         <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
       </Pressable>
       <TextInput
         value={search.comments[1]}
         onChangeText={(q) => setSearch(prev => ({...prev, comments: ['comment', q]}))}
         placeholder='ID of Comment to find...'
+        onFocus={() => setBorder4(true)}
+        onBlur={() => setBorder4(false)}
         style={{
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: Colors.border_color,
+          borderColor: border4 ? Colors.heteroboxd : Colors.border_color,
           borderRadius: 7,
           padding: 10,
           paddingHorizontal: 10,
@@ -380,7 +458,7 @@ const Admin = () => {
         <Fontisto name='search' size={20} color={Colors.text_button} />
       </Pressable>
     </View>
-  ), [search, width])
+  ), [search, width, border4])
 
   if (!aJwt) {
     return (
@@ -392,7 +470,7 @@ const Admin = () => {
           style={{
             backgroundColor: 'transparent',
             borderWidth: 2,
-            borderColor: Colors.border_color,
+            borderColor: border5 ? Colors.heteroboxd : Colors.border_color,
             borderRadius: 7,
             padding: 10,
             paddingHorizontal: 10,
@@ -408,6 +486,8 @@ const Admin = () => {
           }}
           onSubmitEditing={handleSubmitKey}
           returnKeyType='search'
+          onFocus={() => setBorder5(true)}
+          onBlur={() => setBorder5(false)}
         />
         <Pressable
           style={[{backgroundColor: Colors.heteroboxd, width: 'auto', padding: 10, borderRadius: 10, alignSelf: 'center'}, key.length === 0 && { opacity: 0.5 }]}
@@ -476,19 +556,13 @@ const Admin = () => {
                     <HText style={{fontSize: 20, fontWeight: '600', color: Colors.text_title}}>{format.sliceText(item.name, 20)}</HText>
                   </View>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('user', item.id, () => getUsers(users.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('user', item.id, () => get('users', users.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
             )}
-            ListFooterComponent={
-              <PaginationBar
-                page={users.page}
-                totalPages={Math.ceil(users.totalCount / PAGE_SIZE)}
-                onPagePress={(num) => { getUsers(num) }}
-              />
-            }
+            ListFooterComponent={servers.users.result === 0 ? (<ActivityIndicator size='small' color={Colors.text_link} />) : null}
             ListEmptyComponent={
               servers.users.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
@@ -496,6 +570,8 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
+            onEndReachedThreshold={0.2}
+            onEndReached={() => loadNextPage('users')}
           />
         </View>
         <View style={{width: width/4.1, height: height*0.8, borderWidth: 3, borderRadius: 10, borderColor: Colors.border_color}}>
@@ -511,19 +587,13 @@ const Admin = () => {
                     <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Entries: {item.listEntryCount}</HText>
                   </View>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('list', item.id, () => getLists(lists.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('list', item.id, () => get('lists', lists.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
             )}
-            ListFooterComponent={
-              <PaginationBar
-                page={lists.page}
-                totalPages={Math.ceil(lists.totalCount / PAGE_SIZE)}
-                onPagePress={(num) => { getLists(num) }}
-              />
-            }
+            ListFooterComponent={servers.lists.result === 0 ? (<ActivityIndicator size='small' color={Colors.text_link} />) : null}
             ListEmptyComponent={
               servers.lists.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
@@ -531,6 +601,8 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
+            onEndReachedThreshold={0.2}
+            onEndReached={() => loadNextPage('lists')}
           />        
         </View>
         <View style={{width: width/4.1, height: height*0.8, borderWidth: 3, borderRadius: 10, borderColor: Colors.border_color}}>
@@ -542,23 +614,17 @@ const Admin = () => {
               <View style={{backgroundColor: Colors.card, padding: 10, borderRadius: 5, marginBottom: 20, width: width/4.1 - 20, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
                 <Pressable style={{width: (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/review/${item.id}`)}>
                   <View>
-                    <HText style={{fontSize: 20, color: Colors.text_title, fontWeight: '500'}}>{format.sliceText(item.filmTitle, 30)} <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{item.filmReleaseYear || ''}</HText></HText>
+                    <HText style={{fontSize: 20, color: Colors.text_title, fontWeight: '500'}}>{format.sliceText(item.filmTitle, 30)} <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{format.parseOutYear(item.filmDate) || ''}</HText></HText>
                     <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{format.sliceText(item.text || '', 100)}</HText>
                   </View>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('review', item.id, () => getReviews(reviews.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('review', item.id, () => get('reviews', reviews.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
             )}
-            ListFooterComponent={
-              <PaginationBar
-                page={reviews.page}
-                totalPages={Math.ceil(reviews.totalCount / PAGE_SIZE)}
-                onPagePress={(num) => { getReviews(num) }}
-              />
-            }
+            ListFooterComponent={servers.reviews.result === 0 ? (<ActivityIndicator size='small' color={Colors.text_link} />) : null}
             ListEmptyComponent={
               servers.reviews.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
@@ -566,6 +632,8 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
+            onEndReachedThreshold={0.2}
+            onEndReached={() => loadNextPage('reviews')}
           />
         </View>
         <View style={{width: width/4.1, height: height*0.8, borderWidth: 3, borderRadius: 10, borderColor: Colors.border_color}}>
@@ -578,26 +646,20 @@ const Admin = () => {
                 <Pressable style={{width: (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/review/${item.reviewId}`)}>
                   <View style={{alignItems: 'center', justifyContent: 'flex-start', flexDirection: 'row'}}>
                     <UserAvatar
-                      pictureUrl={item.authorProfilePictureUrl || null}
+                      pictureUrl={item.authorPictureUrl || null}
                       style={{width: 50, height: 50, borderRadius: 25, marginRight: 10}}
                     />
                     <HText style={{color: Colors.text_title, fontSize: 20, fontWeight: '500'}}>{item.authorName}</HText>
                   </View>
                   <HText style={{color: Colors.text, fontSize: 16, fontWeight: '400'}}>{format.sliceText(item.text || '', 50)}</HText>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('comment', item.id, () => getComments(comments.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('comment', item.id, () => get('comments', comments.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
                   <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
                 </Pressable>
               </View>
             )}
-            ListFooterComponent={
-              <PaginationBar
-                page={comments.page}
-                totalPages={Math.ceil(comments.totalCount / PAGE_SIZE)}
-                onPagePress={(num) => { getComments(num) }}
-              />
-            }
+            ListFooterComponent={servers.comments.result === 0 ? (<ActivityIndicator size='small' color={Colors.text_link} />) : null}
             ListEmptyComponent={
               servers.comments.result === 0
               ? <View style={{alignItems: 'center'}}><ActivityIndicator size='large' color={Colors.text_link} /></View>
@@ -605,6 +667,8 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
+            onEndReachedThreshold={0.2}
+            onEndReached={() => loadNextPage('comments')}
           />        
         </View>
         <LoadingResponse visible={servers.delete.result === 0} />

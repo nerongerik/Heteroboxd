@@ -1,14 +1,15 @@
-import { useMemo, useRef, useState } from 'react'
-import { FlatList, Pressable, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Fontisto } from '@expo/vector-icons'
 import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
 import Author from '../author'
 import HText from '../htext'
-import PaginationBar from '../paginationBar'
 import ParsedRead from '../parsedRead'
 import { Poster } from '../poster'
 import Stars from '../stars'
+
+const TABS = ['reviews', 'lists']
 
 const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
   const [ activeTab, setActiveTab ] = useState('reviews')
@@ -17,47 +18,55 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
 
   const currentData = useMemo(() => {
     switch (activeTab) {
-      case 'reviews':
-        return reviews
-      case 'lists':
-        return lists
-      default:
-        return { page: 1, items: [], totalCount: 0 }
+      case 'reviews': return reviews
+      case 'lists': return lists
+      default: return { page: 1, items: [], totalCount: 0 }
     }
   }, [activeTab, reviews, lists])
+
+  const totalPages = useMemo(() => Math.ceil(currentData.totalCount / pageSize), [currentData.totalCount, pageSize])
+
+  const loadNextPage = useCallback(() => {
+    if (currentData.page < totalPages) {
+      onPageChange(activeTab, currentData.page + 1)
+    }
+  }, [currentData.page, totalPages, activeTab, onPageChange])
+
   const widescreen = useMemo(() => width > 1000, [width])
-  const totalPages = Math.ceil(currentData.totalCount / pageSize)
-  const maxRowWidth = useMemo(() => widescreen ? 900 : width*0.95, [widescreen])
+  const maxRowWidth = useMemo(() => widescreen ? 900 : width * 0.95, [widescreen, width])
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
-  const TabButton = ({ title, active, onPress }) => (
-    <TouchableOpacity onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
-      <HText style={[styles.tabText, active && styles.activeTabText]}>{title}</HText>
-    </TouchableOpacity>
-  )
+  const panResponder = useMemo(() => {
+    if (widescreen) return null
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, { dx, dy }) =>
+        Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 2,
+      onPanResponderRelease: (_, { dx }) => {
+        if (Math.abs(dx) < 50) return
+        const currentIndex = TABS.indexOf(activeTab)
+        if (dx < 0 && currentIndex < TABS.length - 1) {
+          setActiveTab(TABS[currentIndex + 1])
+        } else if (dx > 0 && currentIndex > 0) {
+          setActiveTab(TABS[currentIndex - 1])
+        }
+      }
+    })
+  }, [widescreen, activeTab])
 
-  const Footer = () => (
-    <PaginationBar
-      page={currentData.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        onPageChange(activeTab, num);
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true
-        })
-      }}
-    />
-  )
+  const TabButton = useCallback(({ title, active, onPress }) => (
+    <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
+      <HText style={[{fontSize: width > 1000 ? 16 : width > 300 ? 14 : 12, color: Colors.text}, active && styles.activeTabText]}>{title}</HText>
+    </Pressable>
+  ), [])
 
-  const RenderReview = ({ item }) => (
+  const RenderReview = useCallback(({ item }) => (
     <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -67,11 +76,13 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         <Stars size={widescreen ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
       </View>
       <Pressable onPress={() => router.push(`/review/${item.id}`)}>
-        <HText style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title}}>{format.sliceText(item.filmTitle || '', widescreen ? 100 : 50)}</HText>
+        <HText style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title}}>
+          {format.sliceText(item.filmTitle || '', widescreen ? 100 : 50)}
+        </HText>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
           <View style={{width: posterWidth, height: posterHeight, marginRight: 5}}>
             <Poster
-              posterUrl={item.filmPosterUrl}
+              posterUrl={item.filmPosterUrl || 'noposter'}
               style={{
                 width: posterWidth,
                 height: posterHeight,
@@ -81,16 +92,15 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
               }}
             />
           </View>
-          {
-            item.text?.length > 0 ?
+          {item.text?.length > 0 ? (
             <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
+              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={maxRowWidth - posterWidth - 10} />
             </View>
-            :
+          ) : (
             <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
               <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
             </View>
-          }
+          )}
         </View>
         <View style={styles.statsRow}>
           <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
@@ -98,14 +108,14 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, router, posterWidth, posterHeight, maxRowWidth])
 
-  const RenderList = ({ item }) => (
+  const RenderList = useCallback(({ item }) => (
     <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -115,47 +125,36 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
         <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
-                      
-        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          {(() => {
-            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
-            const remainder = paddedFilms.length % 4
-            if (remainder !== 0) {
-              const placeholdersToAdd = 4 - remainder
-              for (let i = 0; i < placeholdersToAdd; i++) {
-                paddedFilms.push(null)
-              }
-            }
-            return paddedFilms.map((film, i) => (
-              film ? (
-                <Poster
-                  key={film.filmId}
-                  posterUrl={film.filmPosterUrl}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing / 2,
-                    borderWidth: 2,
-                    borderColor: Colors.border_color,
-                    borderRadius: 6
-                  }}
-                />
-              ) : (
-                <View
-                  key={`placeholder-${i}`}
-                  style={{
-                    width: posterWidth,
-                    height: posterHeight,
-                    marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing / 2
-                  }}
-                />
-              )
-            ))
-          })()}
-        </View>        
+        <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+          {item.films.map((film, i) => (
+            film ? (
+              <Poster
+                key={film.filmId}
+                posterUrl={film.filmPosterUrl || 'noposter'}
+                style={{
+                  width: posterWidth,
+                  height: posterHeight,
+                  marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing / 2,
+                  borderWidth: 2,
+                  borderColor: Colors.border_color,
+                  borderRadius: 6
+                }}
+              />
+            ) : (
+              <View
+                key={`placeholder-${i}`}
+                style={{
+                  width: posterWidth,
+                  height: posterHeight,
+                  marginRight: i % 4 === 3 ? 0 : widescreen ? spacing : spacing / 2
+                }}
+              />
+            )
+          ))}
+        </View>
         <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
-        </HText>         
+        </HText>
         <View style={styles.statsRow}>
           <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
           <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
@@ -164,11 +163,11 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, router, posterWidth, posterHeight, spacing])
 
   return (
-    <View style={{flex: 1}}>
-      <View style={[widescreen ? styles.wideRow : styles.narrowRow]}>
+    <View style={{flex: 1}} {...(panResponder?.panHandlers ?? {})}>
+      <View style={widescreen ? styles.wideRow : styles.narrowRow}>
         <TabButton title='Reviews' active={activeTab === 'reviews'} onPress={() => setActiveTab('reviews')} />
         <TabButton title='Lists' active={activeTab === 'lists'} onPress={() => setActiveTab('lists')} />
       </View>
@@ -176,13 +175,14 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         ref={listRef}
         data={currentData.items ?? []}
         key={activeTab}
-        keyExtractor={(item) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-${item.listId}`}
+        keyExtractor={(item) => `${activeTab}-${item.id}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
         ListEmptyComponent={<HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</HText>}
-        ListFooterComponent={Footer}
         style={{width: maxRowWidth, alignSelf: 'center'}}
         contentContainerStyle={{paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
     </View>
   )
@@ -210,10 +210,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 6,
     flex: 1,
-  },
-  tabText: {
-    fontSize: 16,
-    color: Colors.text,
   },
   activeTabText: {
     color: Colors.text_title,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -12,7 +12,6 @@ import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
-import PaginationBar from '../../../components/paginationBar'
 import ParsedRead from '../../../components/parsedRead'
 import Popup from '../../../components/popup'
 import Stars from '../../../components/stars'
@@ -35,47 +34,59 @@ const FilmsReviews = () => {
   const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
+  const requestRef = useRef(0)
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
     try {
       if (user?.userId) {
+        const requestId = ++requestRef.current
         const res = await fetch(`${BaseUrl.api}/reviews/film?FilmId=${filmId}&UserId=${user?.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
         if (res.ok) {
+          if (requestId !== requestRef.current) return
           const json = await res.json()
-          setData({ page: json.reviews.page, reviews: json.reviews.items, totalCount: json.reviews.totalCount })
-          setUwf(json.uwf)
+          if (page === 1) {
+            setData({ page: json.reviews.page, reviews: json.reviews.items, totalCount: json.reviews.totalCount })
+            setUwf(json.uwf)
+          } else {
+            setData(prev => ({...prev, page: json.reviews.page, reviews: prev.reviews.length > 1000 ? [...prev.reviews.slice(-980), ...json.reviews.items] : [...prev.reviews, ...json.reviews.items]}))
+          }
           setServer(Response.ok)
         } else {
+          if (requestId !== requestRef.current) return
           setServer(Response.internalServerError)
         }
       } else {
+        const requestId = ++requestRef.current
         const res = await fetch(`${BaseUrl.api}/reviews/film?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
         if (res.ok) {
+          if (requestId !== requestRef.current) return
           const json = await res.json()
-          setData({ page: json.page, reviews: json.items, totalCount: json.totalCount })
+          if (page === 1) {
+            setData({ page: json.page, reviews: json.items, totalCount: json.totalCount })
+          } else {
+            setData(prev => ({...prev, page: json.page, reviews: prev.reviews.length > 1000 ? [...prev.reviews.slice(-980), ...json.items] : [...prev.reviews, ...json.items]}))
+          }
           setServer(Response.ok)
         } else {
+          if (requestId !== requestRef.current) return
           setServer(Response.internalServerError)
         }
       }
@@ -84,19 +95,23 @@ const FilmsReviews = () => {
     }
   }, [user, filmId, currentFilter, currentSort])
 
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (data.page < totalPages && server.result !== 0) {
+      loadDataPage(data.page + 1)
+    }
+  }, [data.page, totalPages, loadDataPage, server.result])
+
   const revealSpoiler = useCallback((reviewId) => {
     setRevealedSpoilers(prev => {
       const next = new Set(prev)
       next.add(reviewId)
       return next
     })
-  }, [revealedSpoilers])
+  }, [])
 
   const isRevealed = useCallback((reviewId) => revealedSpoilers.has(reviewId), [revealedSpoilers])
-
-  useEffect(() => {
-    setCurrentSort({field: 'POPULARITY', desc: true})
-  }, [currentFilter.field])
 
   useEffect(() => {
     loadDataPage(1)
@@ -105,10 +120,8 @@ const FilmsReviews = () => {
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
-    const first = data.reviews[0]
-    if (!first) return
     navigation.setOptions({
-      headerTitle: `Reviews of ${format.sliceText(first.filmTitle || '', widescreen ? 20 : 12)}`,
+      headerTitle: `Film's Reviews`,
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
@@ -117,17 +130,16 @@ const FilmsReviews = () => {
         </Pressable>
       ),
     })
-  }, [data, navigation, widescreen, openMenu])
+  }, [navigation, widescreen, openMenu])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
 
-  const Review = ({ item }) => (
+  const Review = useCallback(({ item }) => (
     <View style={{borderTopWidth: 1, borderBottomWidth: 1, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 5, marginBottom: 5}}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
@@ -141,7 +153,7 @@ const FilmsReviews = () => {
           item.text?.length > 0 ?
             !item.spoiler || uwf || isRevealed(item.id) ? (
               <View style={{marginVertical: 7.5, overflow: 'hidden'}}>
-                <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 600 : 300)}`} />
+                <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 600 : 300)}`} contentWidth={maxRowWidth} />
               </View>
             ) : (
             <Pressable onPress={() => revealSpoiler(item.id)}>
@@ -158,21 +170,11 @@ const FilmsReviews = () => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, router, uwf, isRevealed, revealSpoiler])
 
-  const Footer = () => (
-    <PaginationBar
-      page={data.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        loadDataPage(num)
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        })
-      }}
-    />
-  )
+  const Footer = useMemo(() => data.reviews.length > 0 && server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [data.reviews.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -185,9 +187,11 @@ const FilmsReviews = () => {
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={server.result <= 0} />
+      <LoadingResponse visible={data.reviews.length === 0 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

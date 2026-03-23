@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Snackbar } from 'react-native-paper'
-import Checkbox from 'expo-checkbox'
-import { Link, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
 import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
@@ -26,36 +25,28 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const [ seenPressed, setSeenPressed ] = useState(false)
   const { user, isValidSession } = useAuth()
   const [ server, setServer ] = useState(Response.initial)
-  const [ listsClicked, setListsClicked ] = useState(false)
-  const [ usersLists, setUsersLists ] = useState([])
   const router = useRouter()
   const reviewLocalCopyRef = useRef(null)
   const watchlistLocalCopyRef = useRef(null)
   const ratingRequestRef = useRef(0)
   const watchlistRequestRef = useRef(0)
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
-    }).start(async () => {
-      setMenuShown(false)
-      setListsClicked(false)
-    })
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+    }).start(() => setMenuShown(false))
+  }, [slideAnim])
 
   const handleRatingChange = useCallback(async (newRating) => {
     if (!user || !(await isValidSession())) {
@@ -65,7 +56,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     const currentReview = reviewLocalCopyRef.current
     setSeenLocalCopy(true)
     setWatchlistedLocalCopy(false)
-    setReviewLocalCopy({ id: currentReview?.id ?? null, rating: newRating, text: currentReview?.text ?? null, spoiler: currentReview?.spoiler ?? false })
+    setReviewLocalCopy({ id: currentReview?.id || null, rating: newRating, text: currentReview?.text || null, spoiler: currentReview?.spoiler || false })
     const requestId = ++ratingRequestRef.current
     try {
       const jwt = await auth.getJwt()
@@ -78,7 +69,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
             ReviewId: currentReview.id,
             Rating: newRating,
             Text: currentReview.text || null,
-            Spoiler: currentReview.spoiler ?? false
+            Spoiler: currentReview.spoiler || false
           })
         })
       } else {
@@ -188,57 +179,6 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     }
   }, [user, watchlistRequestRef, filmId])
 
-  const fetchLists = useCallback(async () => {
-    if (!user || !(await isValidSession())) {
-      setServer(Response.forbidden)
-      return
-    }
-    try {
-      const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/film-interact?FilmId=${filmId}`, {
-        headers: { 'Authorization': `Bearer ${jwt}` }
-      })
-      if (res.ok) {
-        const json = await res.json()
-        setUsersLists(json)
-      } else {
-        setServer(Response.internalServerError)
-      }
-    } catch {
-      setServer(Response.networkError)
-    }
-  }, [user, filmId])
-
-  const addToLists = useCallback(async () => {
-    if (!user || !(await isValidSession())) {
-      setListsClicked(false)
-      setServer(Response.forbidden)
-      return
-    }
-    try {
-      const lists = usersLists.filter(item => item.selected).map(item => ({ key: item.listId, value: item.size }))
-      const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/lists/bulk`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
-        body: JSON.stringify({
-          AuthorId: user.userId,
-          FilmId: filmId,
-          Lists: lists
-        })
-      })
-      if (!res.ok) {
-        setListsClicked(false)
-        setServer(Response.internalServerError)
-      }
-      setListsClicked(false)
-      setServer({ result: 201, message: 'Added successfully.' })
-    } catch {
-      setListsClicked(false)
-      setServer(Response.internalServerError)
-    }
-  }, [user, usersLists, filmId])
-
   useEffect(() => {
     setWatchlistedLocalCopy(watchlisted)
     if (review) {
@@ -336,50 +276,6 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Watchlist</HText>
     </View>
 
-  const selectLists =
-    <>        
-      {
-        usersLists?.length > 0 ? (
-          <ScrollView
-            style={{ maxHeight: widescreen ? 500 : 250 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {usersLists.map((item) => (
-              <View key={item.listId} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, paddingHorizontal: 20 }}>
-                <Checkbox
-                  color={Colors.heteroboxd}
-                  style={{width: widescreen ? 24 : 20, height: widescreen ? 24 : 20}}
-                  disabled={item.containsFilm}
-                  value={item.containsFilm || item.selected || false}
-                  onValueChange={(checked) => {
-                    setUsersLists(prev =>
-                      prev.map(l =>
-                        l.listId === item.listId ? { ...l, selected: checked } : l
-                      )
-                    );
-                  }}
-                />
-                <HText style={{ marginLeft: 8, marginRight: 8, color: Colors.text, fontSize: widescreen ? 24 : 20 }}>{item.listName}</HText>
-              </View>
-            ))}
-            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15}}>
-              <Pressable style={{marginRight: 20, backgroundColor: Colors.heteroboxd, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4}} onPress={() => setListsClicked(false)}>
-                <HText style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Cancel</HText>
-              </Pressable>
-              <Pressable style={{backgroundColor: Colors._heteroboxd, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 2}} onPress={addToLists}>
-                <HText style={{fontWeight: '500', fontSize: widescreen ? 22 : 18, color: Colors.text_title}}>Add</HText>
-              </Pressable>
-            </View>
-          </ScrollView>
-        ) : (
-          <HText style={{color: Colors.text_placeholder, textAlign: 'center', paddingHorizontal: 10, paddingBottom: 15, fontSize: 14}}>
-            You have not created any lists. 
-            <Link href="/list/create" style={{color: Colors.text_link}}> Create one now?</Link>
-          </HText>
-        )
-      }
-    </>
-
   return (
     <>
       {button}
@@ -411,16 +307,12 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         </Pressable>
         <Divider marginVertical={20} />
         
-        {listsClicked ? (
-          selectLists
-        ) : (
-          <Pressable onPress={() => { fetchLists(); setListsClicked(true) }}>
-            <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
-              <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</HText>
-              <MaterialCommunityIcons name="playlist-plus" size={28} color={Colors.text} />
-            </View>
-          </Pressable>
-        )}
+        <Pressable onPress={() => {closeMenu(); router.push(`/lists/addto/${filmId}`)}}>
+          <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</HText>
+            <MaterialCommunityIcons name="playlist-plus" size={28} color={Colors.text} />
+          </View>
+        </Pressable>
 
         <Snackbar
           visible={[201, 400, 403, 404, 500].includes(server.result)}

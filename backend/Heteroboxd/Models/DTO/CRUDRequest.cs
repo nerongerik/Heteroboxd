@@ -32,12 +32,11 @@
         public string Name { get; set; }
         public string Description { get; set; }
         public bool Ranked { get; set; }
-        public List<CreateListEntryRequest> Entries { get; set; } //send full list; we'll check if they should be removed or added, and in what order
+        public List<CreateListEntryRequest> Entries { get; set; }
     }
 
     public class UpdateUserListBulkRequest
     {
-        public string AuthorId { get; set; }
         public int FilmId { get; set; }
         public List<KeyValuePair<string, int>> Lists { get; set; }
     }

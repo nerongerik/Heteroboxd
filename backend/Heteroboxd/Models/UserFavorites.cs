@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Heteroboxd.Models
+﻿namespace Heteroboxd.Models
 {
     public class UserFavorites
     {
-        [Key]
         public Guid Id { get; set; }
         public int? Film1 { get; set; }
         public int? Film2 { get; set; }

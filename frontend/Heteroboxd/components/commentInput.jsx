@@ -6,6 +6,7 @@ import HText from './htext'
 const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth }) => {
   const [ text, setText ] = useState('')
   const textInputRef = useRef(null)
+  const [ border, setBorder ] = useState(false)
 
   const handleSubmit = () => {
     if (text.trim().length > 0 && text.trim().length <= 500) {
@@ -23,7 +24,9 @@ const CommentInput = memo(({ onSubmit, widescreen, maxRowWidth }) => {
           onChangeText={setText}
           placeholder='Add a comment…'
           placeholderTextColor={Colors.text_placeholder}
-          style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 60 : 50}]}
+          style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 60 : 50, borderWidth: border ? 1 : null, borderColor: border ? Colors.heteroboxd : null}]}
+          onFocus={() => setBorder(true)}
+          onBlur={() => setBorder(false)}
           onSubmitEditing={() => {
             if (text.trim().length > 0 && text.trim().length < 500) {
               handleSubmit()

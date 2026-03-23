@@ -33,25 +33,23 @@ const Home = () => {
   const [ refreshing, setRefreshing ] = useState(false)
   const [ refreshKey, setRefreshKey ] = useState(0)
 
-  const openMenu = () => {
+  const translateX = slideAnim.interpolate({inputRange: [0, 1], outputRange: [-300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown(false))
-  }
-  const translateX = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-300, 0]
-  })
+  }, [slideAnim])
+  
   const navPress = (path) => {
     setMenuShown(false)
     router.push(path)
@@ -62,7 +60,7 @@ const Home = () => {
       const res = await fetch(`${BaseUrl.api}/films/all?Page=1&PageSize=${PAGE_SIZE}&Filter=ALL&Sort=POPULARITY&Desc=${true}`)
       if (res.ok) {
         const json = await res.json()
-        setPopular(json.items)
+        setPopular(json.items.filter(x => x))
       } else {
         setPopular([])
         console.log('failed to fetch popular; internal server error.')
@@ -140,11 +138,14 @@ const Home = () => {
           />
         ),
       headerTitleAlign: 'center',
-      headerRight: () => (
-        <Pressable onPress={() => router.push('/search')} style={{marginRight: widescreen ? 15 : null}}>
-          <Fontisto name='search' size={24} color={Colors.text} />
-        </Pressable>
-      ),
+      headerRight: () => {
+        if (widescreen) return null
+        return (
+          <Pressable onPress={() => router.push('/search')}>
+            <Fontisto name='search' size={24} color={Colors.text} />
+          </Pressable>
+        )
+      },
       headerLeft: () => {
         if (widescreen) return null
         return (
@@ -185,7 +186,7 @@ const Home = () => {
             footerImage={require('../assets/foreground.png')}
           >
             <View style={{flex: 1, justifyContent: 'flex-start', paddingLeft: 5, paddingTop: 10}}>
-              <Pressable onPress={() => navPress(`/films/explore?filter=${'ALL'}&value=${'RELEASE DATE'}`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Pressable onPress={() => navPress(`/films/explore`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <MaterialIcons name='explore' size={32} color={Colors.text} />
                 </View>
@@ -240,7 +241,7 @@ const Home = () => {
                 <View style={{width: 40, alignItems: 'center'}}>
                 <FontAwesome6 name='circle-dollar-to-slot' size={28} color={Colors.text} />
                 </View>
-                <HText style={{fontSize: 20, fontWeight: '700', color: Colors.text}}>Donate</HText>
+                <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Donate</HText>
               </Pressable>
               {
                 user?.userId ? (
@@ -274,6 +275,12 @@ const Home = () => {
           </SideNav>
         ) : (
           <View style={{width: width - 50, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 15, justifyContent: 'center', marginBottom: 15}}>
+            <Pressable onPress={() => navPress('search')} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <View style={{width: 30, alignItems: 'center'}}>
+              <Fontisto name='search' size={24} color={Colors.text} />
+              </View>
+              <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Search</HText>
+            </Pressable>
             <Pressable onPress={() => navPress(`/films/explore?filter=${'ALL'}&value=${'RELEASE DATE'}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
               <MaterialIcons name='explore' size={28} color={Colors.text} />
@@ -382,11 +389,12 @@ const Home = () => {
               contentContainerStyle={{alignItems: 'center'}}
               data={trending}
               keyExtractor={(item) => item.filmId.toString()}
+              ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>}
               renderItem={({ item }) => {
                 return (
                   <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{marginRight: spacing}}>
                     <Poster
-                      posterUrl={item?.filmPosterUrl || null}
+                      posterUrl={item.filmPosterUrl || 'noposter'}
                       style={{
                         width: colPosterWidth,
                         height: colPosterHeight,
@@ -401,8 +409,10 @@ const Home = () => {
             />
           )}
         </View>
-
-        <HText style={[styles.regionalTitle, {marginBottom: 10, marginTop: widescreen ? 50 : 30}]}>Popular on Heteroboxd</HText>
+        
+        <Pressable onPress={() => router.push(`/films/explore?filter=${'ALL'}&value=${'POPULARITY'}`)}>
+          <HText style={[styles.regionalTitle, {marginBottom: 10, marginTop: widescreen ? 50 : 30}]}>Popular on Heteroboxd</HText>
+        </Pressable>
         <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
           {popular.length === 0 ? (
             <View style={{width: '100%', alignItems: 'center', paddingVertical: 30}}>
@@ -415,12 +425,13 @@ const Home = () => {
               style={{maxWidth: Math.min(width * 0.95, 1000), paddingBottom: 10}}
               contentContainerStyle={{alignItems: 'center'}}
               data={popular}
-              keyExtractor={(item) => item.filmId.toString()}
+              keyExtractor={(item) => item.id.toString()}
+              ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>}
               renderItem={({ item }) => {
                 return (
-                  <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{marginRight: spacing}}>
+                  <Pressable onPress={() => router.push(`/film/${item.id}`)} style={{marginRight: spacing}}>
                     <Poster
-                      posterUrl={item?.posterUrl || null}
+                      posterUrl={item.posterUrl || 'noposter'}
                       style={{
                         width: colPosterWidth,
                         height: colPosterHeight,
@@ -472,7 +483,7 @@ const Home = () => {
                                   <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
                                     <Author
                                       userId={item.authorId}
-                                      url={item.authorProfilePictureUrl || null}
+                                      url={item.authorPictureUrl || null}
                                       username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
                                       admin={item.admin}
                                       router={router}
@@ -486,7 +497,7 @@ const Home = () => {
                                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
                                       <View style={{ width: colPosterWidth, height: colPosterHeight, marginRight: 5 }}>
                                         <Poster
-                                          posterUrl={item.filmPosterUrl || null}
+                                          posterUrl={item.filmPosterUrl || 'noposter'}
                                           style={{
                                             width: colPosterWidth,
                                             height: colPosterHeight,
@@ -498,7 +509,7 @@ const Home = () => {
                                       </View>
                                       {item.text?.length > 0 ? (
                                         <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
+                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={maxRowWidth - posterWidth - 10} />
                                         </View>
                                       ) : (
                                         <View style={{ width: maxRowWidth - colPosterWidth - 10 }}>
@@ -527,7 +538,7 @@ const Home = () => {
                                   <View style={{marginLeft: 5, marginBottom: -5}}>
                                     <Author
                                       userId={item.authorId}
-                                      url={item.authorProfilePictureUrl || null}
+                                      url={item.authorPictureUrl || null}
                                       username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
                                       admin={item.admin}
                                       router={router}
@@ -538,20 +549,12 @@ const Home = () => {
                                   <Pressable onPress={() => router.push(`/list/${item.id}`)}>
                                     <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
                                     <View style={{flexDirection: 'row', justifyContent: 'center'}}>
-                                      {(() => {
-                                        const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
-                                        const remainder = paddedFilms.length % 4
-                                        if (remainder !== 0) {
-                                          const placeholdersToAdd = 4 - remainder
-                                          for (let i = 0; i < placeholdersToAdd; i++) {
-                                            paddedFilms.push(null)
-                                          }
-                                        }
-                                        return paddedFilms.map((film, i) => (
+                                      {
+                                        item.films.map((film, i) => (
                                           film ? (
                                             <Poster
                                               key={film.filmId}
-                                              posterUrl={film.filmPosterUrl}
+                                              posterUrl={film.filmPosterUrl || 'noposter'}
                                               style={{
                                                 width: posterWidth,
                                                 height: posterHeight,
@@ -572,7 +575,7 @@ const Home = () => {
                                             />
                                           )
                                         ))
-                                      })()}
+                                      }
                                     </View>
                                     <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
                                       {format.sliceText(item.description || '', widescreen ? 500 : 150)}
@@ -655,5 +658,13 @@ const styles = StyleSheet.create({
   description: {
     color: Colors.text,
     padding: 10,
+  },
+  text: {
+    fontWeight: "350",
+    marginTop: 5,
+    marginBottom: 0,
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: "center",
   }
 })

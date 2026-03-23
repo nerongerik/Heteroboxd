@@ -20,6 +20,9 @@ const Login = () => {
   const { login } = useAuth()
   const [ recovery, setRecovery ] = useState('')
   const [ visible, setVisible ]= useState(false)
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
+  const [ border3, setBorder3 ] = useState(false)
 
   const handleLogin = useCallback(async () => {
     setServer(Response.loading)
@@ -69,15 +72,17 @@ const Login = () => {
         <View style={[styles.form, {width: width > 1000 ? 1000 : width*0.95}]}>
           <HText style={styles.title}>Welcome Back</HText>
           <TextInput
-            style={[styles.input, {fontFamily: 'Inter_400Regular'}]}
+            style={[styles.input, {borderColor: border1 ? Colors.heteroboxd : Colors.border_color, fontFamily: 'Inter_400Regular'}]}
             placeholder='Email'
             keyboardType='email-address'
             value={email}
             onChangeText={setEmail}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder1(true)}
+            onBlur={() => setBorder1(false)}
           />
-          <View style={styles.inputContainer}>
+          <View style={[styles.inputContainer, {borderColor: border2 ? Colors.heteroboxd : Colors.border_color}]}>
             <TextInput
               style={[styles.inputInner, {fontFamily: 'Inter_400Regular'}]}
               placeholder='Password'
@@ -85,6 +90,8 @@ const Login = () => {
               value={password}
               onChangeText={setPassword}
               placeholderTextColor={Colors.text_placeholder}
+              onFocus={() => setBorder2(true)}
+              onBlur={() => setBorder2(false)}
               onSubmitEditing={() => {
                 if (email.length > 0 && password.length > 0) {
                   handleLogin()
@@ -122,10 +129,12 @@ const Login = () => {
                 value={recovery}
                 onChangeText={setRecovery}
                 placeholderTextColor={Colors.text_placeholder}
+                onFocus={() => setBorder3(true)}
+                onBlur={() => setBorder3(false)}
                 style={{
                   backgroundColor: 'transparent',
                   borderWidth: 2,
-                  borderColor: Colors.border_color,
+                  borderColor: border3 ? Colors.heteroboxd : Colors.border_color,
                   borderRadius: 3,
                   padding: 7,
                   paddingHorizontal: 10,

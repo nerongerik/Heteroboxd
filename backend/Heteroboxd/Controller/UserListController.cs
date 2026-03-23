@@ -59,7 +59,7 @@ namespace Heteroboxd.Controller
 
         [HttpGet("entries")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetListEntries(string UserListId, string? UserId = null, int Page = 1, int PageSize = 20, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
+        public async Task<IActionResult> GetListEntries(string UserListId, string? UserId = null, int Page = 1, int PageSize = 48, string Filter = "ALL", string Sort = "POSITION", bool Desc = false, string? FilterValue = null)
         {
             _logger.LogInformation($"GetListEntries endpoint hit for ListId: {UserListId}");
             try
@@ -108,13 +108,13 @@ namespace Heteroboxd.Controller
 
         [HttpGet("film-interact")]
         [Authorize]
-        public async Task<IActionResult> GetAuthorsListsDelimitedFilm(int FilmId)
+        public async Task<IActionResult> GetAuthorsListsDelimitedFilm(int FilmId, int Page = 1, int PageSize = 20)
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"GetAuthorsListsDelimitedFilm endpoint hit for User: {UserId} delimited by Film: {FilmId}");
             try
             {
-                return Ok(await _service.GetDelimitedLists(UserId!, FilmId));
+                return Ok(await _service.GetDelimitedLists(UserId!, FilmId, Page, PageSize));
             }
             catch (KeyNotFoundException)
             {

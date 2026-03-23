@@ -2,7 +2,7 @@
 {
     public class FilmInfoResponse
     {
-        public int FilmId { get; set; }
+        public int Id { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
         public List<string> Country { get; set; }
@@ -12,14 +12,14 @@
         public string PosterUrl { get; set; }
         public string? BackdropUrl { get; set; }
         public int Length { get; set; }
-        public int ReleaseYear { get; set; }
+        public string Date { get; set; }
         public int WatchCount { get; set; }
         public Dictionary<int, string>? Collection { get; set; }
         public List<CelebrityCreditInfoResponse>? CastAndCrew { get; set; }
 
-        public FilmInfoResponse(Film Film, bool IncludeCredits = false)
+        public FilmInfoResponse(Film Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>? Credits = null)
         {
-            this.FilmId = Film.Id;
+            this.Id = Film.Id;
             this.Title = Film.Title;
             this.OriginalTitle = Film.OriginalTitle;
             this.Country = Film.Country.ToList();
@@ -29,15 +29,12 @@
             this.PosterUrl = Film.PosterUrl;
             this.BackdropUrl = Film.BackdropUrl;
             this.Length = Film.Length;
-            this.ReleaseYear = Film.ReleaseYear;
+            this.Date = Film.Date.ToString("dd/MM/yyyy HH:mm");
             this.WatchCount = Film.WatchCount;
             this.Collection = Film.Collection;
-
-            if (IncludeCredits && Film.CastAndCrew != null)
+            if (Credits != null)
             {
-                this.CastAndCrew = Film.CastAndCrew
-                    .Select(c => new CelebrityCreditInfoResponse(c))
-                    .ToList();
+                this.CastAndCrew = Credits.SelectMany(x => x.Joined.Select(y => new CelebrityCreditInfoResponse(x.Item, y))).ToList();
             }
             else this.CastAndCrew = null;
         }
@@ -46,27 +43,31 @@
     public class WatchlistEntryInfoResponse
     {
         public string Id { get; set; }
-        public string DateAdded { get; set; }
+        public string Date { get; set; }
         public int FilmId { get; set; }
+        public string FilmTitle { get; set; }
+        public string FilmDate { get; set; }
         public string FilmPosterUrl { get; set; }
 
-        public WatchlistEntryInfoResponse(WatchlistEntry Entry)
+        public WatchlistEntryInfoResponse(WatchlistEntry Entry, Film Film)
         {
             this.Id = Entry.Id.ToString();
-            this.DateAdded = Entry.DateAdded.ToString("dd/MM/yyyy HH:mm");
-            this.FilmId = Entry.FilmId;
-            this.FilmPosterUrl = Entry.FilmPosterUrl;
+            this.Date = Entry.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmId = Film.Id;
+            this.FilmTitle = Film.Title;
+            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmPosterUrl = Film.PosterUrl;
         }
     }
 
     public class UserWatchedFilmInfoResponse
     {
-        public string DateWatched { get; set; }
+        public string Date { get; set; }
         public int TimesWatched { get; set; }
 
         public UserWatchedFilmInfoResponse(UserWatchedFilm UWF)
         {
-            this.DateWatched = UWF.DateWatched.ToString("dd/MM/yyyy HH:mm");
+            this.Date = UWF.Date.ToString("dd/MM/yyyy HH:mm");
             this.TimesWatched = UWF.TimesWatched;
         }
     }
@@ -82,36 +83,36 @@
 
     public class CelebrityInfoResponse
     {
-        public int CelebrityId { get; set; }
-        public string CelebrityName { get; set; }
-        public string? CelebrityDescription { get; set; }
-        public string? CelebrityPictureUrl { get; set; }
-        public List<string>? Roles { get; set; } //Enum.ToString() for all the Roles appearing in their credits
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string? Description { get; set; }
+        public string? HeadshotUrl { get; set; }
+        public List<string>? Roles { get; set; }
 
         public CelebrityInfoResponse(Celebrity Celebrity, List<string>? Roles = null)
         {
-            this.CelebrityId = Celebrity.Id;
-            this.CelebrityName = Celebrity.Name;
-            this.CelebrityDescription = Celebrity.Description;
-            this.CelebrityPictureUrl = Celebrity.PictureUrl;
+            this.Id = Celebrity.Id;
+            this.Name = Celebrity.Name;
+            this.Description = Celebrity.Description;
+            this.HeadshotUrl = Celebrity.HeadshotUrl;
             this.Roles = Roles;
         }
     }
 
     public class CelebrityCreditInfoResponse
     {
-        public int? CelebrityId { get; set; }
-        public string? CelebrityName { get; set; }
-        public string? CelebrityPictureUrl { get; set; }
+        public int? Id { get; set; }
+        public string? Name { get; set; }
+        public string? HeadshotUrl { get; set; }
         public string Role { get; set; }
         public string? Character { get; set; }
         public int? Order { get; set; }
 
-        public CelebrityCreditInfoResponse(CelebrityCredit Role)
+        public CelebrityCreditInfoResponse(Celebrity Celebrity, CelebrityCredit Role)
         {
-            this.CelebrityId = Role.CelebrityId;
-            this.CelebrityName = Role.CelebrityName;
-            this.CelebrityPictureUrl = Role.CelebrityPictureUrl;
+            this.Id = Role.CelebrityId;
+            this.Name = Celebrity.Name;
+            this.HeadshotUrl = Celebrity.HeadshotUrl;
             this.Role = Role.Role.ToString();
             this.Character = Role.Character;
             this.Order = Role.Order;
@@ -130,11 +131,11 @@
         public int LikeCount { get; set; }
         public string AuthorId { get; set; }
         public string? AuthorName { get; set; }
-        public string? AuthorProfilePictureUrl { get; set; }
+        public string? AuthorPictureUrl { get; set; }
         public bool? Admin { get; set; }
         public int FilmId { get; set; }
         public string? FilmTitle { get; set; }
-        public int? FilmReleaseYear { get; set; }
+        public string FilmDate { get; set; }
         public string? FilmPosterUrl { get; set; }
 
         public ReviewInfoResponse(Review Review, User Author, Film Film)
@@ -150,12 +151,12 @@
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorProfilePictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
-            this.FilmReleaseYear = Film.ReleaseYear;
+            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
@@ -172,7 +173,7 @@
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorProfilePictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
 
             this.FilmId = Review.FilmId;
@@ -193,7 +194,7 @@
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
-            this.FilmReleaseYear = Film.ReleaseYear;
+            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
@@ -223,7 +224,7 @@
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
-            this.FilmReleaseYear = Film.ReleaseYear;
+            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
             this.FilmPosterUrl = Film.PosterUrl;
         }
     }
@@ -234,34 +235,50 @@
         public string Name { get; set; }
         public string? Description { get; set; }
         public bool Ranked { get; set; }
-        public string DateCreated { get; set; }
+        public string Date { get; set; }
         public int Flags { get; set; }
         public bool NotificationsOn { get; set; }
         public int ListEntryCount { get; set; }
-        public List<ListEntryInfoResponse> Films { get; set; }
+        public List<ListEntryInfoResponse?> Films { get; set; }
         public int LikeCount { get; set; }
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
-        public string AuthorProfilePictureUrl { get; set; }
+        public string AuthorPictureUrl { get; set; }
         public bool Admin { get; set; }
 
-        public UserListInfoResponse(UserList List, User Author, int Take = -1)
+        public UserListInfoResponse(UserList List, User Author)
         {
             this.Id = List.Id.ToString();
             this.Name = List.Name;
             this.Description = List.Description;
             this.Ranked = List.Ranked;
-            this.DateCreated = List.DateCreated.ToString("dd/MM/yyyy HH:mm");
+            this.Date = List.Date.ToString("dd/MM/yyyy HH:mm");
             this.Flags = List.Flags;
             this.NotificationsOn = List.NotificationsOn;
-            this.ListEntryCount = List.Films.Count;
-            if (Take < 0) this.Films = List.Films.OrderBy(le => le.Position).Select(le => new ListEntryInfoResponse(le)).ToList();
-            else this.Films = List.Films.OrderBy(le => le.Position).Select(le => new ListEntryInfoResponse(le)).Take(Take).ToList();
-
+            this.ListEntryCount = List.Size;
+            this.Films = new();
             this.LikeCount = List.LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorProfilePictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = Author.PictureUrl;
+            this.Admin = Author.IsAdmin;
+        }
+
+        public UserListInfoResponse(UserList List, List<JoinResponse<ListEntry, Film>?> Entries, User Author)
+        {
+            this.Id = List.Id.ToString();
+            this.Name = List.Name;
+            this.Description = List.Description;
+            this.Ranked = List.Ranked;
+            this.Date = List.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Flags = List.Flags;
+            this.NotificationsOn = List.NotificationsOn;
+            this.ListEntryCount = List.Size;
+            this.Films = Entries.Select(x => x == null ? null : (ListEntryInfoResponse?) new ListEntryInfoResponse(x.Item, x.Joined)).ToList();
+            this.LikeCount = List.LikeCount;
+            this.AuthorId = List.AuthorId.ToString();
+            this.AuthorName = Author.Name;
+            this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
         }
     }
@@ -277,24 +294,20 @@
     public class ListEntryInfoResponse
     {
         public string Id { get; set; }
-        public string DateAdded { get; set; }
         public int Position { get; set; }
         public string FilmTitle { get; set; }
-        public int FilmYear { get; set; }
+        public string FilmDate { get; set; }
         public string FilmPosterUrl { get; set; }
-        public string? FilmBackdropUrl { get; set; }
         public int FilmId { get; set; }
 
-        public ListEntryInfoResponse(ListEntry Entry)
+        public ListEntryInfoResponse(ListEntry Entry, Film Film)
         {
             this.Id = Entry.Id.ToString();
-            this.DateAdded = Entry.DateAdded.ToString("dd/MM/yyyy HH:mm");
             this.Position = Entry.Position;
-            this.FilmTitle = Entry.FilmTitle;
-            this.FilmYear = Entry.FilmYear;
-            this.FilmPosterUrl = Entry.FilmPosterUrl;
-            this.FilmBackdropUrl = Entry.FilmBackdropUrl;
-            this.FilmId = Entry.FilmId;
+            this.FilmTitle = Film.Title;
+            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmPosterUrl = Film.PosterUrl;
+            this.FilmId = Film.Id;
         }
     }
 
@@ -306,7 +319,7 @@
         public int Flags { get; set; }
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
-        public string AuthorProfilePictureUrl { get; set; }
+        public string AuthorPictureUrl { get; set; }
         public bool Admin { get; set; }
         public string ReviewId { get; set; }
 
@@ -318,7 +331,7 @@
             this.Flags = Comment.Flags;
             this.AuthorId = Comment.AuthorId.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorProfilePictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
             this.ReviewId = Comment.ReviewId.ToString();
         }
@@ -332,7 +345,7 @@
         public string? Bio { get; set; }
         public string? Gender { get; set; }
         public bool Admin { get; set; }
-        public string Joined { get; set; }
+        public string Date { get; set; }
         public int Flags { get; set; }
         public int WatchlistCount { get; set; }
         public int ListsCount { get; set; }
@@ -340,10 +353,10 @@
         public int FollowingCount { get; set; }
         public int BlockedCount { get; set; }
         public int ReviewsCount { get; set; }
-        public int Likes { get; set; }
-        public int Watched { get; set; }
+        public int LikesCount { get; set; }
+        public int WatchedCount { get; set; }
 
-        public UserInfoResponse(User User)
+        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0)
         {
             this.Id = User.Id.ToString();
             this.Name = User.Name;
@@ -351,16 +364,16 @@
             this.Bio = User.Bio;
             this.Gender = User.Gender.ToString();
             this.Admin = User.IsAdmin;
-            this.Joined = User.DateJoined.ToString("dd/MM/yyyy HH:mm");
+            this.Date = User.Date.ToString("dd/MM/yyyy HH:mm");
             this.Flags = User.Flags;
-            this.WatchlistCount = User.Watchlist != null ? User.Watchlist.Films.Count : 0;
-            this.ListsCount = User.Lists != null ? User.Lists.Count : 0;
+            this.WatchlistCount = WatchlistCount;
+            this.ListsCount = UserListCount;
             this.FollowersCount = User.Followers != null ? User.Followers.Count : 0;
             this.FollowingCount = User.Following != null ? User.Following.Count : 0;
             this.BlockedCount = User.Blocked != null ? User.Blocked.Count : 0;
-            this.ReviewsCount = User.Reviews != null ? User.Reviews.Count : 0;
-            this.Likes = (User.LikedLists != null && User.LikedReviews != null) ? (User.LikedLists.Count + User.LikedReviews.Count) : 0;
-            this.Watched = User.WatchedFilms != null ? User.WatchedFilms.Count : 0;
+            this.ReviewsCount = ReviewCount;
+            this.LikesCount = LikesCount;
+            this.WatchedCount = WatchedFilmCount;
         }
     }
 
@@ -380,8 +393,7 @@
     public class DelimitedUserFilmInfoResponse
     {
         public string FriendId { get; set; }
-        public string FriendProfilePictureUrl { get; set; }
-        public string DateWatched { get; set; }
+        public string FriendPictureUrl { get; set; }
         public string? ReviewId { get; set; }
         public double? Rating { get; set; }
     }

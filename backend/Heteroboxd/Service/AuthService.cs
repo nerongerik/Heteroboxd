@@ -66,11 +66,11 @@ namespace Heteroboxd.Service
             if (ExistingUser != null) throw new ArgumentException();
 
             var User = new User(Regex.Replace(Request.Name.Trim(), @"\s+", " "), Request.Email, Request.Bio, Request.Gender);
-            User.Watchlist = new Watchlist(User.Id);
-            User.Favorites = new UserFavorites(User.Id);
 
             var Result = await _userManager.CreateAsync(User, Request.Password);
             if (!Result.Succeeded) throw new Exception();
+
+            await _authRepo.InitFavoritesAsync(new UserFavorites(User.Id));
 
             //generate presigned url (if picture uploaded)
             string? PresignedUrl = null;

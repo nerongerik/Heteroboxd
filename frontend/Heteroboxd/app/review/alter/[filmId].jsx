@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View 
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../../helpers/auth'
+import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
@@ -40,8 +41,8 @@ const AlterReview = () => {
       })
       if (res.ok) {
         const json = await res.json()
-        setFilm({title: json?.filmTitle, year: json?.filmReleaseYear, posterUrl: json?.filmPosterUrl})
-        setReview({id: (json?.id && json?.id.length > 0) ? json?.id : null, rating: json?.rating ?? 0, text: json?.text ?? '', spoiler: json.spoiler ?? false})
+        setFilm({title: json?.filmTitle, year: format.parseOutYear(json?.filmDate), posterUrl: json?.filmPosterUrl})
+        setReview({id: (json?.id && json?.id.length > 0) ? json?.id : null, rating: json?.rating || 0, text: json?.text || '', spoiler: json.spoiler || false})
         if (json.text?.length > 0) {
           setInitial(json.text)
         }
@@ -143,7 +144,7 @@ const AlterReview = () => {
         >
           <View style={{flexDirection: 'row', alignItems: 'center', width: '95%', justifyContent: 'flex-start'}}>
             <Poster
-              posterUrl={film.posterUrl}
+              posterUrl={film.posterUrl || 'noposter'}
               style={{
                 width: posterWidth,
                 height: posterHeight,
@@ -154,7 +155,7 @@ const AlterReview = () => {
               }}
             />
             <HText style={{color: Colors.text_title, fontWeight: '400', fontSize: widescreen ? 20 : 16, textAlign: 'left', flex: 1, flexWrap: 'wrap'}}>
-              {film.title} <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14}}>{film.year || ''}</HText>
+              {film.title} <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14}}>{film.year}</HText>
             </HText>
           </View>
 

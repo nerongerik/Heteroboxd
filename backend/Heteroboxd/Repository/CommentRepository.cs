@@ -55,7 +55,7 @@ namespace Heteroboxd.Repository
                 .AsNoTracking()
                 .Where(c => c.ReviewId == ReviewId)
                 .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
-                .OrderBy(x => x.c.Date);
+                .OrderByDescending(x => x.c.Date);
 
             var TotalCount = await ReviewQuery.CountAsync();
             var Responses = await ReviewQuery

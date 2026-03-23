@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -12,7 +12,6 @@ import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
-import PaginationBar from '../../../components/paginationBar'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import SlidingMenu from '../../../components/slidingMenu'
@@ -32,26 +31,24 @@ const FilmsLists = () => {
   const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
+  const requestRef = useRef(0)
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true,
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const loadDataPage = useCallback(async (page) => {
     setServer(Response.loading)
@@ -59,18 +56,33 @@ const FilmsLists = () => {
       const url = user
       ? `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      const requestId = ++requestRef.current
       const res = await fetch(url)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setData({ page: json.page, lists: json.items, totalCount: json.totalCount })
+        if (page === 1) {
+          setData({ page: json.page, lists: json.items, totalCount: json.totalCount })
+        } else {
+          setData(prev => ({...prev, page: json.page, lists: prev.lists.length > 250 ? [...prev.lists.slice(-230), ...json.items] : [...prev.lists, ...json.items]}))
+        }
         setServer(Response.ok)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
   }, [user, filmId, currentFilter, currentSort])
+
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (data.page < totalPages && server.result !== 0) {
+      loadDataPage(data.page + 1)
+    }
+  }, [data.page, totalPages, loadDataPage, server.result])
 
   const widescreen = useMemo(() => width > 1000, [width])
 
@@ -88,48 +100,36 @@ const FilmsLists = () => {
   }, [navigation, widescreen, openMenu])
 
   useEffect(() => {
-    setCurrentSort({field: 'POPULARITY', desc: true})
-  }, [currentFilter.field])
-
-  useEffect(() => {
     loadDataPage(1)
   }, [loadDataPage])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
-  const List = ({ item }) => (
+  const List = useCallback(({ item }) => (
     <View style={[styles.card, {marginBottom: 5}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}
-          url={item.authorProfilePictureUrl || null}
+          url={item.authorPictureUrl || null}
           username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
           admin={item.admin}
           router={router}
           widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
         />
       </View>
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
         <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
         <View style={{flexDirection: 'row', justifyContent: 'center'}}>
-          {(() => {
-            const paddedFilms = [...item.films].sort((a, b) => a.position - b.position)
-            const remainder = paddedFilms.length % 4
-            if (remainder !== 0) {
-              const placeholdersToAdd = 4 - remainder
-              for (let i = 0; i < placeholdersToAdd; i++) {
-                paddedFilms.push(null)
-              }
-            }
-            return paddedFilms.map((film, i) => (
+          {
+            item.films.map((film, i) => (
               film ? (
                 <Poster
                   key={film.filmId}
-                  posterUrl={film.filmPosterUrl}
+                  posterUrl={film.filmPosterUrl || 'noposter'}
                   style={{
                     width: posterWidth,
                     height: posterHeight,
@@ -150,7 +150,7 @@ const FilmsLists = () => {
                 />
               )
             ))
-          })()}
+          }
         </View>
         <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
@@ -163,21 +163,11 @@ const FilmsLists = () => {
         </View>
       </Pressable>
     </View>
-  )
+  ), [widescreen, posterHeight, posterWidth, router, spacing])
   
-  const Footer = () => (
-    <PaginationBar
-      page={data.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        loadDataPage(num)
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        })
-      }}
-    />
-  )
+  const Footer = useMemo(() => data.lists.length > 0 && server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [data.lists.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -190,9 +180,11 @@ const FilmsLists = () => {
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={server.result <= 0} />
+      <LoadingResponse visible={data.lists.length === 0 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

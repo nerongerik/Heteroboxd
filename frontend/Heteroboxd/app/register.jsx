@@ -23,6 +23,10 @@ const Register = () => {
   const [ server, setServer ] = useState(Response.initial)
   const { width } = useWindowDimensions()
   const router = useRouter()
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
+  const [ border3, setBorder3 ] = useState(false)
+  const [ border4, setBorder4 ] = useState(false)
 
   const handleRegister = useCallback(async () => {
     setServer(Response.loading)
@@ -109,39 +113,47 @@ const Register = () => {
             <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 14}]}>Profile Picture (optional)</HText>
           </Pressable>
           <TextInput
-            style={[styles.input, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+            style={[styles.input, {borderColor: border1 ? Colors.heteroboxd : Colors.border_color, fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Name*'
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder1(true)}
+            onBlur={() => setBorder1(false)}
           />
           <TextInput
-            style={[styles.input, styles.bioInput, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+            style={[styles.input, styles.bioInput, {borderColor: border2 ? Colors.heteroboxd : Colors.border_color, fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Bio (optional)'
             value={bio}
             onChangeText={setBio}
             multiline
             numberOfLines={3}
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder2(true)}
+            onBlur={() => setBorder2(false)}
           />
           <TextInput
-            style={[styles.input, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+            style={[styles.input, {borderColor: border3 ? Colors.heteroboxd : Colors.border_color, fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Email*'
             keyboardType='email-address'
             value={email}
             onChangeText={setEmail}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder3(true)}
+            onBlur={() => setBorder3(false)}
           />
           <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
           <TextInput
-            style={[styles.input, {fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+            style={[styles.input, {borderColor: border4 ? Colors.heteroboxd : Colors.border_color, fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Repeat Password*'
             secureTextEntry
             value={repeatPassword}
             onChangeText={setRepeatPassword}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder4(true)}
+            onBlur={() => setBorder4(false)}
             onSubmitEditing={() => {
               if (email.length > 0 && pwValid && name.trim().length > 0 && password === repeatPassword && gender !== -1) {
                 handleRegister()

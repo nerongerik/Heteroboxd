@@ -1,5 +1,5 @@
 ﻿using Heteroboxd.Models.DTO;
-using Heteroboxd.Models.Enums;
+using Heteroboxd.Models;
 using Heteroboxd.Repository;
 
 namespace Heteroboxd.Service
@@ -8,7 +8,7 @@ namespace Heteroboxd.Service
     {
         Task<PagedResponse<NotificationInfoResponse>> GetNotificationsByUser(string UserId, int Page, int PageSize);
         Task<int> AnyNewNotifications(string UserId);
-        Task AddNotification(string Text, NotificationType Type, Guid UserId);
+        Task AddNotification(string Text, Guid UserId);
         Task ReadAll(string UserId);
         Task UpdateNotification(string NotificationId);
         Task DeleteNotification(string NotificationId);
@@ -29,7 +29,6 @@ namespace Heteroboxd.Service
             return new PagedResponse<NotificationInfoResponse>
             {
                 Page = Page,
-                PageSize = PageSize,
                 TotalCount = TotalCount,
                 Items = Notifications.Select(n => new NotificationInfoResponse(n)).ToList()
             };
@@ -38,8 +37,8 @@ namespace Heteroboxd.Service
         public async Task<int> AnyNewNotifications(string UserId) =>
             await _repo.CountUnreadAsync(Guid.Parse(UserId));
 
-        public async Task AddNotification(string Text, NotificationType Type, Guid UserId) =>
-            await _repo.CreateAsync(new Models.Notification(Text, Type, UserId));
+        public async Task AddNotification(string Text, Guid UserId) =>
+            await _repo.CreateAsync(new Notification(Text, UserId));
 
         public async Task ReadAll(string UserId) =>
             await _repo.MarkAllReadAsync(Guid.Parse(UserId));

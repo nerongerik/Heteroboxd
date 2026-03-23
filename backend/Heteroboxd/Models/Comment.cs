@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Heteroboxd.Models
+﻿namespace Heteroboxd.Models
 {
     public class Comment
     {
-        [Key]
         public Guid Id { get; set; }
         public string Text { get; set; }
         public DateTime Date { get; set; }

@@ -14,7 +14,6 @@ import FilterSort from '../../components/filterSort'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
 import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
-import PaginationBar from '../../components/paginationBar'
 import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import SlidingMenu from '../../components/slidingMenu'
@@ -39,26 +38,25 @@ const List = () => {
   const listRef = useRef(null)
   const listLocalCopyRef = useRef(null)
   const likeRequestRef = useRef(0)
+  const requestRef = useRef(0)
+  const seenFilmsRef = useRef(new Set())
 
-  const openMenu2 = () => {
+  const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu2 = useCallback(() => {
     setMenuShown2(true)
     Animated.timing(slideAnim2, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true,
     }).start()
-  }
-  const closeMenu2 = () => {
+  }, [slideAnim2])
+  const closeMenu2 = useCallback(() => {
     Animated.timing(slideAnim2, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
     }).start(() => setMenuShown2(false))
-  }
-  const translateY2 = slideAnim2.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0],
-  })
+  }, [slideAnim2])
 
   const loadBaseData = useCallback(async () => {
     setServer(Response.loading)
@@ -100,20 +98,41 @@ const List = () => {
     setServer(Response.loading)
     try {
       const url = user
-        ? `${BaseUrl.api}/lists/entries?UserListId=${listId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-        : `${BaseUrl.api}/lists/entries?UserListId=${listId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      ? `${BaseUrl.api}/lists/entries?UserListId=${listId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      : `${BaseUrl.api}/lists/entries?UserListId=${listId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      const requestId = ++requestRef.current
       const res = await fetch(url)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setData({ page: json.page, entries: json.items, totalCount: json.totalCount, seenFilms: json.seen, seenCount: json.seenCount })
+        if (page === 1) {
+          setData({ page: json.page, entries: json.items, totalCount: json.totalCount, seenCount: json.seenCount || 0 })
+          if (user) {
+            seenFilmsRef.current = new Set(json.seen)
+          }
+        } else {
+          setData(prev => ({...prev, page: json.page, entries: prev.entries.length > 1000 ? [...prev.entries.slice(-980), ...json.items] : [...prev.entries, ...json.items]}))
+          if (user) {
+            json.seen.forEach(id => seenFilmsRef.current.add(id))
+          }
+        }
         setServer(Response.ok)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
   }, [user, listId, currentFilter, currentSort])
+
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (data.page < totalPages && server.result !== 0) {
+      loadDataPage(data.page + 1)
+    }
+  }, [data.page, totalPages, loadDataPage, server.result])
 
   const handleLike = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -183,28 +202,16 @@ const List = () => {
     listLocalCopyRef.current = base
   }, [base])
 
-  const totalPages = Math.ceil(data.totalCount / PAGE_SIZE)
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
   const maxRowWidth = useMemo(() => (widescreen ? 1000 : width * 0.95), [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
-  const paddedEntries = useMemo(() => {
-    const padded = [...data.entries]
-    const remainder = padded.length % 4
-    if (remainder !== 0) {
-      const placeholdersToAdd = 4 - remainder
-      for (let i = 0; i < placeholdersToAdd; i++) {
-        padded.push(null)
-      }
-    }
-    return padded
-  }, [data.entries])
 
   const Header = useMemo(() => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
       <Author
         userId={base?.authorId}
-        url={base?.authorProfilePictureUrl}
+        url={base?.authorPictureUrl || null}
         username={format.sliceText(base?.authorName || 'Anonymous', widescreen ? 50 : 25)}
         admin={base?.admin}
         router={router}
@@ -232,7 +239,7 @@ const List = () => {
         user && server.result > 0 ? (
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
           <View />
-          <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'right', paddingTop: 5}}>
+          <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'flex-end', paddingTop: 5}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <MaterialCommunityIcons name="eye-outline" size={widescreen ? 22 : 18} color={Colors._heteroboxd} />
               <HText style={{ color: Colors._heteroboxd, fontSize: widescreen ? 18 : 16 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</HText>
@@ -243,17 +250,17 @@ const List = () => {
       }
       <View style={{height: 20}} />
     </View>
-  ), [maxRowWidth, base, router, widescreen, descCollapsed, user, data, fadeSeen])
+  ), [maxRowWidth, base, router, widescreen, descCollapsed, user, data, fadeSeen, handleLike])
 
-  const Film = ({ item }) => {
+  const Film = useCallback(({ item }) => {
     if (!item) {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
-    const isSeen = fadeSeen && (data.seenFilms?.includes(item.filmId) ?? false)
+    const isSeen = fadeSeen && seenFilmsRef.current.has(item.filmId)
     return (
       <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{ margin: spacing / 2 }}>
         <Poster
-          posterUrl={item.filmPosterUrl}
+          posterUrl={item.filmPosterUrl || 'noposter'}
           style={{
             width: posterWidth,
             height: posterHeight,
@@ -290,21 +297,11 @@ const List = () => {
         )}
       </Pressable>
     )
-  }
+  }, [posterWidth, posterHeight, spacing, fadeSeen, router, widescreen, base?.ranked])
 
-  const Footer = () => (
-    <PaginationBar
-      page={data.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        loadDataPage(num)
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        })
-      }}
-    />
-  )
+  const Footer = useMemo(() => data.entries.length > 0 && server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [data.entries.length, server])
 
   if (!base) {
     return (
@@ -323,7 +320,7 @@ const List = () => {
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
         ref={listRef}
-        data={paddedEntries}
+        data={data.entries}
         keyExtractor={(item, index) => item ? item.filmId.toString() : `placeholder-${index}`}
         numColumns={4}
         ListHeaderComponent={Header}
@@ -335,8 +332,11 @@ const List = () => {
           : <HText style={{textAlign: 'center', color: Colors.text, padding: 50, fontSize: widescreen ? 20 : 16}}>Nothing to see here.</HText>
         }
         style={{alignSelf: 'center'}}
+        columnWrapperStyle={{justifyContent: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
 
       <Popup
@@ -355,10 +355,7 @@ const List = () => {
             width={width}
           >
             <FilterSort
-              key={`${currentFilter.field}-${currentSort.field}`}
               context={'list'}
-              currentFilter={currentFilter}
-              onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu2()}}
               currentSort={currentSort}
               onSortChange={(newSort) => setCurrentSort(newSort)}
             />

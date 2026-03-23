@@ -1,4 +1,5 @@
-﻿using Heteroboxd.Service;
+﻿using Amazon.S3.Model;
+using Heteroboxd.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -61,7 +62,7 @@ namespace Heteroboxd.Controller
 
         [HttpGet("subsequent")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetFilmSubsequent(int FilmId, int PageSize = 3)
+        public async Task<IActionResult> GetFilmSubsequent(int FilmId, int PageSize = 5)
         {
             _logger.LogInformation($"GetFilmSubsequent endpoint hit for: {FilmId}");
             try
@@ -69,7 +70,7 @@ namespace Heteroboxd.Controller
                 return Ok(
                 new 
                 {
-                    Reviews = await _reviewService.GetReviewsByFilm(FilmId, null, 1, PageSize, "ALL", "POPULARITY", true, null), 
+                    Reviews = await _reviewService.GetTopX(FilmId, PageSize), 
                     Lists = await _userListService.GetListsFeaturingFilmCount(FilmId) 
                 });
             }
@@ -87,6 +88,21 @@ namespace Heteroboxd.Controller
             try
             {
                 return Ok(await _service.GetFilms(UserId, Page, PageSize, Filter, Sort, Desc, FilterValue));
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("shuffle")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ShuffleFilms(string? UserId = null, int PageSize = 20)
+        {
+            _logger.LogInformation("ShuffleFilms endpoint hit.");
+            try
+            {
+                return Ok(await _service.ShuffleFilms(UserId, PageSize));
             }
             catch
             {

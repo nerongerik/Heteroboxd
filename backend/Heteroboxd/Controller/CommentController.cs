@@ -20,7 +20,7 @@ namespace Heteroboxd.Controller
 
         [HttpGet("review")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCommentsByReview(string ReviewId, int Page = 1, int PageSize = 20)
+        public async Task<IActionResult> GetCommentsByReview(string ReviewId, int Page = 1, int PageSize = 96)
         {
             _logger.LogInformation($"GetCommentsByReview endpoint hit for {ReviewId}");
             try

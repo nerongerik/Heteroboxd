@@ -97,6 +97,22 @@ namespace Heteroboxd.Controller
             }
         }
 
+        [HttpGet("shuffle")]
+        [Authorize]
+        public async Task<IActionResult> ShuffleWatchlist(int PageSize = 20)
+        {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            _logger.LogInformation($"ShuffleWatchlist endpoint hit for User: {UserId}");
+            try
+            {
+                return Ok(await _service.ShuffleWatchlist(UserId!, PageSize));
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("relationships")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserRelationships(string UserId, int FollowersPage = 1, int FollowingPage = 1, int BlockedPage = 1, int PageSize = 20)

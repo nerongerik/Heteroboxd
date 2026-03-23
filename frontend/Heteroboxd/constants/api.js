@@ -1,3 +1,3 @@
 export const BaseUrl = {
-    api: "http://192.168.0.4:5137/api"
+    api: process.env.EXPO_PUBLIC_API_URL
 }
