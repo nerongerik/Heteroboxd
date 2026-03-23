@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Platform, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons, MaterialCommunityIcons, Octicons } from '@expo/vector-icons'
+import Heart from '../../assets/icons/heart.svg'
+import Heart2 from '../../assets/icons/heart2.svg'
+import Trash from '../../assets/icons/trash.svg'
+import Flag from '../../assets/icons/flag.svg'
+import Spoiler from '../../assets/icons/spoiler.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -282,7 +286,7 @@ const ReviewWithComments = () => {
           : (
             <Pressable onPress={() => setShowText(true)}>
               <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>
-                <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
+                <Spoiler height={widescreen ? 30 : 24} width={widescreen ? 30 : 24} />
                 <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>
               </View>
             </Pressable>
@@ -295,11 +299,13 @@ const ReviewWithComments = () => {
       }
       <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 10, justifyContent: 'space-between'}}>
         <Pressable onPress={handleLike} style={{flexDirection: 'row', alignItems: 'center'}}>
-            <MaterialCommunityIcons
-              name={review?.iLiked ? 'cards-heart' : 'cards-heart-outline'}
-              size={widescreen ? 24 : 20}
-              color={review?.iLiked ? Colors.heteroboxd : Colors.text}
-            />
+          {
+            review?.iLiked ? (
+              <Heart width={widescreen ? 24 : 20} height={widescreen ? 24 : 20} fill={Colors.heteroboxd} />
+            ) : (
+              <Heart2 width={widescreen ? 24 : 20} height={widescreen ? 24 : 20} />
+            )
+          }
           <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: 'bold'}}> {format.formatCount(review?.likeCount)} likes</HText>
         </Pressable>
       </View>
@@ -336,11 +342,11 @@ const ReviewWithComments = () => {
                 {
                   user.userId !== item.authorId ? (
                     <Pressable onPress={() => handleReport(item.id)}>
-                      <Octicons name='report' size={widescreen ? 22 : 18} color={Colors.text} />
+                      <Flag height={widescreen ? 22 : 18} width={widescreen ? 22 : 18} />
                     </Pressable>
                   ) : (
                     <Pressable onPress={() => handleDelete(item.id)}>
-                      <MaterialCommunityIcons name='delete' size={widescreen ? 24 : 20} color={Colors.text} />
+                      <Trash height={20} width={20} />
                     </Pressable>
                   )
                 }

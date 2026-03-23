@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import AntDesign from '@expo/vector-icons/AntDesign'
-import Fontisto from '@expo/vector-icons/Fontisto'
-import { Ionicons } from '@expo/vector-icons'
+import Plus from '../../../assets/icons/plus.svg'
+import ListIco from '../../../assets/icons/list.svg'
+import Heart from '../../../assets/icons/heart.svg'
+import Filter from '../../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
@@ -108,12 +109,12 @@ const UsersLists = () => {
           {
             user?.userId === userId && (
               <Pressable onPress={() => router.push('/list/create')}>
-                <AntDesign name='plus' size={24} color={Colors.text_title} />
+                <Plus height={20} width={20} />
               </Pressable>
             )
           }
           <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null, marginLeft: user?.userId === userId ? 15 : null}}>
-            <Ionicons name='options' size={24} color={Colors.text} />
+            <Filter width={22} height={22} />
           </Pressable>
         </>
       )
@@ -176,9 +177,9 @@ const UsersLists = () => {
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
         </HText>
         <View style={styles.statsRow}>
-          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <ListIco height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />
           <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
-          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>

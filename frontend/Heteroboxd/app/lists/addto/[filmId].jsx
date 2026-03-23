@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, useWindowDimensions, FlatList, View, Pressable } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { useRouter, useLocalSearchParams, useNavigation, Link } from 'expo-router'
-import AntDesign from '@expo/vector-icons/AntDesign'
+import Plus from '../../../assets/icons/plus.svg'
+import Check from '../../../assets/icons/check.svg'
+import Minus from '../../../assets/icons/minus.svg'
 import * as auth from '../../../helpers/auth'
 import * as format from '../../../helpers/format'
 import { BaseUrl } from '../../../constants/api'
@@ -114,7 +116,7 @@ const AddToLists = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={addToLists} disabled={selectedIds.length === 0} style={[{marginRight: widescreen ? 15 : null}, (selectedIds.length === 0) && {opacity: 0.5}]}>
-          <AntDesign name='check' size={24} color={Colors.text_title} />
+          <Check height={20} width={20} />
         </Pressable>
       )
     })
@@ -124,11 +126,11 @@ const AddToLists = () => {
     if (item.containsFilm) {
       return (
         <View style={{width: width*0.75, backgroundColor: Colors.card, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color, marginVertical: 10}}>
-          <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 10}}>
-            <AntDesign name='check' size={24} color={Colors.text} style={{opacity: 0.75}} />
+          <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 10, opacity: 0.75}}>
+            <Check height={20} width={20} />
             <View>
-              <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title, opacity: 0.75}}>{format.sliceText(item.listName || '', widescreen ? 80 : 40)}</HText>
-              <HText style={{fontWeigth: '400', fontSize: widescreen ? 15 : 11, color: Colors.text, opacity: 0.75}}>Entries: {item.size}</HText>
+              <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 40)}</HText>
+              <HText style={{fontWeigth: '400', fontSize: widescreen ? 15 : 11, color: Colors.text}}>Entries: {item.size}</HText>
             </View>
             <UserAvatar
               pictureUrl={user?.pictureUrl || null}
@@ -137,8 +139,7 @@ const AddToLists = () => {
                 height: widescreen ? 40 : 30,
                 borderRadius: widescreen ? 20 : 15,
                 borderWidth: 1,
-                borderColor: Colors.border_color,
-                opacity: 0.75
+                borderColor: Colors.border_color
               }}
             />
           </View>
@@ -149,7 +150,7 @@ const AddToLists = () => {
         <Pressable onPress={() => toggle(item.listId)} style={{width: width*0.75, marginVertical: 10}}>
           <View style={{backgroundColor: Colors.card, borderRadius: 5, borderWidth: 2, borderColor: Colors._heteroboxd}}>
             <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 10}}>
-              <AntDesign name='minus' size={24} color={Colors.text} />
+              <Minus height={20} width={20} />
               <View>
                 <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 40)}</HText>
                 <HText style={{fontWeigth: '400', fontSize: widescreen ? 15 : 11, color: Colors.text}}>Entries: {item.size}</HText>
@@ -173,7 +174,7 @@ const AddToLists = () => {
         <Pressable onPress={() => toggle(item.listId)} style={{width: width*0.75, marginVertical: 10}}>
           <View style={{backgroundColor: Colors.background, borderRadius: 5, borderWidth: 2, borderColor: Colors.heteroboxd}}>
             <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 10}}>
-              <AntDesign name='plus' size={24} color={Colors.text_title} />
+              <Plus height={20} width={20} />
               <View>
                 <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 40)}</HText>
                 <HText style={{fontWeigth: '400', fontSize: widescreen ? 15 : 11, color: Colors.text}}>Entries: {item.size}</HText>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
-import Foundation from '@expo/vector-icons/Foundation'
+import Male from '../../assets/icons/male.svg'
+import Female from '../../assets/icons/female.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -359,9 +360,9 @@ const Profile = () => {
         <View style={styles.bio}>
           {
             data.gender?.toLowerCase() === 'male' ? (
-              <Foundation name='male-symbol' size={24} color={Colors.male} />
+              <Male width={20} height={20} />
             ) : data.gender?.toLowerCase() === 'female' ? (
-              <Foundation name='female-symbol' size={24} color={Colors.female} />
+              <Female width={20} height={20} />
             ) : null
           }
           <HText style={[styles.text, {fontSize: widescreen ? 18 : 16}]}>{data.bio || ''}</HText>

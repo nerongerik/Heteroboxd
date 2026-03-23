@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import Trash from '../../../assets/icons/trash.svg'
+import Up from '../../../assets/icons/up.svg'
+import Down from '../../../assets/icons/down.svg'
+import Check from '../../../assets/icons/check.svg'
+import Plus from '../../../assets/icons/plus.svg'
+import Trophy from '../../../assets/icons/trophy.svg'
+import Trophy2 from '../../../assets/icons/trophy2.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../../helpers/auth'
@@ -167,7 +171,7 @@ const EditList = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={handleSubmit} disabled={base.listName?.length === 0 || entries.length === 0} style={[{marginRight: widescreen ? 15 : null}, (base.listName?.length === 0 || entries.length === 0) && {opacity: 0.5}]}>
-          <Ionicons name='checkmark' size={24} color={Colors.text_title} />
+          <Check width={24} height={24} />
         </Pressable>
       )
     })
@@ -212,7 +216,13 @@ const EditList = () => {
           </HText>
         </View>
         <Pressable onPress={() => setBase(prev => ({...prev, ranked: !prev.ranked}))} style={{alignItems: 'center'}}>
-          <FontAwesome5 name='trophy' size={30} color={base?.ranked ? Colors.heteroboxd : Colors.text} />
+          {
+            base?.ranked ? (
+              <Trophy width={30} height={30} />
+            ) : (
+              <Trophy2 width={30} height={30} />
+            )
+          }
           <HText style={{textAlign: 'center', fontSize: 16, color: base?.ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
         </Pressable>
       </View>
@@ -243,15 +253,15 @@ const EditList = () => {
           </View>
           <View style={{gap: 5, marginLeft: 3}}>
             <Pressable onPress={() => moveItem(item.filmId, -1)}>
-              <MaterialIcons name='keyboard-arrow-up' size={28} color={Colors.text_title} />
+              <Up width={28} height={28} />
             </Pressable>
             <Pressable onPress={() => moveItem(item.filmId, +1)}>
-              <MaterialIcons name='keyboard-arrow-down' size={28} color={Colors.text_title} />
+              <Down width={28} height={28} />
             </Pressable>
           </View>
         </View>
         <Pressable onPress={() => deleteItem(item.filmId)}>
-          <FontAwesome5 name='trash' size={20} color={Colors.text} />
+          <Trash height={20} width={20} />
         </Pressable>
       </View>
     )
@@ -319,7 +329,7 @@ const EditList = () => {
         scrollEnabled={true}
       />
       <Pressable style={styles.fab} onPress={openMenu}>
-        <Ionicons name='add' size={28} color='white' />
+        <Plus width={24} height={24} />
       </Pressable>
 
       <Popup

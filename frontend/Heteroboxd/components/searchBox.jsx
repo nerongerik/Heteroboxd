@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, StyleSheet, TextInput, View, Pressable, useWindow
 import { Colors } from '../constants/colors'
 import { Snackbar } from 'react-native-paper'
 import { BaseUrl } from '../constants/api'
-import Fontisto from '@expo/vector-icons/Fontisto'
+import Search from '../assets/icons/search.svg'
 import {Response} from '../constants/response'
 
 const SearchBox = ({ onSelected, page, pageSize }) => {
@@ -65,7 +65,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
             disabled={query.length === 0}
             onPress={() => { lastQuery.current = query; setQuery(''); handleSearch() }}
           >
-            <Fontisto name='search' size={widescreen ? 24 : 22} color={Colors.text_button} />
+            <Search width={widescreen ? 24 : 22} height={widescreen ? 24 : 22} fill={Colors.text_button} />
           </Pressable>
         </KeyboardAvoidingView>
         {

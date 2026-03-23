@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Filter from '../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useAuth } from '../../hooks/useAuth'
 import * as format from '../../helpers/format'
@@ -153,7 +153,7 @@ const Celebrity = () => {
       headerTitleStyle: { color: Colors.text_title, fontFamily: 'Inter_400Regular' },
       headerRight: () => (
         <Pressable onPress={openMenu} style={{ marginRight: widescreen ? 15 : null }}>
-          <Ionicons name='options' size={24} color={Colors.text} />
+          <Filter width={22} height={22} />
         </Pressable>
       ),
     })

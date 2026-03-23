@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import Fontisto from '@expo/vector-icons/Fontisto'
+import Filter from '../../../assets/icons/filter.svg'
+import Heart from '../../../assets/icons/heart.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as format from '../../../helpers/format'
 import { BaseUrl } from '../../../constants/api'
@@ -101,7 +101,7 @@ const UserReviews = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='options' size={24} color={Colors.text} />
+          <Filter width={22} height={22} />
         </Pressable>
       )
     })
@@ -155,7 +155,7 @@ const UserReviews = () => {
           }
         </View>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
-          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>

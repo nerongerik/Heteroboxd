@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import Feather from '@expo/vector-icons/Feather'
+import Eye from '../assets/icons/eye.svg'
+import EyeOff from '../assets/icons/eye-off.svg'
+import Question from '../assets/icons/question.svg'
 import { Colors } from '../constants/colors'
 import HText from './htext'
  
@@ -51,14 +52,20 @@ const Password = ({ value, onChangeText, onValidityChange }) => {
           onBlur={() => setBorder(false)}
         />
         <Pressable onPress={() => setShowPassword(showPassword ? false : true)} style={styles.iconBtn}>
-          <Feather name={showPassword ? 'eye-off' : 'eye'} size={22} color={Colors.text_input} />
+          {
+            showPassword ? (
+              <EyeOff height={22} width={22} />
+            ) : (
+              <Eye height={22} width={22} />
+            )
+          }
         </Pressable>
       </View>
       
       <View style={styles.strContainer}>
         <View style={[styles.strengthBar, { backgroundColor: strengthColors[strength] }]} />
         <Pressable onPress={() => setShowRequirements(!showRequirements)} style={styles.iconBtn}>
-            <Ionicons name='help-circle-outline' size={22} color={Colors.text_input} />
+          <Question height={22} width={22} />
         </Pressable>
       </View>
  

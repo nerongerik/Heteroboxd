@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import Eye from '../../assets/icons/eye2.svg'
+import Filter from '../../assets/icons/filter.svg'
+import Shuffle from '../../assets/icons/shuffle.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -122,10 +124,10 @@ const Explore = () => {
       headerRight: () => (
         <>
           <Pressable onPress={shuffle}>
-            <Ionicons name='shuffle-outline' size={24} color={Colors.text} />
+            <Shuffle width={22} height={22} />
           </Pressable>
           <Pressable onPress={openMenu} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
-            <Ionicons name='options' size={24} color={Colors.text} />
+            <Filter width={22} height={22} />
           </Pressable>
         </>
       ),
@@ -152,7 +154,7 @@ const Explore = () => {
               user ? (
                 <Pressable onPress={() => setFadeSeen(prev => !prev)}>
                   <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-                    <MaterialCommunityIcons name='eye-outline' size={widescreen ? 20 : 16} color={Colors._heteroboxd} />
+                    <Eye width={widescreen ? 20 : 16} height={widescreen ? 20 : 16} />
                     <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 16 : 13}}> {format.roundSeen(seenCount, data.totalCount)}% seen</HText>
                   </View>
                 </Pressable>

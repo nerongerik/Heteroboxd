@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Check from '../../../assets/icons/check.svg'
+import Spoiler from '../../../assets/icons/spoiler.svg'
+import Spoiler2 from '../../../assets/icons/spoiler2.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../../helpers/auth'
 import * as format from '../../../helpers/format'
@@ -121,7 +123,7 @@ const AlterReview = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={handleSubmit} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='checkmark' size={24} color={Colors.text_title} />
+          <Check width={24} height={24} />
         </Pressable>
       )
     })
@@ -172,12 +174,12 @@ const AlterReview = () => {
               {
                 !review.spoiler ? (
                   <>
-                    <Ionicons name='warning-outline' size={widescreen ? 30 : 24} color={Colors.text} />
+                    <Spoiler width={widescreen ? 30 : 24} height={widescreen ? 30 : 24} />
                     <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</HText>
                   </>
                 ) : (
                   <>
-                    <Ionicons name='warning' size={widescreen ? 30 : 24} color={Colors.heteroboxd} />
+                    <Spoiler2 width={widescreen ? 30 : 24} height={widescreen ? 30 : 24} />
                     <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 13, marginTop: -2}}>Spoilers</HText>
                   </>
                 )

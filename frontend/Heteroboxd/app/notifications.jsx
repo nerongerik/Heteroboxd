@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import Seen from '../assets/icons/seen.svg'
 import { useNavigation, useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
@@ -204,7 +204,7 @@ const Notifications = () => {
         <View style={{position: 'absolute', bottom: 75, backgroundColor: Colors._heteroboxd, borderRadius: 5, padding: 7.5}}>
           <Pressable onPress={handleReadAll} style={{flexDirection: 'row', alignItems: 'center'}}>
             <HText style={{color: Colors.text_button, fontWeight: 'bold', fontSize: 14}}>MARK ALL AS READ </HText>
-            <MaterialIcons name='mark-email-read' size={18} color={Colors.text_button} />
+            <Seen width={20} height={20} />
           </Pressable>
         </View>
       }

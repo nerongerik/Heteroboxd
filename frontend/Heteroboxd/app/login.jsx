@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
-import Feather from '@expo/vector-icons/Feather'
+import Eye from '../assets/icons/eye.svg'
+import EyeOff from '../assets/icons/eye-off.svg'
 import { Link, useRouter } from 'expo-router'
 import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
@@ -100,7 +101,13 @@ const Login = () => {
               returnKeyType='join'
             />
             <Pressable onPress={() => setShowPassword(prev => !prev)} style={styles.iconBtn}>
-              <Feather name={showPassword ? 'eye-off' : 'eye'} size={22} color={Colors.text_input} />
+              {
+                showPassword ? (
+                  <EyeOff height={22} width={22} />
+                ) : (
+                  <Eye height={22} width={22} />
+                )
+              }
             </Pressable>
           </View>
           <Pressable

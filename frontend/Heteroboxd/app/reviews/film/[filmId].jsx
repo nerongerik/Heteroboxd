@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import Fontisto from '@expo/vector-icons/Fontisto'
+import Spoiler from '../../../assets/icons/spoiler.svg'
+import Heart from '../../../assets/icons/heart.svg'
+import Filter from '../../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
@@ -126,7 +127,7 @@ const FilmsReviews = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='options' size={24} color={Colors.text} />
+          <Filter width={22} height={22} />
         </Pressable>
       ),
     })
@@ -158,14 +159,14 @@ const FilmsReviews = () => {
             ) : (
             <Pressable onPress={() => revealSpoiler(item.id)}>
               <View style={{width: '95%', alignSelf: 'center', padding: 10, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center'}}>
-                <Ionicons name="warning-outline" size={widescreen ? 30 : 24} color={Colors.text} />
+                <Spoiler width={widescreen ? 30 : 24} height={widescreen ? 30 : 24} />
                 <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>
               </View>
             </Pressable>
             ) : <HText style={{paddingVertical: 10, color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
         }
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
-          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>

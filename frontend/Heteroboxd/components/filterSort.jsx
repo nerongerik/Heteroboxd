@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import Desc from '../assets/icons/desc.svg'
+import Asc from '../assets/icons/asc.svg'
 import * as format from '../helpers/format'
 import { useCountries } from '../hooks/useCountries'
 import { Colors } from '../constants/colors'
@@ -203,7 +204,15 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
                 ]}>
                   {item}
                 </HText>
-                {isSelected && <MaterialCommunityIcons name={currentSort.desc ? "sort-descending" : "sort-ascending"} size={20} color={Colors.heteroboxd} />}
+                {
+                  isSelected && (
+                    currentSort.desc ? (
+                      <Desc width={24} height={24} />
+                    ) : (
+                      <Asc width={24} height={24} />
+                    )
+                  )
+                }
               </View>
             </Pressable>
           )

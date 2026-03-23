@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import More from '../assets/icons/more2.svg'
+import Eye from '../assets/icons/eye.svg'
+import EyeOff from '../assets/icons/eye-off2.svg'
+import Watchlist from '../assets/icons/bookmark.svg'
+import Rewatch from '../assets/icons/rewatch.svg'
+import Watched from '../assets/icons/watched.svg'
+import Edit from '../assets/icons/edit.svg'
+import Addto from '../assets/icons/addto.svg'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
@@ -223,7 +229,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
                   : "Watch, review, or add this film to your lists"
             }
           </HText>
-          <MaterialIcons name="more-horiz" size={widescreen ? 24 : 20} color={Colors.text_button} />
+          <More width={widescreen ? 18 : 14} height={widescreen ? 18 : 14} />
         </View>
       </Pressable>
     </View>
@@ -231,7 +237,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const watch = 
     <View style={styles.buttonContainer}>
       <Pressable onPress={handleWatch}>
-        <MaterialCommunityIcons name="eye-outline" size={widescreen ? 50 : 35} color={Colors.text} />
+        <Eye width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} />
       </Pressable>
       <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Watch</HText>
     </View>
@@ -239,7 +245,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const watched =
     <View style={styles.buttonContainer}>
       <Pressable onPress={() => {setSeenPressed(true)}}>
-        <MaterialCommunityIcons name="eye-check" size={widescreen ? 50 : 35} color={Colors._heteroboxd} />
+        <Watched width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} />
       </Pressable>
       <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 20 : 18}}>Watched</HText>
     </View>
@@ -247,7 +253,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const rewatch =
     <View style={styles.buttonContainer}>
       <Pressable onPress={handleWatch}>
-        <MaterialCommunityIcons name="eye-refresh" size={widescreen ? 50 : 35} color={Colors.text} />
+        <Rewatch width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} />
       </Pressable>
       <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Rewatch</HText>
     </View>
@@ -255,7 +261,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const unwatch =
     <View style={styles.buttonContainer}>
       <Pressable onPress={handleUnwatch}>
-        <MaterialCommunityIcons name="eye-off" size={widescreen ? 50 : 35} color={Colors.heteroboxd} />
+        <EyeOff width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} />
       </Pressable>
       <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Remove</HText>
     </View>
@@ -263,7 +269,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const watchlist =
     <View style={styles.buttonContainer}>
       <Pressable onPress={handleWatchlist}>
-        <MaterialCommunityIcons name="bookmark-plus-outline" size={widescreen ? 50 : 35} color={Colors.text} />
+        <Watchlist width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} fill={Colors.text} />
       </Pressable>
       <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Watchlist</HText>
     </View>
@@ -271,9 +277,9 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const unwatchlist =
     <View style={styles.buttonContainer}>
       <Pressable onPress={handleWatchlist}>
-        <MaterialCommunityIcons name="bookmark-remove" size={widescreen ? 50 : 35} color={Colors.heteroboxd} />
+        <Watchlist width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} fill={Colors.heteroboxd} />
       </Pressable>
-      <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Watchlist</HText>
+      <HText style={{color: Colors.heteroboxd, fontSize: widescreen ? 20 : 18}}>Unlist</HText>
     </View>
 
   return (
@@ -302,7 +308,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         <Pressable onPress={() => { closeMenu(); reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/alter/${filmId}`) }}>
           <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
             <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</HText>
-            <MaterialCommunityIcons name="typewriter" size={24} color={Colors.text} />
+            <Edit width={28} height={28} />
           </View>
         </Pressable>
         <Divider marginVertical={20} />
@@ -310,7 +316,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         <Pressable onPress={() => {closeMenu(); router.push(`/lists/addto/${filmId}`)}}>
           <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
             <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</HText>
-            <MaterialCommunityIcons name="playlist-plus" size={28} color={Colors.text} />
+            <Addto width={28} height={28} />
           </View>
         </Pressable>
 

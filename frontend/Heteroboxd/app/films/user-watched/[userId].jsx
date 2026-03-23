@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Filter from '../../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
@@ -85,7 +85,7 @@ const UserWatchedFilms = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='options' size={24} color={Colors.text} />
+          <Filter width={22} height={22} />
         </Pressable>
       ),
     })

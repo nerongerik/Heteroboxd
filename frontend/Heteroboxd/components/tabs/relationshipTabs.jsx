@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import Feather from '@expo/vector-icons/Feather'
+import X from '../../assets/icons/x.svg'
 import { Colors } from '../../constants/colors'
 import HText from '../htext'
 import { UserAvatar } from '../userAvatar'
@@ -91,7 +91,7 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
             </Pressable>
             {isMyProfile && activeTab === 'followers' && (
               <Pressable onPress={() => onRemoveFollower(item.id)}>
-                <Feather name='x' size={20} color={Colors.text} />
+                <X width={20} height={20} />
               </Pressable>
             )}
           </View>

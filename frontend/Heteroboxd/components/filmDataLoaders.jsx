@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import Eye from '../assets/icons/eye3.svg'
+import Review from '../assets/icons/review.svg'
+import List from '../assets/icons/list2.svg'
 import * as format from '../helpers/format'
 import { Colors } from '../constants/colors'
 import HText from './htext'
@@ -12,7 +14,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         onPress={() => router.push(`/gotcha`)}
         disabled={watchCount === 0}
       >
-        <MaterialCommunityIcons name="eye-outline" size={widescreen ? 32 : 24} color={Colors.text_title} />
+        <Eye width={widescreen ? 32 : 24} height={widescreen ? 32 : 24} />
         <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Watched</HText>
         <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(watchCount)}</HText>
       </Pressable>
@@ -22,7 +24,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         onPress={() => router.push(`/reviews/film/${filmId}`)}
         disabled={reviewCount === 0}
       >
-        <MaterialCommunityIcons name="text-box" size={widescreen ? 32 : 24} color={Colors.text_title} />
+        <Review width={widescreen ? 32 : 24} height={widescreen ? 32 : 24} fill={Colors.text_title} />
         <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Reviews</HText>
         <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(reviewCount)}</HText>
       </Pressable>
@@ -32,7 +34,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
         onPress={() => router.push(`/lists/film/${filmId}`)}
         disabled={listsIncluded === 0}
       >
-        <MaterialCommunityIcons name="format-list-bulleted-square" size={widescreen ? 32 : 24} color={Colors.text_title} />
+        <List width={widescreen ? 32 : 24} height={widescreen ? 32 : 24} />
         <HText style={[styles.text, {fontSize: widescreen ? 20 : 16}]}>Lists</HText>
         <HText style={[styles.text, {fontSize: widescreen ? 16 : 13, fontWeight: '300'}]}> {format.formatCount(listsIncluded)}</HText>
       </Pressable>
@@ -40,7 +42,7 @@ const FilmDataLoaders = ({ filmId, watchCount, reviewCount, listsIncluded, wides
   )
 }
 
-export default FilmDataLoaders;
+export default FilmDataLoaders
 
 const styles = StyleSheet.create({
   button: {

@@ -22,7 +22,7 @@ import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import Stars from '../../components/stars'
 import { UserAvatar } from '../../components/userAvatar'
-import { Fontisto } from '@expo/vector-icons'
+import Heart from '../../assets/icons/heart.svg'
 
 const TOP_COUNT = 5
 
@@ -430,7 +430,7 @@ const Film = () => {
                       <Stars size={widescreen ? 30 : 22} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
                       <ParsedRead html={`${format.sliceText(r.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
                       <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
-                        <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+                        <Heart width={widescreen ? 16 : 12} height={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
                         <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(r.likeCount)}</HText>
                       </View>
                     </Pressable>

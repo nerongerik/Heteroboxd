@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import AntDesign from '@expo/vector-icons/AntDesign'
-import Entypo from '@expo/vector-icons/Entypo'
-import Feather from '@expo/vector-icons/Feather'
-import FontAwesome from '@expo/vector-icons/FontAwesome'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import Octicons from '@expo/vector-icons/Octicons'
+import More from '../../assets/icons/more.svg'
+import Flag from '../../assets/icons/flag.svg'
+import Edit from '../../assets/icons/edit.svg'
+import Trash from '../../assets/icons/trash.svg'
+import Logout from '../../assets/icons/logout.svg'
+import Block from '../../assets/icons/block.svg'
+import Unblock from '../../assets/icons/unblock.svg'
 import { useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
 import { useAuth } from '../../hooks/useAuth'
@@ -144,7 +145,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
   return (
     <View>
       <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-        <MaterialIcons name='more-vert' size={24} color={Colors.text} />
+        <More width={18} height={18} />
       </Pressable>
       <SlidingMenu
         menuShown={menuShown} 
@@ -157,26 +158,35 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
           <>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleReport}>
               <HText style={styles.optionText}>Report User  </HText>
-              <Octicons name='report' size={18} color={Colors.text} />
+              <Flag width={20} height={20} />
             </Pressable>
-            <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-              <HText style={styles.optionText}>{blockedLocalCopy ? 'Unblock user  ' : 'Block user  '}</HText>
-              <Entypo name={blockedLocalCopy ? 'lock-open' : 'block'} size={18} color={Colors.text} />
-            </Pressable>
+            {
+              blockedLocalCopy ? (
+                <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
+                  <HText style={styles.optionText}>Unblock user  </HText>
+                  <Unblock width={20} height={20} />
+                </Pressable>
+              ) : (
+                <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
+                  <HText style={styles.optionText}>Block user  </HText>
+                  <Block width={20} height={20} />
+                </Pressable>
+              )
+            }
           </>
         ) : (
           <>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleEdit}>
               <HText style={styles.optionText}>Edit Profile  </HText>
-              <Feather name="edit" size={18} color={Colors.text} />
+              <Edit width={20} height={20} />
             </Pressable>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={handleLogout}>
               <HText style={styles.optionText}>Sign Out  </HText>
-              <FontAwesome name="sign-out" size={18} color={Colors.text} />
+              <Logout width={22} height={22} />
             </Pressable>
             <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => {setDeleteConfirm(true)}}>
               <HText style={styles.optionText}>Delete Profile  </HText>
-              <AntDesign name="user-delete" size={18} color={Colors.text} />
+              <Trash width={18} height={18} />
             </Pressable>
           </>
         )}

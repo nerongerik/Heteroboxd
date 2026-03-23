@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, PanResponder, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
-import { Fontisto } from '@expo/vector-icons'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import ListIco from '../../assets/icons/list.svg'
+import Heart from '../../assets/icons/heart.svg'
+import Search from '../../assets/icons/search.svg'
+import X from '../../assets/icons/x.svg'
 import * as format from '../../helpers/format'
 import { useSearchHistory } from '../../hooks/useSearchHistory'
 import { BaseUrl } from '../../constants/api'
@@ -272,9 +274,9 @@ const SearchTabs = ({ widescreen, router }) => {
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
         </HText>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6}}>
-          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <ListIco height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />
           <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.listEntryCount)} </HText>
-          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
@@ -336,16 +338,16 @@ const SearchTabs = ({ widescreen, router }) => {
           />
           <Pressable
             onPress={() => fullSearch(1)}
-            style={[{backgroundColor: Colors.heteroboxd, padding: 12, borderTopRightRadius: 10, borderBottomRightRadius: 10, borderWidth: 2, borderLeftWidth: 0, borderColor: border ? Colors.heteroboxd : Colors.border_color, height: 45, justifyContent: 'center'}, query.length === 0 && {opacity: 0.8}]}
+            style={[{alignItems: 'center', alignContent: 'center', backgroundColor: Colors.heteroboxd, padding: 12, borderTopRightRadius: 10, borderBottomRightRadius: 10, borderWidth: 2, borderLeftWidth: 0, borderColor: border ? Colors.heteroboxd : Colors.border_color, height: 45, justifyContent: 'center'}, query.length === 0 && {opacity: 0.8}]}
             disabled={query.length === 0}
           >
-            <Fontisto name='search' size={widescreen ? 24 : 18} color={Colors.text_button} />
+            <Search width={widescreen ? 24 : 18} height={widescreen ? 24 : 18} fill={Colors.text_button} />
           </Pressable>
         </View>
         {searching !== 0 && (
           <View style={{width: widescreen ? 100 : null, alignSelf: 'center'}}>
             <Pressable onPress={() => resetParams(tab)}>
-              <MaterialIcons name="cancel" size={24} color={Colors.text} />
+              <X width={24} height={24} />
             </Pressable>
           </View>
         )}

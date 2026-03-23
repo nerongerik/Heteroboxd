@@ -1,7 +1,7 @@
-import { View, Pressable } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
+import { View, Pressable } from 'react-native'
+import Star1 from '../assets/icons/star1.svg'
+import Star2 from '../assets/icons/star2.svg'
+import Star3 from '../assets/icons/star3.svg'
 
 const Stars = ({ size, rating = 0, onRatingChange, readonly = false, padding = false, align }) => {
   const ratingToStars = (rating) => {
@@ -43,27 +43,9 @@ const Stars = ({ size, rating = 0, onRatingChange, readonly = false, padding = f
           key={index}
           onPress={readonly ? undefined : () => handlePress(index)}
         >
-          {starValue === 2 && (
-            <MaterialCommunityIcons
-              name="star"
-              size={size}
-              color={Colors.heteroboxd}
-            />
-          )}
-          {starValue === 1 && (
-            <MaterialCommunityIcons
-              name="star-half-full"
-              size={size}
-              color={Colors.heteroboxd}
-            />
-          )}
-          {starValue === 0 && (
-            <MaterialIcons
-              name="star-outline"
-              size={size}
-              color={Colors.text}
-            />
-          )}
+          {starValue === 2 && (<Star3 width={size} height={size} />)}
+          {starValue === 1 && (<Star2 width={size} height={size} />)}
+          {starValue === 0 && (<Star1 width={size} height={size} />)}
         </Pressable>
       ))}
     </View>

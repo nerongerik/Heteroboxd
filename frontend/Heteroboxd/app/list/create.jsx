@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
-import Ionicons from '@expo/vector-icons/Ionicons'
+import Check from '../../assets/icons/check.svg'
+import Plus from '../../assets/icons/plus.svg'
+import Trophy from '../../assets/icons/trophy.svg'
+import Trophy2 from '../../assets/icons/trophy2.svg'
 import { Snackbar } from 'react-native-paper'
 import { useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -101,7 +103,7 @@ const CreateList = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={handleSubmit} disabled={listName.length === 0 || entries.length === 0 || desc.length > 1000} style={[{marginRight: widescreen ? 15 : null}, (listName.length === 0 || entries.length === 0 || desc.length > 1000) && {opacity: 0.5}]}>
-          <Ionicons name='checkmark' size={24} color={Colors.text_title} />
+          <Check width={24} height={24} />
         </Pressable>
       )
     })
@@ -206,7 +208,13 @@ const CreateList = () => {
 
   const Footer = useMemo(() => (
     <Pressable onPress={() => setRanked(prev => !prev)} style={{alignItems: 'center', marginTop: 5}}>
-      <FontAwesome5 name="trophy" size={30} color={ranked ? Colors.heteroboxd : Colors.text} />
+      {
+        ranked ? (
+          <Trophy width={30} height={30} />
+        ) : (
+          <Trophy2 width={30} height={30} />
+        )
+      }
       <HText style={{textAlign: 'center', fontSize: 16, color: ranked ? Colors.heteroboxd : Colors.text}}>Ranked</HText>
     </Pressable>
   ), [ranked])
@@ -225,7 +233,7 @@ const CreateList = () => {
         showsVerticalScrollIndicator={false}
       />
       <Pressable style={styles.fab} onPress={openMenu}>
-        <Ionicons name='add' size={28} color='white' />
+        <Plus width={24} height={24} />
       </Pressable>
       
       <SlidingMenu

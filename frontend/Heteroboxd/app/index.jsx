@@ -12,7 +12,7 @@ import Donate from '../assets/icons/donate.svg'
 import Notif from '../assets/icons/notifications.svg'
 import Profile from '../assets/icons/profile.svg'
 import Slide from '../assets/icons/slide.svg'
-import { Fontisto, FontAwesome } from '@expo/vector-icons'
+import List from '../assets/icons/list.svg'
 import { Link, useFocusEffect, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
@@ -161,11 +161,11 @@ const Home = () => {
       headerLeft: () => {
         if (widescreen) return null
         return (
-          <View style={{width: 24, height: 24}}>
+          <View style={{width: 28, height: 28}}>
             <Pressable onPress={openMenu}>
-              <Slide width={24} height={24} fill={Colors.text} />
+              <Slide width={28} height={28} fill={Colors.text} />
             </Pressable>
-            {notifs && <View style={styles.badge} />}
+            {notifs && <View style={[styles.badge, {top: 1, right: 0}]} />}
           </View>
         )
       }
@@ -206,7 +206,7 @@ const Home = () => {
               </Pressable>
               <Pressable onPress={() => navPress(`/lists/explore?filter=${'ALL'}&value=${'POPULARITY'}`)} style={{marginBottom: user?.userId ? 20 : null, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
-                <Ranking width={26} height={26} fill={Colors.text} />
+                <Ranking width={24} height={24} fill={Colors.text} />
                 </View>
                 <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Popular Lists</HText>
               </Pressable>
@@ -260,8 +260,8 @@ const Home = () => {
                   <>
                     <Pressable onPress={() => navPress(`/notifications`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
-                      <View style={{width: 32, height: 32}}>
-                        <Notif height={32} width={32} fill={notifs ? Colors.text_title : Colors.text} />
+                      <View style={{width: 24, height: 24}}>
+                        <Notif height={24} width={24} fill={notifs ? Colors.text_title : Colors.text} />
                         {notifs && <View style={[styles.badge, {top: 2, right: 2}]} />}
                       </View>
                       </View>
@@ -277,7 +277,7 @@ const Home = () => {
                 ) : (
                   <Pressable onPress={() => navPress(`/login`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                     <View style={{width: 40, alignItems: 'center'}}>
-                    <Profile width={30} height={30} />
+                    <Profile width={26} height={26} />
                     </View>
                     <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Login</HText>
                   </Pressable>
@@ -369,9 +369,9 @@ const Home = () => {
               ) : (
                 <Pressable onPress={() => navPress(`/login`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                   <View style={{width: 30, alignItems: 'center'}}>
-                  <Profile width={30} height={30} />
+                  <Profile width={26} height={26} />
                   </View>
-                  <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}> Login</HText>
+                  <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Login</HText>
                 </Pressable>
               )
             }
@@ -530,7 +530,7 @@ const Home = () => {
                                       )}
                                     </View>
                                     <View style={styles.statsRow}>
-                                      <FontAwesome name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+                                      <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
                                       <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
                                     </View>
                                   </Pressable>
@@ -593,9 +593,9 @@ const Home = () => {
                                       {format.sliceText(item.description || '', widescreen ? 500 : 150)}
                                     </HText>
                                     <View style={styles.statsRow}>
-                                      <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+                                      <List height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />
                                       <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
-                                      <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+                                      <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
                                       <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
                                     </View>
                                   </Pressable>

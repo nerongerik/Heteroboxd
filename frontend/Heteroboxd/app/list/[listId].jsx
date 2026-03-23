@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import Filter from '../../assets/icons/filter.svg'
+import Eye from '../../assets/icons/eye2.svg'
+import Heart from '../../assets/icons/heart.svg'
+import Heart2 from '../../assets/icons/heart2.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
@@ -184,7 +186,7 @@ const List = () => {
             {
               !base.ranked && 
               <Pressable onPress={openMenu2} style={{marginLeft: user ? 15 : null, marginRight: widescreen ? 15 : null}}>
-                <Ionicons name='options' size={24} color={Colors.text} />
+                <Filter width={22} height={22} />
               </Pressable>
             }
           </>
@@ -226,11 +228,13 @@ const List = () => {
       </Pressable>
       <View style={[styles.metaRow, {marginTop: widescreen ? 40 : 20}]}>
         <Pressable onPress={handleLike} style={styles.likeRow}>
-          <MaterialCommunityIcons
-            name={base?.iLiked ? 'cards-heart' : 'cards-heart-outline'}
-            size={widescreen ? 24 : 20}
-            color={base?.iLiked ? Colors.heteroboxd : Colors.text}
-          />
+          {
+            base?.iLiked ? (
+              <Heart width={widescreen ? 24 : 20} height={widescreen ? 24 : 20} fill={Colors.heteroboxd} />
+            ) : (
+              <Heart2 width={widescreen ? 24 : 20} height={widescreen ? 24 : 20} />
+            )
+          }
           <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{format.formatCount(base?.likeCount)} likes</HText>
         </Pressable>
         <HText style={[styles.metaText, {fontSize: widescreen ? 18 : 14}]}>{`${data.totalCount || 'No'} entries`}</HText>
@@ -241,7 +245,7 @@ const List = () => {
           <View />
           <Pressable onPress={() => setFadeSeen(prev => !prev)} style={{alignSelf: 'flex-end', paddingTop: 5}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <MaterialCommunityIcons name="eye-outline" size={widescreen ? 22 : 18} color={Colors._heteroboxd} />
+              <Eye width={widescreen ? 22 : 18} height={widescreen ? 22 : 18} />
               <HText style={{ color: Colors._heteroboxd, fontSize: widescreen ? 18 : 16 }}> {format.roundSeen(data.seenCount, data.totalCount)}% seen</HText>
             </View>
           </Pressable>

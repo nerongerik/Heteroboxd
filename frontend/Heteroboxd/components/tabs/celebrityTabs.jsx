@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from "react"
 import { FlatList, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import Eye from '../../assets/icons/eye2.svg'
 import * as format from '../../helpers/format'
 import { Colors } from "../../constants/colors"
 import { Headshot } from '../headshot'
@@ -78,7 +78,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
             showSeen ? (
               <Pressable onPress={flipShowSeen}>
                 <View style={{padding: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-                  <MaterialCommunityIcons name='eye-outline' size={widescreen ? 22 : 18} color={Colors._heteroboxd} />
+                  <Eye width={widescreen ? 22 : 18} height={widescreen ? 22 : 18} />
                   <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 18 : 16 }}> {format.roundSeen(seenCount, currentTabData?.totalCount)}% seen</HText>
                 </View>
               </Pressable>

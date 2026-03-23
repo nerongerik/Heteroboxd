@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import Fontisto from '@expo/vector-icons/Fontisto'
+import Filter from '../../assets/icons/filter.svg'
+import ListIco from '../../assets/icons/list.svg'
+import Heart from '../../assets/icons/heart.svg'
 import { useNavigation, useRouter } from 'expo-router'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -92,7 +93,7 @@ const ExploreLists = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={openMenu} style={{marginRight: widescreen ? 15 : null}}>
-          <Ionicons name='options' size={24} color={Colors.text} />
+          <Filter width={22} height={22} />
         </Pressable>
       )
     })
@@ -154,9 +155,9 @@ const ExploreLists = () => {
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
         </HText>
         <View style={styles.statsRow}>
-          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <ListIco height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />
           <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
-          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>

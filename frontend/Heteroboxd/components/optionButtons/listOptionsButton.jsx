@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { MaterialIcons } from '@expo/vector-icons'
-import { Octicons } from '@expo/vector-icons'
+import Trash from '../../assets/icons/trash.svg'
+import Flag from '../../assets/icons/flag.svg'
+import More from '../../assets/icons/more.svg'
+import Edit from '../../assets/icons/edit.svg'
+import Notif from '../../assets/icons/notifications.svg'
+import NotifOff from '../../assets/icons/notifications-off.svg'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -136,7 +139,7 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
   return (
     <View>
       <Pressable onPress={openMenu} style={{zIndex: 999}}>
-        <MaterialIcons name='more-vert' size={24} color={Colors.text} />
+        <More width={18} height={18} />
       </Pressable>
       <SlidingMenu
         menuShown={menuShown}
@@ -149,21 +152,30 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange })
           user?.userId !== authorId ? (
             <Pressable style={styles.option} onPress={handleReport}>
               <HText style={styles.optionText}>Report List </HText>
-              <Octicons name="report" size={18} color={Colors.text} />
+              <Flag width={20} height={20} />
             </Pressable>
           ) : (
             <>
               <Pressable style={styles.option} onPress={handleEdit}>
                 <HText style={styles.optionText}>Edit List </HText>
-                <MaterialIcons name="edit" size={20} color={Colors.text} />
+                <Edit width={20} height={20} />
               </Pressable>
-              <Pressable style={styles.option} onPress={handleNotifications}>
-                <HText style={styles.optionText}>{notifsOnLocal ? 'Turn Notifications Off ' : 'Turn Notifications On '}</HText>
-                <MaterialIcons name={notifsOnLocal ? "notifications-off" : 'notifications-active'} size={20} color={Colors.text} />
-              </Pressable>
+              {
+                notifsOnLocal ? (
+                  <Pressable style={styles.option} onPress={handleNotifications}>
+                    <HText style={styles.optionText}>{'Turn Notifications Off '}</HText>
+                    <NotifOff width={20} height={20} fill={Colors.text} />
+                  </Pressable>
+                ) : (
+                  <Pressable style={styles.option} onPress={handleNotifications}>
+                    <HText style={styles.optionText}>{'Turn Notifications On '}</HText>
+                    <Notif width={20} height={20} fill={Colors.text} />
+                  </Pressable>
+                )
+              }
               <Pressable style={styles.option} onPress={handleDelete}>
                 <HText style={styles.optionText}>Delete List </HText>
-                <MaterialCommunityIcons name="delete" size={20} color={Colors.text} />
+                <Trash width={18} height={18} />
               </Pressable>
             </>
           )

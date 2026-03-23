@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
-import { Fontisto } from '@expo/vector-icons'
+import ListIco from '../../assets/icons/list.svg'
+import Heart from '../../assets/icons/heart.svg'
 import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
 import Author from '../author'
@@ -103,7 +104,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
           )}
         </View>
         <View style={styles.statsRow}>
-          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>
@@ -156,9 +157,9 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
           {format.sliceText(item.description || '', widescreen ? 500 : 150)}
         </HText>
         <View style={styles.statsRow}>
-          <Fontisto name='nav-icon-list-a' size={widescreen ? 16 : 12} color={Colors._heteroboxd} />
+          <ListIco height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />
           <HText style={[styles.statText, {color: Colors._heteroboxd, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.listEntryCount)} </HText>
-          <Fontisto name='heart' size={widescreen ? 16 : 12} color={Colors.heteroboxd} />
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
         </View>
       </Pressable>

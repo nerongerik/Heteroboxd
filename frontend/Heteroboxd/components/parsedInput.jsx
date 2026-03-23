@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native'
-import FontAwesome from '@expo/vector-icons/FontAwesome'
+import LinkIco from '../assets/icons/link.svg'
+import Italic from '../assets/icons/italic.svg'
+import Bold from '../assets/icons/bold.svg'
+import Under from '../assets/icons/underline.svg'
 import { Colors } from '../constants/colors'
 import HText from './htext'
 
@@ -130,16 +133,16 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
           justifyContent: 'space-evenly'
         }}>
           <Pressable onPress={() => insertMarkup('i')}>
-            <FontAwesome name="italic" size={20} color={Colors.text} />
+            <Italic width={20} height={20} />
           </Pressable>
           <Pressable onPress={() => insertMarkup('strong')}>
-            <FontAwesome name="bold" size={20} color={Colors.text} />
+            <Bold width={24} height={24} />
           </Pressable>
           <Pressable onPress={() => insertMarkup('u')}>
-            <FontAwesome name="underline" size={20} color={Colors.text} />
+            <Under width={26} height={26} />
           </Pressable>
           <Pressable onPress={() => insertMarkup('a')}>
-            <FontAwesome name="external-link" size={20} color={Colors.text} />
+            <LinkIco width={20} height={20} />
           </Pressable>
       </View>
 

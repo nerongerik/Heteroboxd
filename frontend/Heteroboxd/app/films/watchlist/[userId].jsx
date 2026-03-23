@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Filter from '../../../assets/icons/filter.svg'
+import Shuffle from '../../../assets/icons/shuffle.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../../helpers/auth'
 import { useAuth } from '../../../hooks/useAuth'
@@ -143,10 +144,10 @@ const Watchlist = () => {
       headerRight: () => (
         <>
           <Pressable onPress={shuffle}>
-            <Ionicons name='shuffle-outline' size={24} color={Colors.text} />
+            <Shuffle width={22} height={22} />
           </Pressable>
           <Pressable onPress={openMenu} style={{marginLeft: 15, marginRight: widescreen ? 15 : null}}>
-            <Ionicons name='options' size={24} color={Colors.text} />
+            <Filter width={22} height={22} />
           </Pressable>
         </>
       ),

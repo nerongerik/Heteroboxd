@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, FlatList, Linking, Platform, Pressable, TextInput, useWindowDimensions, View } from 'react-native'
-import { MaterialCommunityIcons, Fontisto, Ionicons } from '@expo/vector-icons'
+import Refresh from '../assets/icons/refresh.svg'
+import Trash from '../assets/icons/trash.svg'
+import Search from '../assets/icons/search.svg'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
@@ -10,11 +12,10 @@ import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
 import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
-import PaginationBar from '../components/paginationBar'
 import { UserAvatar } from '../components/userAvatar'
 import * as format from '../helpers/format'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 100
 
 const Admin = () => {
   const [ aJwt, setAJwt ] = useState(null)
@@ -34,7 +35,6 @@ const Admin = () => {
   const [ border3, setBorder3 ] = useState(false)
   const [ border4, setBorder4 ] = useState(false)
   const [ border5, setBorder5 ] = useState(false)
-  const requestRef = useRef(0)
 
   const handleSubmitKey = useCallback(async () => {
     if (!(await isValidSession())) {
@@ -79,12 +79,10 @@ const Admin = () => {
         return
     }
     try {
-      const requestId = ++requestRef.current
       const res = await fetch(`${BaseUrl.api}/admin/${context}?Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${aJwt}` }
       })
       if (res.ok) {
-        if (requestId !== requestRef.current) return
         const json = await res.json()
         if (page === 1) {
           switch (context) {
@@ -138,7 +136,6 @@ const Admin = () => {
             return
         }
       } else {
-        if (requestId !== requestRef.current) return
         switch (context) {
           case 'users':
             setServers(prev => ({...prev, users: Response.forbidden}))
@@ -175,25 +172,6 @@ const Admin = () => {
       }
     }
   }, [aJwt])
-
-  const loadNextPage = useCallback((context) => {
-    switch (context) {
-      case 'users':
-        if (users.page < Math.ceil(users.totalCount / PAGE_SIZE) && servers.users.result !== 0) get(context, users.page + 1)
-        break
-      case 'lists':
-        if (lists.page < Math.ceil(lists.totalCount / PAGE_SIZE) && servers.lists.result !== 0) get(context, lists.page + 1)
-        break
-      case 'reviews':
-        if (reviews.page < Math.ceil(reviews.totalCount / PAGE_SIZE) && servers.reviews.result !== 0) get(context, reviews.page + 1)
-        break
-      case 'comments':
-        if (comments.page < Math.ceil(comments.totalCount / PAGE_SIZE) && servers.comments.result !== 0) get(context, comments.page + 1)
-        break
-      default:
-        return
-    }
-  }, [users, lists, reviews, comments, servers])
 
   const handleDelete = async (context, id, callback) => {
     setServers(prev => ({...prev, delete: Response.loading}))
@@ -267,7 +245,7 @@ const Admin = () => {
   const UserHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
       <Pressable onPress={() => {setSearch(prev => ({...prev, users: ['user', '']})); get('users', 1)}} style={{padding: 5, alignContent: 'center'}}>
-        <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
+        <Refresh width={24} height={24} />
       </Pressable>
       <TextInput
         value={search.users[1]}
@@ -308,7 +286,7 @@ const Admin = () => {
         }}
         style={{padding: 5, alignContent: 'center'}}
       >
-        <Fontisto name='search' size={20} color={Colors.text_button} />
+        <Search width={20} height={20} fill={Colors.text_button} />
       </Pressable>
     </View>
   ), [search, width, border1])
@@ -316,7 +294,7 @@ const Admin = () => {
   const ListHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
       <Pressable onPress={() => {setSearch(prev => ({...prev, lists: ['list', '']})); get('lists', 1)}} style={{padding: 5, alignContent: 'center'}}>
-        <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
+        <Refresh width={24} height={24} />
       </Pressable>
       <TextInput
         value={search.lists[1]}
@@ -357,7 +335,7 @@ const Admin = () => {
         }}
         style={{padding: 5, alignContent: 'center'}}
       >
-        <Fontisto name='search' size={20} color={Colors.text_button} />
+        <Search width={20} height={20} fill={Colors.text_button} />
       </Pressable>
     </View>
   ), [search, width, border2])
@@ -365,7 +343,7 @@ const Admin = () => {
   const ReviewHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
       <Pressable onPress={() => {setSearch(prev => ({...prev, reviews: ['review', '']})); get('reviews', 1)}} style={{padding: 5, alignContent: 'center'}}>
-        <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
+        <Refresh width={24} height={24} />
       </Pressable>
       <TextInput
         value={search.reviews[1]}
@@ -406,7 +384,7 @@ const Admin = () => {
         }}
         style={{padding: 5, alignContent: 'center'}}
       >
-        <Fontisto name='search' size={20} color={Colors.text_button} />
+        <Search width={20} height={20} fill={Colors.text_button} />
       </Pressable>
     </View>
   ), [search, width, border3])
@@ -414,7 +392,7 @@ const Admin = () => {
   const CommentHeader = useMemo(() => (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
       <Pressable onPress={() => {setSearch(prev => ({...prev, comments: ['comment', '']})); get('comments', 1)}} style={{padding: 5, alignContent: 'center'}}>
-        <Ionicons name='refresh-circle' size={24} color={Colors.text_button} />
+        <Refresh width={24} height={24} />
       </Pressable>
       <TextInput
         value={search.comments[1]}
@@ -455,7 +433,7 @@ const Admin = () => {
         }}
         style={{padding: 5, alignContent: 'center'}}
       >
-        <Fontisto name='search' size={20} color={Colors.text_button} />
+        <Search width={20} height={20} fill={Colors.text_button} />
       </Pressable>
     </View>
   ), [search, width, border4])
@@ -556,9 +534,9 @@ const Admin = () => {
                     <HText style={{fontSize: 20, fontWeight: '600', color: Colors.text_title}}>{format.sliceText(item.name, 20)}</HText>
                   </View>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('user', item.id, () => get('users', users.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'center'}} onPress={() => handleDelete('user', item.id, () => get('users', users.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
-                  <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
+                  <Trash width={20} height={20} />
                 </Pressable>
               </View>
             )}
@@ -570,8 +548,6 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
-            onEndReachedThreshold={0.2}
-            onEndReached={() => loadNextPage('users')}
           />
         </View>
         <View style={{width: width/4.1, height: height*0.8, borderWidth: 3, borderRadius: 10, borderColor: Colors.border_color}}>
@@ -587,9 +563,9 @@ const Admin = () => {
                     <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Entries: {item.listEntryCount}</HText>
                   </View>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('list', item.id, () => get('lists', lists.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'center'}} onPress={() => handleDelete('list', item.id, () => get('lists', lists.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
-                  <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
+                  <Trash width={20} height={20} />
                 </Pressable>
               </View>
             )}
@@ -601,8 +577,6 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
-            onEndReachedThreshold={0.2}
-            onEndReached={() => loadNextPage('lists')}
           />        
         </View>
         <View style={{width: width/4.1, height: height*0.8, borderWidth: 3, borderRadius: 10, borderColor: Colors.border_color}}>
@@ -618,9 +592,9 @@ const Admin = () => {
                     <HText style={{fontSize: 16, color: Colors.text, fontWeight: '400'}}>{format.sliceText(item.text || '', 100)}</HText>
                   </View>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('review', item.id, () => get('reviews', reviews.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'center'}} onPress={() => handleDelete('review', item.id, () => get('reviews', reviews.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
-                  <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
+                  <Trash width={20} height={20} />
                 </Pressable>
               </View>
             )}
@@ -632,8 +606,6 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
-            onEndReachedThreshold={0.2}
-            onEndReached={() => loadNextPage('reviews')}
           />
         </View>
         <View style={{width: width/4.1, height: height*0.8, borderWidth: 3, borderRadius: 10, borderColor: Colors.border_color}}>
@@ -653,9 +625,9 @@ const Admin = () => {
                   </View>
                   <HText style={{color: Colors.text, fontSize: 16, fontWeight: '400'}}>{format.sliceText(item.text || '', 50)}</HText>
                 </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'flex-end'}} onPress={() => handleDelete('comment', item.id, () => get('comments', comments.page))}>
+                <Pressable style={{flexDirection: 'row', alignItems: 'center'}} onPress={() => handleDelete('comment', item.id, () => get('comments', comments.page))}>
                   <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
-                  <MaterialCommunityIcons name='delete' size={24} color={Colors.text} />
+                  <Trash width={20} height={20} />
                 </Pressable>
               </View>
             )}
@@ -667,8 +639,6 @@ const Admin = () => {
             }
             style={{alignSelf: 'center'}}
             showsVerticalScrollIndicator={false}
-            onEndReachedThreshold={0.2}
-            onEndReached={() => loadNextPage('comments')}
           />        
         </View>
         <LoadingResponse visible={servers.delete.result === 0} />
