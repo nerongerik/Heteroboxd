@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
-import { Inter_400Regular, useFonts } from '@expo-google-fonts/inter'
+import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
@@ -11,7 +11,7 @@ import './browser.css'
 SplashScreen.preventAutoHideAsync()
 
 const RootLayout = () => {
-  const [ loaded, error ] = useFonts({ Inter_400Regular })
+  const [loaded, error] = useFonts({Inter_400Regular: require('../assets/fonts/Inter_400Regular.ttf')})
 
   useCountrySync()
   useTrendingSync()
