@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
-import { Entypo, Fontisto, FontAwesome, FontAwesome6, MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons'
+import Explore from '../assets/icons/explore.svg'
+import Search from '../assets/icons/search.svg'
+import Ranking from '../assets/icons/ranking.svg'
+import Review from '../assets/icons/review.svg'
+import Watchlist from '../assets/icons/bookmark.svg'
+import Heart from '../assets/icons/heart.svg'
+import About from '../assets/icons/about.svg'
+import Contact from '../assets/icons/contact.svg'
+import Donate from '../assets/icons/donate.svg'
+import Notif from '../assets/icons/notifications.svg'
+import Profile from '../assets/icons/profile.svg'
+import Slide from '../assets/icons/slide.svg'
+import { Fontisto, FontAwesome } from '@expo/vector-icons'
 import { Link, useFocusEffect, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
@@ -142,7 +154,7 @@ const Home = () => {
         if (widescreen) return null
         return (
           <Pressable onPress={() => router.push('/search')}>
-            <Fontisto name='search' size={24} color={Colors.text} />
+            <Search width={24} height={24} fill={Colors.text} />
           </Pressable>
         )
       },
@@ -151,7 +163,7 @@ const Home = () => {
         return (
           <View style={{width: 24, height: 24}}>
             <Pressable onPress={openMenu}>
-              <Octicons name='three-bars' size={24} color={Colors.text} />
+              <Slide width={24} height={24} fill={Colors.text} />
             </Pressable>
             {notifs && <View style={styles.badge} />}
           </View>
@@ -188,13 +200,13 @@ const Home = () => {
             <View style={{flex: 1, justifyContent: 'flex-start', paddingLeft: 5, paddingTop: 10}}>
               <Pressable onPress={() => navPress(`/films/explore`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
-                <MaterialIcons name='explore' size={32} color={Colors.text} />
+                <Explore width={24} height={24} fill={Colors.text} />
                 </View>
                 <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Explore Films</HText>
               </Pressable>
               <Pressable onPress={() => navPress(`/lists/explore?filter=${'ALL'}&value=${'POPULARITY'}`)} style={{marginBottom: user?.userId ? 20 : null, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
-                <FontAwesome6 name='ranking-star' size={24} color={Colors.text} />
+                <Ranking width={26} height={26} fill={Colors.text} />
                 </View>
                 <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Popular Lists</HText>
               </Pressable>
@@ -203,19 +215,19 @@ const Home = () => {
                   <>
                     <Pressable onPress={() => navPress(`/reviews/user/${user.userId}`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
-                      <MaterialCommunityIcons name='script-text' size={28} color={Colors.text} />
+                      <Review height={26} width={26} fill={Colors.text} />
                       </View>
                       <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Your Reviews</HText>
                     </Pressable>
                     <Pressable onPress={() => navPress(`/films/watchlist/${user.userId}`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
-                      <MaterialCommunityIcons name='bookmark-plus-outline' size={32} color={Colors.text} />
+                      <Watchlist height={28} width={28} fill={Colors.text} />
                       </View>
                       <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Watchlist</HText>
                     </Pressable>
                     <Pressable onPress={() => navPress(`/likes/${user.userId}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
-                      <FontAwesome name='heart' size={24} color={Colors.text} />
+                      <Heart height={22} width={22} fill={Colors.text} />
                       </View>
                       <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Recently Liked</HText>
                     </Pressable>
@@ -227,19 +239,19 @@ const Home = () => {
 
               <Pressable onPress={() => navPress(`/about`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
-                <Entypo name='info-with-circle' size={24} color={Colors.text} />
+                <About height={24} width={24} fill={Colors.text} />
                 </View>
                 <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>About</HText>
               </Pressable>
               <Pressable onPress={() => navPress(`/contact`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
-                <Entypo name='old-phone' size={28} color={Colors.text} />
+                <Contact height={22} width={22} fill={Colors.text} />
                 </View>
                 <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Contact</HText>
               </Pressable>
               <Pressable onPress={() => navPress(`/sponsor`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
-                <FontAwesome6 name='circle-dollar-to-slot' size={28} color={Colors.text} />
+                <Donate width={22} height={22} fill={Colors.text} />
                 </View>
                 <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Donate</HText>
               </Pressable>
@@ -249,7 +261,7 @@ const Home = () => {
                     <Pressable onPress={() => navPress(`/notifications`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
                       <View style={{width: 32, height: 32}}>
-                        <MaterialIcons name='notifications' size={32} color={notifs ? Colors.text_title : Colors.text} />
+                        <Notif height={32} width={32} fill={notifs ? Colors.text_title : Colors.text} />
                         {notifs && <View style={[styles.badge, {top: 2, right: 2}]} />}
                       </View>
                       </View>
@@ -265,7 +277,7 @@ const Home = () => {
                 ) : (
                   <Pressable onPress={() => navPress(`/login`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                     <View style={{width: 40, alignItems: 'center'}}>
-                    <FontAwesome name='user-circle' size={22} color={Colors.text} />
+                    <Profile width={30} height={30} />
                     </View>
                     <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Login</HText>
                   </Pressable>
@@ -277,19 +289,19 @@ const Home = () => {
           <View style={{width: width - 50, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 15, justifyContent: 'center', marginBottom: 15}}>
             <Pressable onPress={() => navPress('search')} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
-              <Fontisto name='search' size={24} color={Colors.text} />
+              <Search width={24} height={24} fill={Colors.text} />
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Search</HText>
             </Pressable>
             <Pressable onPress={() => navPress(`/films/explore?filter=${'ALL'}&value=${'RELEASE DATE'}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
-              <MaterialIcons name='explore' size={28} color={Colors.text} />
+              <Explore width={24} height={24} fill={Colors.text} />
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Explore Films</HText>
             </Pressable>
             <Pressable onPress={() => navPress(`/lists/explore?filter=${'ALL'}&value=${'POPULARITY'}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
-              <FontAwesome6 name='ranking-star' size={20} color={Colors.text} />
+              <Ranking width={26} height={26} fill={Colors.text} />
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Popular Lists</HText>
             </Pressable>
@@ -298,19 +310,19 @@ const Home = () => {
                 <>
                   <Pressable onPress={() => navPress(`/reviews/user/${user.userId}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                     <View style={{width: 30, alignItems: 'center'}}>
-                    <MaterialCommunityIcons name='script-text' size={24} color={Colors.text} />
+                    <Review height={26} width={26} fill={Colors.text} />
                     </View>
                     <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Your Reviews</HText>
                   </Pressable>
                   <Pressable onPress={() => navPress(`/films/watchlist/${user.userId}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                     <View style={{width: 30, alignItems: 'center'}}>
-                    <MaterialCommunityIcons name='bookmark-plus-outline' size={28} color={Colors.text} />
+                    <Watchlist height={28} width={28} fill={Colors.text} />
                     </View>
                     <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Watchlist</HText>
                   </Pressable>
                   <Pressable onPress={() => navPress(`/likes/${user.userId}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                     <View style={{width: 30, alignItems: 'center'}}>
-                    <FontAwesome name='heart' size={20} color={Colors.text} />
+                    <Heart height={22} width={22} fill={Colors.text} />
                     </View>
                     <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Recently Liked</HText>
                   </Pressable>
@@ -319,19 +331,19 @@ const Home = () => {
             }
             <Pressable onPress={() => navPress(`/about`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
-              <Entypo name='info-with-circle' size={20} color={Colors.text} />
+              <About height={24} width={24} fill={Colors.text} />
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>About</HText>
             </Pressable>
             <Pressable onPress={() => navPress(`/contact`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
-              <Entypo name='old-phone' size={22} color={Colors.text} />
+              <Contact height={22} width={22} fill={Colors.text} />
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Contact</HText>
             </Pressable>
             <Pressable onPress={() => navPress(`/sponsor`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
-              <FontAwesome6 name='circle-dollar-to-slot' size={22} color={Colors.text} />
+              <Donate width={22} height={22} fill={Colors.text} />
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Donate</HText>
             </Pressable>
@@ -341,7 +353,7 @@ const Home = () => {
                   <Pressable onPress={() => navPress(`/notifications`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                     <View style={{width: 30, alignItems: 'center'}}>
                     <View style={{width: 24, height: 24}}>
-                      <MaterialIcons name='notifications' size={24} color={notifs ? Colors.text_title : Colors.text} />
+                      <Notif height={24} width={24} fill={notifs ? Colors.text_title : Colors.text} />
                       {notifs && <View style={[styles.badge, {top: 1, right: 1}]} />}
                     </View>
                     </View>
@@ -357,9 +369,9 @@ const Home = () => {
               ) : (
                 <Pressable onPress={() => navPress(`/login`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                   <View style={{width: 30, alignItems: 'center'}}>
-                  <FontAwesome name='user-circle' size={22} color={Colors.text} />
+                  <Profile width={30} height={30} />
                   </View>
-                  <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Login</HText>
+                  <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}> Login</HText>
                 </Pressable>
               )
             }
