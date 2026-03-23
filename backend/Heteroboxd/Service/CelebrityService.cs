@@ -37,7 +37,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = TotalCount,
                     Page = Page,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?) new FilmInfoResponse(f)).ToList())
                 };
             }
@@ -48,7 +47,6 @@ namespace Heteroboxd.Service
                 {
                     TotalCount = TotalCount,
                     Page = Page,
-                    PageSize = PageSize,
                     Items = PageUtils.AddPadding(Films.Select(f => (FilmInfoResponse?)new FilmInfoResponse(f)).ToList()),
                     Seen = Seen!.Select(uwf => uwf.FilmId).ToList(),
                     SeenCount = SeenCount!.Value
@@ -63,7 +61,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Results.Select(c => new CelebrityInfoResponse(c)).ToList()
             };
         }

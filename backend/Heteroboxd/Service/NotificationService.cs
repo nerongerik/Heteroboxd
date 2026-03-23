@@ -29,7 +29,6 @@ namespace Heteroboxd.Service
             return new PagedResponse<NotificationInfoResponse>
             {
                 Page = Page,
-                PageSize = PageSize,
                 TotalCount = TotalCount,
                 Items = Notifications.Select(n => new NotificationInfoResponse(n)).ToList()
             };

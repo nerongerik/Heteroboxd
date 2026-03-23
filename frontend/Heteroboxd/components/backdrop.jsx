@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Image, useWindowDimensions, View } from 'react-native'
+import { useWindowDimensions, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Colors } from '../constants/colors'
+import { Image } from 'expo-image'
 
 export const Backdrop = ({ backdropUrl }) => {
   const [ resolvedUrl, setResolvedUrl ] = useState(null)
@@ -9,7 +10,7 @@ export const Backdrop = ({ backdropUrl }) => {
   
   useEffect(() => {
     if (!backdropUrl || backdropUrl.length === 0) {
-      setResolvedUrl(null)
+      setResolvedUrl('default')
       return
     }
     setResolvedUrl(width > 1000 ? backdropUrl.replace('original', 'w1280') : backdropUrl.replace('original', 'w780'))
@@ -21,9 +22,8 @@ export const Backdrop = ({ backdropUrl }) => {
   return (
     <View style={{ width: imageWidth, height: imageHeight, alignSelf: 'center' }}>
       <Image
-        source={ resolvedUrl && { uri: resolvedUrl } }
+        source={ resolvedUrl === 'default' ? require('../assets/github.png') : (resolvedUrl && { uri: resolvedUrl })}
         style={{ width: imageWidth, height: imageHeight }}
-        resizeMode='cover'
       />
       <LinearGradient
         colors={['transparent', Colors.background]}

@@ -294,7 +294,6 @@
     public class ListEntryInfoResponse
     {
         public string Id { get; set; }
-        public string Date { get; set; }
         public int Position { get; set; }
         public string FilmTitle { get; set; }
         public string FilmDate { get; set; }
@@ -304,7 +303,6 @@
         public ListEntryInfoResponse(ListEntry Entry, Film Film)
         {
             this.Id = Entry.Id.ToString();
-            this.Date = Entry.Date.ToString("dd/MM/yyyy HH:mm");
             this.Position = Entry.Position;
             this.FilmTitle = Film.Title;
             this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");

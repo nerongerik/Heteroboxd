@@ -13,13 +13,12 @@ import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
-import PaginationBar from '../../../components/paginationBar'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import SearchBox from '../../../components/searchBox'
 import SlidingMenu from '../../../components/slidingMenu'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 const EditList = () => {
   const { listId } = useLocalSearchParams()
@@ -35,6 +34,8 @@ const EditList = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const [ searchResults, setSearchResults ] = useState({ page: 1, items: [], totalCount: 0 })
   const [ searchInit, setSearchInit ] = useState(true)
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -177,7 +178,6 @@ const EditList = () => {
     loadEntriesData()
   }, [base?.id])
 
-  const totalPages = useMemo(() => Math.ceil(searchResults.totalCount / PAGE_SIZE), [searchResults.totalCount])
   const posterWidth = useMemo(() => widescreen ? 150 : 75, [widescreen])
   const posterHeight = useMemo(() => posterWidth*3/2, [posterWidth])
 
@@ -185,20 +185,24 @@ const EditList = () => {
     <>
       <View style={{width: widescreen ? 1000 : width*0.9, alignSelf: 'center'}}>
         <TextInput
-          style={[styles.input, {marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+          style={[styles.input, {borderColor: border1 ? Colors.heteroboxd : Colors.border_color, marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           value={base?.listName}
           onChangeText={(newName) => setBase(prev => ({...prev, listName: newName}))}
           placeholderTextColor={Colors.text_placeholder}
           placeholder='List name*'
+          onFocus={() => setBorder1(true)}
+          onBlur={() => setBorder1(false)}
         />
         <View style={[styles.descWrapper, {marginBottom: 15}]}>
           <TextInput
-            style={[styles.input, styles.bioInput, {fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+            style={[styles.input, styles.bioInput, {borderColor: border2 ? Colors.heteroboxd : Colors.border_color, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             value={base?.desc}
             onChangeText={(newDesc) => setBase(prev => ({...prev, desc: newDesc}))}
             multiline
             placeholderTextColor={Colors.text_placeholder}
             placeholder='Description (optional)'
+            onFocus={() => setBorder2(true)}
+            onBlur={() => setBorder2(false)}
           />
           <HText style={[
             styles.counterText,
@@ -213,7 +217,7 @@ const EditList = () => {
         </Pressable>
       </View>
     </>
-  ), [base, widescreen, width])
+  ), [base, widescreen, width, border1, border2])
 
   const Render = useCallback(({ item }) => {
     return (
@@ -255,7 +259,7 @@ const EditList = () => {
 
   const SearchResult = useCallback(({ item }) => (
     <Pressable onPress={() => {
-      if (!entries.some(e => e.filmId === item.id)) setEntries(prev => [...prev, { filmId: item.id, filmPosterUrl: item.posterUrl, filmTitle: item.title, filmDate: format.parseOutYear(item.date) }])
+      if (!entries.some(e => e.filmId === item.id)) setEntries(prev => [...prev, { filmId: item.id, filmPosterUrl: item.posterUrl, filmTitle: item.title, filmDate: item.date }])
       setSearchResults({items: [], totalCount: 0, page: 1})
       setSearchInit(true)
       closeMenu()
@@ -266,25 +270,23 @@ const EditList = () => {
           <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
             {format.sliceText(item.title || '', widescreen ? 200 : 100)} <HText style={{color: Colors.text, fontSize: 14}}>{format.parseOutYear(item.date) || ''}</HText>
           </HText>
-          <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
-            item.castAndCrew?.map((d, i) => (
-              <HText key={i} style={{}}>{d.name || ''}{i < item.castAndCrew?.length - 1 && ', '}</HText>
-            ))
-          }</HText>
+          {
+            item.castAndCrew?.length > 0 && (
+              <>
+                <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
+                  item.castAndCrew.map((d, i) => (
+                    <HText key={i} style={{}}>
+                      {d.name || ''}{i < item.castAndCrew.length - 1 && ', '}
+                    </HText>
+                  ))
+                }</HText>
+              </>
+            )
+          }
         </View>
       </View>
     </Pressable>
   ), [entries, closeMenu, widescreen])
-
-  const Footer = useMemo(() => (
-    <View style={{width: widescreen ? width*0.5 : width*0.95}}>
-      <PaginationBar
-        page={searchResults.page}
-        totalPages={totalPages}
-        onPagePress={(num) => setSearchResults(prev => ({...prev, page: num}))}
-      />
-    </View>
-  ), [widescreen, width, searchResults.page, totalPages])
 
   if (!base) {
     return (
@@ -370,7 +372,6 @@ const EditList = () => {
             numColumns={1}
             renderItem={SearchResult}
             ListEmptyComponent={!searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
-            ListFooterComponent={Footer}
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />

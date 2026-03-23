@@ -13,7 +13,6 @@ import Divider from '../../components/divider'
 import Histogram from '../../components/histogram'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
-import PaginationBar from '../../components/paginationBar'
 import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import ProfileOptionsButton from '../../components/optionButtons/profileOptionsButton'
@@ -22,7 +21,7 @@ import SlidingMenu from '../../components/slidingMenu'
 import { UserAvatar } from '../../components/userAvatar'
 
 const RECENTS = 8
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 const Profile = () => {
   const { userId } = useLocalSearchParams()
@@ -216,7 +215,6 @@ const Profile = () => {
     followingLocalCopyRef.current = following
   }, [following])
 
-  const totalPages = useMemo(() => Math.ceil(searchResults.totalCount / PAGE_SIZE), [searchResults.totalCount])
   const widescreen = useMemo(() => width > 1000, [width])
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
@@ -283,27 +281,23 @@ const Profile = () => {
           <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode='tail'>
             {item.title} <HText style={{color: Colors.text, fontSize: 14}}>{format.parseOutYear(item.date)}</HText>
           </HText>
-          <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
-            item.castAndCrew?.map((d, i) => (
-              <HText key={i} style={{}}>
-                {d.name ?? ''}{i < item.castAndCrew.length - 1 && ', '}
-              </HText>
-            ))
-          }</HText>
+          {
+            item.castAndCrew?.length > 0 && (
+              <>
+                <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
+                  item.castAndCrew.map((d, i) => (
+                    <HText key={i} style={{}}>
+                      {d.name || ''}{i < item.castAndCrew.length - 1 && ', '}
+                    </HText>
+                  ))
+                }</HText>
+              </>
+            )
+          }
         </View>
       </View>
     </Pressable>
   ), [updateFavorites, closeMenu2])
-
-  const SearchFooter = useMemo(() => (
-    <View style={{ width: widescreen ? width*0.5 : width*0.95 }}>
-      <PaginationBar
-        page={searchResults.page}
-        totalPages={totalPages}
-        onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
-      />
-    </View>
-  ), [widescreen, width, searchResults.page, totalPages])
 
   if (!data) {
     return (
@@ -508,7 +502,6 @@ const Profile = () => {
             numColumns={1}
             renderItem={SearchResult}
             ListEmptyComponent={!searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
-            ListFooterComponent={SearchFooter}
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />

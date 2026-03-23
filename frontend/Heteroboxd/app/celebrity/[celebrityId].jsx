@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, Pressable, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -35,7 +35,7 @@ const Celebrity = () => {
   const [ bio, setBio ] = useState(null)
   const [ availableRoles, setAvailableRoles ] = useState([])
   const [ currentTabData, setCurrentTabData ] = useState({ page: 1, films: [], totalCount: 0 })
-  const [ seenFilms, setSeenFilms ] = useState([])
+  const seenFilmsRef = useRef(new Set())
   const [ seenCount, setSeenCount ] = useState(0)
   const [ fadeSeen, setFadeSeen ] = useState(true)
   const [ server, setServer ] = useState(Response.initial)
@@ -46,6 +46,7 @@ const Celebrity = () => {
   const navigation = useNavigation()
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
+  const requestRef = useRef(0)
   
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -96,18 +97,31 @@ const Celebrity = () => {
     }
     try {
       const url = user
-        ? `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
-        : `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+      ? `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+      : `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+      const requestId = ++requestRef.current
       const res = await fetch(url)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setCurrentTabData({ page: json.page, films: json.items, totalCount: json.totalCount })
-        setSeenFilms(json.seen)
-        setSeenCount(json.seenCount)
+        if (page === 1) {
+          setCurrentTabData({ page: json.page, films: json.items, totalCount: json.totalCount })
+          if (user) {
+            seenFilmsRef.current = new Set(json.seen)
+            setSeenCount(json.seenCount)
+          }
+        } else {
+          setCurrentTabData(prev => ({...prev, page: json.page, films: prev.films.length > 1000 ? [...prev.films.slice(-980), ...json.items] : [...prev.films, ...json.items]}))
+          if (user) {
+            json.seen.forEach(id => seenFilmsRef.current.add(id))
+          }
+        }
         setServer(Response.ok)
       } else if (res.status === 404) {
+        if (requestId !== requestRef.current) return
         setServer(Response.notFound)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
@@ -195,7 +209,7 @@ const Celebrity = () => {
         pageSize={PAGE_SIZE}
         showSeen={user}
         flipShowSeen={() => setFadeSeen(prev => !prev)}
-        seenFilms={seenFilms}
+        seenFilms={seenFilmsRef.current}
         seenCount={seenCount}
         fadeSeen={fadeSeen}
       />

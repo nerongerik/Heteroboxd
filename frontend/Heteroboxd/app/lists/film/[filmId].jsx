@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -12,7 +12,6 @@ import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
-import PaginationBar from '../../../components/paginationBar'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import SlidingMenu from '../../../components/slidingMenu'
@@ -32,6 +31,7 @@ const FilmsLists = () => {
   const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
+  const requestRef = useRef(0)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -56,19 +56,33 @@ const FilmsLists = () => {
       const url = user
       ? `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      const requestId = ++requestRef.current
       const res = await fetch(url)
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        console.log(json)
-        setData({ page: json.page, lists: json.items, totalCount: json.totalCount })
+        if (page === 1) {
+          setData({ page: json.page, lists: json.items, totalCount: json.totalCount })
+        } else {
+          setData(prev => ({...prev, page: json.page, lists: prev.lists.length > 250 ? [...prev.lists.slice(-230), ...json.items] : [...prev.lists, ...json.items]}))
+        }
         setServer(Response.ok)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
   }, [user, filmId, currentFilter, currentSort])
+
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (data.page < totalPages && server.result !== 0) {
+      loadDataPage(data.page + 1)
+    }
+  }, [data.page, totalPages, loadDataPage, server.result])
 
   const widescreen = useMemo(() => width > 1000, [width])
 
@@ -89,7 +103,6 @@ const FilmsLists = () => {
     loadDataPage(1)
   }, [loadDataPage])
 
-  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const spacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
@@ -152,19 +165,9 @@ const FilmsLists = () => {
     </View>
   ), [widescreen, posterHeight, posterWidth, router, spacing])
   
-  const Footer = useMemo(() => (
-    <PaginationBar
-      page={data.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        loadDataPage(num)
-        listRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        })
-      }}
-    />
-  ), [data.page, totalPages, loadDataPage])
+  const Footer = useMemo(() => data.lists.length > 0 && server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [data.lists.length, server])
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
@@ -177,9 +180,11 @@ const FilmsLists = () => {
         ListFooterComponent={Footer}
         contentContainerStyle={{width: maxRowWidth, paddingBottom: 80, marginTop: 40, alignSelf: 'center'}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
 
-      <LoadingResponse visible={server.result <= 0} />
+      <LoadingResponse visible={data.lists.length === 0 && server.result <= 0} />
       <Popup
         visible={server.result === 500}
         message={server.message}

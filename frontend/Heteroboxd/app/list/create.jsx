@@ -11,12 +11,11 @@ import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
-import PaginationBar from '../../components/paginationBar'
 import { Poster } from '../../components/poster'
 import SearchBox from '../../components/searchBox'
 import SlidingMenu from '../../components/slidingMenu'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 50
 
 const CreateList = () => {
   const { user, isValidSession } = useAuth()
@@ -33,6 +32,8 @@ const CreateList = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const [ searchResults, setSearchResults ] = useState({ items: [], totalCount: 0, page: 1 })
   const [ searchInit, setSearchInit ] = useState(true)
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -106,7 +107,6 @@ const CreateList = () => {
     })
   }, [navigation, widescreen, handleSubmit])
 
-  const totalPages = useMemo(() => Math.ceil(searchResults.totalCount / PAGE_SIZE), [searchResults.totalCount])
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 5) / 4, [maxRowWidth, spacing])
@@ -126,20 +126,24 @@ const CreateList = () => {
   const Header = useMemo(() => (
     <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
       <TextInput
-        style={[styles.input, {marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+        style={[styles.input, {borderColor: border1 ? Colors.heteroboxd : Colors.border_color, marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
         placeholder="List name*"
         value={listName}
         onChangeText={setListName}
         placeholderTextColor={Colors.text_placeholder}
+        onFocus={() => setBorder1(true)}
+        onBlur={() => setBorder1(false)}
       />
       <View style={styles.descWrapper}>
         <TextInput
-          style={[styles.input, styles.bioInput, {fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
+          style={[styles.input, styles.bioInput, {borderColor: border2 ? Colors.heteroboxd : Colors.border_color, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
           placeholder="Description (optional)"
           value={desc}
           onChangeText={setDesc}
           multiline
           placeholderTextColor={Colors.text_placeholder}
+          onFocus={() => setBorder2(true)}
+          onBlur={() => setBorder2(false)}
         />
         <HText style={[
           styles.counterText,
@@ -152,7 +156,7 @@ const CreateList = () => {
       <HText style={{color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 20 : 18}}> Entries</HText>
       <View style={{height: 15}} />
     </View>
-  ), [listName, desc, widescreen, width]);
+  ), [listName, desc, widescreen, width, border1, border2]);
 
   const Render = useCallback(({ item, index }) => {
     if (!item) {
@@ -263,28 +267,25 @@ const CreateList = () => {
                     <HText style={{color: Colors.text_title, fontSize: 16}} numberOfLines={3} ellipsizeMode="tail">
                       {format.sliceText(item.title || '', widescreen ? -1 : 100)} <HText style={{color: Colors.text, fontSize: 14}}>{format.parseOutYear(item.date) || ''}</HText>
                     </HText>
-                    <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
-                      item.castAndCrew?.map((d, i) => (
-                        <HText key={i} style={{}}>
-                          {d.name || ''}{i < item.castAndCrew?.length - 1 && ", "}
-                        </HText>
-                      ))
-                    }</HText>
+                    {
+                      item.castAndCrew?.length > 0 && (
+                        <>
+                          <HText style={{color: Colors.text, fontSize: 12}}>Directed by {
+                            item.castAndCrew.map((d, i) => (
+                              <HText key={i} style={{}}>
+                                {d.name || ''}{i < item.castAndCrew.length - 1 && ', '}
+                              </HText>
+                            ))
+                          }</HText>
+                        </>
+                      )
+                    }
                   </View>
                 </View>
               </Pressable>
             )}
             ListEmptyComponent={
               !searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>
-            }
-            ListFooterComponent={
-              <View style={{width: widescreen ? width*0.5 : width*0.95}}>
-                <PaginationBar
-                  page={searchResults.page}
-                  totalPages={totalPages}
-                  onPagePress={(num) => {setSearchResults(prev => ({ ...prev, page: num }))}}
-                />
-              </View>
             }
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}

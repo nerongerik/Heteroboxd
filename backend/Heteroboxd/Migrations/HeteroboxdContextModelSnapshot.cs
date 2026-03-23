@@ -20,7 +20,6 @@ namespace Heteroboxd.Migrations
                 .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Heteroboxd.Models.Celebrity", b =>
@@ -191,9 +190,6 @@ namespace Heteroboxd.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("FilmId")
                         .HasColumnType("integer");

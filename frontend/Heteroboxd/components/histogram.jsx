@@ -17,11 +17,9 @@ const Histogram = ({ histogram }) => {
   const averageRating = Object.entries(histogram).reduce((sum, [rating, count]) => sum + (rating * count), 0) / totalRatings
   const counts = BUCKETS.map(r => histogram[r] ?? 0)
   const maxCount = Math.max(...counts)
-  const volumeScale = Math.log10(totalRatings + 10)
   const data = BUCKETS.map(rating => {
     const count = histogram[rating] ?? 0
-    const relative = maxCount === 0 ? 0 : count / maxCount
-    const normalizedHeight = relative * volumeScale
+    const normalizedHeight = maxCount === 0 ? 0 : count / maxCount
     return { rating, count, height: format.round2(normalizedHeight) }
   })
 

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useNavigation, useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
@@ -10,7 +10,6 @@ import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
 import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
-import PaginationBar from '../components/paginationBar'
 import Popup from '../components/popup'
 
 const PAGE_SIZE = 20
@@ -23,6 +22,7 @@ const Notifications = () => {
   const router = useRouter()
   const navigation = useNavigation()
   const { width } = useWindowDimensions()
+  const requestRef = useRef(0)
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
     if (!user || !(await isValidSession())) {
@@ -33,14 +33,21 @@ const Notifications = () => {
       if (fromRefresh) setIsRefreshing(false)
       setServer(Response.loading)
       const jwt = await auth.getJwt()
+      const requestId = ++requestRef.current
       const res = await fetch(`${BaseUrl.api}/notifications?Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
+        if (requestId !== requestRef.current) return
         const json = await res.json()
-        setData({ page: json.page, notifs: json.items, totalCount: json.totalCount })
+        if (page === 1) {
+          setData({ page: json.page, notifs: json.items, totalCount: json.totalCount })
+        } else {
+          setData(prev => ({...prev, page: json.page, notifs: prev.notifs.length > 1000 ? [...prev.notifs.slice(-980), ...json.items] : [...prev.notifs, ...json.items]}))
+        }
         setServer(Response.ok)
       } else {
+        if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
       }
     } catch {
@@ -49,10 +56,7 @@ const Notifications = () => {
   }, [user])
 
   const handleReadAll = useCallback(async () => {
-    if (!user || !(await isValidSession())) {
-      setServer(Response.forbidden)
-      return
-    }
+    if (!user || !(await isValidSession())) return setServer(Response.forbidden)
     setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
@@ -61,29 +65,27 @@ const Notifications = () => {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
-        loadDataPage(data.page)
+        loadDataPage(1)
       } else {
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
-  }, [user, data])
+  }, [user, loadDataPage])
 
   const handleNotifRead = useCallback(async (i) => {
-    if (!user || !(await isValidSession())) {
-      setServer(Response.forbidden)
-      return
-    }
+    if (!user || !(await isValidSession())) return setServer(Response.forbidden)
+    const notif = data.notifs[i]
+    setData(prev => ({...prev, notifs: prev.notifs.map((n, idx) => idx === i ? { ...n, read: true } : n)}))
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/${data.notifs[i]?.id}`, {
+      const res = await fetch(`${BaseUrl.api}/notifications/${notif?.id}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        loadDataPage(data.page)
-      } else {
+      if (!res.ok) {
+        setData(prev => ({...prev, notifs: prev.notifs.map((n, idx) => idx === i ? notif : n)}))
         setServer(Response.internalServerError)
       }
     } catch {
@@ -92,25 +94,31 @@ const Notifications = () => {
   }, [user, data])
 
   const handleNotifDelete = useCallback(async (i) => {
-    if (!user || !(await isValidSession())) {
-      setServer(Response.forbidden)
-      return
-    }
+    if (!user || !(await isValidSession())) return setServer(Response.forbidden)
+    const notif = data.notifs[i]
+    setData(prev => ({...prev, notifs: prev.notifs.filter((_, idx) => idx !== i), totalCount: prev.totalCount - 1}))
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/${data.notifs[i]?.id}`, {
+      const res = await fetch(`${BaseUrl.api}/notifications/${notif?.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        loadDataPage(data.page)
-      } else {
+      if (!res.ok) {
+        setData(prev => ({...prev, notifs: [...prev.notifs.slice(0, i), notif, ...prev.notifs.slice(i)], totalCount: prev.totalCount + 1}))
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
   }, [user, data])
+
+  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
+
+  const loadNextPage = useCallback(() => {
+    if (data.page < totalPages && server.result !== 0) {
+      loadDataPage(data.page + 1)
+    }
+  }, [data.page, totalPages, loadDataPage, server.result])
 
   useEffect(() => {
     navigation.setOptions({
@@ -124,7 +132,6 @@ const Notifications = () => {
     loadDataPage(1)
   }, [loadDataPage])
 
-  const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
   const maxRowWidth = useMemo(() => Math.min(1000, width*0.95), [width])
 
   const Header = useMemo(() => (
@@ -164,15 +171,9 @@ const Notifications = () => {
     )
   }, [handleNotifRead, handleNotifDelete, maxRowWidth])
 
-  const Footer = useMemo(() => (
-    <PaginationBar
-      page={data.page}
-      totalPages={totalPages}
-      onPagePress={(num) => {
-        loadDataPage(num)
-      }}
-    />
-  ), [data.page, totalPages, loadDataPage])
+  const Footer = useMemo(() => data.notifs.length > 0 && server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [data.notifs.length, server])
   
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
@@ -188,13 +189,15 @@ const Notifications = () => {
             refreshing={isRefreshing} 
             onRefresh={() => {
               setIsRefreshing(true)
-              loadDataPage(data.page, true)
-            }} 
+              loadDataPage(1, true)
+            }}
           />
         }
         style={{alignSelf: 'center'}}
         contentContainerStyle={{paddingHorizontal: 10, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
       />
 
       { data.totalCount > 0 &&
@@ -206,7 +209,7 @@ const Notifications = () => {
         </View>
       }
 
-      <LoadingResponse visible={server.result <= 0} />
+      <LoadingResponse visible={data.notifs.length === 0 && server.result <= 0} />
       <Popup
         visible={[403, 500].includes(server.response)}
         message={server.message}

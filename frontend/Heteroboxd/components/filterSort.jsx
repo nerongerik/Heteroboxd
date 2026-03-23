@@ -5,8 +5,10 @@ import * as format from '../helpers/format'
 import { useCountries } from '../hooks/useCountries'
 import { Colors } from '../constants/colors'
 import HText from './htext'
+import { useAuth } from '../hooks/useAuth'
 
 const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSortChange}) => {
+  const { user } = useAuth()
   const [ expandedFilter, setExpandedFilter ] = useState(null)
   const { countries } = useCountries()
 
@@ -17,17 +19,17 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     list: [],
     celebrity: [],
     userLists: [],
-    filmLists: ['ALL', 'FRIENDS'],
-    exploreLists: ['ALL', 'FRIENDS'],
+    filmLists: user ? ['ALL', 'FRIENDS'] : [],
+    exploreLists: user ? ['ALL', 'FRIENDS'] : [],
     userReviews: [],
-    filmReviews: ['ALL', 'FRIENDS']
+    filmReviews: user ? ['ALL', 'FRIENDS'] : []
   }
 
   const sortOptions = {
     explore: ['POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
     watchlist: ['DATE ADDED', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
     userWatched: ['DATE WATCHED', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
-    list: ['POSITION', 'DATE ADDED', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
+    list: ['POSITION', 'POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'],
     celebrity: ['POPULARITY', 'LENGTH', 'RELEASE DATE', 'AVERAGE RATING'], 
     userLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
     filmLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],

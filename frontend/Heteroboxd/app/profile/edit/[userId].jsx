@@ -25,6 +25,8 @@ const ProfileEdit = () => {
   const [ server, setServer ] = useState(Response.initial)
   const router = useRouter()
   const navigation = useNavigation()
+  const [ border1, setBorder1 ] = useState(false)
+  const [ border2, setBorder2 ] = useState(false)
 
   const loadData = useCallback(async () => {
     if (user?.userId !== userId) {
@@ -170,22 +172,26 @@ const ProfileEdit = () => {
 
           <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 12, padding: 5, marginTop: -5}]}>Change Name</HText>
           <TextInput
-            style={[styles.input, {fontFamily: 'Inter_400Regular', fontSize: width > 1000 ? 16 : 14}]}
+            style={[styles.input, {fontFamily: 'Inter_400Regular', fontSize: width > 1000 ? 16 : 14, borderColor: border1 ? Colors.heteroboxd : Colors.border_color}]}
             placeholder={data.name}
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder1(true)}
+            onBlur={() => setBorder1(false)}
           />
 
           <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 12, padding: 5}]}>Change Bio</HText>
           <TextInput
-            style={[styles.input, styles.bioInput, {fontFamily: 'Inter_400Regular', fontSize: width > 1000 ? 16 : 14}]}
+            style={[styles.input, styles.bioInput, {fontFamily: 'Inter_400Regular', fontSize: width > 1000 ? 16 : 14, borderColor: border2 ? Colors.heteroboxd : Colors.border_color}]}
             placeholder={data.bio}
             value={bio}
             onChangeText={setBio}
             multiline
             numberOfLines={3}
             placeholderTextColor={Colors.text_placeholder}
+            onFocus={() => setBorder2(true)}
+            onBlur={() => setBorder2(false)}
           />
 
           <Pressable

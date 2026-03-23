@@ -16,6 +16,7 @@ namespace Heteroboxd.Repository
         Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
 
         Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> ShuffleWatchlistAsync(Guid UserId, int PageSize);
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
@@ -121,24 +122,38 @@ namespace Heteroboxd.Repository
 
         public async Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            var Query = _context.Users
-                .AsNoTracking()
-                .AsQueryable();
-
+            IQueryable<User> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                Query = Query.Where(u =>
-                    EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3f);
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                var PrefixQuery = _context.Users
+                    .AsNoTracking()
+                    .Where(u => EF.Functions.Like(u.Name, PrefixPattern));
+                var PrefixCount = await PrefixQuery.CountAsync();
+
+                if (PrefixCount > 0)
+                {
+                    Query = PrefixQuery;
+                }
+                else
+                {
+                    Query = _context.Users
+                        .AsNoTracking()
+                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                }
+
+                var TotalCount = await Query.CountAsync();
+                var Results = await Query
+                    .OrderBy(u => u.Date)
+                    .Skip((Page - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToListAsync();
+                return (Results, TotalCount);
             }
-
-            int TotalCount = await Query.CountAsync();
-            var Results = await Query
-                .OrderByDescending(u => EF.Functions.TrigramsSimilarity(u.Name, Search))
-                .Skip((Page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-
-            return (Results, TotalCount);
+            else
+            {
+                return (new(), 0);
+            }
         }
 
         public async Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> GetUserWatchlistAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -199,6 +214,19 @@ namespace Heteroboxd.Repository
             return (Responses, TotalCount);
         }
 
+        public async Task<(List<JoinResponse<WatchlistEntry, Film>> Responses, int TotalCount)> ShuffleWatchlistAsync(Guid UserId, int PageSize)
+        {
+            var TotalCount = await _context.WatchlistEntries.CountAsync(wle => wle.UserId == UserId);
+            var Responses = await _context.WatchlistEntries
+                .AsNoTracking()
+                .Where(wle => wle.UserId == UserId)
+                .OrderBy(wle => EF.Functions.Random())
+                .Take(PageSize)
+                .Join(_context.Films, wle => wle.FilmId, f => f.Id, (wle, f) => new { wle, f })
+                .ToListAsync();
+            return (Responses.Select(x => new JoinResponse<WatchlistEntry, Film> { Item = x.wle, Joined = x.f }).ToList(), TotalCount);
+        }
+
         public async Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId) =>
             await _context.UserFavorites
                 .AsNoTracking()
@@ -251,22 +279,19 @@ namespace Heteroboxd.Repository
                 .Where(u => u.Id == UserId)
                 .SelectMany(u => u.Blocked);
 
-            var FollowingCount = await FollowingQuery.CountAsync();
-            var FollowersCount = await FollowersQuery.CountAsync();
-            var BlockedCount = await BlockedQuery.CountAsync();
+            var FollowingCount = FollowingPage > 0 ? await FollowingQuery.CountAsync() : 0;
+            var FollowersCount = FollowersPage > 0 ? await FollowersQuery.CountAsync() : 0;
+            var BlockedCount = BlockedPage > 0 ? await BlockedQuery.CountAsync() : 0;
 
-            var Following = await FollowingQuery
-                .Skip((FollowingPage - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-            var Followers = await FollowersQuery
-                .Skip((FollowersPage - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-            var Blocked = await BlockedQuery
-                .Skip((BlockedPage - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
+            var Following = FollowingPage > 0
+                ? await FollowingQuery.Skip((FollowingPage - 1) * PageSize).Take(PageSize).ToListAsync()
+                : new();
+            var Followers = FollowersPage > 0
+                ? await FollowersQuery.Skip((FollowersPage - 1) * PageSize).Take(PageSize).ToListAsync()
+                : new();
+            var Blocked = BlockedPage > 0
+                ? await BlockedQuery.Skip((BlockedPage - 1) * PageSize).Take(PageSize).ToListAsync()
+                : new();
 
             return (Following, FollowingCount, Followers, FollowersCount, Blocked, BlockedCount);
         }
@@ -307,42 +332,47 @@ namespace Heteroboxd.Repository
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
                 .OrderByDescending(x => x.ul.LikeCount);
 
-            var ReviewCount = await ReviewsQuery.CountAsync();
-            var ListCount = await ListsQuery.CountAsync();
+            var ReviewCount = ReviewsPage > 0 ? await ReviewsQuery.CountAsync() : 0;
+            var ListCount = ListsPage > 0 ? await ListsQuery.CountAsync() : 0;
 
-            var ReviewResponses = await ReviewsQuery
-                .Skip((ReviewsPage - 1) * PageSize)
-                .Take(PageSize)
-                .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
-                .ToListAsync();
+            var ReviewResponses = ReviewsPage > 0
+                ? await ReviewsQuery
+                    .Skip((ReviewsPage - 1) * PageSize)
+                    .Take(PageSize)
+                    .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
+                    .ToListAsync()
+                : new();
 
-            var PreListResponses = await ListsQuery
-                .Skip((ListsPage - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-            var ListIds = PreListResponses.Select(x => x.ul.Id).ToHashSet();
-            var Entries = await _context.ListEntries
-                .AsNoTracking()
-                .Where(le => ListIds.Contains(le.UserListId))
-                .OrderBy(le => le.Position)
-                .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
-                .ToListAsync();
-            var EntriesByList = Entries
-                .GroupBy(x => x.le.UserListId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Take(4)
-                         .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
-                         .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
-                         .ToList()
-                );
-
-            var ListResponses = PreListResponses.Select(x => new JoinedListEntries(
-                new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
-                EntriesByList.TryGetValue(x.ul.Id, out var entries)
-                    ? entries
-                    : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
-            )).ToList();
+            List<JoinedListEntries> ListResponses = new();
+            if (ListsPage > 0)
+            {
+                var PreListResponses = await ListsQuery
+                    .Skip((ListsPage - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToListAsync();
+                var ListIds = PreListResponses.Select(x => x.ul.Id).ToHashSet();
+                var Entries = await _context.ListEntries
+                    .AsNoTracking()
+                    .Where(le => ListIds.Contains(le.UserListId))
+                    .OrderBy(le => le.Position)
+                    .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                    .ToListAsync();
+                var EntriesByList = Entries
+                    .GroupBy(x => x.le.UserListId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Take(4)
+                             .Select(x => (JoinResponse<ListEntry, Film>?)new JoinResponse<ListEntry, Film> { Item = x.le, Joined = x.f })
+                             .Concat(Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, Math.Max(0, 4 - g.Count())))
+                             .ToList()
+                    );
+                ListResponses = PreListResponses.Select(x => new JoinedListEntries(
+                    new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
+                    EntriesByList.TryGetValue(x.ul.Id, out var entries)
+                        ? entries
+                        : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
+                )).ToList();
+            }
 
             return (ReviewResponses, ReviewCount, ListResponses, ListCount);
         }

@@ -1,5 +1,4 @@
-﻿using Azure;
-using Heteroboxd.Models;
+﻿using Heteroboxd.Models;
 using Heteroboxd.Models.DTO;
 using Heteroboxd.Repository;
 
@@ -11,6 +10,7 @@ namespace Heteroboxd.Service
         Task<ReviewInfoResponse> GetReview(string ReviewId);
         Task<ReviewInfoResponse?> GetReviewByUserFilm(string UserId, int FilmId);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<PagedResponse<ReviewInfoResponse>> GetTopX(int FilmId, int X);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task UpdateReviewLikeCount(string ReviewId, int Delta);
         Task ToggleNotifications(string ReviewId);
@@ -45,7 +45,6 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Responses.Select(x => new ReviewInfoResponse(x.Item.Review, x.Joined, x.Item.Film)).ToList()
             };
         }
@@ -84,7 +83,17 @@ namespace Heteroboxd.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
+                Items = Responses.Select(x => new ReviewInfoResponse(x.Item, x.Joined)).ToList()
+            };
+        }
+
+        public async Task<PagedResponse<ReviewInfoResponse>> GetTopX(int FilmId, int X)
+        {
+            var (Responses, TotalCount) = await _repo.GetTopAsync(FilmId, X);
+            return new PagedResponse<ReviewInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = 1,
                 Items = Responses.Select(x => new ReviewInfoResponse(x.Item, x.Joined)).ToList()
             };
         }
@@ -92,14 +101,13 @@ namespace Heteroboxd.Service
         public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var Author = await _userRepo.LightweightFetcherAsync(Guid.Parse(UserId));
-            if (Author == null) return new PagedResponse<ReviewInfoResponse> { TotalCount = 0, Page = 1, PageSize = PageSize, Items = new() };
+            if (Author == null) return new PagedResponse<ReviewInfoResponse> { TotalCount = 0, Page = 1, Items = new() };
 
             var (Responses, TotalCount) = await _repo.GetByAuthorAsync(Author.Id, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<ReviewInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                PageSize = PageSize,
                 Items = Responses.Select(x => new ReviewInfoResponse(x.Item, Author, x.Joined)).ToList()
             };
         }
