@@ -3,15 +3,18 @@
 Heteroboxd is an open-source, free-speech, social film discovery platform available across devices.
 
 ## Features
-- Track films you've seen or add new ones to your watchlist  
-- Review films and rate them on a 5-star scale (with halves!)
+- Explore our growing database of films and celebrities
+- Track seen films or add new ones to your watchlist
+- Review and rate films on a 5-star scale (with halves!)
 - Create your own custom (rank)lists
-- Read, like, and comment on other cinephiles' reviews
+- Read, like, and comment on other reviews
 - Follow your favorite cinephiles to stay up-to-date with their binging
-- Explore the work of your favorite actors and directors, or filter movies by release date, average rating, etc.
+- Filter and sort by lenghth, release date, country of origin, cast and crew, average rating, etc.
 
 ## Stack
-Heteroboxd employs Expo React Native for cross-platform frontend development, .NET for backend development, and PostgreSQL for data persistency [*all heavily powered by tMDB's API without any endorsments, of course*]
+- Backend: C# (ASP.NET)
+- Frontend: JavaScript (Expo React Native)
+- Database: Postgres (SQL)
 
 ## Contributing
 Heteroboxd is a **solo** project, and external contributions are not accepted.
