@@ -7,6 +7,7 @@ import { AuthProvider } from '../contexts/authContext'
 import { useCountrySync } from '../hooks/useCountrySync'
 import { useTrendingSync } from '../hooks/useTrendingSync'
 import './browser.css'
+import Back from '../assets/icons/back.svg'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -38,7 +39,8 @@ const RootLayout = () => {
           headerTintColor: Colors.text,
           headerShadowVisible: false,
           title: '',
-          headerTitleStyle: {fontFamily: 'Inter_400Regular'}
+          headerTitleStyle: {fontFamily: 'Inter_400Regular'},
+          headerBackImage: () => (<Back width={24} height={24} />)
         }}
       >
         <Stack.Screen name='login' options={{ headerShown: false }} />
