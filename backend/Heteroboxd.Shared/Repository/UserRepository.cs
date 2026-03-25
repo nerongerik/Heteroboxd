@@ -59,7 +59,7 @@ namespace Heteroboxd.Shared.Repository
             var Query = _context.Users
                 .AsNoTracking()
                 .Where(u => !u.IsAdmin)
-                .OrderByDescending(u => u.Flags)
+                .OrderByDescending(u => u.Flags).ThenBy(u => u.Id)
                 .AsQueryable();
 
             var TotalCount = await Query.CountAsync();
@@ -144,7 +144,7 @@ namespace Heteroboxd.Shared.Repository
 
                 var TotalCount = await Query.CountAsync();
                 var Results = await Query
-                    .OrderBy(u => u.Date)
+                    .OrderBy(u => u.Date).ThenBy(u => u.Id)
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();
@@ -184,23 +184,23 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "date added":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Date) : EntriesQuery.OrderBy(x => x.Entry.Date);
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Entry.Date).ThenBy(x => x.Film.Id) : EntriesQuery.OrderBy(x => x.Entry.Date).ThenBy(x => x.Film.Id);
                     break;
                 case "popularity":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.WatchCount);
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : EntriesQuery.OrderBy(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                     break;
                 case "length":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length) : EntriesQuery.OrderBy(x => x.Film.Length);
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Length).ThenBy(x => x.Film.Id) : EntriesQuery.OrderBy(x => x.Film.Length).ThenBy(x => x.Film.Id);
                     break;
                 case "release date":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Date) : EntriesQuery.OrderBy(x => x.Film.Date);
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id) : EntriesQuery.OrderBy(x => x.Film.Date).ThenBy(x => x.Film.Id);
                     break;
                 case "average rating":
-                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount) : EntriesQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount);
+                    EntriesQuery = Desc ? EntriesQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : EntriesQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                     break;
                 default:
                     //error fallback
-                    EntriesQuery = EntriesQuery.OrderByDescending(x => x.Entry.Date);
+                    EntriesQuery = EntriesQuery.OrderByDescending(x => x.Entry.Date).ThenBy(x => x.Film.Id);
                     break;
             }
 
@@ -220,7 +220,7 @@ namespace Heteroboxd.Shared.Repository
             var Responses = await _context.WatchlistEntries
                 .AsNoTracking()
                 .Where(wle => wle.UserId == UserId)
-                .OrderBy(wle => EF.Functions.Random())
+                .OrderBy(wle => EF.Functions.Random()).ThenBy(wle => wle.Id)
                 .Take(PageSize)
                 .Join(_context.Films, wle => wle.FilmId, f => f.Id, (wle, f) => new { wle, f })
                 .ToListAsync();
@@ -269,15 +269,18 @@ namespace Heteroboxd.Shared.Repository
             var FollowingQuery = _context.Users
                 .AsNoTracking()
                 .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Following);
+                .SelectMany(u => u.Following)
+                .OrderBy(u => u.Id);
             var FollowersQuery = _context.Users
                 .AsNoTracking()
                 .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Followers);
+                .SelectMany(u => u.Followers)
+                .OrderBy(u => u.Id);
             var BlockedQuery = _context.Users
                 .AsNoTracking()
                 .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Blocked);
+                .SelectMany(u => u.Blocked)
+                .OrderBy(u => u.Id);
 
             var FollowingCount = FollowingPage > 0 ? await FollowingQuery.CountAsync() : 0;
             var FollowersCount = FollowersPage > 0 ? await FollowersQuery.CountAsync() : 0;
@@ -323,14 +326,14 @@ namespace Heteroboxd.Shared.Repository
                 .SelectMany(u => u.LikedReviews)
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
                 .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
-                .OrderByDescending(x => x.r.LikeCount);
+                .OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id);
 
             var ListsQuery = _context.Users
                 .AsNoTracking()
                 .Where(u => u.Id == UserId)
                 .SelectMany(u => u.LikedLists)
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
-                .OrderByDescending(x => x.ul.LikeCount);
+                .OrderByDescending(x => x.ul.LikeCount).ThenBy(x => x.ul.Id);
 
             var ReviewCount = ReviewsPage > 0 ? await ReviewsQuery.CountAsync() : 0;
             var ListCount = ListsPage > 0 ? await ListsQuery.CountAsync() : 0;

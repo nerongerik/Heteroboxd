@@ -42,6 +42,7 @@ const List = () => {
   const likeRequestRef = useRef(0)
   const requestRef = useRef(0)
   const seenFilmsRef = useRef(new Set())
+  const loadingRef = useRef(false)
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback(() => {
@@ -102,7 +103,9 @@ const List = () => {
       const url = user
       ? `${BaseUrl.api}/lists/entries?UserListId=${listId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/lists/entries?UserListId=${listId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      if (loadingRef.current) return
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(url)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -119,22 +122,25 @@ const List = () => {
           }
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [user, listId, currentFilter, currentSort])
 
   const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
 
   const loadNextPage = useCallback(() => {
-    if (data.page < totalPages && server.result !== 0) {
+    if (data.page < totalPages) {
       loadDataPage(data.page + 1)
     }
-  }, [data.page, totalPages, loadDataPage, server.result])
+  }, [data.page, totalPages, loadDataPage])
 
   const handleLike = useCallback(async () => {
     if (!user || !(await isValidSession())) {

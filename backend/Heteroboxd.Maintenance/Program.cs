@@ -43,7 +43,7 @@ services.AddScoped<IR2Handler, R2Handler>();
 var _provider = services.BuildServiceProvider();
 var _logger = _provider.GetRequiredService<ILogger<MaintanenceExecutor>>();
 var _executor = new MaintanenceExecutor();
-var _cts = new CancellationTokenSource(TimeSpan.FromHours(4));
+var _cts = new CancellationTokenSource(TimeSpan.FromHours(3));
 var _ct = _cts.Token;
 
 _logger.LogInformation("=== Maintenance job started at {Time} UTC ===", DateTime.UtcNow);

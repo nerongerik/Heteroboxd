@@ -18,12 +18,15 @@ const UserLikes = () => {
   const router = useRouter()
   const navigation = useNavigation()
   const requestRef = useRef(0)
+  const loadingRef = useRef(false)
 
   const loadData = useCallback(async (pages = {}) => {
     setServer(Response.loading)
     try {
       const params = new URLSearchParams({ ReviewsPage: pages.reviews || 1, ListsPage: pages.lists || 1, PageSize: PAGE_SIZE })
+      if (loadingRef.current) return
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/users/likes?UserId=${userId}&${params}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -43,15 +46,19 @@ const UserLikes = () => {
           setLists(prev => ({...prev, page: json.likedLists.page, items: prev.items.length > 250 ? [...prev.items.slice(-230), ...json.likedLists.items] : [...prev.items, ...json.likedLists.items]}))
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
         setServer(Response.notFound)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [userId])
 

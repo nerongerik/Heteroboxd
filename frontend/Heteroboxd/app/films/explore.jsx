@@ -22,7 +22,7 @@ const Explore = () => {
   const { user } = useAuth()
   const { filter, value } = useLocalSearchParams()
   const [ currentFilter, setCurrentFilter ] = useState((filter && value) ? { field: filter, value: value } : { field: 'ALL', value: null })
-  const [currentSort, setCurrentSort] = useState({ field: 'RELEASE DATE', desc: true })
+  const [currentSort, setCurrentSort] = useState({ field: 'POPULARITY', desc: true })
   const router = useRouter()
   const navigation = useNavigation()
   const { width } = useWindowDimensions()
@@ -34,6 +34,7 @@ const Explore = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
+  const loadingRef = useRef(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -58,7 +59,9 @@ const Explore = () => {
       const url = user
       ? `${BaseUrl.api}/films/all?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/films/all?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
+      if (loadingRef.current) return
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(url)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -76,12 +79,15 @@ const Explore = () => {
           }
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [user, currentFilter, currentSort])
 
@@ -109,10 +115,10 @@ const Explore = () => {
   const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
 
   const loadNextPage = useCallback(() => {
-    if (data.page < totalPages && server.result !== 0) {
+    if (data.page < totalPages) {
       loadDataPage(data.page + 1)
     }
-  }, [data.page, totalPages, loadDataPage, server.result])
+  }, [data.page, totalPages, loadDataPage])
 
   const widescreen = useMemo(() => width > 1000, [width])
 

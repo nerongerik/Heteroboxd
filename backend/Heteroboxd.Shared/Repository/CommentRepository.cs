@@ -29,7 +29,7 @@ namespace Heteroboxd.Shared.Repository
             var CommentQuery = _context.Comments
                 .AsNoTracking()
                 .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
-                .OrderByDescending(x => x.c.Flags);
+                .OrderByDescending(x => x.c.Flags).ThenBy(x => x.c.Id);
             var TotalCount = await CommentQuery.CountAsync();
             var Responses = await CommentQuery
                 .Skip((Page - 1) * PageSize)
@@ -55,7 +55,7 @@ namespace Heteroboxd.Shared.Repository
                 .AsNoTracking()
                 .Where(c => c.ReviewId == ReviewId)
                 .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
-                .OrderByDescending(x => x.c.Date);
+                .OrderBy(x => x.c.Date).ThenBy(x => x.c.Id);
 
             var TotalCount = await ReviewQuery.CountAsync();
             var Responses = await ReviewQuery

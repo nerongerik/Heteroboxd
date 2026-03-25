@@ -102,26 +102,26 @@ namespace Heteroboxd.Shared.Repository
                 switch (Sort.ToLower())
                 {
                     case "popularity":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount) : FilmsQuery.OrderBy(f => f.WatchCount);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.Date).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.WatchCount).ThenByDescending(f => f.Date).ThenBy(f => f.Id);
                         break;
                     case "length":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Length) : FilmsQuery.OrderBy(f => f.Length);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Length).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.Length).ThenBy(f => f.Id);
                         break;
                     case "release date":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Date) : FilmsQuery.OrderBy(f => f.Date);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Date).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.Date).ThenBy(f => f.Id);
                         break;
                     case "average rating":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.AverageRating).ThenByDescending(f => f.WatchCount) : FilmsQuery.OrderBy(f => f.AverageRating).ThenByDescending(f => f.WatchCount);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.AverageRating).ThenByDescending(f => f.WatchCount).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.AverageRating).ThenByDescending(f => f.WatchCount).ThenBy(f => f.Id);
                         break;
                     default:
                         //error fallback
                         if (Filter.ToLower() == "popular" || Filter.ToLower() == "year")
                         {
-                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount) : FilmsQuery.OrderBy(f => f.WatchCount);
+                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.WatchCount).ThenBy(f => f.Id);
                         }
                         else
                         {
-                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Date) : FilmsQuery.OrderBy(f => f.Date);
+                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Date).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.Date).ThenBy(f => f.Id);
                         }
                         break;
                 }
@@ -166,26 +166,26 @@ namespace Heteroboxd.Shared.Repository
                 switch (Sort.ToLower())
                 {
                     case "popularity":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.WatchCount) : FilmsQuery.OrderBy(x => x.Film.WatchCount);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.WatchCount).ThenByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id) : FilmsQuery.OrderBy(x => x.Film.WatchCount).ThenByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id);
                         break;
                     case "length":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.Length) : FilmsQuery.OrderBy(x => x.Film.Length);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.Length).ThenBy(x => x.Film.Id) : FilmsQuery.OrderBy(x => x.Film.Length).ThenBy(x => x.Film.Id);
                         break;
                     case "release date":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.Date) : FilmsQuery.OrderBy(x => x.Film.Date);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id) : FilmsQuery.OrderBy(x => x.Film.Date).ThenBy(x => x.Film.Id);
                         break;
                     case "average rating":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount) : FilmsQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : FilmsQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                         break;
                     default:
                         //error fallback
                         if (Filter.ToLower() == "popular" || Filter.ToLower() == "year")
                         {
-                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.WatchCount) : FilmsQuery.OrderBy(x => x.Film.WatchCount);
+                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : FilmsQuery.OrderBy(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                         }
                         else
                         {
-                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.Date) : FilmsQuery.OrderBy(x => x.Film.Date);
+                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id) : FilmsQuery.OrderBy(x => x.Film.Date).ThenBy(x => x.Film.Id);
                         }
                         break;
                 }
@@ -207,7 +207,7 @@ namespace Heteroboxd.Shared.Repository
             {
                 var Films = await _context.Films
                     .AsNoTracking()
-                    .OrderBy(f => EF.Functions.Random())
+                    .OrderBy(f => EF.Functions.Random()).ThenBy(f => f.Id)
                     .Take(PageSize)
                     .ToListAsync();
                 return (Films, null, null);
@@ -216,7 +216,7 @@ namespace Heteroboxd.Shared.Repository
             {
                 var FilmsQuery = _context.Films
                     .AsNoTracking()
-                    .OrderBy(f => EF.Functions.Random())
+                    .OrderBy(f => EF.Functions.Random()).ThenBy(f => f.Id)
                     .Take(PageSize)
                     .GroupJoin(_context.UserWatchedFilms.Where(uwf => uwf.UserId == UserId), f => f.Id, uwf => uwf.FilmId, (f, uwfs) => new { f, uwfs })
                     .SelectMany(x => x.uwfs.DefaultIfEmpty(), (x, uwf) => new { x.f, uwf })
@@ -255,23 +255,23 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "date watched":
-                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Uwf.Date) : UwQuery.OrderBy(x => x.Uwf.Date);
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Uwf.Date).ThenBy(x => x.Film.Id) : UwQuery.OrderBy(x => x.Uwf.Date).ThenBy(x => x.Film.Id);
                     break;
                 case "popularity":
-                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.WatchCount) : UwQuery.OrderBy(x => x.Film.WatchCount);
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : UwQuery.OrderBy(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                     break;
                 case "length":
-                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.Length) : UwQuery.OrderBy(x => x.Film.Length);
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.Length).ThenBy(x => x.Film.Id) : UwQuery.OrderBy(x => x.Film.Length).ThenBy(x => x.Film.Id);
                     break;
                 case "release date":
-                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.Date) : UwQuery.OrderBy(x => x.Film.Date);
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id) : UwQuery.OrderBy(x => x.Film.Date).ThenBy(x => x.Film.Id);
                     break;
                 case "average rating":
-                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount) : UwQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount);
+                    UwQuery = Desc ? UwQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : UwQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                     break;
                 default:
                     //error fallback
-                    UwQuery = UwQuery.OrderByDescending(x => x.Uwf.Date);
+                    UwQuery = UwQuery.OrderByDescending(x => x.Uwf.Date).ThenBy(x => x.Film.Id);
                     break;
             }
 
@@ -323,7 +323,7 @@ namespace Heteroboxd.Shared.Repository
                 var TotalCount = await Query.CountAsync();
 
                 var Films = await Query
-                    .OrderByDescending(f => f.WatchCount)
+                    .OrderByDescending(f => f.WatchCount).ThenBy(f => f.Id)
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();

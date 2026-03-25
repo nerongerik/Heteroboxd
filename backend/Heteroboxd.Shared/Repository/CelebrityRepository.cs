@@ -49,20 +49,20 @@ namespace Heteroboxd.Shared.Repository
                 switch (Sort.ToLower())
                 {
                     case "popularity":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.WatchCount) : CreditsQuery.OrderBy(f => f.WatchCount);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.WatchCount).ThenBy(f => f.Id) : CreditsQuery.OrderBy(f => f.WatchCount).ThenBy(f => f.Id);
                         break;
                     case "length":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Length) : CreditsQuery.OrderBy(f => f.Length);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Length).ThenBy(f => f.Id) : CreditsQuery.OrderBy(f => f.Length).ThenBy(f => f.Id);
                         break;
                     case "release date":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Date) : CreditsQuery.OrderBy(f => f.Date);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Date).ThenBy(f => f.Id) : CreditsQuery.OrderBy(f => f.Date).ThenBy(f => f.Id);
                         break;
                     case "average rating":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.AverageRating).ThenByDescending(f => f.WatchCount) : CreditsQuery.OrderBy(f => f.AverageRating).ThenByDescending(f => f.WatchCount);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.AverageRating).ThenByDescending(f => f.WatchCount).ThenBy(f => f.Id) : CreditsQuery.OrderBy(f => f.AverageRating).ThenByDescending(f => f.WatchCount).ThenBy(f => f.Id);
                         break;
                     default:
                         //error handling
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Date) : CreditsQuery.OrderBy(f => f.Date);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(f => f.Date).ThenBy(f => f.Id) : CreditsQuery.OrderBy(f => f.Date).ThenBy(f => f.Id);
                         break;
                 }
 
@@ -97,20 +97,20 @@ namespace Heteroboxd.Shared.Repository
                 switch (Sort.ToLower())
                 {
                     case "popularity":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.WatchCount) : CreditsQuery.OrderBy(x => x.Film.WatchCount);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : CreditsQuery.OrderBy(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                         break;
                     case "length":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Length) : CreditsQuery.OrderBy(x => x.Film.Length);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Length).ThenBy(x => x.Film.Id) : CreditsQuery.OrderBy(x => x.Film.Length).ThenBy(x => x.Film.Id);
                         break;
                     case "release date":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Date) : CreditsQuery.OrderBy(x => x.Film.Date);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id) : CreditsQuery.OrderBy(x => x.Film.Date).ThenBy(x => x.Film.Id);
                         break;
                     case "average rating":
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount) : CreditsQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id) : CreditsQuery.OrderBy(x => x.Film.AverageRating).ThenByDescending(x => x.Film.WatchCount).ThenBy(x => x.Film.Id);
                         break;
                     default:
                         //error handling
-                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Date) : CreditsQuery.OrderBy(x => x.Film.Date);
+                        CreditsQuery = Desc ? CreditsQuery.OrderByDescending(x => x.Film.Date).ThenBy(x => x.Film.Id) : CreditsQuery.OrderBy(x => x.Film.Date).ThenBy(x => x.Film.Id);
                         break;
                 }
 
@@ -148,6 +148,7 @@ namespace Heteroboxd.Shared.Repository
 
                 var TotalCount = await Query.CountAsync();
                 var Results = await Query
+                    .OrderBy(c => c.Id)
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();

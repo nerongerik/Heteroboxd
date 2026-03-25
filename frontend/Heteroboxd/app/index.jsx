@@ -293,7 +293,7 @@ const Home = () => {
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Search</HText>
             </Pressable>
-            <Pressable onPress={() => navPress(`/films/explore?filter=${'ALL'}&value=${'RELEASE DATE'}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+            <Pressable onPress={() => navPress(`/films/explore`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
               <View style={{width: 30, alignItems: 'center'}}>
               <Explore width={24} height={24} fill={Colors.text} />
               </View>

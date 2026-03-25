@@ -47,6 +47,7 @@ const Celebrity = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
+  const loadingRef = useRef(false)
   
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -99,7 +100,9 @@ const Celebrity = () => {
       const url = user
       ? `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
       : `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
+      if (loadingRef.current) return
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(url)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -117,15 +120,19 @@ const Celebrity = () => {
           }
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
         setServer(Response.notFound)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [user, celebrityId, currentSort])
 

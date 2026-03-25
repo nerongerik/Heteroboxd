@@ -32,15 +32,14 @@ namespace Heteroboxd.Shared.Repository
         public async Task<int> CountUnreadAsync(Guid UserId) =>
             await _context.Notifications
                 .AsNoTracking()
-                .Where(n => n.UserId == UserId && !n.Read)
-                .CountAsync();
+                .CountAsync(n => n.UserId == UserId && !n.Read);
 
         public async Task<(List<Notification> Notifications, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize)
         {
             var UserQuery = _context.Notifications
                 .AsNoTracking()
                 .Where(n => n.UserId == UserId)
-                .OrderByDescending(n => n.Date);
+                .OrderByDescending(n => n.Date).ThenBy(n => n.Id);
 
             var TotalCount = await UserQuery.CountAsync();
 

@@ -54,20 +54,20 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "popularity":
-                    Query = Desc ? Query.OrderByDescending(x => x.r.LikeCount) : Query.OrderBy(x => x.r.LikeCount);
+                    Query = Desc ? Query.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.LikeCount).ThenBy(x => x.r.Id);
                     break;
                 case "date created":
-                    Query = Desc ? Query.OrderByDescending(x => x.r.Date) : Query.OrderBy(x => x.r.Date);
+                    Query = Desc ? Query.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.Date).ThenBy(x => x.r.Id);
                     break;
                 case "rating":
-                    Query = Desc ? Query.OrderByDescending(x => x.r.Rating) : Query.OrderBy(x => x.r.Rating);
+                    Query = Desc ? Query.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
                 case "flags":
-                    Query = Query.OrderByDescending(x => x.r.Flags);
+                    Query = Query.OrderByDescending(x => x.r.Flags).ThenBy(x => x.r.Id);
                     break;
                 default:
                     //error handling
-                    Query = Query.OrderByDescending(x => x.r.Date);
+                    Query = Query.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id);
                     break;
             }
 
@@ -117,17 +117,17 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "popularity":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.LikeCount) : FilmQuery.OrderBy(x => x.r.LikeCount);
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.LikeCount).ThenBy(x => x.r.Id);
                     break;
                 case "date created":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.Date) : FilmQuery.OrderBy(x => x.r.Date);
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.Date).ThenBy(x => x.r.Id);
                     break;
                 case "rating":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.Rating) : FilmQuery.OrderBy(x => x.r.Rating);
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
                 default:
                     //error handling
-                    FilmQuery = FilmQuery.OrderByDescending(x => x.r.LikeCount);
+                    FilmQuery = FilmQuery.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id);
                     break;
             }
 
@@ -146,7 +146,7 @@ namespace Heteroboxd.Shared.Repository
             var Responses = await _context.Reviews
                 .AsNoTracking()
                 .Where(r => r.FilmId == FilmId && r.Text != null && r.Text.Length > 0 && !r.Spoiler)
-                .OrderByDescending(r => r.LikeCount)
+                .OrderByDescending(r => r.LikeCount).ThenBy(r => r.Id)
                 .Take(PageSize)
                 .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
                 .Select(x => new JoinResponse<Review, User> { Item = x.r, Joined = x.u })
@@ -169,17 +169,17 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "popularity":
-                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.LikeCount) : UserQuery.OrderBy(x => x.r.LikeCount);
+                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.LikeCount).ThenBy(x => x.r.Id);
                     break;
                 case "date created":
-                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.Date) : UserQuery.OrderBy(x => x.r.Date);
+                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.Date).ThenBy(x => x.r.Id);
                     break;
                 case "rating":
-                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.Rating) : UserQuery.OrderBy(x => x.r.Rating);
+                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
                 default:
                     //error handling
-                    UserQuery = UserQuery.OrderByDescending(x => x.r.Date);
+                    UserQuery = UserQuery.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id);
                     break;
             }
 

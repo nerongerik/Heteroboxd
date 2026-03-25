@@ -37,16 +37,8 @@ const About = () => {
           Is Heteroboxd a wild-west platform?
         </HText>
         <HText style={styles.text}>  
-          Yes... and no. Heteroboxd enforces no speech restrictions per se, but remains very serious about both the privacy of its
-          users and the integrity of the founding vision. The community is encouraged to report any behavior threatening these
-          core tenets so they can be accordingly penalized.
-        </HText>
-    
-        <HText style={styles.subtitle}>
-          Does Heteroboxd have guidelines?
-        </HText>
-        <HText style={styles.text}>
-          Yes! Unlike our competitors, Heteroboxd is 100% transparent with its <Link style={styles.link} href='https://heteroboxd.com/guidelines'>code of conduct.</Link>
+          Yes... and no. Heteroboxd enforces no speech restrictions per se, but retains the right to silence any behavior that threatens
+          the privacy of our users, endangers the founding vision, or blasphemes the good name of our Lord and Savior, Jesus Christ.
         </HText>
 
         <HText style={styles.subtitle}>

@@ -41,6 +41,7 @@ const ReviewWithComments = () => {
   const reviewLocalCopyRef = useRef(null)
   const likeRequestRef = useRef(0)
   const requestRef = useRef(0)
+  const loadingRef = useRef(false)
 
   const loadReviewData = useCallback(async () => {
     setServer(Response.loading)
@@ -82,7 +83,9 @@ const ReviewWithComments = () => {
 
   const loadCommentsDataPage = useCallback(async (page) => {
     try {
+      if (loadingRef.current) return
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/comments/review?ReviewId=${reviewId}&Page=${page}&PageSize=${PAGE_SIZE}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -92,14 +95,17 @@ const ReviewWithComments = () => {
         } else {
           setComments(prev => ({...prev, page: json.page, comments: prev.comments.length > 1000 ? [...prev.comments.slice(-980), ...json.items] : [...prev.comments, ...json.items]}))
         }
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setComments({ page: 1, comments: [], totalCount: 0 })
         console.log('load comments failed; internal server error.')
+        loadingRef.current = false
       }
     } catch {
       setComments({ page: 1, comments: [], totalCount: 0 })
       console.log('load comments failed; network error.')
+      loadingRef.current = false
     }
   }, [reviewId])
 
