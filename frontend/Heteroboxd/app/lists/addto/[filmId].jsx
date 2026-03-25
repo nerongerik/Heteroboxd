@@ -28,6 +28,7 @@ const AddToLists = () => {
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
   const requestRef = useRef(0)
+  const loadingRef = useRef(false)
 
   const fetchLists = useCallback(async (page) => {
     if (!user || !(await isValidSession())) {
@@ -36,8 +37,10 @@ const AddToLists = () => {
     }
     setServer(Response.loading)
     try {
+      if (loadingRef.current) return
       const jwt = await auth.getJwt()
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/lists/film-interact?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -50,22 +53,25 @@ const AddToLists = () => {
           setUsersLists(prev => ({...prev, page: json.page, lists: prev.lists.length > 1000 ? [...prev.lists.slice(-980), ...json.items] : [...prev.lists, ...json.items]}))
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [user, filmId])
 
   const totalPages = useMemo(() => Math.ceil(usersLists.totalCount / PAGE_SIZE), [usersLists.totalCount])
 
   const loadNextPage = useCallback(() => {
-    if (usersLists.page < totalPages && server.result !== 0) {
+    if (usersLists.page < totalPages) {
       fetchLists(usersLists.page + 1)
     }
-  }, [usersLists.page, totalPages, fetchLists, server.result])
+  }, [usersLists.page, totalPages, fetchLists])
 
   const addToLists = useCallback(async () => {
     if (!user || !(await isValidSession())) {

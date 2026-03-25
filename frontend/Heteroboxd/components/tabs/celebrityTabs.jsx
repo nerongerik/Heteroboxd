@@ -71,7 +71,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'center', width: maxRowWidth}}>
           <View style={{padding: 5}}>
             <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 16}}>
-              {currentTabData?.totalCount || 0} films
+              {(!currentTabData?.totalCount || currentTabData.totalCount === 0) ? '' : `${currentTabData.totalCount} films`}
             </HText>
           </View>
           {

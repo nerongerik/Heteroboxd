@@ -21,43 +21,25 @@ const TABS = ['films', 'celebrities', 'lists', 'users']
 const SearchTabs = ({ widescreen, router }) => {
   const [ query, setQuery ] = useState('')
   const queryRef = useRef('')
-  const [ searching, setSearching ] = useState(0)
   const { width } = useWindowDimensions()
   const { searches: history, saveSearch } = useSearchHistory()
+  const [ showHistory, setShowHistory ] = useState(true)
   const [ results, setResults ] = useState({ page: 1, items: [], totalCount: 0 })
   const [ tab, setTab ] = useState('films')
   const [ border, setBorder ] = useState(false)
   const listRef = useRef(null)
-  const debounceRef = useRef(null)
-  const [ searchMode, setSearchMode ] = useState('')
   const requestRef = useRef(0)
+  const [ loading, setLoading ] = useState(false)
+  const loadingRef = useRef(false)
 
-  const setQueryAndRef = (text) => {
-    setQuery(text)
-    queryRef.current = text
-  }
-
-  const incrementalSearch = useCallback(async (overrideQuery) => {
-    const activeQuery = overrideQuery || query
-    if (activeQuery.trim().length === 0) return
-    setSearching(1)
-    try {
-      const res = await fetch(`${BaseUrl.api}/${tab}/search?Search=${activeQuery}&Page=1&PageSize=${PAGE_SIZE/4}`)
-      if (res.ok) {
-        const json = await res.json()
-        setResults({ page: json.page, items: json.items, totalCount: json.totalCount })
-        setSearchMode('incremental')
-      }
-    } finally {
-      setSearching(2)
-    }
-  }, [query, tab])
-
-  const fullSearch = useCallback(async (page, overrides = {}) => {
-    const activeQuery = overrides.query ?? queryRef.current
+  const search = useCallback(async (page, overrides = {}) => {
+    const activeQuery = overrides.query || queryRef.current
     const activeTab = overrides.tab || tab
+    if (loadingRef.current) return
     const requestId = ++requestRef.current
-    setSearching(1)
+    loadingRef.current = true
+    setShowHistory(false)
+    setLoading(true)
     if (page === 1) saveSearch(activeQuery, activeTab)
     try {
       const res = await fetch(`${BaseUrl.api}/${activeTab}/search?Search=${activeQuery}&Page=${page}&PageSize=${PAGE_SIZE}`)
@@ -67,34 +49,38 @@ const SearchTabs = ({ widescreen, router }) => {
         if (page === 1) {
           setResults({ page: json.page, items: json.items, totalCount: json.totalCount })
         } else {
-          setResults(prev => ({...prev, page: json.page, items: prev.items.length > 100 ? [...prev.items.slice(-80), ...json.items] : [...prev.items, ...json.items]}))
+          setResults(prev => ({...prev, page: json.page, items: prev.items.length > 1000 ? [...prev.items.slice(-980), ...json.items] : [...prev.items, ...json.items]}))
         }
-        setSearchMode('full')
       }
-    } finally {
-      setSearching(2)
+      setLoading(false)
+      loadingRef.current = false
+    } catch {
+      setLoading(false)
+      loadingRef.current = false
     }
   }, [tab, saveSearch])
 
   const totalPages = useMemo(() => Math.ceil(results.totalCount / PAGE_SIZE), [results.totalCount])
 
   const loadNextPage = useCallback(() => {
-    if (results.page < totalPages && searching !== 1) {
-      fullSearch(results.page + 1)
+    if (results.page < totalPages) {
+      search(results.page + 1)
     }
-  }, [results.page, totalPages, fullSearch, searching])
+  }, [results.page, totalPages, search])
 
   const repeatSearch = useCallback((s) => {
     setTab(s.tab)
-    setQueryAndRef(s.query)
-    fullSearch(1, { query: s.query, tab: s.tab })
-  }, [fullSearch])
+    setQuery(s.query)
+    queryRef.current = s.query
+    search(1, { query: s.query, tab: s.tab })
+  }, [search])
 
   const resetParams = useCallback((tab) => {
     setTab(tab)
     setResults({ page: 1, items: [], totalCount: 0 })
-    setQueryAndRef('')
-    setSearching(0)
+    setQuery('')
+    queryRef.current = ''
+    setShowHistory(true)
   }, [])
 
   const panResponder = useMemo(() => {
@@ -128,9 +114,9 @@ const SearchTabs = ({ widescreen, router }) => {
     </Pressable>
   ), [])
 
-  const Footer = useMemo(() => (results.items.length > 0 && searching === 1 && searchMode === 'full') ? (
+  const Footer = useMemo(() => (results.items.length > 0 && loading) ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
-  ) : null, [results.items.length, searching, searchMode])
+  ) : null, [results.items.length, loading])
 
   const RenderItem = useCallback(({ item }) => {
     switch (tab) {
@@ -313,38 +299,24 @@ const SearchTabs = ({ widescreen, router }) => {
             }}
             placeholder={`Search ${tab}...`}
             value={query}
-            onChangeText={(text) => {
-              const prev = queryRef.current
-              setQueryAndRef(text)
-              clearTimeout(debounceRef.current)
-              if (text.length === 0) {
-                setResults({ page: 1, items: [], totalCount: 0 })
-                setSearching(0)
-                setSearchMode('')
-                return
-              }
-              if (text.length < prev.length) return
-              debounceRef.current = setTimeout(() => {
-                incrementalSearch(text)
-              }, 250)
-            }}
+            onChangeText={(text) => {setQuery(text); queryRef.current = text}}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
             onFocus={() => setBorder(true)}
             onBlur={() => setBorder(false)}
             onSubmitEditing={() => {
-              if (query.length > 0) fullSearch(1)
+              if (query.length > 0) search(1)
             }}
           />
           <Pressable
-            onPress={() => fullSearch(1)}
+            onPress={() => search(1)}
             style={[{alignItems: 'center', alignContent: 'center', backgroundColor: Colors.heteroboxd, padding: 12, borderTopRightRadius: 10, borderBottomRightRadius: 10, borderWidth: 2, borderLeftWidth: 0, borderColor: border ? Colors.heteroboxd : Colors.border_color, height: 45, justifyContent: 'center'}, query.length === 0 && {opacity: 0.8}]}
             disabled={query.length === 0}
           >
             <Search width={widescreen ? 24 : 18} height={widescreen ? 24 : 18} fill={Colors.text_button} />
           </Pressable>
         </View>
-        {searching !== 0 && (
+        {!showHistory && (
           <View style={{width: widescreen ? 100 : null, alignSelf: 'center'}}>
             <Pressable onPress={() => resetParams(tab)}>
               <X width={24} height={24} />
@@ -353,7 +325,7 @@ const SearchTabs = ({ widescreen, router }) => {
         )}
       </View>
 
-      {searching === 0 ? (
+      {showHistory ? (
         <ScrollView style={{marginBottom: 30}} showsVerticalScrollIndicator={false}>
           {history.map((s, i) => (
             <View key={i}>
@@ -368,7 +340,7 @@ const SearchTabs = ({ widescreen, router }) => {
             </View>
           ))}
         </ScrollView>
-      ) : searching === 1 && searchMode !== 'full' ? (
+      ) : results.items.length === 0 && loading ? (
         <View style={{width: '100%', alignItems: 'center', paddingVertical: 30}}>
           <ActivityIndicator size='large' color={Colors.text_link} />
         </View>
@@ -379,7 +351,7 @@ const SearchTabs = ({ widescreen, router }) => {
           key={tab}
           keyExtractor={(_, index) => `${tab}-${index}`}
           renderItem={RenderItem}
-          ListEmptyComponent={searching === 2 && <HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to see here.</HText>}
+          ListEmptyComponent={!loading && <HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to see here.</HText>}
           ListFooterComponent={Footer}
           style={{width: '100%', alignSelf: 'center'}}
           contentContainerStyle={{paddingBottom: 80}}

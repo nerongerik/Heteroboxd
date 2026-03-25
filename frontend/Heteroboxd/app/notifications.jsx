@@ -23,6 +23,7 @@ const Notifications = () => {
   const navigation = useNavigation()
   const { width } = useWindowDimensions()
   const requestRef = useRef(0)
+  const loadingRef = useRef(false)
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
     if (!user || !(await isValidSession())) {
@@ -32,8 +33,10 @@ const Notifications = () => {
     try {
       if (fromRefresh) setIsRefreshing(false)
       setServer(Response.loading)
+      if (loadingRef.current) return
       const jwt = await auth.getJwt()
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/notifications?Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -46,12 +49,15 @@ const Notifications = () => {
           setData(prev => ({...prev, page: json.page, notifs: prev.notifs.length > 1000 ? [...prev.notifs.slice(-980), ...json.items] : [...prev.notifs, ...json.items]}))
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [user])
 
@@ -115,10 +121,10 @@ const Notifications = () => {
   const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
 
   const loadNextPage = useCallback(() => {
-    if (data.page < totalPages && server.result !== 0) {
+    if (data.page < totalPages) {
       loadDataPage(data.page + 1)
     }
-  }, [data.page, totalPages, loadDataPage, server.result])
+  }, [data.page, totalPages, loadDataPage])
 
   useEffect(() => {
     navigation.setOptions({

@@ -31,6 +31,7 @@ const Watchlist = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
   const requestRef = useRef(0)
+  const loadingRef = useRef(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -56,8 +57,10 @@ const Watchlist = () => {
     }
     setServer(Response.loading)
     try {
+      if (loadingRef.current) return
       const jwt = await auth.getJwt()
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/users/watchlist?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -70,12 +73,15 @@ const Watchlist = () => {
           setData(prev => ({...prev, page: json.page, entries: prev.entries.length > 1000 ? [...prev.entries.slice(-980), ...json.items] : [...prev.entries, ...json.items]}))
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [user, userId, currentFilter, currentSort])
 
@@ -105,10 +111,10 @@ const Watchlist = () => {
   const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
 
   const loadNextPage = useCallback(() => {
-    if (data.page < totalPages && server.result !== 0) {
+    if (data.page < totalPages) {
       loadDataPage(data.page + 1)
     }
-  }, [data.page, totalPages, loadDataPage, server.result])
+  }, [data.page, totalPages, loadDataPage])
 
   const handleDelete = useCallback(async (filmId) => {
     if (user?.userId !== userId || !(await isValidSession())) {

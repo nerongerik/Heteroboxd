@@ -21,6 +21,7 @@ const Relationships = () => {
   const [ server, setServer ] = useState(Response.initial)
   const router = useRouter()
   const requestRef = useRef(0)
+  const loadingRef = useRef(0)
 
   const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
@@ -33,7 +34,9 @@ const Relationships = () => {
       PageSize: PAGE_SIZE
     })
     try {
+      if (loadingRef.current) return
       const requestId = ++requestRef.current
+      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/users/relationships?UserId=${userId}&${params}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -101,15 +104,19 @@ const Relationships = () => {
           }
         }
         setServer(Response.ok)
+        loadingRef.current = false
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
         setServer(Response.notFound)
+        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
+        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+      loadingRef.current = false
     }
   }, [userId, isOwnProfile])
 
