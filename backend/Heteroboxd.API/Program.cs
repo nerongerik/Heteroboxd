@@ -16,6 +16,10 @@ using System.Collections.Concurrent;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+
+builder.Services.AddHealthChecks();
+
 //database config
 builder.Services.AddDbContext<HeteroboxdContext>(options =>
     options.UseNpgsql(config.GetConnectionString("DefaultConnection"), npgsqlOptions =>
@@ -120,22 +124,17 @@ FirebaseApp.Create(new AppOptions()
 
 var app = builder.Build();
 
-//middleware pipeline config
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
+app.UseHealthChecks("/health");
 
-app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+app.Run($"http://0.0.0.0:{port}");
 
-
+//one-time bulk import from tMDB
 using var Scope = app.Services.CreateScope();
 var _client = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
 var FilePath = "C:/Code/Heteroboxd/ids.txt";
