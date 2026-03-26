@@ -91,6 +91,7 @@ const Watchlist = () => {
       return
     }
     setServer(Response.loading)
+    setData({ page: 1, entries: [], totalCount: 0 })
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/shuffle?PageSize=${PAGE_SIZE}`, {
