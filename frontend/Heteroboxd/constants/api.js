@@ -1,3 +1,3 @@
 export const BaseUrl = {
-    api: "heteroboxdapi-production.up.railway.app/api"
+    api: "https://heteroboxdapi-production.up.railway.app/api"
 }
