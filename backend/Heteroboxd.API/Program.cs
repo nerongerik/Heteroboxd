@@ -134,6 +134,7 @@ app.MapControllers();
 
 app.Run($"http://0.0.0.0:{port}");
 
+/*
 //one-time bulk import from tMDB
 using var Scope = app.Services.CreateScope();
 var _client = Scope.ServiceProvider.GetRequiredService<ITMDBClient>();
@@ -208,3 +209,4 @@ if (File.Exists(FilePath))
     Console.WriteLine("=== IMPORT FINISHED ===");
     return;
 }
+*/
