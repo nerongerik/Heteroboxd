@@ -103,12 +103,19 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITMDBParser, TMDBParser>();
+
 builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 {
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config["TMDB:AccessToken"]}");
 });
 builder.Services.AddScoped<IR2Handler, R2Handler>();
+
+builder.Services.AddHttpClient("Brevo", client =>
+{
+    client.BaseAddress = new Uri("https://api.brevo.com/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 //controller config

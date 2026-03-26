@@ -16,7 +16,6 @@
 	<ItemGroup>
 		<PackageReference Include="EFCore.BulkExtensions" Version="9.0.1" />
 		<PackageReference Include="FirebaseAdmin" Version="3.4.0" />
-		<PackageReference Include="MailKit" Version="4.14.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.9" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.9" />
