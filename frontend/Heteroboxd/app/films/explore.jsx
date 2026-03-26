@@ -93,6 +93,7 @@ const Explore = () => {
 
   const shuffle = useCallback(async () => {
     setServer(Response.loading)
+    setData({ page: 1, films: [], totalCount: 0 })
     try {
       const url = user
         ? `${BaseUrl.api}/films/shuffle?UserId=${user.userId}&PageSize=${PAGE_SIZE}`
