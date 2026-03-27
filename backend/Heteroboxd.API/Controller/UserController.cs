@@ -59,7 +59,7 @@ namespace Heteroboxd.API.Controller
 
         [HttpGet("subsequent")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUserSubsequent(string UserId, int PageSize = 8)
+        public async Task<IActionResult> GetUserSubsequent(string UserId, int PageSize = 8, string? Pinned = null)
         {
             _logger.LogInformation($"GetUserSubsequent endpoint hit with UserId: {UserId}");
             try
@@ -68,7 +68,8 @@ namespace Heteroboxd.API.Controller
                 new
                 {
                     Favorites = await _service.GetFavorites(UserId),
-                    Recents = await _filmService.GetFilmsByUser(UserId, 1, PageSize, "ALL", "DATE WATCHED", true, null)
+                    Recents = await _filmService.GetFilmsByUser(UserId, 1, PageSize, "ALL", "DATE WATCHED", true, null),
+                    Pinned = Pinned == null ? null : await _reviewService.GetReview(Pinned)
                 });
             }
             catch (KeyNotFoundException)
@@ -347,6 +348,31 @@ namespace Heteroboxd.API.Controller
             try
             {
                 await _service.TrackFilm(UserId!, FilmId, Action);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPut("pin")]
+        [Authorize]
+        public async Task<IActionResult> PinObject(string ObjectId, string Type)
+        {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            _logger.LogInformation($"PinObject endpoint hit for {Type}: {ObjectId}");
+            try
+            {
+                await _service.PinObject(UserId!, ObjectId, Type);
                 return Ok();
             }
             catch (KeyNotFoundException)

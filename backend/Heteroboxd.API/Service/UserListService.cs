@@ -101,12 +101,13 @@ namespace Heteroboxd.API.Service
             var Author = await _userRepo.LightweightFetcherAsync(Guid.Parse(UserId));
             if (Author == null) throw new KeyNotFoundException();
 
-            var (Responses, TotalCount) = await _repo.GetByUserAsync(Guid.Parse(UserId), Page, PageSize, Filter, Sort, Desc, FilterValue);
+            var (Responses, TotalCount) = await _repo.GetByUserAsync(Author.Id, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<UserListInfoResponse>
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, Author)).ToList()
+                Items = Responses.Where(x => x.List.Item.Id != Author.PinnedListId).Select(x => new UserListInfoResponse(x.List.Item, x.Entries, Author)).ToList(),
+                Pinned = Responses.FirstOrDefault(x => x.List.Item.Id == Author.PinnedListId) == null ? null : new UserListInfoResponse(Responses.First(x => x.List.Item.Id == Author.PinnedListId).List.Item, Responses.First(x => x.List.Item.Id == Author.PinnedListId).Entries, Author)
             };
         }
 
@@ -180,8 +181,10 @@ namespace Heteroboxd.API.Service
             List<ListEntry> Created = new();
             foreach (var kvp in Request.Lists)
             {
-                Created.Add(new ListEntry(kvp.Value + 1, Film.Id, Guid.Parse(kvp.Key)));
-                await _repo.IncrementSize(Guid.Parse(kvp.Key));
+                var ListId = Guid.Parse(kvp.Key);
+                Created.Add(new ListEntry(kvp.Value + 1, Film.Id, ListId));
+                await _repo.IncrementSizeAsync(ListId);
+                await _repo.RedateAsync(ListId);
             }
             await _repo.CreateEntriesAsync(Created);
         }
@@ -195,8 +198,16 @@ namespace Heteroboxd.API.Service
         public async Task ReportList(string ListId) =>
             await _repo.ReportAsync(Guid.Parse(ListId));
 
-        public async Task DeleteList(string ListId) =>
+        public async Task DeleteList(string ListId)
+        {
+            var List = await _repo.GetByIdAsync(Guid.Parse(ListId));
+            if (List == null) throw new KeyNotFoundException();
+
+            var User = await _userRepo.LightweightFetcherAsync(List.AuthorId);
+            if (User != null && User.PinnedListId == List.Id) await _userRepo.PinListAsync(User.Id, List.Id);
+
             await _repo.DeleteAsync(Guid.Parse(ListId));
+        }
 
         private async Task<int> AddListEntries(Guid ListId, List<CreateListEntryRequest> Entries)
         {

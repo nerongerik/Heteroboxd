@@ -4,6 +4,7 @@ import Plus from '../../../assets/icons/plus.svg'
 import ListIco from '../../../assets/icons/list.svg'
 import Heart from '../../../assets/icons/heart.svg'
 import Filter from '../../../assets/icons/filter.svg'
+import Pin from '../../../assets/icons/pin.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
@@ -29,6 +30,7 @@ const UsersLists = () => {
   const router = useRouter()
   const { width } = useWindowDimensions()
   const [ data, setData ] = useState({ page: 1, lists: [], totalCount: 0 })
+  const [ pinnedId, setPinnedId ] = useState(null)
   const [ server, setServer ] = useState(Response.initial)
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE CREATED', desc: true })
   const listRef = useRef(null)
@@ -65,7 +67,8 @@ const UsersLists = () => {
         if (requestId !== requestRef.current) return
         const json = await res.json()
         if (page === 1) {
-          setData({ page: json.page, lists: json.items, totalCount: json.totalCount })
+          setData({ page: json.page, lists: json.pinned ? [json.pinned, ...json.items] : json.items, totalCount: json.totalCount })
+          if (json.pinned) setPinnedId(json.pinned.id)
         } else {
           setData(prev => ({...prev, page: json.page, lists: prev.lists.length > 250 ? [...prev.lists.slice(-230), ...json.items] : [...prev.lists, ...json.items]}))
         }
@@ -147,7 +150,8 @@ const UsersLists = () => {
   [userId, author, widescreen, router])
 
   const List = useCallback(({ item }) => (
-    <View style={[styles.card, {marginBottom: 5}]}>
+    <View style={[styles.card, {marginBottom: 5}, item.id === pinnedId && {borderWidth: 2, borderColor: Colors.heteroboxd}]}>
+      {pinnedId === item.id && <View style={{position: 'absolute', top: widescreen ? 10 : 5, right: widescreen ? 10 : 5}}><Pin height={widescreen ? 24 : 20} width={widescreen ? 24 : 20} /></View>}
       {AuthorSection}
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>
         <HText style={[styles.listTitle, {fontSize: widescreen ? 20 : 16}]}>{format.sliceText(item.name || '', widescreen ? 80 : 40)}</HText>
@@ -181,7 +185,7 @@ const UsersLists = () => {
           }
         </View>
         <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
-          {format.sliceText(item.description || '', widescreen ? 500 : 150)}
+          {format.sliceText((item.description || '').replace(/\n{2,}/g, '\n'), widescreen ? 500 : 150)}
         </HText>
         <View style={styles.statsRow}>
           <ListIco height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />

@@ -235,7 +235,7 @@ const ReviewWithComments = () => {
   useEffect(() => {
     if (!review) return
     navigation.setOptions({
-      headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} /> : null
+      headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} pinnedInitial={review.pinned} onPin={() => setReview(prev => ({...prev, pinned: !prev.pinned}))} /> : null
     })
   }, [navigation, user, review])
 

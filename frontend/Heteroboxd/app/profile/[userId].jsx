@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Male from '../../assets/icons/male.svg'
 import Female from '../../assets/icons/female.svg'
+import Heart from '../../assets/icons/heart.svg'
+import Pin from '../../assets/icons/pin.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -20,6 +22,9 @@ import ProfileOptionsButton from '../../components/optionButtons/profileOptionsB
 import SearchBox from '../../components/searchBox'
 import SlidingMenu from '../../components/slidingMenu'
 import { UserAvatar } from '../../components/userAvatar'
+import Author from '../../components/author'
+import ParsedRead from '../../components/parsedRead'
+import Stars from '../../components/stars'
 
 const RECENTS = 8
 const PAGE_SIZE = 50
@@ -36,6 +41,7 @@ const Profile = () => {
   const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const [ favorites, setFavorites ] = useState([])
   const [ recent, setRecent ] = useState(null)
+  const [ pinned, setPinned ] = useState({})
   const [ blocked, setBlocked ] = useState(false)
   const [ following, setFollowing ] = useState(false)
   const [ menuShown2, setMenuShown2 ] = useState(false)
@@ -86,7 +92,8 @@ const Profile = () => {
           name: json.profile.name, pictureUrl: json.profile.pictureUrl, bio: json.profile.bio, gender: json.profile.gender, admin: json.profile.admin,
           joined: format.parseDate(json.profile.date), flags: json.profile.flags, watchlistCount: json.profile.watchlistCount,
           listsCount: json.profile.listsCount, followersCount: json.profile.followersCount, followingCount: json.profile.followingCount,
-          blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount, likes: json.profile.likesCount, watched: json.profile.watchedCount
+          blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount, likes: json.profile.likesCount,
+          watched: json.profile.watchedCount, pinnedReviewId: json.profile.pinnedReviewId || null
         })
         setServer(Response.ok)
       } else if (res.status === 404) {
@@ -104,22 +111,23 @@ const Profile = () => {
 
   const loadFilmData = useCallback(async () => {
     try {
-      const res = await fetch(`${BaseUrl.api}/users/subsequent?UserId=${userId}&PageSize=${RECENTS}`)
+      const res = await fetch(`${BaseUrl.api}/users/subsequent?UserId=${userId}&PageSize=${RECENTS}${data?.pinnedReviewId ? `&Pinned=${data?.pinnedReviewId}` : ''}`)
       if (res.ok) {
         const json = await res.json()
         setFavorites([json.favorites["1"] || null, json.favorites["2"] || null, json.favorites["3"] || null, json.favorites["4"] || null])
         setRecent({ films: json.recents.items.filter(x => x), totalCount: json.recents.totalCount })
+        if (json.pinned) setPinned(json.pinned)
       } else {
         setFavorites([null, null, null, null])
         setRecent({ films: [], totalCount: 0 })
-        console.log('failed to fetch favorites and recents; internal server error...')
+        console.log('failed to fetch favorites, recents and pinned; internal server error...')
       }
     } catch {
       setFavorites([null, null, null, null])
       setRecent({ films: [], totalCount: 0 })
-      console.log('failed to fetch favorites and recents; network error...')
+      console.log('failed to fetch favorites, recents and pinned; network error...')
     }
-  }, [userId])
+  }, [userId, data?.pinnedReviewId])
 
   const handleButtons = useCallback((button) => {
     switch (button) {
@@ -225,6 +233,10 @@ const Profile = () => {
   const colPosterHeight = useMemo(() => colPosterWidth * (3 / 2), [colPosterWidth])
   const followButtonColor = useMemo(() => following ? Colors.heteroboxd : Colors._heteroboxd, [following])
   const followLabel = useMemo(() => following ? 'UNFOLLOW' : 'FOLLOW', [following])
+  const reviewSpacing = useMemo(() => (widescreen ? 30 : 5), [widescreen])
+  const reviewMaxRowWidth = useMemo(() => widescreen ? 900 : width * 0.9, [widescreen, width])
+  const reviewPosterWidth = useMemo(() => (reviewMaxRowWidth - reviewSpacing * 4) / 4, [reviewMaxRowWidth, reviewSpacing])
+  const reviewPosterHeight = useMemo(() => reviewPosterWidth * (3 / 2), [reviewPosterWidth])
 
   const Favorite = useCallback(({item, index}) => (
     <Pressable
@@ -299,6 +311,55 @@ const Profile = () => {
       </View>
     </Pressable>
   ), [updateFavorites, closeMenu2])
+
+  const RenderReview = useMemo(() => (
+    <View style={[styles.card, {marginBottom: 5, borderWidth: 2, borderColor: Colors.heteroboxd}]}>
+      <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+        <Author
+          userId={userId}
+          url={data?.pictureUrl || null}
+          username={format.sliceText(data?.name || 'Anonymous', widescreen ? 50 : 25)}
+          admin={data?.admin}
+          router={router}
+          widescreen={widescreen}
+          dim={widescreen ? 40 : 30}
+        />
+        <Stars size={widescreen ? 30 : 20} rating={pinned.rating} readonly={true} padding={false} align={'flex-end'} />
+      </View>
+      <Pressable onPress={() => router.push(`/review/${pinned.id}`)}>
+        <HText style={{padding: 5, flex: 1, flexWrap: 'wrap', fontWeight: '600', textAlign: 'left', fontSize: widescreen ? 20 : 16, color: Colors.text_title}}>
+          {format.sliceText(pinned.filmTitle || '', widescreen ? 100 : 50)}
+        </HText>
+        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+          <View style={{width: reviewPosterWidth, height: reviewPosterHeight, marginRight: 5}}>
+            <Poster
+              posterUrl={pinned.filmPosterUrl || 'noposter'}
+              style={{
+                width: reviewPosterWidth,
+                height: reviewPosterHeight,
+                borderWidth: 2,
+                borderRadius: 6,
+                borderColor: Colors.border_color
+              }}
+            />
+          </View>
+          {pinned.text?.length > 0 ? (
+            <View style={{width: reviewMaxRowWidth - reviewPosterWidth - 10, maxHeight: reviewPosterHeight, overflow: 'hidden'}}>
+              <ParsedRead html={`${format.sliceText(pinned.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={reviewMaxRowWidth - reviewPosterWidth - 10} />
+            </View>
+          ) : (
+            <View style={{width: reviewMaxRowWidth - reviewPosterWidth - 10, marginLeft: -5}}>
+              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
+            </View>
+          )}
+        </View>
+        <View style={styles.statsRow}>
+          <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
+          <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(pinned.likeCount)}</HText>
+        </View>
+      </Pressable>
+    </View>
+  ), [widescreen, router, userId, data, pinned, reviewPosterWidth, reviewPosterHeight, reviewMaxRowWidth])
 
   if (!data) {
     return (
@@ -393,6 +454,15 @@ const Profile = () => {
         }
 
         <Divider marginVertical={20} />
+
+        {
+          pinned.id &&
+            <>
+              <HText style={[styles.subtitle, {marginBottom: 10}]}>Pinned Review</HText>
+              {RenderReview}
+              <Divider marginVertical={20} />
+            </>
+        }
 
         <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
           <HText style={[styles.subtitle, {marginBottom: 10}]}>Recents</HText>
@@ -597,5 +667,24 @@ const styles = StyleSheet.create({
     color: Colors.text_link,
     fontWeight: "600",
     fontSize: 16
+  },
+  card: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: Colors.border_color,
+    borderRadius: 6,
+    backgroundColor: Colors.card,
+    padding: 5
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 3,
+  },
+  statText: {
+    marginHorizontal: 4,
+    fontWeight: 'bold',
+    color: Colors.heteroboxd,
   },
 })

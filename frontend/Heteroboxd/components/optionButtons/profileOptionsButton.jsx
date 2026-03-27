@@ -30,25 +30,22 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
   const router = useRouter()
   const { width } = useWindowDimensions()
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const handleLogout = useCallback(async () => {
     await logout(userId)

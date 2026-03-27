@@ -18,6 +18,8 @@ namespace Heteroboxd.Shared.Models
         public ICollection<User> Blocked { get; set; }
         public ICollection<Review> LikedReviews { get; set; }
         public ICollection<UserList> LikedLists { get; set; }
+        public Guid? PinnedListId { get; set; }
+        public Guid? PinnedReviewId { get; set; }
 
         public User()
         {
@@ -30,6 +32,8 @@ namespace Heteroboxd.Shared.Models
             Blocked = new List<User>();
             LikedReviews = new List<Review>();
             LikedLists = new List<UserList>();
+            PinnedListId = null;
+            PinnedReviewId = null;
         }
 
         public User(string Name, string Email, string? Bio, string Gender) : this()

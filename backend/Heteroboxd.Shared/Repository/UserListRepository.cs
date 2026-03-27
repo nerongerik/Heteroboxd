@@ -20,7 +20,8 @@ namespace Heteroboxd.Shared.Repository
         Task CreateAsync(UserList UserList);
         Task CreateEntriesAsync(IReadOnlyCollection<ListEntry> ListEntry);
         Task UpdateAsync(UserList UserList);
-        Task IncrementSize(Guid UserListId);
+        Task IncrementSizeAsync(Guid UserListId);
+        Task RedateAsync(Guid UserListId);
         Task UpdateLikeCountAsync(Guid ListId, int Delta);
         Task ToggleNotificationsAsync(Guid ListId);
         Task ReportAsync(Guid ListId);
@@ -405,13 +406,24 @@ namespace Heteroboxd.Shared.Repository
             await _context.SaveChangesAsync();
         }
 
-        public async Task IncrementSize(Guid UserListId)
+        public async Task IncrementSizeAsync(Guid UserListId)
         {
             var Rows = await _context.UserLists
                 .Where(ul => ul.Id == UserListId)
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     ul => ul.Size,
                     ul => ul.Size + 1
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
+
+        public async Task RedateAsync(Guid UserListId)
+        {
+            var Rows = await _context.UserLists
+                .Where(ul => ul.Id == UserListId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    ul => ul.Date,
+                    ul => DateTime.UtcNow
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
         }

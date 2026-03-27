@@ -7,6 +7,7 @@
         public List<T> Items { get; set; }
         public List<int>? Seen { get; set; }
         public int? SeenCount { get; set; }
+        public T? Pinned { get; set; }
     }
 
     public class JoinResponse<T1, T2>

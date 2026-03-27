@@ -41,6 +41,8 @@ namespace Heteroboxd.Shared.Repository
         Task UpdateFavoritesAsync(UserFavorites Favorites);
         Task CreateUserWatchedFilmAsync(UserWatchedFilm WatchedFilm);
         Task UpdateUserWatchedFilmAsync(UserWatchedFilm WatchedFilm);
+        Task PinReviewAsync(Guid UserId, Guid ReviewId);
+        Task PinListAsync(Guid UserId, Guid ListId);
         Task DeleteAsync(Guid UserId);
         Task DeleteUserWatchedFilmAsync(Guid UwfId);
     }
@@ -550,6 +552,28 @@ namespace Heteroboxd.Shared.Repository
         {
             _context.UserWatchedFilms.Update(WatchedFilm);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task PinReviewAsync(Guid UserId, Guid ReviewId)
+        {
+            var Rows = await _context.Users
+                .Where(u => u.Id == UserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    u => u.PinnedReviewId,
+                    u => u.PinnedReviewId == ReviewId ? null : ReviewId
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
+
+        public async Task PinListAsync(Guid UserId, Guid ListId)
+        {
+            var Rows = await _context.Users
+                .Where(u => u.Id == UserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    u => u.PinnedListId,
+                    u => u.PinnedListId == ListId ? null : ListId
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
         }
 
         public async Task DeleteAsync(Guid UserId) =>

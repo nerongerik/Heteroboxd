@@ -6,6 +6,8 @@ import Trash from '../../assets/icons/trash.svg'
 import Notif from '../../assets/icons/notifications.svg'
 import NotifOff from '../../assets/icons/notifications-off.svg'
 import Edit from '../../assets/icons/edit.svg'
+import Pin from '../../assets/icons/pin.svg'
+import Unpin from '../../assets/icons/unpin.svg'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -17,34 +19,32 @@ import HText from '../htext'
 import LoadingResponse from '../loadingResponse'
 import SlidingMenu from '../slidingMenu'
 
-const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNotifChange }) => {
+const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNotifChange, pinnedInitial, onPin }) => {
   const { user, isValidSession } = useAuth()
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const router = useRouter()
   const { width } = useWindowDimensions()
   const [ notifsOnLocal, setNotifsOnLocal ] = useState(true)
+  const [ pinnedLocal, setPinnedLocal ] = useState(false)
   const [ server, setServer ] = useState(Response.initial)
 
-  const openMenu = () => {
+  const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu = useCallback(() => {
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,
       duration: 150,
       useNativeDriver: true
     }).start()
-  }
-  const closeMenu = () => {
+  }, [slideAnim])
+  const closeMenu = useCallback(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true
     }).start(() => setMenuShown(false))
-  }
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0]
-  })
+  }, [slideAnim])
 
   const handleDelete = useCallback(async () => {
     if (user?.userId !== authorId || !(await isValidSession())) {
@@ -97,6 +97,32 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
     }
   }, [user, authorId, notifsOnLocal, reviewId, onNotifChange])
 
+  const handlePin = useCallback(async () => {
+    if (user?.userId !== authorId || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/pin?ObjectId=${reviewId}&Type=review`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setPinnedLocal(prev => !prev)
+        onPin()
+      } else if (res.status === 400) {
+        setServer(Response.badRequest)
+      } else if (res.status === 404) {
+        setServer(Response.notFound)
+      } else {
+        setServer(Response.internalServerError)
+      }
+    } catch {
+      setServer(Response.networkError)
+    }
+  }, [user, authorId, pinnedLocal, reviewId, onPin])
+
   const handleEdit = useCallback(async () => {
     if (user?.userId !== authorId || !(await isValidSession())) {
       setServer(Response.forbidden)
@@ -132,7 +158,8 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
 
   useEffect(() => {
     setNotifsOnLocal(notifsOnInitial)
-  }, [notifsOnInitial])
+    setPinnedLocal(pinnedInitial)
+  }, [notifsOnInitial, pinnedInitial])
 
   const widescreen = useMemo((() => width > 1000), [width])
 
@@ -156,6 +183,19 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
             </Pressable>
           ) : (
             <>
+              {
+                pinnedLocal ? (
+                  <Pressable style={styles.option} onPress={handlePin}>
+                    <HText style={styles.optionText}>{'Unpin '}</HText>
+                    <Unpin width={20} height={20} />
+                  </Pressable>
+                ) : (
+                  <Pressable style={styles.option} onPress={handlePin}>
+                    <HText style={styles.optionText}>{'Pin '}</HText>
+                    <Pin width={20} height={20} />
+                  </Pressable>
+                )
+              }
               <Pressable style={styles.option} onPress={handleEdit}>
                 <HText style={styles.optionText}>Edit Review </HText>
                 <Edit width={20} height={20} />

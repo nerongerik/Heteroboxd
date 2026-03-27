@@ -133,6 +133,7 @@
         public string? AuthorName { get; set; }
         public string? AuthorPictureUrl { get; set; }
         public bool? Admin { get; set; }
+        public bool? Pinned { get; set; }
         public int FilmId { get; set; }
         public string? FilmTitle { get; set; }
         public string FilmDate { get; set; }
@@ -153,6 +154,7 @@
             this.AuthorName = Author.Name;
             this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
+            this.Pinned = Author.PinnedReviewId == Review.Id;
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
@@ -175,6 +177,7 @@
             this.AuthorName = Author.Name;
             this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
+            this.Pinned = Author.PinnedReviewId == Review.Id;
 
             this.FilmId = Review.FilmId;
         }
@@ -245,6 +248,7 @@
         public string AuthorName { get; set; }
         public string AuthorPictureUrl { get; set; }
         public bool Admin { get; set; }
+        public bool Pinned { get; set; }
 
         public UserListInfoResponse(UserList List, User Author)
         {
@@ -262,6 +266,7 @@
             this.AuthorName = Author.Name;
             this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
+            this.Pinned = Author.PinnedListId == List.Id;
         }
 
         public UserListInfoResponse(UserList List, List<JoinResponse<ListEntry, Film>?> Entries, User Author)
@@ -280,6 +285,7 @@
             this.AuthorName = Author.Name;
             this.AuthorPictureUrl = Author.PictureUrl;
             this.Admin = Author.IsAdmin;
+            this.Pinned = Author.PinnedListId == List.Id;
         }
     }
 
@@ -355,6 +361,8 @@
         public int ReviewsCount { get; set; }
         public int LikesCount { get; set; }
         public int WatchedCount { get; set; }
+        public string? PinnedListId { get; set; }
+        public string? PinnedReviewId { get; set; }
 
         public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0)
         {
@@ -374,6 +382,8 @@
             this.ReviewsCount = ReviewCount;
             this.LikesCount = LikesCount;
             this.WatchedCount = WatchedFilmCount;
+            this.PinnedListId = User.PinnedListId?.ToString();
+            this.PinnedReviewId = User.PinnedReviewId?.ToString();
         }
     }
 
