@@ -181,7 +181,10 @@ namespace Heteroboxd.API.Service
             );
             await _filmRepo.UpdateRatingCountAsync(Response.Item.Film.Id, -1);
 
-            await _repo.DeleteAsync(Guid.Parse(ReviewId));
+            var User = await _userRepo.LightweightFetcherAsync(Response.Item.Review.AuthorId);
+            if (User != null && User.PinnedReviewId == Response.Item.Review.Id) await _userRepo.PinReviewAsync(User.Id, Response.Item.Review.Id);
+
+            await _repo.DeleteAsync(Response.Item.Review.Id);
         }
 
         private int Flag(string? Text)

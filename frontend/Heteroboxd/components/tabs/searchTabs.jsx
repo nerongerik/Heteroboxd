@@ -257,7 +257,7 @@ const SearchTabs = ({ widescreen, router }) => {
           ))}
         </View>
         <HText style={{color: Colors.text, padding: 10, fontSize: widescreen ? 16 : 14}}>
-          {format.sliceText(item.description || '', widescreen ? 500 : 150)}
+          {format.sliceText((item.description || '').replace(/\n{2,}/g, '\n'), widescreen ? 500 : 150)}
         </HText>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6}}>
           <ListIco height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />

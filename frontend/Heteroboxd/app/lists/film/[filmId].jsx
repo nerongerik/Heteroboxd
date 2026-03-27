@@ -160,7 +160,7 @@ const FilmsLists = () => {
           }
         </View>
         <HText style={[styles.description, {fontSize: widescreen ? 16 : 14}]}>
-          {format.sliceText(item.description || '', widescreen ? 500 : 150)}
+          {format.sliceText((item.description || '').replace(/\n{2,}/g, '\n'), widescreen ? 500 : 150)}
         </HText>
         <View style={styles.statsRow}>
           <ListIco height={widescreen ? 20 : 16} width={widescreen ? 20 : 16} />

@@ -188,7 +188,7 @@ const List = () => {
       headerRight: () => {
         return (
           <>
-            {user && <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} />}
+            {user && <ListOptionsButton listId={base.id} authorId={base.authorId} notifsOnInitial={base.notificationsOn} onNotifChange={() => setBase(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} pinnedInitial={base.pinned} onPin={() => setBase(prev => ({...prev, pinned: !prev.pinned}))} />}
             {
               !base.ranked && 
               <Pressable onPress={openMenu2} style={{marginLeft: user ? 15 : null, marginRight: widescreen ? 15 : null}}>

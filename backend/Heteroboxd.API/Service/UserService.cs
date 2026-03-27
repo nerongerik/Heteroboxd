@@ -30,6 +30,7 @@ namespace Heteroboxd.API.Service
         Task UpdateRelationship(string UserId, string TargetId, string Action);
         Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
         Task TrackFilm(string UserId, int FilmId, string Action);
+        Task PinObject(string UserId, string ObjectId, string Type);
         Task DeleteUser(string UserId);
     }
 
@@ -435,6 +436,21 @@ namespace Heteroboxd.API.Service
                             await _filmRepo.UpdateRatingCountAsync(Film.Id, -1);
                         }
                     }
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
+        }
+
+        public async Task PinObject(string UserId, string ObjectId, string Type)
+        {
+            switch (Type)
+            {
+                case ("review"):
+                    await _repo.PinReviewAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
+                    break;
+                case ("list"):
+                    await _repo.PinListAsync(Guid.Parse(UserId), Guid.Parse(ObjectId));
                     break;
                 default:
                     throw new ArgumentException();
