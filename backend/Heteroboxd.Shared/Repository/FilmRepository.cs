@@ -102,7 +102,7 @@ namespace Heteroboxd.Shared.Repository
                 switch (Sort.ToLower())
                 {
                     case "popularity":
-                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.Date).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.WatchCount).ThenByDescending(f => f.Date).ThenBy(f => f.Id);
+                        FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.AverageRating).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.WatchCount).ThenBy(f => f.AverageRating).ThenBy(f => f.Id);
                         break;
                     case "length":
                         FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.Length).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.Length).ThenBy(f => f.Id);
@@ -117,7 +117,7 @@ namespace Heteroboxd.Shared.Repository
                         //error fallback
                         if (Filter.ToLower() == "popular" || Filter.ToLower() == "year")
                         {
-                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.WatchCount).ThenBy(f => f.Id);
+                            FilmsQuery = Desc ? FilmsQuery.OrderByDescending(f => f.WatchCount).ThenByDescending(f => f.AverageRating).ThenBy(f => f.Id) : FilmsQuery.OrderBy(f => f.WatchCount).ThenBy(f => f.AverageRating).ThenBy(f => f.Id);
                         }
                         else
                         {
