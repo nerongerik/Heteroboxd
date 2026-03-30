@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { FlatList, Linking, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import { Snackbar } from 'react-native-paper'
 import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -44,10 +44,12 @@ const Film = () => {
   const [ snack, setSnack ] = useState(false)
   const snackRef = useRef(false)
   const [ server, setServer ] = useState(Response.initial)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
-  const loadBasicData = useCallback(async () => {
+  const loadBasicData = useCallback(async (fromRefresh = false) => {
     setServer(Response.loading)
     try {
+      if (fromRefresh) setIsRefreshing(false)
       const res = await fetch(`${BaseUrl.api}/films?FilmId=${filmId}`)
       if (res.ok) {
         const json = await res.json()
@@ -117,6 +119,12 @@ const Film = () => {
   }, [filmId])
 
   useEffect(() => {
+    loadBasicData()
+    loadUserData()
+    loadSubsequentData()
+  }, [loadBasicData, loadUserData, loadSubsequentData])
+
+  useEffect(() => {
     navigation.setOptions({
       headerShown: Platform.OS === 'web' ? false : true,
       headerTransparent: true,
@@ -124,13 +132,10 @@ const Film = () => {
       headerTitle: '',
       headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
     })
-  }, [navigation])
-
-  useEffect(() => {
-    loadBasicData()
-    loadUserData()
-    loadSubsequentData()
-  }, [loadBasicData, loadUserData, loadSubsequentData])
+    if (Platform.OS === 'web' && film.title) {
+      document.title = film.title
+    }
+  }, [navigation, film.title])
 
   useEffect(() => {
     if (!user || !uwf) return
@@ -181,6 +186,17 @@ const Film = () => {
           alignSelf: 'center'
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setIsRefreshing(true)
+              loadBasicData(true)
+              loadUserData()
+              loadSubsequentData()
+            }}
+          />
+        }
       >
         {backdrop}
 
@@ -220,7 +236,9 @@ const Film = () => {
               )}
             </View>
           </View>
-          <Poster posterUrl={film.posterUrl || 'noposter'} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} />
+          <Pressable onPress={() => Linking.openURL(film.posterUrl)}>
+            <Poster posterUrl={film.posterUrl || 'noposter'} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} />
+          </Pressable>
         </View>
         
         <Divider marginVertical={15} />

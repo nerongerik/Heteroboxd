@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import ListIco from '../../assets/icons/list.svg'
 import Heart from '../../assets/icons/heart.svg'
 import * as format from '../../helpers/format'
@@ -12,7 +12,7 @@ import Stars from '../stars'
 
 const TABS = ['reviews', 'lists']
 
-const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
+const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize, isRefreshing, onRefresh, loading }) => {
   const [ activeTab, setActiveTab ] = useState('reviews')
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
@@ -166,6 +166,10 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
     </View>
   ), [widescreen, router, posterWidth, posterHeight, spacing])
 
+  const Footer = useMemo(() => loading ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [loading])
+
   return (
     <View style={{flex: 1}} {...(panResponder?.panHandlers ?? {})}>
       <View style={widescreen ? styles.wideRow : styles.narrowRow}>
@@ -179,11 +183,18 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize }) => {
         keyExtractor={(item) => `${activeTab}-${item.id}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
         ListEmptyComponent={<HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</HText>}
+        ListFooterComponent={Footer}
         style={{width: maxRowWidth, alignSelf: 'center'}}
         contentContainerStyle={{paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={onRefresh}
+          />
+        }
       />
     </View>
   )

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { View } from 'react-native'
+import { View, Platform } from 'react-native'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
-import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
 import LikeTabs from '../../components/tabs/likeTabs'
 
@@ -19,8 +18,10 @@ const UserLikes = () => {
   const navigation = useNavigation()
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
-  const loadData = useCallback(async (pages = {}) => {
+  const loadData = useCallback(async (pages = {}, fromRefresh = false) => {
+    if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
       const params = new URLSearchParams({ ReviewsPage: pages.reviews || 1, ListsPage: pages.lists || 1, PageSize: PAGE_SIZE })
@@ -63,7 +64,7 @@ const UserLikes = () => {
   }, [userId])
 
   const loadPage = useCallback((tab, page) => {
-    loadData({reviews: tab === 'reviews' ? page : 0, lists:   tab === 'lists' ? page : 0})
+    loadData({reviews: tab === 'reviews' ? page : 0, lists: tab === 'lists' ? page : 0})
   }, [loadData])
 
   useEffect(() => {
@@ -72,6 +73,9 @@ const UserLikes = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Likes'
+    }
   }, [navigation])
 
   useEffect(() => {
@@ -86,9 +90,14 @@ const UserLikes = () => {
         onPageChange={loadPage}
         router={router}
         pageSize={PAGE_SIZE}
+        isRefreshing={isRefreshing}
+        onRefresh={() => {
+          setIsRefreshing(true)
+          loadData({reviews: 1, lists: 1}, true)
+        }}
+        loading={server.result <= 0}
       />
 
-      <LoadingResponse visible={server.result <= 0} />
       <Popup
         visible={[404, 500].includes(server.result)}
         message={server.message}

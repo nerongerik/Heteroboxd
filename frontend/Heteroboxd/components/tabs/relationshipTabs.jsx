@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import X from '../../assets/icons/x.svg'
 import { Colors } from '../../constants/colors'
 import HText from '../htext'
 import { UserAvatar } from '../userAvatar'
 
-const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, pageSize }) => {
+const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, pageSize, isRefreshing, onRefresh, loading }) => {
   const [ activeTab, setActiveTab ] = useState(active)
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
@@ -52,6 +52,10 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
     })
   }, [widescreen, allTabs, activeTab])
 
+  const Footer = useMemo(() => loading ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [loading])
+
   const TabButton = useCallback(({ title, active, onPress }) => (
     <Pressable onPress={onPress} style={[styles.tabButton, active && styles.activeTabButton]}>
       <HText style={[{fontSize: width > 1000 ? 16 : width > 300 ? 14 : 12, color: Colors.text}, active && styles.activeTabText]}>{title}</HText>
@@ -96,10 +100,17 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
             )}
           </View>
         )}
+        ListFooterComponent={Footer}
         contentContainerStyle={{width: Math.min(width, 1000), alignSelf: widescreen ? 'center' : 'stretch', paddingHorizontal: 10, paddingBottom: 80}}
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={onRefresh}
+          />
+        }
       />
     </View>
   )

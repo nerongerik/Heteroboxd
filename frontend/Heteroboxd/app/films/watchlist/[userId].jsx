@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import Shuffle from '../../../assets/icons/shuffle.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -13,6 +13,7 @@ import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
+import Interact from '../../../components/interact'
 import SlidingMenu from '../../../components/slidingMenu'
 
 const PAGE_SIZE = 20
@@ -26,12 +27,16 @@ const Watchlist = () => {
   const [ server, setServer ] = useState(Response.initial)
   const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0 })
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
-  const [ currentSort, setCurrentSort ] = useState({ field: 'DATE ADDED', desc: true })
+  const [ currentSort, setCurrentSort ] = useState({ field: 'DATE ADDED', desc: false })
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
+  const [ menuShown2, setMenuShown2 ] = useState(false)
+  const slideAnim2 = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ selected, setSelected ] = useState(null)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -50,11 +55,32 @@ const Watchlist = () => {
     }).start(() => setMenuShown(false))
   }, [slideAnim])
 
-  const loadDataPage = useCallback(async (page) => {
+  const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu2 = useCallback((id) => {
+    if (!user) return
+    setSelected(id)
+    setMenuShown2(true)
+    Animated.timing(slideAnim2, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start()
+  }, [user, slideAnim2])
+  const closeMenu2 = useCallback(() => {
+    setSelected(null)
+    Animated.timing(slideAnim2, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown2(false))
+  }, [slideAnim2])
+
+  const loadDataPage = useCallback(async (page, fromRefresh = false) => {
     if (user?.userId !== userId || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
     }
+    if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
       if (loadingRef.current) return
@@ -117,30 +143,6 @@ const Watchlist = () => {
     }
   }, [data.page, totalPages, loadDataPage])
 
-  const handleDelete = useCallback(async (filmId) => {
-    if (user?.userId !== userId || !(await isValidSession())) {
-      setServer(Response.forbidden)
-      return
-    }
-    const prevEntries = data.entries
-    const prevCount = data.totalCount
-    setData(prev => ({...prev, entries: prev.entries.filter(e => e?.filmId !== filmId), totalCount: prev.totalCount - 1}))
-    try {
-      const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/watchlist?FilmId=${filmId}`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${jwt}` }
-      })
-      if (!res.ok) {
-        setData(prev => ({ ...prev, entries: prevEntries, totalCount: prevCount }))
-        setServer(Response.internalServerError)
-      }
-    } catch {
-      setData(prev => ({ ...prev, entries: prevEntries, totalCount: prevCount }))
-      setServer(Response.networkError)
-    }
-  }, [user, userId, data.entries, data.totalCount])
-
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
@@ -159,6 +161,9 @@ const Watchlist = () => {
         </>
       ),
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Watchlist'
+    }
   }, [navigation, widescreen, openMenu, shuffle])
 
   useEffect(() => {
@@ -170,24 +175,15 @@ const Watchlist = () => {
   const posterWidth = useMemo(() => (maxRowWidth - spacing * 4) / 4, [maxRowWidth, spacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
-  const Header = useMemo(() => (
-    <>
-      {
-        user?.userId === userId && 
-        <>
-        <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 13, textAlign: 'center'}}>Tip: to remove a film from your watchlist quickly, just press and hold on it!</HText>
-        <View style={{height: 35}} />
-        </>
-      }
-    </>
-  ), [user, userId, widescreen])
-
   const Film = useCallback(({ item }) => {
     if (!item) {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
     return (
-      <Pressable onPress={() => router.push(`/film/${item.filmId}`)} onLongPress={() => {handleDelete(item.filmId)}} style={{margin: spacing / 2}}>
+      <Pressable
+        onPress={() => router.push(`/film/${item.filmId}`)}
+        onLongPress={() => openMenu2(item.filmId)}
+        style={{margin: spacing / 2}}>
         <Poster
           posterUrl={item.filmPosterUrl || 'noposter'}
           style={{
@@ -200,7 +196,7 @@ const Watchlist = () => {
         />
       </Pressable>
     )
-  }, [posterWidth, posterHeight, spacing, router, handleDelete])
+  }, [posterWidth, posterHeight, spacing, router])
 
   const Footer = useMemo(() => data.entries.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
@@ -214,7 +210,6 @@ const Watchlist = () => {
         keyExtractor={(item, index) => item ? item.id.toString() : `placeholder-${index}`}
         numColumns={4}
         ListEmptyComponent={server.result > 0 && <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center', padding: 35}}>Nothing to see here.</HText>}
-        ListHeaderComponent={Header}
         renderItem={Film}
         ListFooterComponent={Footer}
         style={{alignSelf: 'center'}}
@@ -223,7 +218,33 @@ const Watchlist = () => {
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setData({ page: 1, entries: [], totalCount: 0 })
+              setIsRefreshing(true)
+              loadDataPage(1, true)
+            }}
+          />
+        }
       />
+
+      <SlidingMenu
+        menuShown={menuShown2}
+        closeMenu={closeMenu2}
+        translateY={translateY2}
+        widescreen={widescreen}
+        width={width}
+      >
+        <Interact
+          widescreen={widescreen}
+          filmId={selected}
+          close={closeMenu2}
+          fade={() => {}}
+          del={() => setData(prev => ({...prev, entries: prev.entries.filter(e => e?.filmId !== selected), totalCount: prev.totalCount - 1}))}
+        />
+      </SlidingMenu>
       
       <LoadingResponse visible={data.entries.length === 0 && server.result <= 0} />
       <Popup

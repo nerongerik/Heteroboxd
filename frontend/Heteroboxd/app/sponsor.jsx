@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { useEffect, useMemo } from 'react'
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import { Colors } from '../constants/colors'
 import HText from '../components/htext'
@@ -34,6 +34,12 @@ const Sponsor = () => {
   const { width } = useWindowDimensions()
   const widescreen = useMemo(() => width > 1000, [width])
   const iconSize = widescreen ? 50 : 36
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Donate'
+    }
+  })
 
   return (
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>

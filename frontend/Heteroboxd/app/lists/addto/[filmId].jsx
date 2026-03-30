@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, useWindowDimensions, FlatList, View, Pressable } from 'react-native'
+import { ActivityIndicator, useWindowDimensions, FlatList, View, Pressable, Platform } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { useRouter, useLocalSearchParams, useNavigation, Link } from 'expo-router'
 import Plus from '../../../assets/icons/plus.svg'
@@ -122,20 +122,23 @@ const AddToLists = () => {
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
         <Pressable onPress={addToLists} disabled={selectedIds.length === 0} style={[{marginRight: widescreen ? 15 : null}, (selectedIds.length === 0) && {opacity: 0.5}]}>
-          <Check height={20} width={20} />
+          <Check height={24} width={24} />
         </Pressable>
       )
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Add to lists'
+    }
   }, [navigation, widescreen, addToLists])
 
   const List = useCallback(({item}) => {
     if (item.containsFilm) {
       return (
-        <View style={{width: width*0.75, backgroundColor: Colors.card, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color, marginVertical: 10}}>
+        <View style={{width: widescreen ? width*0.75 : width*0.9, backgroundColor: Colors.card, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color, marginVertical: 10}}>
           <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 10, opacity: 0.75}}>
             <Check height={20} width={20} />
             <View>
-              <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 40)}</HText>
+              <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 30)}</HText>
               <HText style={{fontWeigth: '400', fontSize: widescreen ? 15 : 11, color: Colors.text}}>Entries: {item.size}</HText>
             </View>
             <UserAvatar
@@ -153,12 +156,12 @@ const AddToLists = () => {
       )
     } else if (isToggled(item.listId)) {
       return (
-        <Pressable onPress={() => toggle(item.listId)} style={{width: width*0.75, marginVertical: 10}}>
+        <Pressable onPress={() => toggle(item.listId)} style={{width: widescreen ? width*0.75 : width*0.9, marginVertical: 10}}>
           <View style={{backgroundColor: Colors.card, borderRadius: 5, borderWidth: 2, borderColor: Colors._heteroboxd}}>
             <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 10}}>
-              <Minus height={20} width={20} />
+              <Minus height={24} width={24} />
               <View>
-                <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 40)}</HText>
+                <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 30)}</HText>
                 <HText style={{fontWeigth: '400', fontSize: widescreen ? 15 : 11, color: Colors.text}}>Entries: {item.size}</HText>
               </View>
               <UserAvatar
@@ -177,12 +180,12 @@ const AddToLists = () => {
       )
     } else {
       return (
-        <Pressable onPress={() => toggle(item.listId)} style={{width: width*0.75, marginVertical: 10}}>
+        <Pressable onPress={() => toggle(item.listId)} style={{width: widescreen ? width*0.75 : width*0.9, marginVertical: 10}}>
           <View style={{backgroundColor: Colors.background, borderRadius: 5, borderWidth: 2, borderColor: Colors.heteroboxd}}>
             <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 10}}>
-              <Plus height={20} width={20} />
+              <Plus height={24} width={24} />
               <View>
-                <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 40)}</HText>
+                <HText style={{fontWeigth: '500', fontSize: widescreen ? 16 : 12, color: Colors.text_title}}>{format.sliceText(item.listName || '', widescreen ? 80 : 30)}</HText>
                 <HText style={{fontWeigth: '400', fontSize: widescreen ? 15 : 11, color: Colors.text}}>Entries: {item.size}</HText>
               </View>
               <UserAvatar

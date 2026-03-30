@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Filter from '../../assets/icons/filter.svg'
 import ListIco from '../../assets/icons/list.svg'
 import Heart from '../../assets/icons/heart.svg'
@@ -33,6 +33,7 @@ const ExploreLists = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -51,9 +52,10 @@ const ExploreLists = () => {
     }).start(() => setMenuShown(false))
   }, [slideAnim])
 
-  const loadDataPage = useCallback(async (page) => {
-    setServer(Response.loading)
+  const loadDataPage = useCallback(async (page, fromRefresh = false) => {
     try {
+      if (fromRefresh) setIsRefreshing(false)
+      setServer(Response.loading)
       const url = user
       ? `${BaseUrl.api}/lists/all?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/lists/all?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
@@ -103,6 +105,9 @@ const ExploreLists = () => {
         </Pressable>
       )
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Featured Lists'
+    }
   }, [navigation, widescreen, openMenu])
 
   useEffect(() => {
@@ -187,6 +192,16 @@ const ExploreLists = () => {
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setData({ page: 1, lists: [], totalCount: 0 })
+              setIsRefreshing(true)
+              loadDataPage(1, true)
+            }}
+          />
+        }
       />
 
       <LoadingResponse visible={data.lists.length === 0 && server.result <= 0} />

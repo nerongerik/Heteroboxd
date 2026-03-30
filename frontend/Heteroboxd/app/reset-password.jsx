@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { Pressable, useWindowDimensions, View } from 'react-native'
+import { useCallback, useEffect, useState } from 'react'
+import { Platform, Pressable, useWindowDimensions, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
@@ -41,6 +41,12 @@ const PasswordReset = () => {
       setServer(Response.networkError)
     }
   }, [userId, decodedToken, password])
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Reset password'
+    }
+  })
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, justifyContent: 'center', paddingBottom: 50}}>

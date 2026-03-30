@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Filter from '../../assets/icons/filter.svg'
 import Eye from '../../assets/icons/eye2.svg'
 import Heart from '../../assets/icons/heart.svg'
@@ -19,6 +19,7 @@ import ListOptionsButton from '../../components/optionButtons/listOptionsButton'
 import Popup from '../../components/popup'
 import { Poster } from '../../components/poster'
 import SlidingMenu from '../../components/slidingMenu'
+import Interact from '../../components/interact'
 
 const PAGE_SIZE = 20
 
@@ -37,12 +38,16 @@ const List = () => {
   const [ currentSort, setCurrentSort ] = useState({ field: 'POSITION', desc: false })
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
+  const [ menuShown3, setMenuShown3 ] = useState(false)
+  const slideAnim3 = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
   const listLocalCopyRef = useRef(null)
   const likeRequestRef = useRef(0)
   const requestRef = useRef(0)
   const seenFilmsRef = useRef(new Set())
   const loadingRef = useRef(false)
+  const [ selected, setSelected ] = useState(null)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback(() => {
@@ -61,9 +66,30 @@ const List = () => {
     }).start(() => setMenuShown2(false))
   }, [slideAnim2])
 
-  const loadBaseData = useCallback(async () => {
-    setServer(Response.loading)
+  const translateY3 = slideAnim3.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu3 = useCallback((id) => {
+    if (!user) return
+    setSelected(id)
+    setMenuShown3(true)
+    Animated.timing(slideAnim3, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start()
+  }, [user, slideAnim3])
+  const closeMenu3 = useCallback(() => {
+    setSelected(null)
+    Animated.timing(slideAnim3, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown3(false))
+  }, [slideAnim3])
+
+  const loadBaseData = useCallback(async (fromRefresh = false) => {
     try {
+      if (fromRefresh) setIsRefreshing(false)
+      setServer(Response.loading)
       if (user?.userId) {
         const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}&UserId=${user.userId}`)
         if (res.ok) {
@@ -199,6 +225,9 @@ const List = () => {
         )
       }
     })
+    if (Platform.OS === 'web' && base?.name) {
+      document.title = base?.name
+    }
   }, [navigation, user, widescreen, base, openMenu2])
 
   useEffect(() => {
@@ -268,7 +297,11 @@ const List = () => {
     }
     const isSeen = fadeSeen && seenFilmsRef.current.has(item.filmId)
     return (
-      <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{ margin: spacing / 2 }}>
+      <Pressable
+        onPress={() => router.push(`/film/${item.filmId}`)}
+        onLongPress={() => openMenu3(item.filmId)}
+        style={{ margin: spacing / 2 }}
+      >
         <Poster
           posterUrl={item.filmPosterUrl || 'noposter'}
           style={{
@@ -347,7 +380,40 @@ const List = () => {
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setData({ page: 1, entries: [], totalCount: 0 })
+              setIsRefreshing(true)
+              loadBaseData(true)
+              loadDataPage(1)
+            }}
+          />
+        }
       />
+
+      <SlidingMenu
+        menuShown={menuShown3}
+        closeMenu={closeMenu3}
+        translateY={translateY3}
+        widescreen={widescreen}
+        width={width}
+      >
+        <Interact
+          widescreen={widescreen}
+          filmId={selected}
+          close={closeMenu3}
+          fade={() => {
+            if (seenFilmsRef.current.has(selected)) {
+              seenFilmsRef.current.delete(selected)
+            } else {
+              seenFilmsRef.current.add(selected)
+            }
+          }}
+          del={() => {}}
+        />
+      </SlidingMenu>
 
       <Popup
         visible={[403, 404, 500].includes(server.result)}

@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { useCallback, useEffect, useState } from 'react'
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import Eye from '../assets/icons/eye.svg'
 import EyeOff from '../assets/icons/eye-off.svg'
 import { Link, useRouter } from 'expo-router'
@@ -66,6 +66,12 @@ const Login = () => {
       setServer(Response.networkError)
     }
   }, [recovery])
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Login'
+    }
+  })
 
   return (
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>

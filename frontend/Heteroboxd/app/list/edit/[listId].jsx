@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
 import Trash from '../../../assets/icons/trash.svg'
 import Up from '../../../assets/icons/up.svg'
 import Down from '../../../assets/icons/down.svg'
@@ -175,6 +175,9 @@ const EditList = () => {
         </Pressable>
       )
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Edit list'
+    }
   }, [navigation, widescreen, handleSubmit])
 
   useEffect(() => {

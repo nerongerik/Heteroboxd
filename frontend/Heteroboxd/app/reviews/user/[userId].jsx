@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import Heart from '../../../assets/icons/heart.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -35,6 +35,7 @@ const UserReviews = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -53,7 +54,8 @@ const UserReviews = () => {
     }).start(() => setMenuShown(false))
   }, [slideAnim])
 
-  const loadDataPage = useCallback(async (page) => {
+  const loadDataPage = useCallback(async (page, fromRefresh = false) => {
+    if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
       if (loadingRef.current) return
@@ -111,6 +113,9 @@ const UserReviews = () => {
         </Pressable>
       )
     })
+    if (Platform.OS === 'web') {
+      document.title = userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`
+    }
   }, [navigation, author, widescreen, openMenu])
 
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
@@ -185,6 +190,16 @@ const UserReviews = () => {
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setData({ page: 1, reviews: [], totalCount: 0 })
+              setIsRefreshing(true)
+              loadDataPage(1, true)
+            }}
+          />
+        }
       />
 
       <LoadingResponse visible={data.reviews.length === 0 && server.result <= 0} />

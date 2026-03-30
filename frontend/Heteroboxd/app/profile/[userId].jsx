@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Male from '../../assets/icons/male.svg'
 import Female from '../../assets/icons/female.svg'
 import Heart from '../../assets/icons/heart.svg'
-import Pin from '../../assets/icons/pin.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -51,6 +50,7 @@ const Profile = () => {
   const [ searchInit, setSearchInit ] = useState(true)
   const followingLocalCopyRef = useRef(null)
   const followRequestRef = useRef(0)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback(() => {
@@ -71,7 +71,8 @@ const Profile = () => {
 
   const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
-  const loadProfileData = useCallback(async () => {
+  const loadProfileData = useCallback(async (fromRefresh = false) => {
+    if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
       const res = await fetch(`${BaseUrl.api}/users?UserId=${userId}&Inclusive=${true}${!isOwnProfile && user?.userId ? `&VisitorId=${user.userId}` : ''}`)
@@ -214,6 +215,9 @@ const Profile = () => {
       headerTitle: '',
       headerRight: () => user ? <ProfileOptionsButton userId={userId} blocked={blocked} /> : null
     })
+    if (Platform.OS === 'web' && data?.name.length > 0) {
+      document.title = data.name
+    }
   }, [navigation, blocked, data, user, userId])
 
   useEffect(() => {
@@ -389,13 +393,26 @@ const Profile = () => {
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
-      <ScrollView contentContainerStyle={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={async () => {
+              setIsRefreshing(true)
+              await loadProfileData(true)
+              loadFilmData()
+            }}
+          />
+        }
+      >
         <View style={styles.profile}>
-          <View style={{marginBottom: 15}}>
+          <Pressable onPress={() => Linking.openURL(data.pictureUrl)} style={{marginBottom: 15}}>
             <UserAvatar pictureUrl={data.pictureUrl} style={width < 500 ? styles.smallWebProfile : styles.profileImage} />
-          </View>
+          </Pressable>
           <View style={{alignItems: 'center', justifyContent: 'center'}}>
-            <HText style={styles.username}>{data.name}{data.admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}</HText>
+            <HText style={styles.username}>{data.name}{data.admin && <HText style={{color: Colors._heteroboxd}}>{'[ADMIN]'}</HText>}</HText>
           </View>
           {!isOwnProfile && (
             <Pressable

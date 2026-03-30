@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Heart from '../../assets/icons/heart.svg'
 import Heart2 from '../../assets/icons/heart2.svg'
 import Trash from '../../assets/icons/trash.svg'
@@ -42,8 +42,10 @@ const ReviewWithComments = () => {
   const likeRequestRef = useRef(0)
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
-  const loadReviewData = useCallback(async () => {
+  const loadReviewData = useCallback(async (fromRefresh = false) => {
+    if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
       if (user?.userId) {
@@ -237,6 +239,9 @@ const ReviewWithComments = () => {
     navigation.setOptions({
       headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} pinnedInitial={review.pinned} onPin={() => setReview(prev => ({...prev, pinned: !prev.pinned}))} /> : null
     })
+    if (Platform.OS === 'web' && review?.filmTitle.length > 0) {
+      document.title = `Review of ${review.filmTitle}`
+    }
   }, [navigation, user, review])
 
   useEffect(() => {
@@ -407,6 +412,17 @@ const ReviewWithComments = () => {
             showsVerticalScrollIndicator={false}
             onEndReachedThreshold={0.2}
             onEndReached={loadNextPage}
+            refreshControl={
+              <RefreshControl 
+                refreshing={isRefreshing} 
+                onRefresh={async () => {
+                  setComments({ page: 1, comments: [], totalCount: 0 })
+                  setIsRefreshing(true)
+                  await loadReviewData(true)
+                  loadCommentsDataPage(1)
+                }}
+              />
+            }
           />
         )
       }

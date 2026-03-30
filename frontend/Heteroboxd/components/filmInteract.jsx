@@ -245,7 +245,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const watched =
     <View style={styles.buttonContainer}>
       <Pressable onPress={() => {setSeenPressed(true)}}>
-        <Watched width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} />
+        <Watched width={widescreen ? 48 : 33} height={widescreen ? 48 : 33} />
       </Pressable>
       <HText style={{color: Colors._heteroboxd, fontSize: widescreen ? 20 : 18}}>Watched</HText>
     </View>
@@ -253,7 +253,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const rewatch =
     <View style={styles.buttonContainer}>
       <Pressable onPress={handleWatch}>
-        <Rewatch width={widescreen ? 50 : 35} height={widescreen ? 50 : 35} />
+        <Rewatch width={widescreen ? 48 : 33} height={widescreen ? 48 : 33} />
       </Pressable>
       <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 18}}>Rewatch</HText>
     </View>
@@ -321,7 +321,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         </Pressable>
 
         <Snackbar
-          visible={[201, 400, 403, 404, 500].includes(server.result)}
+          visible={[400, 403, 404, 500].includes(server.result)}
           onDismiss={() => setServer(Response.initial)}
           duration={3000}
           style={{

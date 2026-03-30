@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
@@ -31,6 +31,9 @@ const Verify = () => {
   }, [userId, token])
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Email confirmation'
+    }
     verifyUser()
   }, [verifyUser])
 

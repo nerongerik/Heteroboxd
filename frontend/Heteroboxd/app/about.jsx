@@ -1,10 +1,17 @@
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Link } from 'expo-router'
 import { Colors } from '../constants/colors'
 import HText from '../components/htext'
+import { useEffect } from 'react'
 
 const About = () => {
   const { width } = useWindowDimensions()
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'About'
+    }
+  })
 
   return (
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background, alignContent: 'center', justifyContent: 'center'}}>
@@ -53,7 +60,7 @@ const About = () => {
           Is Heteroboxd available on all devices?
         </HText>
         <HText style={styles.text}>
-          You can access Heteroboxd on any web browser at <Link style={styles.link} href='https://heteroboxd.com'>heteroboxd.com</Link>,
+          You can access Heteroboxd on any web browser at <Link style={styles.link} href='https://www.heteroboxd.com'>heteroboxd.com</Link>,
           or download our mobile app from the Google Play Store. The iOS build is ready for deployment, but due to massive
           costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest and
           <Link style={styles.link} href='/sponsor'> funding.</Link>

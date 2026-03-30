@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Explore from '../assets/icons/explore.svg'
 import Search from '../assets/icons/search.svg'
 import Ranking from '../assets/icons/ranking.svg'
@@ -27,6 +27,8 @@ import { Poster } from '../components/poster'
 import SideNav from '../components/sideNav'
 import Stars from '../components/stars'
 import { UserAvatar } from '../components/userAvatar'
+import Interact from '../components/interact'
+import SlidingMenu from '../components/slidingMenu'
 
 const PAGE_SIZE = 10
 
@@ -42,8 +44,11 @@ const Home = () => {
   const navigation = useNavigation()
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
+  const [ menuShown2, setMenuShown2 ] = useState(false)
+  const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ refreshing, setRefreshing ] = useState(false)
   const [ refreshKey, setRefreshKey ] = useState(0)
+  const [ selected, setSelected ] = useState(null)
 
   const translateX = slideAnim.interpolate({inputRange: [0, 1], outputRange: [-300, 0]})
   const openMenu = useCallback(() => {
@@ -61,6 +66,26 @@ const Home = () => {
       useNativeDriver: true
     }).start(() => setMenuShown(false))
   }, [slideAnim])
+
+  const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu2 = useCallback((id) => {
+    if (!user) return
+    setSelected(id)
+    setMenuShown2(true)
+    Animated.timing(slideAnim2, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start()
+  }, [user, slideAnim2])
+  const closeMenu2 = useCallback(() => {
+    setSelected(null)
+    Animated.timing(slideAnim2, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown2(false))
+  }, [slideAnim2])
   
   const navPress = (path) => {
     setMenuShown(false)
@@ -170,6 +195,9 @@ const Home = () => {
         )
       }
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Heteroboxd'
+    }
   }, [navigation, user, notifs, widescreen, router, openMenu, refreshKey])
 
   useEffect(() => {
@@ -404,7 +432,11 @@ const Home = () => {
               ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>}
               renderItem={({ item }) => {
                 return (
-                  <Pressable onPress={() => router.push(`/film/${item.filmId}`)} style={{marginRight: spacing}}>
+                  <Pressable
+                    onPress={() => router.push(`/film/${item.filmId}`)}
+                    onLongPress={() => openMenu2(item.filmId)}
+                    style={{marginRight: spacing}}
+                  >
                     <Poster
                       posterUrl={item.filmPosterUrl || 'noposter'}
                       style={{
@@ -441,7 +473,11 @@ const Home = () => {
               ListEmptyComponent={<View style={{width: maxRowWidth, alignSelf: 'center', alignItems: 'center', paddingVertical: 30}}><HText style={styles.text}>Nothing to see here.</HText></View>}
               renderItem={({ item }) => {
                 return (
-                  <Pressable onPress={() => router.push(`/film/${item.id}`)} style={{marginRight: spacing}}>
+                  <Pressable
+                    onPress={() => router.push(`/film/${item.id}`)}
+                    onLongPress={() => openMenu2(item.id)}
+                    style={{marginRight: spacing}}
+                  >
                     <Poster
                       posterUrl={item.posterUrl || 'noposter'}
                       style={{
@@ -617,6 +653,22 @@ const Home = () => {
 
         <HText style={{marginTop: widescreen ? 250 : 100, color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>Heteroboxd uses <Link style={{color: Colors.heteroboxd}} href='https://developer.themoviedb.org/docs/getting-started'>tMDB's API</Link> for film data, bearing no endorsement whatsoever.</HText>
       </ScrollView>
+
+      <SlidingMenu
+        menuShown={menuShown2}
+        closeMenu={closeMenu2}
+        translateY={translateY2}
+        widescreen={widescreen}
+        width={width}
+      >
+        <Interact
+          widescreen={widescreen}
+          filmId={selected}
+          close={closeMenu2}
+          fade={() => {}}
+          del={() => {}}
+        />
+      </SlidingMenu>
     </View>
   )
 }

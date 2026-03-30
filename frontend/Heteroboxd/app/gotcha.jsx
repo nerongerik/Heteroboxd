@@ -1,10 +1,17 @@
-import { StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Colors } from '../constants/colors'
 import HText from '../components/htext'
 import { Image } from 'expo-image'
+import { useEffect } from 'react'
 
 const Gotcha = () => {
   const {width} = useWindowDimensions()
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Gotcha!'
+    }
+  })
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>

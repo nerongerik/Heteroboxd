@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Plus from '../../../assets/icons/plus.svg'
 import ListIco from '../../../assets/icons/list.svg'
 import Heart from '../../../assets/icons/heart.svg'
@@ -38,6 +38,7 @@ const UsersLists = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -56,9 +57,10 @@ const UsersLists = () => {
     }).start(() => setMenuShown(false))
   }, [slideAnim])
 
-  const loadDataPage = useCallback(async (page) => {
-    setServer(Response.loading)
+  const loadDataPage = useCallback(async (page, fromRefresh = false) => {
     try {
+      if (fromRefresh) setIsRefreshing(false)
+      setServer(Response.loading)
       if (loadingRef.current) return
       const requestId = ++requestRef.current
       loadingRef.current = true
@@ -119,7 +121,7 @@ const UsersLists = () => {
           {
             user?.userId === userId && (
               <Pressable onPress={() => router.push('/list/create')}>
-                <Plus height={20} width={20} />
+                <Plus height={24} width={24} />
               </Pressable>
             )
           }
@@ -129,6 +131,9 @@ const UsersLists = () => {
         </>
       )
     })
+    if (Platform.OS === 'web' && author.username?.length > 0) {
+      document.title = `${author.username}'s lists`
+    }
   }, [user, userId, author, navigation, router, widescreen, openMenu])
 
   const spacing = useMemo(() => widescreen ? 30 : 5, [widescreen])
@@ -214,6 +219,16 @@ const UsersLists = () => {
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setData({ page: 1, lists: [], totalCount: 0 })
+              setIsRefreshing(true)
+              loadDataPage(1, true)
+            }}
+          />
+        }
       />
 
       <LoadingResponse visible={data.lists.length === 0 && server.result <= 0} />
