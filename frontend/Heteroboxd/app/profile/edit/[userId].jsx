@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
 import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
@@ -136,6 +136,9 @@ const ProfileEdit = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Edit your profile'
+    }
   }, [navigation])
 
   useEffect(() => {

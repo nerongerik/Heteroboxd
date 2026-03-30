@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View } from 'react-native'
+import { View, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
 import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
-import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
 import RelationshipTabs from '../../components/tabs/relationshipTabs'
 
@@ -22,10 +21,12 @@ const Relationships = () => {
   const router = useRouter()
   const requestRef = useRef(0)
   const loadingRef = useRef(0)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
-  const loadData = useCallback(async (pages = {}) => {
+  const loadData = useCallback(async (pages = {}, fromRefresh = false) => {
+    if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     const params = new URLSearchParams({
       FollowersPage: pages.followers || 1,
@@ -153,6 +154,12 @@ const Relationships = () => {
     loadData()
   }, [loadData])
 
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Relationship'
+    }
+  }, [])
+
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <RelationshipTabs
@@ -165,9 +172,14 @@ const Relationships = () => {
         onPageChange={loadPage}
         active={t}
         pageSize={PAGE_SIZE}
+        isRefreshing={isRefreshing}
+        onRefresh={() => {
+          setIsRefreshing(true)
+          loadData({followers: 1, following: 1, blocked: 1}, true)
+        }}
+        loading={server.result <= 0}
       />
 
-      <LoadingResponse visible={server.result <= 0} />
       <Popup
         visible={[403, 404, 500].includes(server.result)}
         message={server.message}

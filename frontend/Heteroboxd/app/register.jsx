@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { useCallback, useEffect, useState } from 'react'
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
@@ -99,6 +99,12 @@ const Register = () => {
       console.log('image pick failed; debugging...')
     }
   }
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Register'
+    }
+  })
 
   return (
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>

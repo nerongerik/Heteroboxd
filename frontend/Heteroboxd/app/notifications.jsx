@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
 import Seen from '../assets/icons/seen.svg'
 import { useNavigation, useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
@@ -132,6 +132,9 @@ const Notifications = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Notifications'
+    }
   }, [navigation])
 
   useEffect(() => {
@@ -194,6 +197,7 @@ const Notifications = () => {
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
+              setData({ page: 1, notifs: [], totalCount: 0 })
               setIsRefreshing(true)
               loadDataPage(1, true)
             }}

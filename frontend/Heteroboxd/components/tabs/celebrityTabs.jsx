@@ -1,15 +1,40 @@
-import { useCallback, useMemo, useRef } from "react"
-import { FlatList, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
+import { useCallback, useMemo, useRef, useState } from "react"
+import { ActivityIndicator, Animated, FlatList, Linking, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from "react-native"
 import Eye from '../../assets/icons/eye2.svg'
 import * as format from '../../helpers/format'
 import { Colors } from "../../constants/colors"
 import { Headshot } from '../headshot'
 import HText from '../htext'
 import { Poster } from '../poster'
+import Interact from "../interact"
+import SlidingMenu from "../slidingMenu"
 
-const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, seenCount, fadeSeen }) => {
+const CelebrityTabs = ({ user, bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, updateSeenFilms, seenCount, fadeSeen, isRefreshing, onRefresh, loading }) => {
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
+  const [ menuShown2, setMenuShown2 ] = useState(false)
+  const slideAnim2 = useState(new Animated.Value(0))[0]
+  const [ selected, setSelected ] = useState(null)
+
+  const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu2 = useCallback((id) => {
+    if (!user) return
+    setSelected(id)
+    setMenuShown2(true)
+    Animated.timing(slideAnim2, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start()
+  }, [user, slideAnim2])
+  const closeMenu2 = useCallback(() => {
+    setSelected(null)
+    Animated.timing(slideAnim2, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown2(false))
+  }, [slideAnim2])
 
   const widescreen = useMemo(() => width > 1000, [width])
   const spacing = useMemo(() => (widescreen ? 50 : 5), [widescreen])
@@ -96,7 +121,11 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
     }
     const isSeen = fadeSeen && seenFilms.has(item.id)
     return (
-      <Pressable onPress={() => onFilmPress(item.id)} style={{margin: spacing / 2}}>
+      <Pressable
+        onPress={() => onFilmPress(item.id)}
+        onLongPress={() => openMenu2(item.id)}
+        style={{margin: spacing / 2}}
+      >
         <Poster
           posterUrl={item.posterUrl || 'noposter'}
           style={{
@@ -111,6 +140,10 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
       </Pressable>
     )
   }, [posterWidth, posterHeight, spacing, fadeSeen, seenFilms])
+
+  const Footer = useMemo(() => loading ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [loading])
 
   return (
     <View style={{flex: 1}} {...(panResponder?.panHandlers ?? {})}>
@@ -165,19 +198,21 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
           contentContainerStyle={{width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start'}} 
           showsVerticalScrollIndicator={false}
         >
-          <Headshot
-            pictureUrl={bio.url}
-            style={{
-              width: headshotWidth,
-              height: headshotHeight,
-              borderWidth: 1,
-              borderColor: Colors.border_color,
-              borderRadius: 4,
-              margin: widescreen ? 10 : 0,
-              alignSelf: widescreen ? 'auto' : 'center'
-            }}
-            wcp={true}
-          />
+          <Pressable onPress={() => Linking.openURL(bio.url)}>
+            <Headshot
+              pictureUrl={bio.url}
+              style={{
+                width: headshotWidth,
+                height: headshotHeight,
+                borderWidth: 1,
+                borderColor: Colors.border_color,
+                borderRadius: 4,
+                margin: widescreen ? 10 : 0,
+                alignSelf: widescreen ? 'auto' : 'center'
+              }}
+              wcp={true}
+            />
+          </Pressable>
           <HText style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</HText>
         </ScrollView>
       ) : (
@@ -188,6 +223,7 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
           keyExtractor={(item, index) => item?.id ? `${activeTab}-${item.id}` : `${activeTab}-placeholder-${index}`}
           ListHeaderComponent={Header}
           renderItem={Filmography}
+          ListFooterComponent={Footer}
           numColumns={4}
           columnWrapperStyle={{justifyContent: 'center'}}
           style={{width: maxRowWidth, alignSelf: 'center'}}
@@ -195,8 +231,30 @@ const CelebrityTabs = ({ bio, currentTabData, availableRoles, activeTab, onTabCh
           showsVerticalScrollIndicator={false}
           onEndReachedThreshold={0.2}
           onEndReached={loadNextPage}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isRefreshing} 
+              onRefresh={onRefresh}
+            />
+          }
         />
       )}
+
+      <SlidingMenu
+        menuShown={menuShown2}
+        closeMenu={closeMenu2}
+        translateY={translateY2}
+        widescreen={widescreen}
+        width={width}
+      >
+        <Interact
+          widescreen={widescreen}
+          filmId={selected}
+          close={closeMenu2}
+          fade={() => updateSeenFilms(selected)}
+          del={() => {}}
+        />
+      </SlidingMenu>
     </View>
   )
 }

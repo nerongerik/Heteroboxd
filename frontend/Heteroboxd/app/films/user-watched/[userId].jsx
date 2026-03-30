@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { BaseUrl } from '../../../constants/api'
@@ -11,11 +11,14 @@ import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import SlidingMenu from '../../../components/slidingMenu'
+import { useAuth } from '../../../hooks/useAuth'
+import Interact from '../../../components/interact'
 
 const PAGE_SIZE = 20
 
 const UserWatchedFilms = () => {
   const { userId } = useLocalSearchParams()
+  const { user } = useAuth()
   const navigation = useNavigation()
   const router = useRouter()
   const { width } = useWindowDimensions()
@@ -25,9 +28,13 @@ const UserWatchedFilms = () => {
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE WATCHED', desc: true })
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
+  const [ menuShown2, setMenuShown2 ] = useState(false)
+  const slideAnim2 = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ selected, setSelected ] = useState(null)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -46,9 +53,30 @@ const UserWatchedFilms = () => {
     }).start(() => setMenuShown(false))
   }, [slideAnim])
 
-  const loadDataPage = useCallback(async (page) => {
+  const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
+  const openMenu2 = useCallback((id) => {
+    if (!user) return
+    setSelected(id)
+    setMenuShown2(true)
+    Animated.timing(slideAnim2, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start()
+  }, [user, slideAnim2])
+  const closeMenu2 = useCallback(() => {
+    setSelected(null)
+    Animated.timing(slideAnim2, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => setMenuShown2(false))
+  }, [slideAnim2])
+
+  const loadDataPage = useCallback(async (page, fromRefresh = false) => {
     setServer(Response.loading)
     try {
+      if (fromRefresh) setIsRefreshing(false)
       if (loadingRef.current) return
       const requestId = ++requestRef.current
       loadingRef.current = true
@@ -95,6 +123,9 @@ const UserWatchedFilms = () => {
         </Pressable>
       ),
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Recents'
+    }
   }, [navigation, widescreen, openMenu])
 
   useEffect(() => {
@@ -111,7 +142,11 @@ const UserWatchedFilms = () => {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
     return (
-      <Pressable onPress={() => router.push(`/film/${item.id}`)} style={{margin: spacing / 2}}>
+      <Pressable
+        onPress={() => router.push(`/film/${item.id}`)}
+        onLongPress={() => openMenu2(item.id)}
+        style={{margin: spacing / 2}}
+      >
         <Poster
           posterUrl={item.posterUrl || 'noposter'}
           style={{
@@ -141,12 +176,37 @@ const UserWatchedFilms = () => {
         renderItem={Film}
         ListFooterComponent={Footer}
         style={{alignSelf: 'center'}}
-        columnWrapperStyle={{justifyContent: 'center'}}
         contentContainerStyle={{paddingHorizontal: spacing / 2, paddingBottom: 80, marginTop: 50}}
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={() => {
+              setData({ page: 1, entries: [], totalCount: 0 })
+              setIsRefreshing(true)
+              loadDataPage(1, true)
+            }}
+          />
+        }
       />
+
+      <SlidingMenu
+        menuShown={menuShown2}
+        closeMenu={closeMenu2}
+        translateY={translateY2}
+        widescreen={widescreen}
+        width={width}
+      >
+        <Interact
+          widescreen={widescreen}
+          filmId={selected}
+          close={closeMenu2}
+          fade={() => setData(prev => ({...prev, entries: prev.entries.filter(e => e?.id !== selected), totalCount: prev.totalCount - 1}))}
+          del={() => {}}
+        />
+      </SlidingMenu>
 
       <LoadingResponse visible={data.entries.length === 0 && server.result <= 0} />
       <Popup visible={server.result === 500} message={server.message} onClose={() => router.replace('/contact')} />

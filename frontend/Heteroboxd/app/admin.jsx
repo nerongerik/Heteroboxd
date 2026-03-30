@@ -215,6 +215,7 @@ const Admin = () => {
         router.replace('/login')
       }
     })()
+    document.title = 'Admin Dashboard'
   }, [user, router])
 
   useEffect(() => {

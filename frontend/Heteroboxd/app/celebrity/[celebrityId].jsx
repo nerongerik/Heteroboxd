@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Pressable, useWindowDimensions, View } from 'react-native'
+import { Animated, Pressable, useWindowDimensions, View, Platform } from 'react-native'
 import Filter from '../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { useAuth } from '../../hooks/useAuth'
@@ -48,6 +48,7 @@ const Celebrity = () => {
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
   const loadingRef = useRef(false)
+  const [ isRefreshing, setIsRefreshing ] = useState(false)
   
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -85,7 +86,8 @@ const Celebrity = () => {
     }
   }, [celebrityId])
 
-  const loadCreditsData = useCallback(async (filter, page = 1) => {
+  const loadCreditsData = useCallback(async (filter, page = 1, fromRefresh = false) => {
+    if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     if (!filter || filter === 'Bio') {
       setCurrentTabData({ page: 1, films: [], totalCount: 0 })
@@ -164,6 +166,9 @@ const Celebrity = () => {
         </Pressable>
       ),
     })
+    if (Platform.OS === 'web' && bio?.name) {
+      document.title = bio?.name
+    }
   }, [navigation, bio?.name, widescreen, openMenu])
 
   useEffect(() => {
@@ -206,6 +211,7 @@ const Celebrity = () => {
   return (
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <CelebrityTabs
+        user={user}
         bio={{text: bio.description || 'This individual is indescribable.', url: bio.headshotUrl || null}}
         currentTabData={currentTabData}
         availableRoles={availableRoles}
@@ -217,8 +223,22 @@ const Celebrity = () => {
         showSeen={user}
         flipShowSeen={() => setFadeSeen(prev => !prev)}
         seenFilms={seenFilmsRef.current}
+        updateSeenFilms={(id) => {
+          if (seenFilmsRef.current.has(id)) {
+            seenFilmsRef.current.delete(id)
+          } else {
+            seenFilmsRef.current.add(id)
+          }
+        }}
         seenCount={seenCount}
         fadeSeen={fadeSeen}
+        isRefreshing={isRefreshing}
+        onRefresh={() => {
+          setCurrentTabData({ page: 1, films: [], totalCount: 0 })
+          setIsRefreshing(true)
+          loadCreditsData(currentFilter, 1, true)
+        }}
+        loading={server.result <= 0}
       />
 
       <Popup 
@@ -226,8 +246,6 @@ const Celebrity = () => {
         message={server.message} 
         onClose={() => { server.result === 404 ? router.back() : router.replace('/contact') }}
       />
-
-      <LoadingResponse visible={server.result <= 0} />
 
       <SlidingMenu 
         menuShown={menuShown} 

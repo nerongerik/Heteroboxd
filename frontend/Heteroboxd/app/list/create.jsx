@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
 import Check from '../../assets/icons/check.svg'
 import Plus from '../../assets/icons/plus.svg'
 import Trophy from '../../assets/icons/trophy.svg'
@@ -107,6 +107,9 @@ const CreateList = () => {
         </Pressable>
       )
     })
+    if (Platform.OS === 'web') {
+      document.title = 'New list'
+    }
   }, [navigation, widescreen, handleSubmit])
 
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])

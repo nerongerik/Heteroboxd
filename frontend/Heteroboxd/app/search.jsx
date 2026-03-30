@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useWindowDimensions, View } from 'react-native'
+import { Platform, useWindowDimensions, View } from 'react-native'
 import { useNavigation, useRouter } from 'expo-router'
 import { Colors } from '../constants/colors'
 import SearchTabs from '../components/tabs/searchTabs'
@@ -16,6 +16,9 @@ const Search = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Search'
+    }
   }, [navigation])
 
   return (

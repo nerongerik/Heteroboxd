@@ -1,12 +1,19 @@
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Link } from 'expo-router'
 import * as Linking from 'expo-linking'
 import { Colors } from '../constants/colors'
 import Divider from '../components/divider'
 import HText from '../components/htext'
+import { useEffect } from 'react'
 
 const Contact = () => {
   const { width } = useWindowDimensions()
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.title = 'Contact'
+    }
+  })
 
   return (
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>

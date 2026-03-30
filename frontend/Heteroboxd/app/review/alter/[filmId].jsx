@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
+import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View, Platform } from 'react-native'
 import Check from '../../../assets/icons/check.svg'
 import Spoiler from '../../../assets/icons/spoiler.svg'
 import Spoiler2 from '../../../assets/icons/spoiler2.svg'
@@ -127,6 +127,9 @@ const AlterReview = () => {
         </Pressable>
       )
     })
+    if (Platform.OS === 'web') {
+      document.title = 'Rate and review'
+    }
   }, [navigation, handleSubmit])
 
   useEffect(() => {
