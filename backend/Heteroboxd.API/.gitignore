@@ -4,6 +4,7 @@ obj/
 Debug/
 Release/
 out/
+Properties/
 
 # Migrations
 Migrations/

@@ -31,7 +31,7 @@ const List = () => {
   const { user, isValidSession } = useAuth()
   const [ server, setServer ] = useState(Response.initial)
   const [ base, setBase ] = useState(null)
-  const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0, seenFilms: [], seenCount: 0 })
+  const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0, seenCount: 0 })
   const [ fadeSeen, setFadeSeen ] = useState(true)
   const [ descCollapsed, setDescCollapsed ] = useState(true)
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
@@ -433,7 +433,7 @@ const List = () => {
             <FilterSort
               context={'list'}
               currentSort={currentSort}
-              onSortChange={(newSort) => setCurrentSort(newSort)}
+              onSortChange={(newSort) => {closeMenu2(); setData({ page: 1, entries: [], totalCount: 0, seenCount: 0 }); setCurrentSort(newSort)}}
             />
           </SlidingMenu>
         )

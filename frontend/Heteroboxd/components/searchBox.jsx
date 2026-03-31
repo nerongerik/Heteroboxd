@@ -18,6 +18,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
   }, [page])
 
   const handleSearch = useCallback(async (overridePage) => {
+    onSelected({ items: [], totalCount: 0, page: 1 })
     const q = lastQuery.current || query
     if (q?.length === 0) {
       return

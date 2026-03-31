@@ -257,7 +257,7 @@ const Celebrity = () => {
         <FilterSort
           context={'celebrity'}
           currentSort={currentSort}
-          onSortChange={(newSort) => setCurrentSort(newSort)}
+          onSortChange={(newSort) => {closeMenu(); setCurrentTabData({ page: 1, films: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>
