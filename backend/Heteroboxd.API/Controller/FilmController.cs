@@ -32,7 +32,7 @@ namespace Heteroboxd.API.Controller
             }
             catch (ArgumentException)
             {
-                return BadRequest()
+                return BadRequest();
             }
             catch
             {
