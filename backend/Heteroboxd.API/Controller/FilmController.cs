@@ -30,6 +30,10 @@ namespace Heteroboxd.API.Controller
             {
                 return Ok(await _service.GetTrending(LastSync));
             }
+            catch (ArgumentException)
+            {
+                return BadRequest()
+            }
             catch
             {
                 return StatusCode(500);
