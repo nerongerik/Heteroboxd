@@ -248,7 +248,7 @@ const UsersLists = () => {
         <FilterSort
           context={'userLists'}
           currentSort={currentSort}
-          onSortChange={(newSort) => setCurrentSort(newSort)}
+          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, lists: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>

@@ -34,7 +34,7 @@ const ReviewWithComments = () => {
   const { width } = useWindowDimensions()
   const router = useRouter()
   const navigation = useNavigation()
-  const [ comments, setComments ] = useState(null)
+  const [ comments, setComments ] = useState({ page: 1, comments: [], totalCount: 0 })
   const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const [ server, setServer ] = useState(Response.initial)
   const listRef = useRef(null)
@@ -46,7 +46,6 @@ const ReviewWithComments = () => {
 
   const loadReviewData = useCallback(async (fromRefresh = false) => {
     if (fromRefresh) setIsRefreshing(false)
-    setServer(Response.loading)
     try {
       if (user?.userId) {
         const res = await fetch(`${BaseUrl.api}/reviews?ReviewId=${reviewId}&UserId=${user.userId}`)
@@ -84,6 +83,7 @@ const ReviewWithComments = () => {
   }, [user, reviewId])
 
   const loadCommentsDataPage = useCallback(async (page) => {
+    setServer(Response.loading)
     try {
       if (loadingRef.current) return
       const requestId = ++requestRef.current
@@ -98,16 +98,19 @@ const ReviewWithComments = () => {
           setComments(prev => ({...prev, page: json.page, comments: prev.comments.length > 1000 ? [...prev.comments.slice(-980), ...json.items] : [...prev.comments, ...json.items]}))
         }
         loadingRef.current = false
+        setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
         setComments({ page: 1, comments: [], totalCount: 0 })
         console.log('load comments failed; internal server error.')
         loadingRef.current = false
+        setServer(Response.internalServerError)
       }
     } catch {
       setComments({ page: 1, comments: [], totalCount: 0 })
       console.log('load comments failed; network error.')
       loadingRef.current = false
+      setServer(Response.networkError)
     }
   }, [reviewId])
 
@@ -373,11 +376,19 @@ const ReviewWithComments = () => {
     </View>
   ), [spacing, widescreen, user, handleDelete, handleReport, router, maxRowWidth])
 
-  const NoComments = useMemo(() => (
-    <View style={{width: maxRowWidth, height: 200, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
+  const NoComments = useMemo(() => server.result > 0 ? (
+    <View style={{width: maxRowWidth, height: 50, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
       <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center'}}>No comments yet. Be the first to respond!</HText>
     </View>
-  ), [maxRowWidth, widescreen])
+  ) : (
+    <View style={{width: maxRowWidth, height: 50, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
+      <ActivityIndicator color={Colors.heteroboxd} size='large' />
+    </View>
+  ), [maxRowWidth, widescreen, server.result])
+
+  const Footer = useMemo(() => comments.comments.length > 0 && server.result === 0 ? (
+    <ActivityIndicator size='small' color={Colors.text_link} />
+  ) : null, [comments.comments.length, server.result])
 
   if (!review) {
     return (
@@ -394,38 +405,32 @@ const ReviewWithComments = () => {
 
   return (
     <View style={{flex: 1, backgroundColor: Colors.background}}>
-      {
-        !comments ? (
-          <View style={{width: widescreen ? 1000 : width*0.95, alignItems: 'center', paddingVertical: 30}}>
-            <ActivityIndicator size='large' color={Colors.text_link} />
-          </View>
-        ) : (
-          <FlatList
-            ref={listRef}
-            data={comments.comments}
-            keyExtractor={(item) => item.id}
-            ListHeaderComponent={Header}
-            renderItem={Comment}
-            ListEmptyComponent={NoComments}
-            contentContainerStyle={{flexGrow: 1, paddingBottom: 100}}
-            scrollEnabled={true}
-            showsVerticalScrollIndicator={false}
-            onEndReachedThreshold={0.2}
-            onEndReached={loadNextPage}
-            refreshControl={
-              <RefreshControl 
-                refreshing={isRefreshing} 
-                onRefresh={async () => {
-                  setComments({ page: 1, comments: [], totalCount: 0 })
-                  setIsRefreshing(true)
-                  await loadReviewData(true)
-                  loadCommentsDataPage(1)
-                }}
-              />
-            }
+      <FlatList
+        ref={listRef}
+        data={comments.comments}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={Header}
+        renderItem={Comment}
+        ListEmptyComponent={NoComments}
+        ListFooterComponent={Footer}
+        contentContainerStyle={{flexGrow: 1, paddingBottom: 100}}
+        scrollEnabled={true}
+        showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.2}
+        onEndReached={loadNextPage}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={async () => {
+              setReview(null)
+              setComments({ page: 1, comments: [], totalCount: 0 })
+              setIsRefreshing(true)
+              await loadReviewData(true)
+              loadCommentsDataPage(1)
+            }}
           />
-        )
-      }
+        }
+      />
 
       <Popup 
         visible={[403, 404, 500].includes(server.result)} 

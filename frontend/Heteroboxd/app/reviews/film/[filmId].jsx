@@ -235,9 +235,9 @@ const FilmsReviews = () => {
           key={`${currentFilter.field}-${currentSort.field}`}
           context={'filmReviews'}
           currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
+          onFilterChange={(newFilter) => {closeMenu(); setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
           currentSort={currentSort}
-          onSortChange={(newSort) => setCurrentSort(newSort)}
+          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>

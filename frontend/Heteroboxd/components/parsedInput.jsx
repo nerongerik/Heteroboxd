@@ -120,7 +120,6 @@ const ParsedInput = ({ initial, width, onValueChange }) => {
       <View
         style={{
           borderWidth: 2,
-          borderTopColor: Colors.border_color,
           borderColor: border1 ? Colors.heteroboxd : Colors.border_color,
           borderBottomLeftRadius: 5,
           borderBottomRightRadius: 5,

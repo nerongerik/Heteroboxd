@@ -222,9 +222,9 @@ const UserWatchedFilms = () => {
           key={`${currentFilter.field}-${currentSort.field}`}
           context={'userWatched'}
           currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {setCurrentFilter(newFilter); closeMenu()}}
+          onFilterChange={(newFilter) => {closeMenu(); setData({ page: 1, entries: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
           currentSort={currentSort}
-          onSortChange={(newSort) => setCurrentSort(newSort)}
+          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, entries: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu> 
     </View>

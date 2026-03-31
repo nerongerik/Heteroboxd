@@ -22,8 +22,8 @@ const AlterReview = () => {
 
   const { filmId } = useLocalSearchParams()
   const { user, isValidSession } = useAuth()
-  const [ film, setFilm ] = useState({ title: '', year: 0, posterUrl: '' })
-  const [ review, setReview ] = useState({ id: null, rating: 0, text: '', spoiler: false })
+  const [ film, setFilm ] = useState(null)
+  const [ review, setReview ] = useState(null)
   const [ initial, setInitial ] = useState(null)
   const { width, height } = useWindowDimensions()
   const router = useRouter()
@@ -43,16 +43,20 @@ const AlterReview = () => {
       })
       if (res.ok) {
         const json = await res.json()
-        setFilm({title: json?.filmTitle, year: format.parseOutYear(json?.filmDate), posterUrl: json?.filmPosterUrl})
-        setReview({id: (json?.id && json?.id.length > 0) ? json?.id : null, rating: json?.rating || 0, text: json?.text || '', spoiler: json.spoiler || false})
+        setFilm({title: json?.filmTitle || '', year: format.parseOutYear(json?.filmDate) || '', posterUrl: json?.filmPosterUrl || 'noposter'})
+        setReview({id: (json?.id && json.id.length > 0) ? json.id : null, rating: json?.rating || 0, text: json?.text || '', spoiler: json.spoiler || false})
         if (json.text?.length > 0) {
           setInitial(json.text)
         }
         setServer(Response.ok)
       } else {
+        setFilm({ title: '', year: 0, posterUrl: '' })
+        setReview({ id: null, rating: 0, text: '', spoiler: false })
         setServer(Response.internalServerError)
       }
     } catch {
+      setFilm({ title: '', year: 0, posterUrl: '' })
+      setReview({ id: null, rating: 0, text: '', spoiler: false })
       setServer(Response.networkError)
     }
   }, [filmId, user, isValidSession])
@@ -139,6 +143,19 @@ const AlterReview = () => {
   const posterWidth = useMemo(() => widescreen ? 120 : 80, [widescreen])
   const posterHeight = useMemo(() => posterWidth * 3 / 2, [posterWidth])
 
+  if (!film || !review) {
+    return (
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        backgroundColor: Colors.background
+      }}>
+        <LoadingResponse visible={true} />
+      </View>
+    )
+  }
+
   return (
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center'}}>
       <KeyboardAvoidingView behavior='padding' style={{alignSelf: 'center', alignItems: 'center', width: widescreen ? 1000 : width*0.95}}>
@@ -193,7 +210,7 @@ const AlterReview = () => {
           <ParsedInput initial={initial} width={width} height={height} onValueChange={(r) => setReview(prev => ({ ...prev, text: r }))} />
         </ScrollView>
       </KeyboardAvoidingView>
-      <LoadingResponse visible={server.result <= 0} />
+
       <Popup
         visible={[403, 500].includes(server.result)}
         message={server.message}

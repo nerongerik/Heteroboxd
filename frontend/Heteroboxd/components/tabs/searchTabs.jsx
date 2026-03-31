@@ -35,6 +35,7 @@ const SearchTabs = ({ widescreen, router }) => {
   const search = useCallback(async (page, overrides = {}) => {
     const activeQuery = overrides.query || queryRef.current
     const activeTab = overrides.tab || tab
+    resetParams(activeTab, true)
     if (loadingRef.current) return
     const requestId = ++requestRef.current
     loadingRef.current = true
@@ -75,12 +76,14 @@ const SearchTabs = ({ widescreen, router }) => {
     search(1, { query: s.query, tab: s.tab })
   }, [search])
 
-  const resetParams = useCallback((tab) => {
+  const resetParams = useCallback((tab, fromSearch = false) => {
     setTab(tab)
     setResults({ page: 1, items: [], totalCount: 0 })
-    setQuery('')
-    queryRef.current = ''
-    setShowHistory(true)
+    if (!fromSearch) {
+      setQuery('')
+      queryRef.current = ''
+      setShowHistory(true)
+    }
   }, [])
 
   const panResponder = useMemo(() => {

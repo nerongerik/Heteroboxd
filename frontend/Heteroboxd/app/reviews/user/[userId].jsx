@@ -219,7 +219,7 @@ const UserReviews = () => {
         <FilterSort
           context={'userReviews'}
           currentSort={currentSort}
-          onSortChange={(newSort) => setCurrentSort(newSort)}
+          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>
