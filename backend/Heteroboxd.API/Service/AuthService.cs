@@ -47,7 +47,7 @@ namespace Heteroboxd.API.Service
         public async Task<List<CountryInfoResponse>> SyncCountries(string? LastSync)
         {
             var Countries = await _authRepo.GetCountriesAsync();
-            if (!Countries.Any()) return new List<CountryInfoResponse>();
+            if (Countries.Count == 0) return new List<CountryInfoResponse>();
 
             if (LastSync != null)
             {
@@ -56,7 +56,7 @@ namespace Heteroboxd.API.Service
             }
 
             return Countries
-                .Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("dd/MM/yyyy HH:mm") })
+                .Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("yyyy-MM-dd HH:mm") })
                 .ToList();
         }
 

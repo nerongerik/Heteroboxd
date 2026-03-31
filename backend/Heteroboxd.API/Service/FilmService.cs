@@ -28,7 +28,7 @@ namespace Heteroboxd.API.Service
         public async Task<List<TrendingInfoResponse>> GetTrending(string? LastSync)
         {
             var Trending = await _repo.GetTrendingAsync();
-            if (!Trending.Any()) return new List<TrendingInfoResponse>();
+            if (Trending.Count == 0) return new List<TrendingInfoResponse>();
 
             if (LastSync != null)
             {
@@ -37,7 +37,7 @@ namespace Heteroboxd.API.Service
             }
 
             return Trending
-                .Select(t => new TrendingInfoResponse { FilmId = t.FilmId, Title = t.Title, FilmPosterUrl = t.PosterUrl, Rank = t.Rank, LastSync = t.LastSync.ToString("dd/MM/yyyy HH:mm") })
+                .Select(t => new TrendingInfoResponse { FilmId = t.FilmId, Title = t.Title, FilmPosterUrl = t.PosterUrl, Rank = t.Rank, LastSync = t.LastSync.ToString("yyyy-MM-dd HH:mm") })
                 .ToList();
         }
 
