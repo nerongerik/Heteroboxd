@@ -299,9 +299,14 @@ namespace Heteroboxd.API.Service
             }
             else
             {
-                var Film = await _filmRepo.LightweightFetcherAsync(FilmId);
-                if (Film == null) throw new KeyNotFoundException();
-                await _repo.AddToWatchlistAsync(new WatchlistEntry(FilmId, Guid.Parse(UserId)));
+                try
+                {
+                    await _repo.AddToWatchlistAsync(new WatchlistEntry(FilmId, Guid.Parse(UserId)));
+                }
+                catch
+                {
+                    throw new ArgumentException();
+                }
             }
         }
 

@@ -121,6 +121,10 @@ namespace Heteroboxd.API.Controller
             {
                 return Ok(await _service.AddReview(ReviewRequest));
             }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
             catch (KeyNotFoundException)
             {
                 return NotFound();

@@ -1,13 +1,13 @@
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Linking, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from "react-native"
 import Eye from '../../assets/icons/eye2.svg'
 import * as format from '../../helpers/format'
-import { Colors } from "../../constants/colors"
+import { Colors } from '../../constants/colors'
 import { Headshot } from '../headshot'
 import HText from '../htext'
 import { Poster } from '../poster'
-import Interact from "../interact"
-import SlidingMenu from "../slidingMenu"
+import Interact from '../interact'
+import SlidingMenu from '../slidingMenu'
 
 const CelebrityTabs = ({ user, bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, updateSeenFilms, seenCount, fadeSeen, isRefreshing, onRefresh, loading }) => {
   const { width } = useWindowDimensions()
