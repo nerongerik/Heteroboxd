@@ -89,7 +89,7 @@ namespace Heteroboxd.API.Service
             var (Responses, TotalCount) = await _repo.ShuffleWatchlistAsync(Guid.Parse(UserId), PageSize);
             return new PagedResponse<WatchlistEntryInfoResponse?>
             {
-                TotalCount = TotalCount,
+                TotalCount = 0,
                 Page = 1,
                 Items = PageUtils.AddPadding(Responses.Select(x => (WatchlistEntryInfoResponse?)new WatchlistEntryInfoResponse(x.Item, x.Joined)).ToList())
             };
