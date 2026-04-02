@@ -281,6 +281,10 @@ namespace Heteroboxd.API.Controller
                 await _service.UpdateWatchlist(UserId!, FilmId);
                 return Ok();
             }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
             catch (KeyNotFoundException)
             {
                 return NotFound();

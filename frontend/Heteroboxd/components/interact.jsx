@@ -25,7 +25,7 @@ const Interact = ({ widescreen, filmId, close, fade, del }) => {
   const router = useRouter()
   const reviewRef = useRef(null)
   const watchlistedRef = useRef(null)
-  const ratingRequestRef = useRef(0)
+  const ratingDebounceRef = useRef(null)
   const watchlistRequestRef = useRef(0)
 
   const fetchData = useCallback(async () => {
@@ -58,46 +58,51 @@ const Interact = ({ widescreen, filmId, close, fade, del }) => {
     setSeen(true)
     setWatchlisted(false)
     setReview({ id: currentReview?.id || null, rating: newRating, text: currentReview?.text || null, spoiler: currentReview?.spoiler || false })
-    const requestId = ++ratingRequestRef.current
-    try {
-      const jwt = await auth.getJwt()
-      let res
-      if (currentReview?.id) {
-        res = await fetch(`${BaseUrl.api}/reviews`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
-          body: JSON.stringify({
-            ReviewId: currentReview.id,
-            Rating: newRating,
-            Text: currentReview.text || null,
-            Spoiler: currentReview.spoiler || false
+  
+    if (ratingDebounceRef.current) clearTimeout(ratingDebounceRef.current)
+    
+    ratingDebounceRef.current = setTimeout(async () => {
+      try {
+        const jwt = await auth.getJwt()
+        const reviewAtDispatch = reviewRef.current
+        let res
+        if (reviewAtDispatch?.id) {
+          res = await fetch(`${BaseUrl.api}/reviews`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
+            body: JSON.stringify({
+              ReviewId: reviewAtDispatch.id,
+              Rating: newRating,
+              Text: reviewAtDispatch.text || null,
+              Spoiler: reviewAtDispatch.spoiler || false
+            })
           })
-        })
-      } else {
-        res = await fetch(`${BaseUrl.api}/reviews`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
-          body: JSON.stringify({
-            Rating: newRating,
-            Text: null,
-            Spoiler: false,
-            AuthorId: user.userId,
-            FilmId: filmId
+        } else {
+          res = await fetch(`${BaseUrl.api}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
+            body: JSON.stringify({
+              Rating: newRating,
+              Text: null,
+              Spoiler: false,
+              AuthorId: user.userId,
+              FilmId: filmId
+            })
           })
-        })
+        }
+        if (res.ok) {
+          const json = await res.json()
+          setReview(prev => ({ ...prev, id: json.id, rating: json.rating }))
+        } else if (res.status === 400) {
+          console.log('concurrency race condition')
+        } else {
+          console.log('rate failed; internal server error')
+        }
+      } catch {
+        console.log('rate failed; network error')
       }
-      if (requestId !== ratingRequestRef.current) return
-      if (res.ok) {
-        const json = await res.json()
-        setReview(prev => ({ ...prev, id: json.id, rating: json.rating }))
-      } else {
-        console.log('rate failed; internal server error')
-      }
-    } catch {
-      if (requestId !== ratingRequestRef.current) return
-      console.log('rate failed; network error')
-    }
-  }, [user, ratingRequestRef, filmId, router])
+    }, 1000)
+  }, [user, filmId, router])
 
   const handleWatch = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -257,7 +262,7 @@ const Interact = ({ widescreen, filmId, close, fade, del }) => {
       <Stars
         size={widescreen ? 60 : 50}
         rating={review?.rating || 0}
-        onRatingChange={(newRating) => {fade(); del(); handleRatingChange(newRating)}}
+        onRatingChange={(newRating) => {if (!seen) fade(); del(); handleRatingChange(newRating)}}
         padding={true}
       />
       <HText style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</HText>

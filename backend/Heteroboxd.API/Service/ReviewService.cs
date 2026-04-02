@@ -125,17 +125,18 @@ namespace Heteroboxd.API.Service
         {
             Guid UserId = Guid.Parse(ReviewRequest.AuthorId);
 
-            var DuplicateCheck = await _repo.GetByUserFilmAsync(UserId, ReviewRequest.FilmId);
-            if (DuplicateCheck != null)
-            {
-                return new ReviewInfoResponse(DuplicateCheck.Review); //fail silently
-            }
-
             var Film = await _filmRepo.LightweightFetcherAsync(ReviewRequest.FilmId);
             if (Film == null) throw new KeyNotFoundException(); //fail loudly
 
             var Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, Flag(ReviewRequest.Text), ReviewRequest.Spoiler, UserId, ReviewRequest.FilmId);
-            await _repo.CreateAsync(Review);
+            try
+            {
+                await _repo.CreateAsync(Review);
+            }
+            catch
+            {
+                throw new ArgumentException();
+            }
             await _filmRepo.UpdateAverageRatingAsync(Film.Id, ((Film.AverageRating * Film.RatingCount) + Review.Rating) / (Film.RatingCount + 1));
             await _filmRepo.UpdateRatingCountAsync(ReviewRequest.FilmId, 1);
 

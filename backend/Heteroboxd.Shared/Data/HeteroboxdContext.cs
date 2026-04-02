@@ -158,6 +158,8 @@ namespace Heteroboxd.Shared.Data
             {
                 entity.HasKey(r => r.Id);
 
+                entity.HasIndex(r => new { r.AuthorId, r.FilmId }).IsUnique(); //one review per user per film
+
                 entity.HasOne<User>()
                       .WithMany()
                       .HasForeignKey(r => r.AuthorId)
@@ -227,6 +229,8 @@ namespace Heteroboxd.Shared.Data
             modelBuilder.Entity<WatchlistEntry>(entity =>
             {
                 entity.HasKey(wle => wle.Id);
+
+                entity.HasIndex(wle => new { wle.UserId, wle.FilmId }).IsUnique(); //one entry per user per film
 
                 entity.HasOne<User>()
                       .WithMany()

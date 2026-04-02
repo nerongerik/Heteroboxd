@@ -32,11 +32,11 @@ const SearchTabs = ({ widescreen, router }) => {
   const [ loading, setLoading ] = useState(false)
   const loadingRef = useRef(false)
 
-  const search = useCallback(async (page, overrides = {}) => {
+  const search = useCallback(async (page, overrides = {}, fromButton = false) => {
     const activeQuery = overrides.query || queryRef.current
     const activeTab = overrides.tab || tab
-    resetParams(activeTab, true)
     if (loadingRef.current) return
+    if (fromButton) resetParams(activeTab, true)
     const requestId = ++requestRef.current
     loadingRef.current = true
     setShowHistory(false)
@@ -308,11 +308,11 @@ const SearchTabs = ({ widescreen, router }) => {
             onFocus={() => setBorder(true)}
             onBlur={() => setBorder(false)}
             onSubmitEditing={() => {
-              if (query.length > 0) search(1)
+              if (query.length > 0) search(1, {}, true)
             }}
           />
           <Pressable
-            onPress={() => search(1)}
+            onPress={() => search(1, {}, true)}
             style={[{alignItems: 'center', alignContent: 'center', backgroundColor: Colors.heteroboxd, padding: 12, borderTopRightRadius: 10, borderBottomRightRadius: 10, borderWidth: 2, borderLeftWidth: 0, borderColor: border ? Colors.heteroboxd : Colors.border_color, height: 45, justifyContent: 'center'}, query.length === 0 && {opacity: 0.8}]}
             disabled={query.length === 0}
           >

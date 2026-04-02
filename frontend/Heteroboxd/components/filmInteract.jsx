@@ -34,8 +34,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const router = useRouter()
   const reviewLocalCopyRef = useRef(null)
   const watchlistLocalCopyRef = useRef(null)
-  const ratingRequestRef = useRef(0)
   const watchlistRequestRef = useRef(0)
+  const ratingDebounceRef = useRef(null)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -63,46 +63,51 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     setSeenLocalCopy(true)
     setWatchlistedLocalCopy(false)
     setReviewLocalCopy({ id: currentReview?.id || null, rating: newRating, text: currentReview?.text || null, spoiler: currentReview?.spoiler || false })
-    const requestId = ++ratingRequestRef.current
-    try {
-      const jwt = await auth.getJwt()
-      let res
-      if (currentReview?.id) {
-        res = await fetch(`${BaseUrl.api}/reviews`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
-          body: JSON.stringify({
-            ReviewId: currentReview.id,
-            Rating: newRating,
-            Text: currentReview.text || null,
-            Spoiler: currentReview.spoiler || false
+
+    if (ratingDebounceRef.current) clearTimeout(ratingDebounceRef.current)
+
+    ratingDebounceRef.current = setTimeout(async () => {
+      try {
+        const jwt = await auth.getJwt()
+        const reviewAtDispatch = reviewLocalCopyRef.current
+        let res
+        if (reviewAtDispatch?.id) {
+          res = await fetch(`${BaseUrl.api}/reviews`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
+            body: JSON.stringify({
+              ReviewId: reviewAtDispatch.id,
+              Rating: newRating,
+              Text: reviewAtDispatch.text || null,
+              Spoiler: reviewAtDispatch.spoiler || false
+            })
           })
-        })
-      } else {
-        res = await fetch(`${BaseUrl.api}/reviews`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
-          body: JSON.stringify({
-            Rating: newRating,
-            Text: null,
-            Spoiler: false,
-            AuthorId: user.userId,
-            FilmId: filmId
+        } else {
+          res = await fetch(`${BaseUrl.api}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
+            body: JSON.stringify({
+              Rating: newRating,
+              Text: null,
+              Spoiler: false,
+              AuthorId: user.userId,
+              FilmId: filmId
+            })
           })
-        })
+        }
+        if (res.ok) {
+          const json = await res.json()
+          setReviewLocalCopy(prev => ({ ...prev, id: json.id, rating: json.rating }))
+        } else if (res.status === 400) {
+          console.log('concurrency race condition')
+        } else {
+          setServer(Response.internalServerError)
+        }
+      } catch {
+        setServer(Response.networkError)
       }
-      if (requestId !== ratingRequestRef.current) return
-      if (res.ok) {
-        const json = await res.json()
-        setReviewLocalCopy(prev => ({ ...prev, id: json.id, rating: json.rating }))
-      } else {
-        setServer(Response.internalServerError)
-      }
-    } catch {
-      if (requestId !== ratingRequestRef.current) return
-      setServer(Response.networkError)
-    }
-  }, [user, ratingRequestRef, filmId])
+    }, 1000)
+  }, [user, filmId])
 
   const handleWatch = useCallback(async () => {
     if (!user || !(await isValidSession())) {

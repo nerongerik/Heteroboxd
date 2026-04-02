@@ -139,6 +139,7 @@ const Celebrity = () => {
   }, [user, celebrityId, currentSort])
 
   const handleTabChange = useCallback((newTab) => {
+    setCurrentTabData({ page: 1, films: [], totalCount: 0 })
     setCurrentFilter(newTab)
     if (newTab !== 'Bio') {
       loadCreditsData(newTab, 1)
