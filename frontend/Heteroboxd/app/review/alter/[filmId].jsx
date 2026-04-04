@@ -62,11 +62,11 @@ const AlterReview = () => {
   }, [filmId, user, isValidSession])
 
   const handleSubmit = useCallback(async () => {
+    setFilm(null)
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
     }
-    setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
       let res

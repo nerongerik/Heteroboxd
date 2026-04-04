@@ -76,14 +76,13 @@ const UserReviews = () => {
           setData(prev => ({...prev, page: json.page, reviews: prev.reviews.length > 1000 ? [...prev.reviews.slice(-980), ...json.items] : [...prev.reviews, ...json.items]}))
         }
         setServer(Response.ok)
-        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
-        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
       loadingRef.current = false
     }
   }, [userId, currentSort])

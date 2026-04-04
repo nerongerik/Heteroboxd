@@ -49,14 +49,13 @@ const Notifications = () => {
           setData(prev => ({...prev, page: json.page, notifs: prev.notifs.length > 1000 ? [...prev.notifs.slice(-980), ...json.items] : [...prev.notifs, ...json.items]}))
         }
         setServer(Response.ok)
-        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
-        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
       loadingRef.current = false
     }
   }, [user])

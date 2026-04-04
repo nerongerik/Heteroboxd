@@ -105,18 +105,16 @@ const Relationships = () => {
           }
         }
         setServer(Response.ok)
-        loadingRef.current = false
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
         setServer(Response.notFound)
-        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
-        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
       loadingRef.current = false
     }
   }, [userId, isOwnProfile])

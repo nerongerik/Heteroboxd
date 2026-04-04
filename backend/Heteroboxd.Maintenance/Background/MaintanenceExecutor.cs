@@ -71,10 +71,15 @@ namespace Heteroboxd.Maintenance.Background
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
             var _client = _scope.ServiceProvider.GetRequiredService<ITMDBClient>();
 
+            var DontInclude = new HashSet<string>()
+            {
+                "XK", "AN", "BU", "CS", "SU", "TP", "XC", "XG", "XI", "YU", "ZR"
+            };
+
             var Response = await _client.CountryConfigurationCall();
             var Countries = Response
                 .Select(r => new Country(r.english_name!, r.iso_3166_1!))
-                .Where(c => c.Code != "XK");
+                .Where(c => !DontInclude.Contains(c.Code));
 
             await _context.Countries.ExecuteDeleteAsync(CT);
             await _context.Countries.AddRangeAsync(Countries, CT);

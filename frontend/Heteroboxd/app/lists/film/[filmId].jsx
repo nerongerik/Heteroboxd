@@ -73,14 +73,13 @@ const FilmsLists = () => {
           setData(prev => ({...prev, page: json.page, lists: prev.lists.length > 250 ? [...prev.lists.slice(-230), ...json.items] : [...prev.lists, ...json.items]}))
         }
         setServer(Response.ok)
-        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
-        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
       loadingRef.current = false
     }
   }, [user, filmId, currentFilter, currentSort])

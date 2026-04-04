@@ -47,18 +47,16 @@ const UserLikes = () => {
           setLists(prev => ({...prev, page: json.likedLists.page, items: prev.items.length > 250 ? [...prev.items.slice(-230), ...json.likedLists.items] : [...prev.items, ...json.likedLists.items]}))
         }
         setServer(Response.ok)
-        loadingRef.current = false
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
         setServer(Response.notFound)
-        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
-        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
       loadingRef.current = false
     }
   }, [userId])

@@ -85,7 +85,46 @@ namespace Heteroboxd.Shared.Integrations
             }
             foreach (var pc in Response.production_countries ?? new List<ProductionCountry>())
             {
-                Film.Country.Add(pc.iso_3166_1 == null ? "XX" : pc.iso_3166_1 == "XK" ? "RS" : pc.iso_3166_1);
+                var ParsedCode = "";
+                switch (pc.iso_3166_1)
+                {
+                    case null:
+                        ParsedCode = "XX";
+                        break;
+                    case "XK":
+                    case "YU":
+                    case "CS":
+                        ParsedCode = "RS";
+                        break;
+                    case "AN":
+                        ParsedCode = "NL";
+                        break;
+                    case "BU":
+                        ParsedCode = "MM";
+                        break;
+                    case "SU":
+                        ParsedCode = "RU";
+                        break;
+                    case "TP":
+                        ParsedCode = "TL";
+                        break;
+                    case "XC":
+                        ParsedCode = "CZ";
+                        break;
+                    case "XG":
+                        ParsedCode = "DE";
+                        break;
+                    case "XI":
+                        ParsedCode = "IE";
+                        break;
+                    case "ZR":
+                        ParsedCode = "CD";
+                        break;
+                    default:
+                        ParsedCode = pc.iso_3166_1;
+                        break;
+                }
+                Film.Country.Add(ParsedCode);
             }
 
             var (Celebrities, Credits) = await ParseCredits(Response.credits, Film.Id, ThreadsafeCelebs);
