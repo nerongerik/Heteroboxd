@@ -99,14 +99,13 @@ const Watchlist = () => {
           setData(prev => ({...prev, page: json.page, entries: prev.entries.length > 1000 ? [...prev.entries.slice(-980), ...json.items] : [...prev.entries, ...json.items]}))
         }
         setServer(Response.ok)
-        loadingRef.current = false
       } else {
         if (requestId !== requestRef.current) return
         setServer(Response.internalServerError)
-        loadingRef.current = false
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
       loadingRef.current = false
     }
   }, [user, userId, currentFilter, currentSort])

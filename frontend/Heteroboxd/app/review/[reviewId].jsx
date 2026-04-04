@@ -97,20 +97,19 @@ const ReviewWithComments = () => {
         } else {
           setComments(prev => ({...prev, page: json.page, comments: prev.comments.length > 1000 ? [...prev.comments.slice(-980), ...json.items] : [...prev.comments, ...json.items]}))
         }
-        loadingRef.current = false
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
         setComments({ page: 1, comments: [], totalCount: 0 })
         console.log('load comments failed; internal server error.')
-        loadingRef.current = false
         setServer(Response.internalServerError)
       }
     } catch {
       setComments({ page: 1, comments: [], totalCount: 0 })
       console.log('load comments failed; network error.')
-      loadingRef.current = false
       setServer(Response.networkError)
+    } finally {
+      loadingRef.current = false
     }
   }, [reviewId])
 

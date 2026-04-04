@@ -54,9 +54,9 @@ const SearchTabs = ({ widescreen, router }) => {
         }
       }
       setLoading(false)
-      loadingRef.current = false
     } catch {
       setLoading(false)
+    } finally {
       loadingRef.current = false
     }
   }, [tab, saveSearch])
