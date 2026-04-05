@@ -30,7 +30,7 @@ const Histogram = ({ histogram }) => {
   const BAR_WIDTH = widescreen ? 750/12.5 : width/15
 
   useEffect(() => {
-    if (averageRating) {
+    if (averageRating != null && !isNaN(averageRating)) {
       setActiveOutput(format.round1(averageRating))
     }
   }, [averageRating])
