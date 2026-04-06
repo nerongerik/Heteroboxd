@@ -409,9 +409,9 @@ const Profile = () => {
     <>
     <Head>
       <title>{data?.name}</title>
-      <meta name="description" content="All lists created by the selected author." />
+      <meta name="description" content={data?.bio} />
       <meta property="og:title" content={data?.name} />
-      <meta property="og:description" content="All lists created by the selected author." />
+      <meta property="og:description" content={data?.bio} />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <ScrollView
