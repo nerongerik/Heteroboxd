@@ -14,6 +14,7 @@ const About = () => {
       <meta name="description" content="What is Heterobox, how does it work, and other frequently asked questions..." />
       <meta property="og:title" content="About" />
       <meta property="og:description" content="What is Heterobox, how does it work, and other frequently asked questions..." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background, alignContent: 'center', justifyContent: 'center'}}>
       <ScrollView

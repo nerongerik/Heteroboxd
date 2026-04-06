@@ -183,6 +183,7 @@ const ExploreLists = () => {
       <meta name="description" content="Explore Heteroboxd's entire catalogue of lists." />
       <meta property="og:title" content="Featured lists" />
       <meta property="og:description" content="Explore Heteroboxd's entire catalogue of lists." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

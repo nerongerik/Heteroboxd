@@ -219,6 +219,7 @@ const Home = () => {
       <meta name="description" content="Heteroboxd is an open-source, free-speech, social film discovery platform. Track, rate, and review the films you've seen, or add new ones to your watchlist; share your criticism, interact with other users, create your own custom lists, and much more!" />
       <meta property="og:title" content="Heteroboxd" />
       <meta property="og:description" content="Heteroboxd is an open-source, free-speech, social film discovery platform. Track, rate, and review the films you've seen, or add new ones to your watchlist; share your criticism, interact with other users, create your own custom lists, and much more!" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, backgroundColor: Colors.background}}>
       {

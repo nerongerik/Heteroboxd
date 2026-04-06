@@ -239,6 +239,7 @@ const Explore = () => {
       <meta name="description" content="Explore Heteroboxd's entire catalogue of films!" />
       <meta property="og:title" content="Explore" />
       <meta property="og:description" content="Explore Heteroboxd's entire catalogue of films!" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList

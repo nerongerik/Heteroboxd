@@ -308,6 +308,7 @@ const EditList = () => {
         <meta property="og:title" content="Edit List" />
         <meta property="og:description" content="Edit list." />
         <meta name="robots" content="noindex, nofollow" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -329,6 +330,7 @@ const EditList = () => {
       <meta property="og:title" content={`Edit ${base?.listName}`}/>
       <meta property="og:description" content="Edit list." />
       <meta name="robots" content="noindex, nofollow" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{backgroundColor: Colors.background, flex: 1, paddingBottom: 50}}>
       <FlatList

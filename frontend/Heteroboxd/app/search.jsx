@@ -26,6 +26,7 @@ const Search = () => {
       <meta name="description" content="Search through Heteroboxd's catalogue of films, celebrities, lists, and users." />
       <meta property="og:title" content="Search" />
       <meta property="og:description" content="Search through Heteroboxd's catalogue of films, celebrities, lists, and users." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <View style={{flex: 1, width: widescreen ? 1000 : width*0.95, marginTop: 10, alignSelf: 'center'}}>

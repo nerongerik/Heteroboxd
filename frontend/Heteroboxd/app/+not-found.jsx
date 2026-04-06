@@ -15,6 +15,7 @@ const NotFound = () => {
       <meta property="og:title" content="Not Found!" />
       <meta property="og:description" content="The page you're looking for does not exist." />
       <meta name="robots" content="noindex, nofollow" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}>

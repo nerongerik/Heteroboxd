@@ -85,6 +85,7 @@ const UserLikes = () => {
       <meta name="description" content="Recently liked reviews and lists." />
       <meta property="og:title" content="Likes" />
       <meta property="og:description" content="Recently liked reviews and lists." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <LikeTabs

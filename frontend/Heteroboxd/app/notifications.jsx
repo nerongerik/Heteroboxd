@@ -189,6 +189,7 @@ const Notifications = () => {
       <meta property="og:title" content="Notifications" />
       <meta property="og:description" content="The all-in-one inbox for all your Heteroboxd notifications." />
       <meta name="robots" content="noindex, nofollow" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList

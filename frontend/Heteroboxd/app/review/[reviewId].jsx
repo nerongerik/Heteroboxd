@@ -395,6 +395,7 @@ const ReviewWithComments = () => {
         <meta name="description" content={`The review of a film.`} />
         <meta property="og:title" content="Review" />
         <meta property="og:description" content={`The review of a film`} />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -415,6 +416,7 @@ const ReviewWithComments = () => {
       <meta name="description" content={`The ${review?.rating}-star review of ${review?.filmTitle}`} />
       <meta property="og:title" content={`Review of ${review?.filmTitle}`} />
       <meta property="og:description" content={`The ${review?.rating}-star review of ${review?.filmTitle}`} />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <FlatList

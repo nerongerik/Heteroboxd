@@ -200,6 +200,7 @@ const Celebrity = () => {
         <meta name="description" content="The full filmography and biography of a celebrity." />
         <meta property="og:title" content="Celebrity" />
         <meta property="og:description" content="The full filmography and biography of a celebrity." />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -220,6 +221,7 @@ const Celebrity = () => {
       <meta name="description" content={`The full filmography and biography of ${bio?.name}.`} />
       <meta property="og:title" content={bio?.name} />
       <meta property="og:description" content={`The full filmography and biography of ${bio?.name}.`} />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <CelebrityTabs

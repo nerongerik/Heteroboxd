@@ -170,6 +170,7 @@ const Film = () => {
         <meta name="description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
         <meta property="og:title" content="Film" />
         <meta property="og:description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -190,6 +191,7 @@ const Film = () => {
       <meta name="description" content={film.synopsis} />
       <meta property="og:title" content={film.title} />
       <meta property="og:description" content={film.synopsis} />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, overflow: 'hidden'}}>
       <ScrollView

@@ -227,6 +227,7 @@ const CreateList = () => {
       <meta name="description" content="Create a new list with initial entries and choose if it is ranked or unordered." />
       <meta property="og:title" content="New List" />
       <meta property="og:description" content="Create a new list with initial entries and choose if it is ranked or unordered." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{backgroundColor: Colors.background, flex: 1, justifyContent: 'center'}}>
       <FlatList

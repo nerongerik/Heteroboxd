@@ -160,6 +160,7 @@ const Relationships = () => {
       <meta name="description" content="The users you follow, are followed by, or have blocked." />
       <meta property="og:title" content="Relationships" />
       <meta property="og:description" content="The users you follow, are followed by, or have blocked." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <RelationshipTabs

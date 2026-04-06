@@ -206,6 +206,7 @@ const Watchlist = () => {
       <meta name="description" content="All the films designated for a later watch." />
       <meta property="og:title" content="Watchlist" />
       <meta property="og:description" content="All the films designated for a later watch." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

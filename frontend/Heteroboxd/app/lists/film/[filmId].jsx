@@ -185,6 +185,7 @@ const FilmsLists = () => {
       <meta name="description" content="All lists featuring the selected film." />
       <meta property="og:title" content="Featuring Film" />
       <meta property="og:description" content="All lists featuring the selected film." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

@@ -194,6 +194,7 @@ const FilmsReviews = () => {
       <meta name="description" content="Every review ever written for the selected film." />
       <meta property="og:title" content="Film's Reviews" />
       <meta property="og:description" content="Every review ever written for the selected film." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

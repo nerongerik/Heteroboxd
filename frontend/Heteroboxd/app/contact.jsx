@@ -16,6 +16,7 @@ const Contact = () => {
       <meta name="description" content="Contact Heteroboxd support for information, collaboration proposals, or bugs in the app." />
       <meta property="og:title" content="Contact" />
       <meta property="og:description" content="Contact Heteroboxd support for information, collaboration proposals, or bugs in the app." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
       <ScrollView

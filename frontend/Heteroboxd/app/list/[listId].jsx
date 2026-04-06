@@ -351,6 +351,7 @@ const List = () => {
         <meta name="description" content="Custom List" />
         <meta property="og:title" content="List" />
         <meta property="og:description" content="Custom List" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -371,6 +372,7 @@ const List = () => {
       <meta name="description" content={base?.description} />
       <meta property="og:title" content={base?.name} />
       <meta property="og:description" content={base?.description} />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList

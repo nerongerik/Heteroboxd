@@ -108,6 +108,7 @@ const Register = () => {
       <meta name="description" content="Create a new Heteroboxd account!" />
       <meta property="og:title" content="Register" />
       <meta property="og:description" content="Create a new Heteroboxd account!" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20}} keyboardShouldPersistTaps='handled'>

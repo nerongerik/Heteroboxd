@@ -181,6 +181,7 @@ const UserReviews = () => {
       <meta name="description" content="Every review ever written by the selected author." />
       <meta property="og:title" content={userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`} />
       <meta property="og:description" content="Every review ever written by the selected author." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

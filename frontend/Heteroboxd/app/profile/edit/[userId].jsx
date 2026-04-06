@@ -164,6 +164,7 @@ const ProfileEdit = () => {
       <meta property="og:title" content="Edit Profile" />
       <meta property="og:description" content="Change your bio, name, or even your profile picture!" />
       <meta name="robots" content="noindex, nofollow" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}} keyboardShouldPersistTaps='handled'>

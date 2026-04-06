@@ -448,6 +448,7 @@ const Admin = () => {
         <meta property="og:title" content="Admin" />
         <meta property="og:description" content="Admin's Dashboard" />
         <meta name="robots" content="noindex, nofollow" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, backgroundColor: Colors.background}}>
         <HText style={{textAlign: 'center', color: Colors.text_title, fontSize: 20, fontWeight: '600', paddingHorizontal: 10}}>Admin Dashboard Key:</HText>
@@ -524,6 +525,7 @@ const Admin = () => {
       <meta property="og:title" content="Admin" />
       <meta property="og:description" content="Admin's Dashboard" />
       <meta name="robots" content="noindex, nofollow" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingHorizontal: 10}}>
       <HText style={{

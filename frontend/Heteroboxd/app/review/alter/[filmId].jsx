@@ -153,6 +153,7 @@ const AlterReview = () => {
         <meta property="og:title" content="Alter Review" />
         <meta property="og:description" content="Create a new review for this film or update your existing one." />
         <meta name="robots" content="noindex, nofollow" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -174,6 +175,7 @@ const AlterReview = () => {
       <meta property="og:title" content="Review this film" />
       <meta property="og:description" content="Create a new review for this film or update your existing one." />
       <meta name="robots" content="noindex, nofollow" />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center'}}>
       <KeyboardAvoidingView behavior='padding' style={{alignSelf: 'center', alignItems: 'center', width: widescreen ? 1000 : width*0.95}}>

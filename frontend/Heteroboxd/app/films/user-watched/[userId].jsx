@@ -169,6 +169,7 @@ const UserWatchedFilms = () => {
       <meta name="description" content="Recently watched films." />
       <meta property="og:title" content="Recents" />
       <meta property="og:description" content="Recently watched films." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

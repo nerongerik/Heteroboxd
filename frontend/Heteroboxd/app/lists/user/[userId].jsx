@@ -208,6 +208,7 @@ const UsersLists = () => {
       <meta name="description" content="All lists created by the selected author." />
       <meta property="og:title" content={`${author.username}'s lists`} />
       <meta property="og:description" content="All lists created by the selected author." />
+      <link rel="icon" href="/favicon.ico" sizes="any" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
