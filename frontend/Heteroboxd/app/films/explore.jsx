@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Eye from '../../assets/icons/eye2.svg'
 import Filter from '../../assets/icons/filter.svg'
 import Shuffle from '../../assets/icons/shuffle.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
@@ -164,9 +165,6 @@ const Explore = () => {
         </>
       ),
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Explore Films'
-    }
   }, [navigation, widescreen, openMenu, shuffle])
 
   useEffect(() => {
@@ -235,6 +233,13 @@ const Explore = () => {
   ) : null, [data.films.length, server])
 
   return (
+    <>
+    <Head>
+      <title>Explore</title>
+      <meta name="description" content="Explore Heteroboxd's entire catalogue of films!" />
+      <meta property="og:title" content="Explore" />
+      <meta property="og:description" content="Explore Heteroboxd's entire catalogue of films!" />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
         data={data.films}
@@ -307,6 +312,7 @@ const Explore = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

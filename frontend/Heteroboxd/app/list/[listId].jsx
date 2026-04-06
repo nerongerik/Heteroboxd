@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Filter from '../../assets/icons/filter.svg'
 import Eye from '../../assets/icons/eye2.svg'
 import Heart from '../../assets/icons/heart.svg'
 import Heart2 from '../../assets/icons/heart2.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -224,9 +225,6 @@ const List = () => {
         )
       }
     })
-    if (Platform.OS === 'web' && base?.name) {
-      document.title = base?.name
-    }
   }, [navigation, user, widescreen, base, openMenu2])
 
   useEffect(() => {
@@ -347,6 +345,13 @@ const List = () => {
 
   if (!base) {
     return (
+      <>
+      <Head>
+        <title>List</title>
+        <meta name="description" content="Custom List" />
+        <meta property="og:title" content="List" />
+        <meta property="og:description" content="Custom List" />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -355,10 +360,18 @@ const List = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
+      </>
     )
   }
 
   return (
+    <>
+    <Head>
+      <title>{base?.name}</title>
+      <meta name="description" content={base?.description} />
+      <meta property="og:title" content={base?.name} />
+      <meta property="og:description" content={base?.description} />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -438,6 +451,7 @@ const List = () => {
         )
       }
     </View>
+    </>
   )
 }
 

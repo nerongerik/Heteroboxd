@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Spoiler from '../../../assets/icons/spoiler.svg'
 import Heart from '../../../assets/icons/heart.svg'
 import Filter from '../../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
@@ -140,9 +141,6 @@ const FilmsReviews = () => {
         </Pressable>
       ),
     })
-    if (Platform.OS === 'web') {
-      document.title = `Film's Reviews`
-    }
   }, [navigation, widescreen, openMenu])
 
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
@@ -190,6 +188,13 @@ const FilmsReviews = () => {
   ) : null, [data.reviews.length, server])
 
   return (
+    <>
+    <Head>
+      <title>Film's Reviews</title>
+      <meta name="description" content="Every review ever written for the selected film." />
+      <meta property="og:title" content="Film's Reviews" />
+      <meta property="og:description" content="Every review ever written for the selected film." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -238,6 +243,7 @@ const FilmsReviews = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

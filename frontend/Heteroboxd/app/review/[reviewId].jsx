@@ -7,6 +7,7 @@ import Flag from '../../assets/icons/flag.svg'
 import Spoiler from '../../assets/icons/spoiler.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -241,9 +242,6 @@ const ReviewWithComments = () => {
     navigation.setOptions({
       headerRight: () => user ? <ReviewOptionsButton reviewId={review.id} authorId={review.authorId} filmId={review.filmId} notifsOnInitial={review.notificationsOn} onNotifChange={() => setReview(prev => ({...prev, notificationsOn: !prev.notificationsOn}))} pinnedInitial={review.pinned} onPin={() => setReview(prev => ({...prev, pinned: !prev.pinned}))} /> : null
     })
-    if (Platform.OS === 'web' && review?.filmTitle.length > 0) {
-      document.title = `Review of ${review.filmTitle}`
-    }
   }, [navigation, user, review])
 
   useEffect(() => {
@@ -391,6 +389,13 @@ const ReviewWithComments = () => {
 
   if (!review) {
     return (
+      <>
+      <Head>
+        <title>Review</title>
+        <meta name="description" content={`The review of a film.`} />
+        <meta property="og:title" content="Review" />
+        <meta property="og:description" content={`The review of a film`} />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -399,10 +404,18 @@ const ReviewWithComments = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
+      </>
     )
   }
 
   return (
+    <>
+    <Head>
+      <title>Review of {review?.filmTitle}</title>
+      <meta name="description" content={`The ${review?.rating}-star review of ${review?.filmTitle}`} />
+      <meta property="og:title" content={`Review of ${review?.filmTitle}`} />
+      <meta property="og:description" content={`The ${review?.rating}-star review of ${review?.filmTitle}`} />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <FlatList
         ref={listRef}
@@ -456,6 +469,7 @@ const ReviewWithComments = () => {
         {snack.msg}
       </Snackbar>
     </View>
+    </>
   )
 }
 

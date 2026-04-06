@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { useCallback, useState } from 'react'
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import Eye from '../assets/icons/eye.svg'
 import EyeOff from '../assets/icons/eye-off.svg'
 import { Link, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
@@ -67,13 +68,14 @@ const Login = () => {
     }
   }, [recovery])
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'Login'
-    }
-  })
-
   return (
+    <>
+    <Head>
+      <title>Login</title>
+      <meta name="description" content="Welcome back! Sign in to your Heteroboxd account." />
+      <meta property="og:title" content="Login" />
+      <meta property="og:description" content="Welcome back! Sign in to your Heteroboxd account." />
+    </Head>
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20}} keyboardShouldPersistTaps='handled'>
         <View style={[styles.form, {width: width > 1000 ? 1000 : width*0.95}]}>
@@ -194,6 +196,7 @@ const Login = () => {
         <LoadingResponse visible={server.response <= 0} />
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   )
 }
 

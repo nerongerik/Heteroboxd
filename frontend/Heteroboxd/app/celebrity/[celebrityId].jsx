@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Pressable, useWindowDimensions, View, Platform } from 'react-native'
+import { Animated, Pressable, useWindowDimensions, View } from 'react-native'
 import Filter from '../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import { useAuth } from '../../hooks/useAuth'
 import * as format from '../../helpers/format'
 import { BaseUrl } from '../../constants/api'
@@ -165,9 +166,6 @@ const Celebrity = () => {
         </Pressable>
       ),
     })
-    if (Platform.OS === 'web' && bio?.name) {
-      document.title = bio?.name
-    }
   }, [navigation, bio?.name, widescreen, openMenu])
 
   useEffect(() => {
@@ -196,6 +194,13 @@ const Celebrity = () => {
 
   if (!bio) {
     return (
+      <>
+      <Head>
+        <title>Celebrity</title>
+        <meta name="description" content="The full filmography and biography of a celebrity." />
+        <meta property="og:title" content="Celebrity" />
+        <meta property="og:description" content="The full filmography and biography of a celebrity." />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -204,10 +209,18 @@ const Celebrity = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
+      </>
     )
   }
 
   return (
+    <>
+    <Head>
+      <title>{bio?.name}</title>
+      <meta name="description" content={`The full filmography and biography of ${bio?.name}.`} />
+      <meta property="og:title" content={bio?.name} />
+      <meta property="og:description" content={`The full filmography and biography of ${bio?.name}.`} />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <CelebrityTabs
         user={user}
@@ -260,6 +273,7 @@ const Celebrity = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

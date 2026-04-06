@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { View, Platform } from 'react-native'
+import { View } from 'react-native'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
@@ -71,9 +72,6 @@ const UserLikes = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Likes'
-    }
   }, [navigation])
 
   useEffect(() => {
@@ -81,6 +79,13 @@ const UserLikes = () => {
   }, [userId, loadData])
 
   return (
+    <>
+    <Head>
+      <title>Likes</title>
+      <meta name="description" content="Recently liked reviews and lists." />
+      <meta property="og:title" content="Likes" />
+      <meta property="og:description" content="Recently liked reviews and lists." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <LikeTabs
         reviews={reviews}
@@ -102,6 +107,7 @@ const UserLikes = () => {
         onClose={() => { server.result === 404 ? router.back() : router.replace('/contact') }}
       />
     </View>
+    </>
   )
 }
 

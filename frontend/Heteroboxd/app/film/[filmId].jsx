@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FlatList, Linking, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import { Snackbar } from 'react-native-paper'
 import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -132,10 +133,7 @@ const Film = () => {
       headerTitle: '',
       headerStyle: {backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0}
     })
-    if (Platform.OS === 'web' && film.title) {
-      document.title = film.title
-    }
-  }, [navigation, film.title])
+  }, [navigation])
 
   useEffect(() => {
     if (!user || !uwf) return
@@ -166,6 +164,13 @@ const Film = () => {
 
   if (server.result <= 0) {
     return (
+      <>
+      <Head>
+        <title>Film</title>
+        <meta name="description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
+        <meta property="og:title" content="Film" />
+        <meta property="og:description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -174,10 +179,18 @@ const Film = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
+      </>
     )
   }
 
   return (
+    <>
+    <Head>
+      <title>{film.title}</title>
+      <meta name="description" content={film.synopsis} />
+      <meta property="og:title" content={film.title} />
+      <meta property="og:description" content={film.synopsis} />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, overflow: 'hidden'}}>
       <ScrollView
         contentContainerStyle={{
@@ -524,6 +537,7 @@ const Film = () => {
         {uwf?.dateWatched}
       </Snackbar>
     </View>
+    </>
   )
 }
 

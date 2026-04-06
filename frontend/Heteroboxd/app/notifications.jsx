@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
 import Seen from '../assets/icons/seen.svg'
 import { useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
 import { useAuth } from '../hooks/useAuth'
@@ -131,9 +132,6 @@ const Notifications = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Notifications'
-    }
   }, [navigation])
 
   useEffect(() => {
@@ -184,6 +182,14 @@ const Notifications = () => {
   ) : null, [data.notifs.length, server])
   
   return (
+    <>
+    <Head>
+      <title>Notifications</title>
+      <meta name="description" content="The all-in-one inbox for all your Heteroboxd notifications." />
+      <meta property="og:title" content="Notifications" />
+      <meta property="og:description" content="The all-in-one inbox for all your Heteroboxd notifications." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', paddingBottom: 50}}>
       <FlatList
         data={data.notifs}
@@ -225,6 +231,7 @@ const Notifications = () => {
         onClose={() => server.response === 403 ? router.replace('/login') : router.replace('/contact')}
       />
     </View>
+    </>
   )
 }
 

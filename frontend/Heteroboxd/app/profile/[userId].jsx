@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Male from '../../assets/icons/male.svg'
 import Female from '../../assets/icons/female.svg'
 import Heart from '../../assets/icons/heart.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -215,9 +216,6 @@ const Profile = () => {
       headerTitle: '',
       headerRight: () => user ? <ProfileOptionsButton userId={userId} blocked={blocked} /> : null
     })
-    if (Platform.OS === 'web' && data?.name.length > 0) {
-      document.title = data.name
-    }
   }, [navigation, blocked, data, user, userId])
 
   useEffect(() => {
@@ -367,6 +365,13 @@ const Profile = () => {
 
   if (!data) {
     return (
+      <>
+      <Head>
+        <title>Profile</title>
+        <meta name="description" content="User's profile page on Heteroboxd." />
+        <meta property="og:title" content="Profile" />
+        <meta property="og:description" content="User's profile page on Heteroboxd" />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -375,11 +380,19 @@ const Profile = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
+      </>
     )
   }
 
   if (blocked) {
     return (
+      <>
+      <Head>
+        <title>{data.name}</title>
+        <meta name="description" content="You have blocked this user." />
+        <meta property="og:title" content={data.name} />
+        <meta property="og:description" content="You have blocked this user." />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -388,10 +401,18 @@ const Profile = () => {
       }}>
         <HText style={styles.text}>You have blocked this user.</HText>
       </View>
+      </>
     )
   }
 
   return (
+    <>
+    <Head>
+      <title>{data?.name}</title>
+      <meta name="description" content="All lists created by the selected author." />
+      <meta property="og:title" content={data?.name} />
+      <meta property="og:description" content="All lists created by the selected author." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <ScrollView
         contentContainerStyle={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}
@@ -596,6 +617,7 @@ const Profile = () => {
         </View>
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

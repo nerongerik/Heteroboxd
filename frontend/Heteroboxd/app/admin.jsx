@@ -5,6 +5,7 @@ import Trash from '../assets/icons/trash.svg'
 import Search from '../assets/icons/search.svg'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../helpers/auth'
 import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
@@ -215,7 +216,6 @@ const Admin = () => {
         router.replace('/login')
       }
     })()
-    document.title = 'Admin Dashboard'
   }, [user, router])
 
   useEffect(() => {
@@ -441,6 +441,14 @@ const Admin = () => {
 
   if (!aJwt) {
     return (
+      <>
+      <Head>
+        <title>Admin</title>
+        <meta name="description" content="Admin's Dashboard" />
+        <meta property="og:title" content="Admin" />
+        <meta property="og:description" content="Admin's Dashboard" />
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
       <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, backgroundColor: Colors.background}}>
         <HText style={{textAlign: 'center', color: Colors.text_title, fontSize: 20, fontWeight: '600', paddingHorizontal: 10}}>Admin Dashboard Key:</HText>
         <TextInput
@@ -496,6 +504,7 @@ const Admin = () => {
           {servers.admin.message}
         </Snackbar>
       </View>
+      </>
     )
   }
 
@@ -508,6 +517,14 @@ const Admin = () => {
   const seconds = String(timeLeft % 60).padStart(2, '0')
 
   return (
+    <>
+    <Head>
+      <title>Admin</title>
+      <meta name="description" content="Admin's Dashboard" />
+      <meta property="og:title" content="Admin" />
+      <meta property="og:description" content="Admin's Dashboard" />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingHorizontal: 10}}>
       <HText style={{
         textAlign: 'center',
@@ -663,6 +680,7 @@ const Admin = () => {
         </Snackbar>
       </View>
     </View>
+    </>
   )
 }
 

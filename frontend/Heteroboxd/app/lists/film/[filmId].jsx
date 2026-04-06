@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import ListIco from '../../../assets/icons/list.svg'
 import Heart from '../../../assets/icons/heart.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
@@ -105,9 +106,6 @@ const FilmsLists = () => {
         </Pressable>
       )
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Featuring film'
-    }
   }, [navigation, widescreen, openMenu])
 
   useEffect(() => {
@@ -181,6 +179,13 @@ const FilmsLists = () => {
   ) : null, [data.lists.length, server])
 
   return (
+    <>
+    <Head>
+      <title>Featuring Film</title>
+      <meta name="description" content="All lists featuring the selected film." />
+      <meta property="og:title" content="Featuring Film" />
+      <meta property="og:description" content="All lists featuring the selected film." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -229,6 +234,7 @@ const FilmsLists = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

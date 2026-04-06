@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import Shuffle from '../../../assets/icons/shuffle.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../../helpers/auth'
 import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
@@ -160,9 +161,6 @@ const Watchlist = () => {
         </>
       ),
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Watchlist'
-    }
   }, [navigation, widescreen, openMenu, shuffle])
 
   useEffect(() => {
@@ -202,6 +200,13 @@ const Watchlist = () => {
   ) : null, [data.entries.length, server])
 
   return (
+    <>
+    <Head>
+      <title>Watchlist</title>
+      <meta name="description" content="All the films designated for a later watch." />
+      <meta property="og:title" content="Watchlist" />
+      <meta property="og:description" content="All the films designated for a later watch." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -269,6 +274,7 @@ const Watchlist = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

@@ -1,19 +1,20 @@
-import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Link } from 'expo-router'
+import Head from 'expo-router/head'
 import { Colors } from '../constants/colors'
 import HText from '../components/htext'
-import { useEffect } from 'react'
 
 const About = () => {
   const { width } = useWindowDimensions()
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'About'
-    }
-  })
-
   return (
+    <>
+    <Head>
+      <title>About</title>
+      <meta name="description" content="What is Heterobox, how does it work, and other frequently asked questions..." />
+      <meta property="og:title" content="About" />
+      <meta property="og:description" content="What is Heterobox, how does it work, and other frequently asked questions..." />
+    </Head>
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background, alignContent: 'center', justifyContent: 'center'}}>
       <ScrollView
         contentContainerStyle={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}
@@ -95,6 +96,7 @@ const About = () => {
         </HText>
       </ScrollView>
     </View>
+    </>
   )
 }
 
