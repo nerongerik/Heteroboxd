@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
 import Check from '../../../assets/icons/check.svg'
 import Spoiler from '../../../assets/icons/spoiler.svg'
@@ -26,6 +26,7 @@ const AlterReview = () => {
   const [ film, setFilm ] = useState(null)
   const [ review, setReview ] = useState(null)
   const [ initial, setInitial ] = useState(null)
+  const submitted = useRef(false)
   const { width, height } = useWindowDimensions()
   const router = useRouter()
   const navigation = useNavigation()
@@ -63,6 +64,8 @@ const AlterReview = () => {
   }, [filmId, user, isValidSession])
 
   const handleSubmit = useCallback(async () => {
+    if (submitted.current) return
+    submitted.current = true
     setFilm(null)
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
