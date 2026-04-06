@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, useWindowDimensions, FlatList, View, Pressable, Platform } from 'react-native'
+import { ActivityIndicator, useWindowDimensions, FlatList, View, Pressable } from 'react-native'
 import { useAuth } from '../../../hooks/useAuth'
 import { useRouter, useLocalSearchParams, useNavigation, Link } from 'expo-router'
+import Head from 'expo-router/head'
 import Plus from '../../../assets/icons/plus.svg'
 import Check from '../../../assets/icons/check.svg'
 import Minus from '../../../assets/icons/minus.svg'
@@ -125,9 +126,6 @@ const AddToLists = () => {
         </Pressable>
       )
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Add to lists'
-    }
   }, [navigation, widescreen, addToLists])
 
   const List = useCallback(({item}) => {
@@ -209,6 +207,14 @@ const AddToLists = () => {
   ) : null, [usersLists.lists.length, server])
 
   return (
+    <>
+    <Head>
+      <title>Add to list(s)</title>
+      <meta name="description" content="Choose what lists you want to add this film to." />
+      <meta property="og:title" content="Add to list(s)" />
+      <meta property="og:description" content="Choose what lists you want to add this film to." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -237,6 +243,7 @@ const AddToLists = () => {
         onClose={() => router.replace('/contact')}
       />
     </View>
+    </>
   )
 }
 

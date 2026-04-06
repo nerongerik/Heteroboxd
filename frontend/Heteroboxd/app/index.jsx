@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Explore from '../assets/icons/explore.svg'
 import Search from '../assets/icons/search.svg'
 import Ranking from '../assets/icons/ranking.svg'
@@ -14,6 +14,7 @@ import Profile from '../assets/icons/profile.svg'
 import Slide from '../assets/icons/slide.svg'
 import List from '../assets/icons/list.svg'
 import { Link, useFocusEffect, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
 import { useAuth } from '../hooks/useAuth'
@@ -195,9 +196,6 @@ const Home = () => {
         )
       }
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Heteroboxd'
-    }
   }, [navigation, user, notifs, widescreen, router, openMenu, refreshKey])
 
   useEffect(() => {
@@ -215,6 +213,13 @@ const Home = () => {
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
   return (
+    <>
+    <Head>
+      <title>Heteroboxd</title>
+      <meta name="description" content="Heteroboxd is an open-source, free-speech, social film discovery platform. Track, rate, and review the films you've seen, or add new ones to your watchlist; share your criticism, interact with other users, create your own custom lists, and much more!" />
+      <meta property="og:title" content="Heteroboxd" />
+      <meta property="og:description" content="Heteroboxd is an open-source, free-speech, social film discovery platform. Track, rate, and review the films you've seen, or add new ones to your watchlist; share your criticism, interact with other users, create your own custom lists, and much more!" />
+    </Head>
     <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, backgroundColor: Colors.background}}>
       {
         !widescreen ? (
@@ -670,6 +675,7 @@ const Home = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

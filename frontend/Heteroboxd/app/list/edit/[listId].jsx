@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import Trash from '../../../assets/icons/trash.svg'
 import Up from '../../../assets/icons/up.svg'
 import Down from '../../../assets/icons/down.svg'
@@ -9,6 +9,7 @@ import Trophy from '../../../assets/icons/trophy.svg'
 import Trophy2 from '../../../assets/icons/trophy2.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../../helpers/auth'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
@@ -175,9 +176,6 @@ const EditList = () => {
         </Pressable>
       )
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Edit list'
-    }
   }, [navigation, widescreen, handleSubmit])
 
   useEffect(() => {
@@ -303,6 +301,14 @@ const EditList = () => {
 
   if (!base) {
     return (
+      <>
+      <Head>
+        <title>Edit List</title>
+        <meta name="description" content="Edit list." />
+        <meta property="og:title" content="Edit List" />
+        <meta property="og:description" content="Edit list." />
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -311,10 +317,19 @@ const EditList = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
+      </>
     )
   }
 
   return (
+    <>
+    <Head>
+      <title>Edit {base?.listName}</title>
+      <meta name="description" content="Edit list." />
+      <meta property="og:title" content={`Edit ${base?.listName}`}/>
+      <meta property="og:description" content="Edit list." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <View style={{backgroundColor: Colors.background, flex: 1, paddingBottom: 50}}>
       <FlatList
         data={entries}
@@ -391,6 +406,7 @@ const EditList = () => {
         </View>
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import * as auth from '../../../helpers/auth'
@@ -136,9 +137,6 @@ const ProfileEdit = () => {
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'}
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Edit your profile'
-    }
   }, [navigation])
 
   useEffect(() => {
@@ -159,6 +157,14 @@ const ProfileEdit = () => {
   }
 
   return (
+    <>
+    <Head>
+      <title>Edit Profile</title>
+      <meta name="description" content="Change your bio, name, or even your profile picture!" />
+      <meta property="og:title" content="Edit Profile" />
+      <meta property="og:description" content="Change your bio, name, or even your profile picture!" />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', padding: 20, paddingBottom: 50}} keyboardShouldPersistTaps='handled'>
         <View style={[styles.form, {maxWidth: width > 1000 ? 1000 : '100%' }]}>
@@ -218,6 +224,7 @@ const ProfileEdit = () => {
         <HText style={{marginTop: 100, color: Colors.text, fontSize: width > 1000 ? 14 : 12}}>NOTE: It may take some time for a changed profile picture to display throughout the app.</HText>
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   )
 }
 

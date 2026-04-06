@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, View, Platform } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
@@ -31,13 +32,18 @@ const Verify = () => {
   }, [userId, token])
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'Email confirmation'
-    }
     verifyUser()
   }, [verifyUser])
 
   return (
+    <>
+    <Head>
+      <title>Verify</title>
+      <meta name="description" content="Verify your e-mail address to start using Heteroboxd." />
+      <meta property="og:title" content="Verify" />
+      <meta property="og:description" content="Verify your e-mail address to start using Heteroboxd." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, paddingBottom: 50, backgroundColor: Colors.background, paddingHorizontal: 5}}>
       {server.result <= 0 ? (
         <ActivityIndicator size={'large'} color={Colors.text_link} />
@@ -52,6 +58,7 @@ const Verify = () => {
         <HText style={styles.buttonText}>Proceed</HText>
       </Pressable>
     </View>
+    </>
   )
 }
 

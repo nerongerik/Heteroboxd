@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Platform, Pressable, useWindowDimensions, View } from 'react-native'
+import { useCallback, useState } from 'react'
+import { Pressable, useWindowDimensions, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
@@ -42,13 +43,15 @@ const PasswordReset = () => {
     }
   }, [userId, decodedToken, password])
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'Reset password'
-    }
-  })
-
   return (
+    <>
+    <Head>
+      <title>Reset Password</title>
+      <meta name="description" content="Reset the password for your Heteroboxd account." />
+      <meta property="og:title" content="Reset Password" />
+      <meta property="og:description" content="Reset the password for your Heteroboxd account." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: Math.min(width*0.95, 1000), alignSelf: 'center'}}>
         <HText style={{color: Colors.text_title, fontSize: 20, textAlign: 'center', padding: 10}}>Almost there! Enter your new password:</HText>
@@ -69,6 +72,7 @@ const PasswordReset = () => {
       />
       <LoadingResponse visible={server.response <= 0} />
     </View>
+    </>
   )
 }
 

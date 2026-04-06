@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
@@ -122,9 +123,6 @@ const UserWatchedFilms = () => {
         </Pressable>
       ),
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Recents'
-    }
   }, [navigation, widescreen, openMenu])
 
   useEffect(() => {
@@ -165,6 +163,13 @@ const UserWatchedFilms = () => {
   ) : null, [data.entries.length, server])
 
   return (
+    <>
+    <Head>
+      <title>Recents</title>
+      <meta name="description" content="Recently watched films." />
+      <meta property="og:title" content="Recents" />
+      <meta property="og:description" content="Recently watched films." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -227,6 +232,7 @@ const UserWatchedFilms = () => {
         />
       </SlidingMenu> 
     </View>
+    </>
   )
 }
 

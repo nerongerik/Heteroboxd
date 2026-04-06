@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Platform } from 'react-native'
+import { View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
@@ -152,13 +153,14 @@ const Relationships = () => {
     loadData()
   }, [loadData])
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'Relationship'
-    }
-  }, [])
-
   return (
+    <>
+    <Head>
+      <title>Relationships</title>
+      <meta name="description" content="The users you follow, are followed by, or have blocked." />
+      <meta property="og:title" content="Relationships" />
+      <meta property="og:description" content="The users you follow, are followed by, or have blocked." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <RelationshipTabs
         isMyProfile={isOwnProfile}
@@ -184,6 +186,7 @@ const Relationships = () => {
         onClose={() => { server.result === 403 ? router.replace('/login') : server.result === 404 ? router.back() : router.replace('/contact')}}
       />
     </View>
+    </>
   )
 }
 

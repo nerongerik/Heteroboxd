@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View, Platform } from 'react-native'
+import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
 import Check from '../../../assets/icons/check.svg'
 import Spoiler from '../../../assets/icons/spoiler.svg'
 import Spoiler2 from '../../../assets/icons/spoiler2.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../../helpers/auth'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
@@ -131,9 +132,6 @@ const AlterReview = () => {
         </Pressable>
       )
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Rate and review'
-    }
   }, [navigation, handleSubmit])
 
   useEffect(() => {
@@ -145,6 +143,14 @@ const AlterReview = () => {
 
   if (!film || !review) {
     return (
+      <>
+      <Head>
+        <title>Alter Review</title>
+        <meta name="description" content="Create a new review for this film or update your existing one." />
+        <meta property="og:title" content="Alter Review" />
+        <meta property="og:description" content="Create a new review for this film or update your existing one." />
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
       <View style={{
         alignItems: 'center',
         justifyContent: 'center',
@@ -153,10 +159,19 @@ const AlterReview = () => {
       }}>
         <LoadingResponse visible={true} />
       </View>
+      </>
     )
   }
 
   return (
+    <>
+    <Head>
+      <title>Review this film</title>
+      <meta name="description" content="Create a new review for this film or update your existing one." />
+      <meta property="og:title" content="Review this film" />
+      <meta property="og:description" content="Create a new review for this film or update your existing one." />
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center'}}>
       <KeyboardAvoidingView behavior='padding' style={{alignSelf: 'center', alignItems: 'center', width: widescreen ? 1000 : width*0.95}}>
         <ScrollView
@@ -217,6 +232,7 @@ const AlterReview = () => {
         onClose={() => server.result === 403 ? router.replace('/login') : router.replace('/contact')}
       />
     </View>
+    </>
   )
 }
 

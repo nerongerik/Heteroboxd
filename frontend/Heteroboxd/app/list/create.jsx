@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
+import { Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import Check from '../../assets/icons/check.svg'
 import Plus from '../../assets/icons/plus.svg'
 import Trophy from '../../assets/icons/trophy.svg'
 import Trophy2 from '../../assets/icons/trophy2.svg'
 import { Snackbar } from 'react-native-paper'
 import { useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
@@ -107,9 +108,6 @@ const CreateList = () => {
         </Pressable>
       )
     })
-    if (Platform.OS === 'web') {
-      document.title = 'New list'
-    }
   }, [navigation, widescreen, handleSubmit])
 
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
@@ -223,6 +221,13 @@ const CreateList = () => {
   ), [ranked])
 
   return (
+    <>
+    <Head>
+      <title>New List</title>
+      <meta name="description" content="Create a new list with initial entries and choose if it is ranked or unordered." />
+      <meta property="og:title" content="New List" />
+      <meta property="og:description" content="Create a new list with initial entries and choose if it is ranked or unordered." />
+    </Head>
     <View style={{backgroundColor: Colors.background, flex: 1, justifyContent: 'center'}}>
       <FlatList
         data={paddedEntries}
@@ -320,6 +325,7 @@ const CreateList = () => {
       </Snackbar>
 
     </View>
+    </>
   )
 }
 

@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react'
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { useMemo } from 'react'
+import { Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import Head from 'expo-router/head'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 import { Colors } from '../constants/colors'
 import HText from '../components/htext'
@@ -35,13 +36,14 @@ const Sponsor = () => {
   const widescreen = useMemo(() => width > 1000, [width])
   const iconSize = widescreen ? 50 : 36
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'Donate'
-    }
-  })
-
   return (
+    <>
+    <Head>
+      <title>Donate</title>
+      <meta name="description" content="Heteroboxd is free to use, but maintenance costs add up. Help us with a donation!" />
+      <meta property="og:title" content="Donate" />
+      <meta property="og:description" content="Heteroboxd is free to use, but maintenance costs add up. Help us with a donation!" />
+    </Head>
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
       <ScrollView
         contentContainerStyle={{width: widescreen ? 1000 : width * 0.95, flexGrow: 1, justifyContent: 'center', alignItems: 'center', alignSelf: 'center',}}
@@ -85,6 +87,7 @@ const Sponsor = () => {
         </HText>
       </ScrollView>
     </View>
+    </>
   )
 }
 

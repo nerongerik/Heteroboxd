@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import Heart from '../../../assets/icons/heart.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as format from '../../../helpers/format'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
@@ -112,9 +113,6 @@ const UserReviews = () => {
         </Pressable>
       )
     })
-    if (Platform.OS === 'web') {
-      document.title = userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`
-    }
   }, [navigation, author, widescreen, openMenu])
 
   const maxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
@@ -177,6 +175,13 @@ const UserReviews = () => {
   ) : null, [data.reviews.length, server])
 
   return (
+    <>
+    <Head>
+      <title>{userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`}</title>
+      <meta name="description" content="Every review ever written by the selected author." />
+      <meta property="og:title" content={userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`} />
+      <meta property="og:description" content="Every review ever written by the selected author." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -222,6 +227,7 @@ const UserReviews = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

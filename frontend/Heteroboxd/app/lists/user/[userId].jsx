@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Plus from '../../../assets/icons/plus.svg'
 import ListIco from '../../../assets/icons/list.svg'
 import Heart from '../../../assets/icons/heart.svg'
 import Filter from '../../../assets/icons/filter.svg'
 import Pin from '../../../assets/icons/pin.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as format from '../../../helpers/format'
 import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
@@ -22,7 +23,6 @@ import SlidingMenu from '../../../components/slidingMenu'
 const PAGE_SIZE = 20
 
 const UsersLists = () => {
-
   const { userId } = useLocalSearchParams()
   const { user } = useAuth()
   const [ author, setAuthor ] = useState({ username: '', avatar: '', admin: false })
@@ -129,9 +129,6 @@ const UsersLists = () => {
         </>
       )
     })
-    if (Platform.OS === 'web' && author.username?.length > 0) {
-      document.title = `${author.username}'s lists`
-    }
   }, [user, userId, author, navigation, router, widescreen, openMenu])
 
   const spacing = useMemo(() => widescreen ? 30 : 5, [widescreen])
@@ -205,6 +202,13 @@ const UsersLists = () => {
   ) : null, [data.lists.length, server])
 
   return (
+    <>
+    <Head>
+      <title>{author.username}'s lists</title>
+      <meta name="description" content="All lists created by the selected author." />
+      <meta property="og:title" content={`${author.username}'s lists`} />
+      <meta property="og:description" content="All lists created by the selected author." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -250,6 +254,7 @@ const UsersLists = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

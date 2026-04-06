@@ -1,21 +1,22 @@
-import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { Link } from 'expo-router'
+import Head from 'expo-router/head'
 import * as Linking from 'expo-linking'
 import { Colors } from '../constants/colors'
 import Divider from '../components/divider'
 import HText from '../components/htext'
-import { useEffect } from 'react'
 
 const Contact = () => {
   const { width } = useWindowDimensions()
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'Contact'
-    }
-  })
-
   return (
+    <>
+    <Head>
+      <title>Contact</title>
+      <meta name="description" content="Contact Heteroboxd support for information, collaboration proposals, or bugs in the app." />
+      <meta property="og:title" content="Contact" />
+      <meta property="og:description" content="Contact Heteroboxd support for information, collaboration proposals, or bugs in the app." />
+    </Head>
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
       <ScrollView
         contentContainerStyle={{width: width > 1000 ? 1000 : width*0.95, flexGrow: 1, justifyContent: 'center', alignItems: 'center', alignSelf: 'center'}}
@@ -42,6 +43,7 @@ const Contact = () => {
         </HText>
       </ScrollView>
     </View>
+    </>
   )
 }
 

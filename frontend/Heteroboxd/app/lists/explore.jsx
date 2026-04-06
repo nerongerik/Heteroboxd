@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Filter from '../../assets/icons/filter.svg'
 import ListIco from '../../assets/icons/list.svg'
 import Heart from '../../assets/icons/heart.svg'
 import { useNavigation, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as format from '../../helpers/format'
 import { useAuth } from '../../hooks/useAuth'
 import { BaseUrl } from '../../constants/api'
@@ -104,9 +105,6 @@ const ExploreLists = () => {
         </Pressable>
       )
     })
-    if (Platform.OS === 'web') {
-      document.title = 'Featured Lists'
-    }
   }, [navigation, widescreen, openMenu])
 
   useEffect(() => {
@@ -179,6 +177,13 @@ const ExploreLists = () => {
   ) : null, [data.lists.length, server])
 
   return (
+    <>
+    <Head>
+      <title>Featured lists</title>
+      <meta name="description" content="Explore Heteroboxd's entire catalogue of lists." />
+      <meta property="og:title" content="Featured lists" />
+      <meta property="og:description" content="Explore Heteroboxd's entire catalogue of lists." />
+    </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
         ref={listRef}
@@ -227,6 +232,7 @@ const ExploreLists = () => {
         />
       </SlidingMenu>
     </View>
+    </>
   )
 }
 

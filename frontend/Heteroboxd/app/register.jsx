@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { useCallback, useState } from 'react'
+import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Link, useRouter } from 'expo-router'
+import Head from 'expo-router/head'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import { BaseUrl } from '../constants/api'
@@ -100,13 +101,14 @@ const Register = () => {
     }
   }
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      document.title = 'Register'
-    }
-  })
-
   return (
+    <>
+    <Head>
+      <title>Register</title>
+      <meta name="description" content="Create a new Heteroboxd account!" />
+      <meta property="og:title" content="Register" />
+      <meta property="og:description" content="Create a new Heteroboxd account!" />
+    </Head>
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: Colors.background}} behavior='padding' enabled>
       <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20}} keyboardShouldPersistTaps='handled'>
         <View style={[styles.form, { width: width > 1000 ? 1000 : width*0.95 }]}>
@@ -204,6 +206,7 @@ const Register = () => {
         />
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   )
 }
 
