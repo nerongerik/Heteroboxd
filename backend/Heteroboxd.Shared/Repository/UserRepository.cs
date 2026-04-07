@@ -130,7 +130,7 @@ namespace Heteroboxd.Shared.Repository
                 var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
                 var PrefixQuery = _context.Users
                     .AsNoTracking()
-                    .Where(u => EF.Functions.Like(u.Name, PrefixPattern));
+                    .Where(u => EF.Functions.ILike(u.Name, PrefixPattern));
                 var PrefixCount = await PrefixQuery.CountAsync();
 
                 if (PrefixCount > 0)
