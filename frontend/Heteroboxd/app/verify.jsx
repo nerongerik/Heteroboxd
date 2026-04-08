@@ -43,7 +43,8 @@ const Verify = () => {
       <meta property="og:title" content="Verify" />
       <meta property="og:description" content="Verify your e-mail address to start using Heteroboxd." />
       <meta name="robots" content="noindex, nofollow" />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{alignContent: 'center', justifyContent: 'center', flex: 1, paddingBottom: 50, backgroundColor: Colors.background, paddingHorizontal: 5}}>
       {server.result <= 0 ? (

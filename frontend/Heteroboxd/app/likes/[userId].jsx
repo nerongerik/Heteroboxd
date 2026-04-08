@@ -85,7 +85,8 @@ const UserLikes = () => {
       <meta name="description" content="Recently liked reviews and lists." />
       <meta property="og:title" content="Likes" />
       <meta property="og:description" content="Recently liked reviews and lists." />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
       <LikeTabs

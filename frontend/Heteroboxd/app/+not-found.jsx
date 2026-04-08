@@ -15,7 +15,8 @@ const NotFound = () => {
       <meta property="og:title" content="Not Found!" />
       <meta property="og:description" content="The page you're looking for does not exist." />
       <meta name="robots" content="noindex, nofollow" />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}>

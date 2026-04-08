@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, PanResponder, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, PanResponder, Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import ListIco from '../../assets/icons/list.svg'
 import Heart from '../../assets/icons/heart.svg'
 import Search from '../../assets/icons/search.svg'
@@ -87,7 +87,7 @@ const SearchTabs = ({ widescreen, router }) => {
   }, [])
 
   const panResponder = useMemo(() => {
-    if (widescreen) return null
+    if (Platform.OS === 'web') return null
     return PanResponder.create({
       onMoveShouldSetPanResponder: (_, { dx, dy }) =>
         Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 2,

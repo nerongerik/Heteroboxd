@@ -1,9 +1,9 @@
 import { useWindowDimensions } from 'react-native'
 import { Image } from 'expo-image'
 
-export const Poster = ({ posterUrl, style, other }) => {
+export const Poster = ({ posterUrl, style, other, wcp = false }) => {
   const { width } = useWindowDimensions()
-  const replacer = width > 800 ? 'w342' : 'w154'
+  const replacer = (width > 700 || wcp) ? 'w342' : 'w154'
 
   if (!posterUrl) {
     return (

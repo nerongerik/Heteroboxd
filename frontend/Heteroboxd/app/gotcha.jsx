@@ -15,7 +15,8 @@ const Gotcha = () => {
       <meta property="og:title" content="Gotcha!" />
       <meta property="og:description" content="This page serves to catch creeps and predators who try to stalk other users in the act." />
       <meta name="robots" content="noindex, nofollow" />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: width > 1000 ? 1000 : width*0.95, alignSelf: 'center'}}>
