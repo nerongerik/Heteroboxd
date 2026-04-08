@@ -12,19 +12,19 @@ namespace Heteroboxd.Maintenance.Background
 {
     public interface IMaintanenceExecutor
     {
-        Task ExecuteCountryUpdate(IServiceProvider _provider, CancellationToken CT);
-        /*Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT);
+        /*Task ExecuteCountryUpdate(IServiceProvider _provider, CancellationToken CT);*/
+        Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteUserPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCountrySync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteTrendingSync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCelebritySync(IServiceProvider _provider, CancellationToken CT);
-        Task ExecuteFilmSync(IServiceProvider _provider, CancellationToken CT);*/
+        Task ExecuteFilmSync(IServiceProvider _provider, CancellationToken CT);
     }
 
     public class MaintanenceExecutor : IMaintanenceExecutor
     {
-        public async Task ExecuteCountryUpdate(IServiceProvider _provider, CancellationToken CT)
+        /*public async Task ExecuteCountryUpdate(IServiceProvider _provider, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
@@ -92,9 +92,9 @@ namespace Heteroboxd.Maintenance.Background
                 UpdateByProperties = [nameof(Film.Id)],
                 PropertiesToIncludeOnUpdate = [nameof(Film.Country)]
             });
-        }
+        }*/
 
-        /*public async Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT)
+        public async Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
@@ -404,6 +404,6 @@ namespace Heteroboxd.Maintenance.Background
                 }
                 catch { continue; }
             }
-        }*/
+        }
     }
 }

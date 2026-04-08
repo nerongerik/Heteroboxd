@@ -50,10 +50,10 @@ _logger.LogInformation("=== Maintenance job started at {Time} UTC ===", DateTime
 
 try
 {
-    _logger.LogInformation("UPDATING STALE COUNTRIES...");
-    await _executor.ExecuteCountryUpdate(_provider, _ct);
+    /*_logger.LogInformation("UPDATING STALE COUNTRIES...");
+    await _executor.ExecuteCountryUpdate(_provider, _ct);*/
 
-    /*_logger.LogInformation("REMOVING INVALID REFRESH TOKENS...");
+    _logger.LogInformation("REMOVING INVALID REFRESH TOKENS...");
     await _executor.ExecuteRefreshPurge(_provider, _ct);
 
     _logger.LogInformation("REMOVING UNVERIFIED USERS...");
@@ -75,13 +75,13 @@ try
     await _executor.ExecuteCelebritySync(_provider, _ct);
 
     _logger.LogInformation("SYNCING FILM CHANGES FROM TMDB...");
-    await _executor.ExecuteFilmSync(_provider, _ct);*/
+    await _executor.ExecuteFilmSync(_provider, _ct);
 
     _logger.LogInformation("=== Maintenance job finished at {Time} UTC ===", DateTime.UtcNow);
-    return 0;
+    Environment.Exit(0);
 }
 catch (Exception ex)
 {
     _logger.LogError(ex, "Maintenance job failed");
-    return 1;
+    Environment.Exit(1);
 }
