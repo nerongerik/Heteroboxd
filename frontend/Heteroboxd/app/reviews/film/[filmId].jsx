@@ -194,7 +194,8 @@ const FilmsReviews = () => {
       <meta name="description" content="Every review ever written for the selected film." />
       <meta property="og:title" content="Film's Reviews" />
       <meta property="og:description" content="Every review ever written for the selected film." />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

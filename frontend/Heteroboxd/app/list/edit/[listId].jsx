@@ -308,7 +308,8 @@ const EditList = () => {
         <meta property="og:title" content="Edit List" />
         <meta property="og:description" content="Edit list." />
         <meta name="robots" content="noindex, nofollow" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -330,7 +331,8 @@ const EditList = () => {
       <meta property="og:title" content={`Edit ${base?.listName}`}/>
       <meta property="og:description" content="Edit list." />
       <meta name="robots" content="noindex, nofollow" />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{backgroundColor: Colors.background, flex: 1, paddingBottom: 50}}>
       <FlatList

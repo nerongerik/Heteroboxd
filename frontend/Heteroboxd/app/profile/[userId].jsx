@@ -371,7 +371,8 @@ const Profile = () => {
         <meta name="description" content="User's profile page on Heteroboxd." />
         <meta property="og:title" content="Profile" />
         <meta property="og:description" content="User's profile page on Heteroboxd" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -393,7 +394,8 @@ const Profile = () => {
         <meta name="description" content="You have blocked this user." />
         <meta property="og:title" content={data.name} />
         <meta property="og:description" content="You have blocked this user." />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -414,7 +416,8 @@ const Profile = () => {
       <meta name="description" content={data?.bio} />
       <meta property="og:title" content={data?.name} />
       <meta property="og:description" content={data?.bio} />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <ScrollView

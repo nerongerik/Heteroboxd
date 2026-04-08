@@ -160,7 +160,8 @@ const Relationships = () => {
       <meta name="description" content="The users you follow, are followed by, or have blocked." />
       <meta property="og:title" content="Relationships" />
       <meta property="og:description" content="The users you follow, are followed by, or have blocked." />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50}}>
       <RelationshipTabs

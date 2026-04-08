@@ -43,7 +43,8 @@ const Sponsor = () => {
       <meta name="description" content="Heteroboxd is free to use, but maintenance costs add up. Help us with a donation!" />
       <meta property="og:title" content="Donate" />
       <meta property="og:description" content="Heteroboxd is free to use, but maintenance costs add up. Help us with a donation!" />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
       <ScrollView

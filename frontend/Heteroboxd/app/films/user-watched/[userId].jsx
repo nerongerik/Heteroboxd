@@ -169,7 +169,8 @@ const UserWatchedFilms = () => {
       <meta name="description" content="Recently watched films." />
       <meta property="og:title" content="Recents" />
       <meta property="og:description" content="Recently watched films." />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList

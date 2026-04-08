@@ -170,7 +170,8 @@ const Film = () => {
         <meta name="description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
         <meta property="og:title" content="Film" />
         <meta property="og:description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
       </Head>
       <View style={{
         alignItems: 'center',
@@ -191,7 +192,8 @@ const Film = () => {
       <meta name="description" content={film.synopsis} />
       <meta property="og:title" content={film.title} />
       <meta property="og:description" content={film.synopsis} />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, overflow: 'hidden'}}>
       <ScrollView
@@ -252,7 +254,7 @@ const Film = () => {
             </View>
           </View>
           <Pressable onPress={() => Linking.openURL(film.posterUrl)}>
-            <Poster posterUrl={film.posterUrl || 'noposter'} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} />
+            <Poster posterUrl={film.posterUrl || 'noposter'} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} wcp={true} />
           </Pressable>
         </View>
         

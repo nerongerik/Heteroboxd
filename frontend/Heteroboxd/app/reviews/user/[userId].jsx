@@ -181,7 +181,8 @@ const UserReviews = () => {
       <meta name="description" content="Every review ever written by the selected author." />
       <meta property="og:title" content={userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`} />
       <meta property="og:description" content="Every review ever written by the selected author." />
-      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+      <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, paddingBottom: 50}}>
       <FlatList
