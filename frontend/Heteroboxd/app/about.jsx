@@ -73,8 +73,8 @@ const About = () => {
           Why can Heteroboxd get so slow sometimes?
         </HText>
         <HText style={styles.text}>
-          Heteroboxd is an open-source project developed out of the kindness of our hearts. We pay for the servers from
-          our own pocket, and unless you choose to support us with <Link style={styles.link} href='sponsor'>donations</Link>,
+          Heteroboxd is an open-source project developed from the kindness of our hearts. We pay for the servers ourselves,
+          and unless you choose to support us with <Link style={styles.link} href='sponsor'>donations</Link>,
           getting better service will not be feasible.
         </HText>
     
