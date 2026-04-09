@@ -150,7 +150,7 @@ const UsersLists = () => {
   [userId, author, widescreen, router])
 
   const List = useCallback(({ item }) => (
-    <View style={[styles.card, {marginBottom: 5}, item.id === pinnedId && {borderWidth: 2, borderColor: Colors.heteroboxd}]}>
+    <View style={[styles.card, {marginBottom: 10}, item.id === pinnedId && {borderWidth: 2, borderColor: Colors.heteroboxd}]}>
       {pinnedId === item.id && <View style={{position: 'absolute', top: widescreen ? 10 : 5, right: widescreen ? 10 : 5}}><Pin height={widescreen ? 24 : 20} width={widescreen ? 24 : 20} /></View>}
       {AuthorSection}
       <Pressable onPress={() => router.push(`/list/${item.id}`)}>

@@ -118,7 +118,7 @@ const FilmsLists = () => {
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
 
   const List = useCallback(({ item }) => (
-    <View style={[styles.card, {marginBottom: 5}]}>
+    <View style={[styles.card, {marginBottom: 10}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}

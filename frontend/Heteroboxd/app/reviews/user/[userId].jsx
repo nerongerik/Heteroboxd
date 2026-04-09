@@ -30,6 +30,7 @@ const UserReviews = () => {
   const [ data, setData ] = useState({ page: 1, reviews: [], totalCount: 0 })
   const [ author, setAuthor ] = useState({ authorPic: '', authorName: '', authorAdmin: false })
   const [ server, setServer ] = useState(Response.initial)
+  const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE CREATED', desc: true })
   const listRef = useRef(null)
   const [ menuShown, setMenuShown ] = useState(false)
@@ -62,7 +63,7 @@ const UserReviews = () => {
       if (loadingRef.current) return
       const requestId = ++requestRef.current
       loadingRef.current = true
-      const res = await fetch(`${BaseUrl.api}/reviews/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=ALL&Sort=${currentSort.field}&Desc=${currentSort.desc}`)
+      const res = await fetch(`${BaseUrl.api}/reviews/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return
         const json = await res.json()
@@ -86,7 +87,7 @@ const UserReviews = () => {
     } finally {
       loadingRef.current = false
     }
-  }, [userId, currentSort])
+  }, [userId, currentFilter, currentSort])
 
   const totalPages = useMemo(() => Math.ceil(data.totalCount / PAGE_SIZE), [data.totalCount])
 
@@ -154,7 +155,7 @@ const UserReviews = () => {
           {
             item.text?.length > 0 ?
             <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={maxRowWidth - posterWidth - 10} />
+              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={maxRowWidth - posterWidth - 10} />
             </View>
             :
             <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
@@ -223,7 +224,10 @@ const UserReviews = () => {
         width={width}
       >
         <FilterSort
+          key={`${currentFilter.field}-${currentSort.field}`}
           context={'userReviews'}
+          currentFilter={currentFilter}
+          onFilterChange={(newFilter) => {closeMenu(); setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
           currentSort={currentSort}
           onSortChange={(newSort) => {closeMenu(); setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />

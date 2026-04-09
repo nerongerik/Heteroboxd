@@ -216,7 +216,7 @@ const SearchTabs = ({ widescreen, router }) => {
   )
 
   const RenderList = ({ item }) => (
-    <View style={{borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 1, marginBottom: 5}}>
+    <View style={{borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, borderRadius: 6, backgroundColor: Colors.card, padding: 1, marginBottom: 10}}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}

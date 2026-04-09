@@ -47,7 +47,7 @@ const Profile = () => {
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ favIndex, setFavIndex ] = useState(-1)
-  const [ searchResults, setSearchResults ] = useState({items: [], totalCount: 0, page: 1})
+  const [ searchResults, setSearchResults ] = useState({ items: [], totalCount: 0, page: 1, loading: false })
   const [ searchInit, setSearchInit ] = useState(true)
   const followingLocalCopyRef = useRef(null)
   const followRequestRef = useRef(0)
@@ -347,7 +347,7 @@ const Profile = () => {
           </View>
           {pinned.text?.length > 0 ? (
             <View style={{width: reviewMaxRowWidth - reviewPosterWidth - 10, maxHeight: reviewPosterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(pinned.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={reviewMaxRowWidth - reviewPosterWidth - 10} />
+              <ParsedRead html={`${format.sliceText(pinned.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={reviewMaxRowWidth - reviewPosterWidth - 10} />
             </View>
           ) : (
             <View style={{width: reviewMaxRowWidth - reviewPosterWidth - 10, marginLeft: -5}}>
@@ -616,7 +616,7 @@ const Profile = () => {
             data={searchResults.items}
             numColumns={1}
             renderItem={SearchResult}
-            ListEmptyComponent={!searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
+            ListEmptyComponent={(!searchInit && !searchResults.loading) && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />

@@ -72,7 +72,7 @@ const PasswordReset = () => {
         message={server.message}
         onClose={() => router.replace('/contact')}
       />
-      <LoadingResponse visible={server.response <= 0} />
+      <LoadingResponse visible={server.result === 0} />
     </View>
     </>
   )

@@ -77,6 +77,8 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange, p
       setServer(Response.forbidden)
       return
     }
+    setServer({ result: 201, message: notifsOnLocal ? 'You will no longer recieve notifications for this list!' : 'You will now recieve notifications for this list!' })
+    setNotifsOnLocal(prev => !prev)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/notifs?UserListId=${listId}`, {
@@ -84,16 +86,14 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange, p
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
-        setServer({ result: 201, message: notifsOnLocal ? 'You will no longer recieve notifications for this list!' : 'You will now recieve notifications for this list!' })
-        setNotifsOnLocal(prev => !prev)
         onNotifChange()
       } else if (res.status === 404) {
-        setServer(Response.notFound)
+        console.log('notifs failed; not found')
       } else {
-        setServer(Response.internalServerError)
+        console.log('notifs failed; internal server error')
       }
     } catch {
-      setServer(Response.networkError)
+      console.log('notifs failed; network error')
     }
   }, [user, authorId, notifsOnLocal, listId, onNotifChange])
 
@@ -102,6 +102,8 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange, p
       setServer(Response.forbidden)
       return
     }
+    setServer({ result: 201, message: pinnedLocal ? 'List unpinned from your profile!' : 'List pinned to your profile!' })
+    setPinnedLocal(prev => !prev)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/pin?ObjectId=${listId}&Type=list`, {
@@ -109,17 +111,16 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange, p
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
-        setPinnedLocal(prev => !prev)
         onPin()
       } else if (res.status === 400) {
-        setServer(Response.badRequest)
+        console.log('pin failed; bad request')
       } else if (res.status === 404) {
-        setServer(Response.notFound)
+        console.log('pin failed; not found')
       } else {
-        setServer(Response.internalServerError)
+        console.log('pin failed; internal server error')
       }
     } catch {
-      setServer(Response.networkError)
+      console.log('pin failed; network error')
     }
   }, [user, authorId, pinnedLocal, listId, onPin])
 
@@ -128,22 +129,20 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange, p
       setServer(Response.forbidden)
       return
     }
-    setServer(Response.loading)
+    setServer({ result: 201, message: 'List reported.' })
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/report?UserListId=${listId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setServer({ result: 201, message: 'List reported.' })
-      } else if (res.status === 404) {
-        setServer(Response.notFound)
-      } else {
-        setServer(Response.internalServerError)
+      if (res.status === 404) {
+        console.log('report failed; not found')
+      } else if (!res.ok) {
+        console.log('report failed; internal server error')
       }
     } catch {
-      setServer(Response.networkError)
+      console.log('report failed; network error')
     }
   }, [user, authorId, listId])
 

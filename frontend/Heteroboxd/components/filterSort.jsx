@@ -22,8 +22,8 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     userLists: [],
     filmLists: user ? ['ALL', 'FRIENDS'] : [],
     exploreLists: user ? ['ALL', 'FRIENDS'] : [],
-    userReviews: [],
-    filmReviews: user ? ['ALL', 'FRIENDS'] : []
+    userReviews: ['ALL', 'TEXT'],
+    filmReviews: user ? ['ALL', 'FRIENDS', 'TEXT'] : []
   }
 
   const sortOptions = {
@@ -81,6 +81,8 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
         return years
       case 'COUNTRY':
         return countries
+      case 'TEXT':
+        return ['Containing Text', 'Rating Only']
       default:
         return []
     }
@@ -115,7 +117,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
   const renderFilterButton = (item) => {
     const isSelected = currentFilter.field === item
     const isExpanded = expandedFilter === item
-    const needsValue = ['GENRE', 'YEAR', 'COUNTRY'].includes(item)
+    const needsValue = ['GENRE', 'YEAR', 'COUNTRY', 'TEXT'].includes(item)
     
     return (
       <View key={item}>

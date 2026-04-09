@@ -63,7 +63,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize, isRefreshing
   ), [])
 
   const RenderReview = useCallback(({ item }) => (
-    <View style={[styles.card, {marginBottom: 5}]}>
+    <View style={[styles.card, {marginBottom: 10}]}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
           userId={item.authorId}
@@ -95,7 +95,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize, isRefreshing
           </View>
           {item.text?.length > 0 ? (
             <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={maxRowWidth - posterWidth - 10} />
+              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={maxRowWidth - posterWidth - 10} />
             </View>
           ) : (
             <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
@@ -112,7 +112,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize, isRefreshing
   ), [widescreen, router, posterWidth, posterHeight, maxRowWidth])
 
   const RenderList = useCallback(({ item }) => (
-    <View style={[styles.card, {marginBottom: 5}]}>
+    <View style={[styles.card, {marginBottom: 10}]}>
       <View style={{marginLeft: 5, marginBottom: -5}}>
         <Author
           userId={item.authorId}

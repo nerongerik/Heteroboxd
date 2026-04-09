@@ -77,6 +77,8 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
       setServer(Response.forbidden)
       return
     }
+    setServer({ result: 201, message: notifsOnLocal ? 'You will no longer recieve notifications for this review!' : 'You will now recieve notifications for this review!' })    
+    setNotifsOnLocal(prev => !prev)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/notifs?ReviewId=${reviewId}`, {
@@ -84,16 +86,14 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
-        setServer({ result: 201, message: notifsOnLocal ? 'You will no longer recieve notifications for this review!' : 'You will now recieve notifications for this review!' })
-        setNotifsOnLocal(prev => !prev)
         onNotifChange()
       } else if (res.status === 404) {
-        setServer(Response.notFound)
+        console.log('notif failed; not found')
       } else {
-        setServer(Response.internalServerError)
+        console.log('notif failed; internal server error')
       }
     } catch {
-      setServer(Response.networkError)
+      console.log('notif failed; network error')
     }
   }, [user, authorId, notifsOnLocal, reviewId, onNotifChange])
 
@@ -102,6 +102,8 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
       setServer(Response.forbidden)
       return
     }
+    setServer({ result: 201, message: pinnedLocal ? 'Review unpinned from your profile!' : 'Review pinned to your profile!' })    
+    setPinnedLocal(prev => !prev)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/pin?ObjectId=${reviewId}&Type=review`, {
@@ -109,17 +111,16 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
-        setPinnedLocal(prev => !prev)
         onPin()
       } else if (res.status === 400) {
-        setServer(Response.badRequest)
+        console.log('pin failed; bad request')
       } else if (res.status === 404) {
-        setServer(Response.notFound)
+        console.log('pin failed; not found')
       } else {
-        setServer(Response.internalServerError)
+        console.log('pin failed; internal server error')
       }
     } catch {
-      setServer(Response.networkError)
+      console.log('pin failed; network error')
     }
   }, [user, authorId, pinnedLocal, reviewId, onPin])
 
@@ -137,22 +138,20 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
       setServer(Response.forbidden)
       return
     }
-    setServer(Response.loading)
+    setServer({ result: 201, message: 'Review reported.' })
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/report?ReviewId=${reviewId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setServer({ result: 201, message: 'Review reported.' })
-      } else if (res.status === 404) {
-        setServer(Response.notFound)
-      } else {
-        setServer(Response.internalServerError)
+      if (res.status === 404) {
+        console.log('report failed; not found')
+      } else if (!res.ok) {
+        console.log('report failed; internal server error')
       }
     } catch {
-      setServer(Response.networkError)
+      console.log('report failed; network error')
     }
   }, [user, authorId, reviewId])
 

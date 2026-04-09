@@ -18,17 +18,17 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
   }, [page])
 
   const handleSearch = useCallback(async (overridePage) => {
-    onSelected({ items: [], totalCount: 0, page: 1 })
     const q = lastQuery.current || query
     if (q?.length === 0) {
       return
     }
+    onSelected({ items: [], totalCount: 0, page: 1, loading: true })
     setServer(Response.loading)
     try {
       const res = await fetch(`${BaseUrl.api}/films/search?Search=${q}&Page=${overridePage || page}&PageSize=${pageSize}`)
       if (res.ok) {
         const json = await res.json()
-        onSelected({ items: json.items, totalCount: json.totalCount, page: json.page })
+        onSelected({ items: json.items, totalCount: json.totalCount, page: json.page, loading: false })
         setServer(Response.ok)
       } else {
         setServer(Response.internalServerError)
