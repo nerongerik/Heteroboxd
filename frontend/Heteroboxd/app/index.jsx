@@ -30,6 +30,7 @@ import Stars from '../components/stars'
 import { UserAvatar } from '../components/userAvatar'
 import Interact from '../components/interact'
 import SlidingMenu from '../components/slidingMenu'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const PAGE_SIZE = 10
 
@@ -50,6 +51,7 @@ const Home = () => {
   const [ refreshing, setRefreshing ] = useState(false)
   const [ refreshKey, setRefreshKey ] = useState(0)
   const [ selected, setSelected ] = useState(null)
+  const insets = useSafeAreaInsets()
 
   const translateX = slideAnim.interpolate({inputRange: [0, 1], outputRange: [-300, 0]})
   const openMenu = useCallback(() => {
@@ -232,7 +234,7 @@ const Home = () => {
             width={width} 
             footerImage={require('../assets/foreground.png')}
           >
-            <View style={{flex: 1, justifyContent: 'flex-start', paddingLeft: 5, paddingTop: 10}}>
+            <View style={{flex: 1, justifyContent: 'flex-start', paddingLeft: 5}}>
               <Pressable onPress={() => navPress(`/films/explore`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <Explore width={24} height={24} fill={Colors.text} />
@@ -658,7 +660,7 @@ const Home = () => {
           )
         }
 
-        <HText style={{marginTop: widescreen ? 250 : 100, color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>Heteroboxd uses <Link style={{color: Colors.heteroboxd}} href='https://developer.themoviedb.org/docs/getting-started'>tMDB's API</Link> for film data, bearing no endorsement whatsoever.</HText>
+        <HText style={{marginTop: widescreen ? 250 : 100, marginBottom: insets.bottom, color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>Heteroboxd uses <Link style={{color: Colors.heteroboxd}} href='https://developer.themoviedb.org/docs/getting-started'>tMDB's API</Link> for film data, bearing no endorsement whatsoever.</HText>
       </ScrollView>
 
       <SlidingMenu

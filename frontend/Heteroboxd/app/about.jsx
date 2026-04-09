@@ -3,9 +3,11 @@ import { Link } from 'expo-router'
 import Head from 'expo-router/head'
 import { Colors } from '../constants/colors'
 import HText from '../components/htext'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const About = () => {
   const { width } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
 
   return (
     <>
@@ -93,7 +95,7 @@ const About = () => {
           Please see the details on our <Link style={styles.link} href='/contact'>contact page.</Link>
         </HText>
     
-        <HText style={[styles.text, {textAlign: 'center', fontWeight: '800', marginTop: 50}]}>  
+        <HText style={[styles.text, {textAlign: 'center', fontWeight: '800', marginTop: 50, marginBottom: insets.bottom}]}>  
           Heteroboxd - developed by <Link style={[styles.link, {fontWeight: '800'}]} href='https://github.com/nerongerik'>nerongerik</Link>
         </HText>
       </ScrollView>
