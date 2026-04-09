@@ -182,7 +182,7 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize, isRefreshing
         key={activeTab}
         keyExtractor={(item) => `${activeTab}-${item.id}`}
         renderItem={activeTab === 'reviews' ? RenderReview : RenderList}
-        ListEmptyComponent={<HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</HText>}
+        ListEmptyComponent={!loading && <HText style={{color: Colors.text, fontSize: 16, textAlign: 'center', padding: 50}}>Nothing to show here.</HText>}
         ListFooterComponent={Footer}
         style={{width: maxRowWidth, alignSelf: 'center'}}
         contentContainerStyle={{paddingBottom: 80}}
