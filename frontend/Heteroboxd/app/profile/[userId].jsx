@@ -25,6 +25,7 @@ import { UserAvatar } from '../../components/userAvatar'
 import Author from '../../components/author'
 import ParsedRead from '../../components/parsedRead'
 import Stars from '../../components/stars'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const RECENTS = 8
 const PAGE_SIZE = 50
@@ -52,6 +53,7 @@ const Profile = () => {
   const followingLocalCopyRef = useRef(null)
   const followRequestRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
+  const insets = useSafeAreaInsets();
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback(() => {
@@ -563,7 +565,7 @@ const Profile = () => {
               </Pressable>
             )
           })}
-          <HText style={[styles.text, {marginTop: widescreen ? 50 : 100, fontSize: widescreen ? 16 : 14}]}>joined {data.joined}</HText>
+          <HText style={[styles.text, {marginTop: widescreen ? 50 : 100, marginBottom: insets.bottom, fontSize: widescreen ? 16 : 14}]}>joined {data.joined}</HText>
         </View>
       </ScrollView>
 

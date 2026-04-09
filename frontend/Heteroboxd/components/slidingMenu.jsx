@@ -1,19 +1,16 @@
 import { Animated, Modal, Pressable, StyleSheet } from 'react-native'
 import { Colors } from '../constants/colors'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const SlidingMenu = ({ menuShown, closeMenu, translateY, widescreen, width, children }) => {
+  const insets = useSafeAreaInsets()
   return (
-    <Modal
-      transparent
-      visible={menuShown}
-      animationType='fade'
-      onRequestClose={closeMenu}
-    >
+    <Modal transparent visible={menuShown} animationType='fade' onRequestClose={closeMenu}>
       <Pressable 
         style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.05)' }]}
         onPress={closeMenu}
       />
-      <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center' }]}>
+      <Animated.View style={[styles.menu, { transform: [{ translateY }], width: widescreen ? '50%' : width, alignSelf: 'center', paddingBottom: insets.bottom }]}>
         {children}
       </Animated.View>
     </Modal>

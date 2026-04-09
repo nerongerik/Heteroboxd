@@ -7,23 +7,19 @@
     "orientation": "portrait",
     "icon": "./assets/master.png",
     "userInterfaceStyle": "dark",
-
     "splash": {
       "image": "./assets/master.png",
       "resizeMode": "contain",
       "backgroundColor": "#191d1f"
     },
-
     "web": {
       "output": "static",
       "bundler": "metro"
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.nerongerik.heteroboxd"
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/foreground.png",
@@ -31,13 +27,21 @@
       },
       "backgroundColor": "#191d1f",
       "googleServicesFile": "./google-services.json",
-      "package": "com.nerongerik.heteroboxd"
+      "package": "com.nerongerik.heteroboxd",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
-
     "plugins": [
       "expo-router",
       "expo-image-picker",
       "expo-image"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "915f6422-43fd-4f34-a29e-77b60afa8eeb"
+      }
+    }
   }
 }

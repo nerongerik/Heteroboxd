@@ -8,6 +8,7 @@ import { useCountrySync } from '../hooks/useCountrySync'
 import { useTrendingSync } from '../hooks/useTrendingSync'
 import './browser.css'
 import Back from '../assets/icons/back.svg'
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync()
 
@@ -29,23 +30,25 @@ const RootLayout = () => {
 
   return (
     <AuthProvider>
-      <Stack initialRouteName='index'
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: Colors.background,
-            elevation: 0,
-            shadowOpacity: 0,
-          },
-          headerTintColor: Colors.text,
-          headerShadowVisible: false,
-          title: '',
-          headerTitleStyle: {fontFamily: 'Inter_400Regular'},
-          headerBackImage: () => (<Back width={24} height={24} />)
-        }}
-      >
-        <Stack.Screen name='login' options={{ headerShown: false }} />
-        <Stack.Screen name='register' options={{ headerShown: false }} />
-      </Stack>
+      <SafeAreaProvider>
+        <Stack initialRouteName='index'
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: Colors.background,
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            headerTintColor: Colors.text,
+            headerShadowVisible: false,
+            title: '',
+            headerTitleStyle: {fontFamily: 'Inter_400Regular'},
+            headerBackImage: () => (<Back width={24} height={24} />)
+          }}
+        >
+          <Stack.Screen name='login' options={{ headerShown: false }} />
+          <Stack.Screen name='register' options={{ headerShown: false }} />
+        </Stack>
+      </SafeAreaProvider>
     </AuthProvider>
   )
 }
