@@ -534,7 +534,7 @@ const Home = () => {
                           <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
                             <View style={{ width: Math.min(width * 0.95, 1000), paddingBottom: 10, alignItems: 'center' }}>
                               {reviews.map((item) => (
-                                <View key={item.id.toString()} style={[styles.card, { marginBottom: 5 }]}>
+                                <View key={item.id.toString()} style={[styles.card, { marginBottom: 10 }]}>
                                   <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
                                     <Author
                                       userId={item.authorId}
@@ -564,7 +564,7 @@ const Home = () => {
                                       </View>
                                       {item.text?.length > 0 ? (
                                         <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} contentWidth={maxRowWidth - posterWidth - 10} />
+                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={maxRowWidth - posterWidth - 10} />
                                         </View>
                                       ) : (
                                         <View style={{ width: maxRowWidth - colPosterWidth - 10 }}>
@@ -589,7 +589,7 @@ const Home = () => {
                           <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
                             <View style={{width: Math.min(width * 0.95, 1000), paddingBottom: 10, alignItems: 'center'}}>
                               {lists.map((item) => (
-                                <View key={item.id.toString()} style={[styles.card, {marginBottom: 5}]}>
+                                <View key={item.id.toString()} style={[styles.card, {marginBottom: 10}]}>
                                   <View style={{marginLeft: 5, marginBottom: -5}}>
                                     <Author
                                       userId={item.authorId}

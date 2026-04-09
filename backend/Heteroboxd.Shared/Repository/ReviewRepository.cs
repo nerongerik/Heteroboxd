@@ -42,13 +42,16 @@ namespace Heteroboxd.Shared.Repository
             //filtering
             switch (Filter.ToLower())
             {
+                case "text":
+                    Query = string.IsNullOrEmpty(FilterValue) ? Query : FilterValue.ToLower() == "containing text" ? Query.Where(x => !string.IsNullOrEmpty(x.r.Text)) : Query.Where(x => string.IsNullOrEmpty(x.r.Text));
+                    break;
                 case "friends":
                     Query = Query.Where(x => UsersFriends!.Contains(x.r.AuthorId));
                     break;
                 default:
                     //error handling
                     break;
-            }
+                }
 
             //sorting
             switch (Sort.ToLower())
@@ -105,6 +108,9 @@ namespace Heteroboxd.Shared.Repository
             //filtering
             switch (Filter.ToLower())
             {
+                case "text":
+                    FilmQuery = string.IsNullOrEmpty(FilterValue) ? FilmQuery : FilterValue.ToLower() == "containing text" ? FilmQuery.Where(x => !string.IsNullOrEmpty(x.r.Text)) : FilmQuery.Where(x => string.IsNullOrEmpty(x.r.Text));
+                    break;
                 case "friends":
                     FilmQuery = FilmQuery.Where(x => UsersFriends!.Contains(x.r.AuthorId));
                     break;
@@ -163,7 +169,16 @@ namespace Heteroboxd.Shared.Repository
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
                 .AsQueryable();
 
-            //filtering - querying by User already filters out enough
+            //filtering
+            switch (Filter.ToLower())
+            {
+                case "text":
+                    UserQuery = string.IsNullOrEmpty(FilterValue) ? UserQuery : FilterValue.ToLower() == "containing text" ? UserQuery.Where(x => !string.IsNullOrEmpty(x.r.Text)) : UserQuery.Where(x => string.IsNullOrEmpty(x.r.Text));
+                    break;
+                default:
+                    //error handling
+                    break;
+            }
 
             //sorting
             switch (Sort.ToLower())

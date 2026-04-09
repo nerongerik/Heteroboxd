@@ -20,13 +20,11 @@ import Popup from '../../../components/popup'
 import Stars from '../../../components/stars'
 
 const AlterReview = () => {
-
   const { filmId } = useLocalSearchParams()
   const { user, isValidSession } = useAuth()
   const [ film, setFilm ] = useState(null)
   const [ review, setReview ] = useState(null)
   const [ initial, setInitial ] = useState(null)
-  const submitted = useRef(false)
   const { width, height } = useWindowDimensions()
   const router = useRouter()
   const navigation = useNavigation()
@@ -64,8 +62,11 @@ const AlterReview = () => {
   }, [filmId, user, isValidSession])
 
   const handleSubmit = useCallback(async () => {
-    if (submitted.current) return
-    submitted.current = true
+    navigation.setOptions({
+      headerTitle: null,
+      headerLeft: null,
+      headerRight: null
+    })
     setFilm(null)
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
@@ -120,7 +121,7 @@ const AlterReview = () => {
     } catch {
       setServer(Response.networkError)
     }
-  }, [filmId, user, isValidSession, review, router])
+  }, [filmId, user, isValidSession, review, router, navigation])
 
   const widescreen = useMemo(() => width > 1000, [width])
   

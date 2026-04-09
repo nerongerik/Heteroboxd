@@ -193,9 +193,9 @@ const Login = () => {
         <Popup
           visible={[403, 500].includes(server.result)}
           message={server.message}
-          onClose={() => { server.response === 403 ? setServer(Response.initial) : router.replace('/contact') }}
+          onClose={() => { server.result === 403 ? setServer(Response.initial) : router.replace('/contact') }}
         />
-        <LoadingResponse visible={server.response <= 0} />
+        <LoadingResponse visible={server.result === 0} />
       </ScrollView>
     </KeyboardAvoidingView>
     </>

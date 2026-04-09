@@ -74,6 +74,12 @@ const AddToLists = () => {
   }, [usersLists.page, totalPages, fetchLists])
 
   const addToLists = useCallback(async () => {
+    navigation.setOptions({
+      headerTitle: null,
+      headerLeft: null,
+      headerRight: null
+    })
+    setServer(Response.loading)
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
@@ -93,11 +99,12 @@ const AddToLists = () => {
         setServer(Response.internalServerError)
         return
       }
+      setServer(Response.ok)
       router.replace(`/film/${filmId}`)
     } catch {
       setServer(Response.networkError)
     }
-  }, [user, usersLists, selectedIds, filmId, router])
+  }, [user, usersLists, selectedIds, filmId, router, navigation])
 
   const toggle = useCallback((id) => {
     if (selectedIds.includes(id)) {

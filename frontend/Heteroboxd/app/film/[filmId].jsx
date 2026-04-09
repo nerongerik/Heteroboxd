@@ -463,7 +463,7 @@ const Film = () => {
                     />
                     <Pressable onPress={() => router.push(`/review/${r.id}`)}>
                       <Stars size={widescreen ? 30 : 22} readonly={true} padding={false} align={'flex-start'} rating={r.rating} />
-                      <ParsedRead html={`${format.sliceText(r.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 150)}`} />
+                      <ParsedRead html={`${format.sliceText(r.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} />
                       <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
                         <Heart width={widescreen ? 16 : 12} height={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
                         <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(r.likeCount)}</HText>

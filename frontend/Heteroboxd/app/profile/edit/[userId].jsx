@@ -88,11 +88,11 @@ const ProfileEdit = () => {
   }
 
   const handleEdit = useCallback(async () => {
+    setServer(Response.loading)
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
     }
-    setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users`, {

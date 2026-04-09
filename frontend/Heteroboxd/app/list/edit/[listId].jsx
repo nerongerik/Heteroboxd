@@ -37,7 +37,7 @@ const EditList = () => {
   const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
-  const [ searchResults, setSearchResults ] = useState({ page: 1, items: [], totalCount: 0 })
+  const [ searchResults, setSearchResults ] = useState({ page: 1, items: [], totalCount: 0, loading: false })
   const [ searchInit, setSearchInit ] = useState(true)
   const [ border1, setBorder1 ] = useState(false)
   const [ border2, setBorder2 ] = useState(false)
@@ -107,11 +107,16 @@ const EditList = () => {
   }, [listId])
 
   const handleSubmit = useCallback(async () => {
+    navigation.setOptions({
+      headerTitle: null,
+      headerLeft: null,
+      headerRight: null
+    })
+    setServer(Response.loading)
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
     }
-    setServer(Response.loading)
     try {
       const cler = entries?.map((e, i) => ({
         FilmId: e.filmId,
@@ -141,7 +146,7 @@ const EditList = () => {
       setServer(Response.ok)
       setSnack({ shown: true, msg: `Network error! Please check your internet connection and try again.` })
     }
-  }, [user, listId, entries, base, router])
+  }, [user, listId, entries, base, router, navigation])
 
   const moveItem = useCallback((filmId, direction) => {
     setEntries(prev => {
@@ -403,7 +408,7 @@ const EditList = () => {
             data={searchResults.items}
             numColumns={1}
             renderItem={SearchResult}
-            ListEmptyComponent={!searchInit && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
+            ListEmptyComponent={(!searchInit && !searchResults.loading) && <View style={{width: widescreen ? width*0.5 : width*0.95, alignSelf: 'center'}}><HText style={{padding: 20, textAlign: 'center', color: Colors.text, fontSize: 16}}>We found no records matching your query.</HText></View>}
             contentContainerStyle={{padding: 20, alignItems: 'flex-start', width: '100%'}}
             showsVerticalScrollIndicator={false}
           />
