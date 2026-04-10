@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
 import * as ImageManipulator from 'expo-image-manipulator'
@@ -11,6 +11,7 @@ import HText from '../components/htext'
 import LoadingResponse from '../components/loadingResponse'
 import Password from '../components/password'
 import Popup from '../components/popup'
+import * as FileSystem from 'expo-file-system/legacy'
 
 const Register = () => {
   const [ email, setEmail ] = useState('')
@@ -47,18 +48,33 @@ const Register = () => {
       if (res.ok) {
         const json = await res.json()
         if (json.presignedUrl && profileUri) {
-          const blob = await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest()
-            xhr.onload = () => resolve(xhr.response)
-            xhr.onerror = () => reject(new Error('failed to fetch local image'))
-            xhr.responseType = 'blob'
-            xhr.open('GET', profileUri, true)
-            xhr.send(null)
-          })
+          let blob = null
+          if (Platform.OS === 'web') {
+            blob = await new Promise((resolve, reject) => {
+              const xhr = new XMLHttpRequest()
+              xhr.onload = () => resolve(xhr.response)
+              xhr.onerror = () => reject(new Error('failed to fetch local image'))
+              xhr.responseType = 'blob'
+              xhr.open('GET', profileUri, true)
+              xhr.send(null)
+            })
+          } else {
+            const base64 = await FileSystem.readAsStringAsync(profileUri, {
+              encoding: FileSystem.EncodingType.Base64,
+            })
+            const byteCharacters = atob(base64)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            blob = new Blob([byteArray], { type: 'image/png' })
+          }
+          if (!blob) new Error('failed to parse blob')
           const picRes = await fetch(json.presignedUrl, {
             method: 'PUT',
             body: blob,
-            headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' }
+            headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
           })
           if (picRes.ok) {
             setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
@@ -73,8 +89,8 @@ const Register = () => {
       } else {
         setServer(Response.internalServerError)
       }
-    } catch {
-      setServer(Response.networkError)
+    } catch (e) {
+      setServer({ result: 500, message: e?.message || 'blob parsing error.' })
     }
   }, [name, email, password, profileUri, bio, gender])
 
@@ -210,7 +226,7 @@ const Register = () => {
         <Popup
           visible={[200, 400, 500].includes(server.result)}
           message={server.message}
-          onClose={() => server.result === 200 ? router.replace('/login') : router.replace === 400 ? setServer(Response.initial) : router.replace('/contact')}
+          onClose={() => server.result === 200 ? router.replace('/login') : server.result === 400 ? setServer(Response.initial) : router.replace('/contact')}
         />
       </ScrollView>
     </KeyboardAvoidingView>

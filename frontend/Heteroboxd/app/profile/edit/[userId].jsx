@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
 import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
 import * as ImageManipulator from 'expo-image-manipulator'
@@ -13,6 +13,7 @@ import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
 import Popup from '../../../components/popup'
 import { UserAvatar } from '../../../components/userAvatar'
+import * as FileSystem from 'expo-file-system/legacy'
 
 const ProfileEdit = () => {
   const { userId } = useLocalSearchParams()
@@ -108,18 +109,33 @@ const ProfileEdit = () => {
       if (res.ok) {
         const json = await res.json()
         if (json.presignedUrl && profileChanged) {
-          const blob = await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest()
-            xhr.onload = () => resolve(xhr.response)
-            xhr.onerror = () => reject(new Error('failed to fetch local image'))
-            xhr.responseType = 'blob'
-            xhr.open('GET', profileUri, true)
-            xhr.send(null)
-          })
+          let blob = null
+          if (Platform.OS === 'web') {
+            blob = await new Promise((resolve, reject) => {
+              const xhr = new XMLHttpRequest()
+              xhr.onload = () => resolve(xhr.response)
+              xhr.onerror = () => reject(new Error('failed to fetch local image'))
+              xhr.responseType = 'blob'
+              xhr.open('GET', profileUri, true)
+              xhr.send(null)
+            })
+          } else {
+            const base64 = await FileSystem.readAsStringAsync(profileUri, {
+              encoding: FileSystem.EncodingType.Base64,
+            })
+            const byteCharacters = atob(base64)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            blob = new Blob([byteArray], { type: 'image/png' })
+          }
+          if (!blob) new Error('failed to parse blob')
           const picRes = await fetch(json.presignedUrl, {
             method: 'PUT',
             body: blob,
-            headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' }
+            headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
           })
           if (picRes.ok) {
             setServer(Response.ok)
@@ -134,8 +150,8 @@ const ProfileEdit = () => {
       } else {
         setServer(Response.internalServerError)
       }
-    } catch {
-      setServer(Response.networkError)
+    } catch (e) {
+      setServer({ result: 500, message: e?.message || 'blob parsing error.' })
     }
   }, [user, userId, name, profileChanged, profileUri, bio, router])
 

@@ -56,6 +56,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
 
   const handleDelete = useCallback(async () => {
     setServer(Response.loading)
+    setDeleteConfirm(false)
     if (user?.userId !== userId || !(await isValidSession)) {
       setServer(Response.forbidden)
       return
@@ -67,7 +68,6 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
-        setDeleteConfirm(false)
         handleLogout()
       } else {
         console.log('delete failed; internal server error; straight up lying to the user and logging them out lol.')
