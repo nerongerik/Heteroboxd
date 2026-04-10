@@ -223,7 +223,7 @@ const ProfileEdit = () => {
           onClose={() => server.response === 403 ? router.replace('/login') : server.result === 404 ? router.back() : router.replace('/contact')}
         />
 
-        <HText style={{marginTop: 100, color: Colors.text, fontSize: width > 1000 ? 14 : 12}}>NOTE: It may take some time for a changed profile picture to display throughout the app.</HText>
+        <HText style={{marginTop: 100, color: Colors.text, textAlign: 'center', fontSize: width > 1000 ? 14 : 12}}>NOTE: It may take some time for a changed profile picture to display throughout the app.</HText>
       </ScrollView>
     </KeyboardAvoidingView>
     </>
