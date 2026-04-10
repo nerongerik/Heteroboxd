@@ -10,7 +10,7 @@ const SideNav = ({ menuShown, closeMenu, translateX, width, children, footerImag
         style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.8)' }]}
         onPress={closeMenu}
       />
-      <Animated.View style={[styles.menu, { transform: [{ translateX }], width: width / 1.5, height: '100%', alignSelf: 'left', paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <Animated.View style={[styles.menu, { transform: [{ translateX }], width: width / 1.5, height: '100%', alignSelf: 'left', paddingTop: insets.top + 5, paddingBottom: insets.bottom }]}>
         <View style={{ flex: 0.75 }}>
           {children}
         </View>

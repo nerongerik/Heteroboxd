@@ -47,8 +47,14 @@ const Register = () => {
       if (res.ok) {
         const json = await res.json()
         if (json.presignedUrl && profileUri) {
-          const fetchResponse = await fetch(profileUri)
-          const blob = await fetchResponse.blob()
+          const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest()
+            xhr.onload = () => resolve(xhr.response)
+            xhr.onerror = () => reject(new Error('failed to fetch local image'))
+            xhr.responseType = 'blob'
+            xhr.open('GET', profileUri, true)
+            xhr.send(null)
+          })
           const picRes = await fetch(json.presignedUrl, {
             method: 'PUT',
             body: blob,
