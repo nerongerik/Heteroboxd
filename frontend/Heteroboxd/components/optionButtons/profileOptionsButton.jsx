@@ -48,11 +48,14 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
   }, [slideAnim])
 
   const handleLogout = useCallback(async () => {
+    setServer(Response.loading)
     await logout(userId)
+    setServer(Response.ok)
     router.replace('/')
   }, [userId, logout, router])
 
   const handleDelete = useCallback(async () => {
+    setServer(Response.loading)
     if (user?.userId !== userId || !(await isValidSession)) {
       setServer(Response.forbidden)
       return
@@ -85,22 +88,20 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
       setServer(Response.forbidden)
       return
     }
-    setServer(Response.loading)
+    setServer({ result: 201, message: 'User reported.' })
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/users/report?UserId=${userId}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (res.ok) {
-        setServer({ result: 201, message: 'User reported.' })
-      } else if (res.status === 404) {
-        setServer(Response.notFound)
-      } else {
-        setServer(Response.internalServerError)
+      if (res.status === 404) {
+        console.log('report failed; not found')
+      } else if (!res.ok) {
+        console.log('report failed; internal server error')
       }
     } catch {
-      setServer(Response.networkError)
+      console.log('report failed; network error')
     }
   }, [user, userId])
   
