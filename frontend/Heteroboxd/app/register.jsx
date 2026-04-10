@@ -48,9 +48,8 @@ const Register = () => {
       if (res.ok) {
         const json = await res.json()
         if (json.presignedUrl && profileUri) {
-          let blob = null
           if (Platform.OS === 'web') {
-            blob = await new Promise((resolve, reject) => {
+            const blob = await new Promise((resolve, reject) => {
               const xhr = new XMLHttpRequest()
               xhr.onload = () => resolve(xhr.response)
               xhr.onerror = () => reject(new Error('failed to fetch local image'))
@@ -58,28 +57,27 @@ const Register = () => {
               xhr.open('GET', profileUri, true)
               xhr.send(null)
             })
-          } else {
-            const base64 = await FileSystem.readAsStringAsync(profileUri, {
-              encoding: FileSystem.EncodingType.Base64,
+            const picRes = await fetch(json.presignedUrl, {
+              method: 'PUT',
+              body: blob,
+              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
             })
-            const byteCharacters = atob(base64)
-            const byteNumbers = new Array(byteCharacters.length)
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            if (picRes.ok) {
+              setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
+            } else {
+              setServer({ result: 200, message: `You have successfully joined the Heteroboxd community, but there was a problem uploading your profile picture: ${picRes.status}\nYou can always update your profile picture at a later time and try again. We sent you a verification email needed to proceed.` })
             }
-            const byteArray = new Uint8Array(byteNumbers)
-            blob = new Blob([byteArray], { type: 'image/png' })
-          }
-          if (!blob) new Error('failed to parse blob')
-          const picRes = await fetch(json.presignedUrl, {
-            method: 'PUT',
-            body: blob,
-            headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
-          })
-          if (picRes.ok) {
-            setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
           } else {
-            setServer({ result: 200, message: `You have successfully joined the Heteroboxd community, but there was a problem uploading your profile picture: ${picRes.status}\nYou can always update your profile picture at a later time and try again. We sent you a verification email needed to proceed.` })
+            const picRes = await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
+              httpMethod: 'PUT',
+              uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
+            })
+            if (picRes.status >= 200 && picRes.status < 300) {
+              setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
+            } else {
+              setServer({ result: 200, message: `You have successfully joined the Heteroboxd community, but there was a problem uploading your profile picture: ${picRes.status}\nYou can always update your profile picture at a later time and try again. We sent you a verification email needed to proceed.` })
+            }
           }
         } else {
           setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })

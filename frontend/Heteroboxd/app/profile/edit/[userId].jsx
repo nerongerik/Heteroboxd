@@ -109,9 +109,8 @@ const ProfileEdit = () => {
       if (res.ok) {
         const json = await res.json()
         if (json.presignedUrl && profileChanged) {
-          let blob = null
           if (Platform.OS === 'web') {
-            blob = await new Promise((resolve, reject) => {
+            const blob = await new Promise((resolve, reject) => {
               const xhr = new XMLHttpRequest()
               xhr.onload = () => resolve(xhr.response)
               xhr.onerror = () => reject(new Error('failed to fetch local image'))
@@ -119,29 +118,29 @@ const ProfileEdit = () => {
               xhr.open('GET', profileUri, true)
               xhr.send(null)
             })
-          } else {
-            const base64 = await FileSystem.readAsStringAsync(profileUri, {
-              encoding: FileSystem.EncodingType.Base64,
+            const picRes = await fetch(json.presignedUrl, {
+              method: 'PUT',
+              body: blob,
+              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
             })
-            const byteCharacters = atob(base64)
-            const byteNumbers = new Array(byteCharacters.length)
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            if (picRes.ok) {
+              setServer(Response.ok)
+              router.replace(`/profile/${userId}`)
+            } else {
+              setServer(Response.internalServerError)
             }
-            const byteArray = new Uint8Array(byteNumbers)
-            blob = new Blob([byteArray], { type: 'image/png' })
-          }
-          if (!blob) new Error('failed to parse blob')
-          const picRes = await fetch(json.presignedUrl, {
-            method: 'PUT',
-            body: blob,
-            headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
-          })
-          if (picRes.ok) {
-            setServer(Response.ok)
-            router.replace(`/profile/${userId}`)
           } else {
-            setServer(Response.internalServerError)
+            const picRes = await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
+              httpMethod: 'PUT',
+              uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
+            })
+            if (picRes.status >= 200 && picRes.status < 300) {
+              setServer(Response.ok)
+              router.replace(`/profile/${userId}`)
+            } else {
+              setServer(Response.internalServerError)
+            }
           }
         } else {
           setServer(Response.ok)
