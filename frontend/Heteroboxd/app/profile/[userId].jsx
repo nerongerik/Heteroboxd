@@ -268,7 +268,7 @@ const Profile = () => {
         other={!isOwnProfile}
       />
     </Pressable>
-  ), [isOwnProfile, updateFavorites, router, openMenu2])
+  ), [isOwnProfile, updateFavorites, router, openMenu2, posterWidth, posterHeight])
 
   const Recent = useCallback(({item}) => (
     <Pressable onPress={() => router.push(`/film/${item.id}`)} style={{marginRight: spacing}}>
