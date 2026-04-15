@@ -73,13 +73,36 @@ const ProfileEdit = () => {
       if (!result.canceled) {
         const uri = result.assets?.[0]?.uri ?? result.uri
         if (uri) {
-          const manipResult = await ImageManipulator.manipulateAsync(
-            uri,
+          const original = result.assets?.[0]
+          let currentUri = uri
+          if (original.width > 1500 || original.height > 1500) {
+            const step1 = await ImageManipulator.manipulateAsync(
+              currentUri,
+              [{ resize: { width: 1000, height: 1000 } }],
+              { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+            )
+            currentUri = step1.uri
+            const step2 = await ImageManipulator.manipulateAsync(
+              currentUri,
+              [{ resize: { width: 500, height: 500 } }],
+              { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+            )
+            currentUri = step2.uri
+          } else if (original.width > 500 || original.height > 500) {
+            const step1 = await ImageManipulator.manipulateAsync(
+              currentUri,
+              [{ resize: { width: 500, height: 500 } }],
+              { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+            )
+            currentUri = step1.uri
+          }
+          const final = await ImageManipulator.manipulateAsync(
+            currentUri,
             [{ resize: { width: 150, height: 150 } }],
             { compress: 1, format: ImageManipulator.SaveFormat.PNG }
           )
           setProfileChanged(true)
-          setProfileUri(manipResult.uri)
+          setProfileUri(final.uri)
         }
       }
       setServer(Response.ok)
@@ -246,7 +269,7 @@ const ProfileEdit = () => {
           onClose={() => server.response === 403 ? router.replace('/login') : server.result === 404 ? router.back() : router.replace('/contact')}
         />
 
-        <HText style={{marginTop: 100, color: Colors.text, textAlign: 'center', fontSize: width > 1000 ? 14 : 12}}>NOTE: It may take some time for a changed profile picture to display throughout the app.</HText>
+        <HText style={{marginTop: 100, color: Colors.text, textAlign: 'center', fontSize: width > 1000 ? 14 : 12}}>Heteroboxd caches profile data on your device for better performance. It may take some time for all the changes to appear throughout the app.</HText>
       </ScrollView>
     </KeyboardAvoidingView>
     </>

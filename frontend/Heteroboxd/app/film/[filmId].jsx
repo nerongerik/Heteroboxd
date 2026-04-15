@@ -255,7 +255,12 @@ const Film = () => {
               )}
             </View>
           </View>
-          <Pressable onPress={() => Linking.openURL(film.posterUrl)}>
+          <Pressable
+            onPress={() => {
+              if (!film.posterUrl) {}
+              else Linking.openURL(film.posterUrl)
+            }}
+            >
             <Poster posterUrl={film.posterUrl || 'noposter'} style={{width: posterWidth, height: posterHeight, borderRadius: 5, borderWidth: 2, borderColor: Colors.border_color}} wcp={true} />
           </Pressable>
         </View>

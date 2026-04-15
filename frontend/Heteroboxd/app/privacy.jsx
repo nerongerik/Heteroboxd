@@ -13,9 +13,9 @@ const Privacy = () => {
     <>
       <Head>
         <title>Privacy Policy</title>
-        <meta name="description" content="Your data is safe with Heteroboxd, and here's why!" />
+        <meta name="description" content="Your data is safe with Heteroboxd!" />
         <meta property="og:title" content="Privacy Policy" />
-        <meta property="og:description" content="Your data is safe with Heteroboxd, and here's why!" />
+        <meta property="og:description" content="Your data is safe with Heteroboxd!" />
         <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
         <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
       </Head>

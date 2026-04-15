@@ -70,15 +70,6 @@ const About = () => {
           costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest and
           <Link style={styles.link} href='/sponsor'> funding.</Link>
         </HText>
-
-        <HText style={styles.subtitle}>
-          Why can Heteroboxd get so slow sometimes?
-        </HText>
-        <HText style={styles.text}>
-          Heteroboxd is an open-source project developed from the kindness of our hearts. We pay for the servers ourselves,
-          and unless you choose to support us with <Link style={styles.link} href='sponsor'>donations</Link>,
-          getting better service will not be feasible.
-        </HText>
     
         <HText style={styles.subtitle}>
           How can I support Heteroboxd?
@@ -86,6 +77,13 @@ const About = () => {
         <HText style={styles.text}>
           Heteroboxd is free to use for everyone, and the (many) expenses are currently covered by the developer.
           If you'd like to support us, please consider making <Link style={styles.link} href='sponsor'>a donation</Link>.
+        </HText>
+
+        <HText style={styles.subtitle}>
+          My privacy on Heteroboxd?
+        </HText>
+        <HText style={styles.text}>
+          You data is safe with us. To read our full privacy policy, click <Link style={styles.link} href='https://heteroboxd.com/privacy'>here</Link>.
         </HText>
 
         <HText style={styles.subtitle}>

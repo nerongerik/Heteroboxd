@@ -6,9 +6,7 @@ import Question from '../assets/icons/question.svg'
 import { Colors } from '../constants/colors'
 import HText from './htext'
  
-const Password = ({ value, onChangeText, onValidityChange }) => {
-  const [ showRequirements, setShowRequirements ] = useState(false)
-  const [ showPassword, setShowPassword ] = useState(false)
+const Password = ({ value, onChangeText, onValidityChange, showPassword, setShowPassword, showRequirements, setShowRequirements }) => {
   const { width } = useWindowDimensions()
   const [ border, setBorder ] = useState(false)
 
