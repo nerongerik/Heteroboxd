@@ -16,11 +16,20 @@ const PasswordReset = () => {
   const decodedToken = decodeURIComponent(rawToken)
   const [ password, setPassword ] = useState('')
   const [ pwValid, setPwValid ] = useState(false)
+  const [ showError, setShowError ] = useState(false)
+  const [ showRequirements, setShowRequirements ] = useState(false)
+  const [ showPassword, setShowPassword ] = useState(false)
   const { width } = useWindowDimensions()
   const router = useRouter()
   const [ server, setServer ] = useState(Response.initial)
 
   const handleReset = useCallback(async () => {
+    if (!pwValid) {
+      setShowPassword(true)
+      setShowError(true)
+      setShowRequirements(true)
+      return
+    }
     setServer(Response.loading)
     try {
       const res = await fetch(`${BaseUrl.api}/auth/reset-password`, {
@@ -56,12 +65,13 @@ const PasswordReset = () => {
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background, justifyContent: 'center', paddingBottom: 50}}>
       <View style={{width: Math.min(width*0.95, 1000), alignSelf: 'center'}}>
-        <HText style={{color: Colors.text_title, fontSize: 20, textAlign: 'center', padding: 10}}>Almost there! Enter your new password:</HText>
-        <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
+        <HText style={{color: Colors.text_title, fontSize: 20, textAlign: 'center', padding: 10, marginBottom: 10}}>Almost there! Enter your new password:</HText>
+        {(showError && !pwValid) && <HText style={{fontSize: 12, color: Colors.password_meager, paddingLeft: 5}}>This password doesn't meet all the requirements.</HText>}
+        <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} showPassword={showPassword} setShowPassword={setShowPassword} showRequirements={showRequirements} setShowRequirements={setShowRequirements}/>
         <Pressable
-          disabled={!pwValid}
+          disabled={password === ''}
           onPress={handleReset}
-          style={[{backgroundColor: Colors.heteroboxd, alignSelf: 'center', borderRadius: 3}, (!pwValid) && {opacity: 0.5}]}
+          style={[{backgroundColor: Colors.heteroboxd, alignSelf: 'center', borderRadius: 3}, (password === '') && {opacity: 0.5}]}
         >
           <HText style={{color: Colors.text_button, paddingHorizontal: 10, paddingVertical: 5, fontSize: 16}}>Confirm</HText>
         </Pressable>

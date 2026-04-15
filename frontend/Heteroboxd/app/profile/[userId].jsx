@@ -437,7 +437,17 @@ const Profile = () => {
         }
       >
         <View style={styles.profile}>
-          <Pressable onPress={() => Linking.openURL(data.pictureUrl)} style={{marginBottom: 15}}>
+          <Pressable
+            onPress={() => {
+              if (!data.pictureUrl) {
+                if (isOwnProfile) router.push(`profile/edit/${userId}`)
+                else setSnack({ shown: true, msg: 'This user never uploaded a profile picture.' })
+              } else {
+                Linking.openURL(data.pictureUrl)
+              }
+            }}
+            style={{marginBottom: 15}}
+          >
             <UserAvatar pictureUrl={data.pictureUrl} style={width < 500 ? styles.smallWebProfile : styles.profileImage} />
           </Pressable>
           <View style={{alignItems: 'center', justifyContent: 'center'}}>

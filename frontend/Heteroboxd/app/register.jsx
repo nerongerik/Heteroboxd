@@ -15,8 +15,11 @@ import * as FileSystem from 'expo-file-system/legacy'
 
 const Register = () => {
   const [ email, setEmail ] = useState('')
+  const [ showError, setShowError ] = useState(false)
   const [ password, setPassword ] = useState('')
   const [ pwValid, setPwValid ] = useState(false)
+  const [ showRequirements, setShowRequirements ] = useState(false)
+  const [ showPassword, setShowPassword ] = useState(false)
   const [ repeatPassword, setRepeatPassword ] = useState('')
   const [ name, setName ] = useState('')
   const [ bio, setBio ] = useState('')
@@ -31,6 +34,12 @@ const Register = () => {
   const [ border4, setBorder4 ] = useState(false)
 
   const handleRegister = useCallback(async () => {
+    if (!pwValid) {
+      setShowRequirements(true)
+      setShowPassword(true)
+      setShowError(true)
+      return
+    }
     setServer(Response.loading)
     try {
       const res = await fetch(`${BaseUrl.api}/auth/register`, {
@@ -108,12 +117,35 @@ const Register = () => {
       if (!result.canceled) {
         const uri = result.assets?.[0]?.uri ?? result.uri
         if (uri) {
-          const manipResult = await ImageManipulator.manipulateAsync(
-            uri,
+          const original = result.assets?.[0]
+          let currentUri = uri
+          if (original.width > 1500 || original.height > 1500) {
+            const step1 = await ImageManipulator.manipulateAsync(
+              currentUri,
+              [{ resize: { width: 1000, height: 1000 } }],
+              { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+            )
+            currentUri = step1.uri
+            const step2 = await ImageManipulator.manipulateAsync(
+              currentUri,
+              [{ resize: { width: 500, height: 500 } }],
+              { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+            )
+            currentUri = step2.uri
+          } else if (original.width > 500 || original.height > 500) {
+            const step1 = await ImageManipulator.manipulateAsync(
+              currentUri,
+              [{ resize: { width: 500, height: 500 } }],
+              { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+            )
+            currentUri = step1.uri
+          }
+          const final = await ImageManipulator.manipulateAsync(
+            currentUri,
             [{ resize: { width: 150, height: 150 } }],
             { compress: 1, format: ImageManipulator.SaveFormat.PNG }
           )
-          setProfileUri(manipResult.uri)
+          setProfileUri(final.uri)
         }
       }
     } catch {
@@ -173,7 +205,8 @@ const Register = () => {
             onFocus={() => setBorder3(true)}
             onBlur={() => setBorder3(false)}
           />
-          <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} />
+          {(showError && !pwValid) && <HText style={{fontSize: 12, color: Colors.password_meager, paddingLeft: 5}}>This password doesn't meet all the requirements.</HText>}
+          <Password value={password} onChangeText={setPassword} onValidityChange={setPwValid} showPassword={showPassword} setShowPassword={setShowPassword} showRequirements={showRequirements} setShowRequirements={setShowRequirements} />
           <TextInput
             style={[styles.input, {borderColor: border4 ? Colors.heteroboxd : Colors.border_color, fontSize: width > 1000 ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
             placeholder='Repeat Password*'
@@ -208,9 +241,9 @@ const Register = () => {
             </Pressable>
           </View>
           <Pressable
-            style={[styles.button, (email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword || gender === -1) && { opacity: 0.5 }]}
+            style={[styles.button, (email.length === 0 || name.trim().length === 0 || password !== repeatPassword || gender === -1) && { opacity: 0.5 }]}
             onPress={handleRegister}
-            disabled={email.length === 0 || !pwValid || name.trim().length === 0 || password !== repeatPassword || gender === -1}
+            disabled={email.length === 0 || name.trim().length === 0 || password !== repeatPassword || gender === -1}
           >
             <HText style={styles.buttonText}>Register</HText>
           </Pressable>

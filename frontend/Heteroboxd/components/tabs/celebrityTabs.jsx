@@ -198,7 +198,12 @@ const CelebrityTabs = ({ user, bio, currentTabData, availableRoles, activeTab, o
           contentContainerStyle={{width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start'}} 
           showsVerticalScrollIndicator={false}
         >
-          <Pressable onPress={() => Linking.openURL(bio.url)}>
+          <Pressable
+            onPress={() => {
+              if (!bio.url) {}
+              else Linking.openURL(bio.url)
+            }}
+          >
             <Headshot
               pictureUrl={bio.url}
               style={{

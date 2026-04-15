@@ -62,6 +62,8 @@ const Login = () => {
       })
       if (!res.ok) {
         setServer(Response.internalServerError)
+      } else {
+        setServer({ result: 201, message: 'Recovery email sent! Check your inbox.' })
       }
     } catch {
       setServer(Response.networkError)
@@ -191,9 +193,9 @@ const Login = () => {
           </View>
         </Modal>
         <Popup
-          visible={[403, 500].includes(server.result)}
+          visible={[201, 403, 500].includes(server.result)}
           message={server.message}
-          onClose={() => { server.result === 403 ? setServer(Response.initial) : router.replace('/contact') }}
+          onClose={() => { server.result === 201 ? router.replace('/') : server.result === 403 ? setServer(Response.initial) : router.replace('/contact') }}
         />
         <LoadingResponse visible={server.result === 0} />
       </ScrollView>

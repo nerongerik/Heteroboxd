@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Image, PanResponder, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Explore from '../assets/icons/explore.svg'
 import Search from '../assets/icons/search.svg'
 import Ranking from '../assets/icons/ranking.svg'
@@ -213,6 +213,17 @@ const Home = () => {
   const listMaxRowWidth = useMemo(() => (widescreen ? 900 : width * 0.95), [widescreen, width])
   const posterWidth = useMemo(() => (listMaxRowWidth - listSpacing * 4) / 4, [listMaxRowWidth, listSpacing])
   const posterHeight = useMemo(() => posterWidth * (3 / 2), [posterWidth])
+  const panResponder = useMemo(() => Platform.OS !== 'web' ? PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      const { dx, dy } = gestureState
+      return dx > 0 && Math.abs(dx) > Math.abs(dy)
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dx > 0) {
+        openMenu()
+      }
+    },
+  }) : null, [openMenu])
 
   return (
     <>
@@ -224,7 +235,7 @@ const Home = () => {
       <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
       <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
-    <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, backgroundColor: Colors.background}}>
+    <View {...(panResponder?.panHandlers ?? {})} style={{flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 50, backgroundColor: Colors.background}}>
       {
         !widescreen ? (
           <SideNav
