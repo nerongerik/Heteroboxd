@@ -4,6 +4,7 @@ using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -136,7 +137,7 @@ namespace Heteroboxd.API.Service
             var UserId = await _authRepo.UseAsync(RefreshToken ?? "");
             if (UserId == null) return (false, null, null);
 
-            var User = await _userManager.FindByIdAsync(UserId.ToString()!);
+            var User = await _userManager.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == UserId);
             if (User == null) return (false, null, null);
 
             return (true, GenerateJwt(User), await GenerateRefreshTokenAsync(User));
@@ -154,7 +155,7 @@ namespace Heteroboxd.API.Service
                 {
                 new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
                 new Claim("name", User.Name!),
-                new Claim("pictureUrl", User.PictureUrl!),
+                new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
                 new Claim("admin", User.IsAdmin.ToString()),
                 };
 

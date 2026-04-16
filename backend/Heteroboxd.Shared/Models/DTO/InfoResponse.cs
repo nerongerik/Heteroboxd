@@ -152,7 +152,7 @@
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorPictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedReviewId == Review.Id;
 
@@ -175,7 +175,7 @@
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorPictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedReviewId == Review.Id;
 
@@ -264,7 +264,7 @@
             this.LikeCount = List.LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorPictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedListId == List.Id;
         }
@@ -283,7 +283,7 @@
             this.LikeCount = List.LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorPictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedListId == List.Id;
         }
@@ -337,7 +337,7 @@
             this.Flags = Comment.Flags;
             this.AuthorId = Comment.AuthorId.ToString();
             this.AuthorName = Author.Name;
-            this.AuthorPictureUrl = Author.PictureUrl;
+            this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.ReviewId = Comment.ReviewId.ToString();
         }
@@ -368,7 +368,7 @@
         {
             this.Id = User.Id.ToString();
             this.Name = User.Name;
-            this.PictureUrl = User.PictureUrl;
+            this.PictureUrl = string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}";
             this.Bio = User.Bio;
             this.Gender = User.Gender.ToString();
             this.Admin = User.IsAdmin;

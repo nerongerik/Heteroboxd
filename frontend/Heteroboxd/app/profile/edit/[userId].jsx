@@ -17,7 +17,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 
 const ProfileEdit = () => {
   const { userId } = useLocalSearchParams()
-  const { user, isValidSession } = useAuth()
+  const { user, isValidSession, reloadUser } = useAuth()
   const { width } = useWindowDimensions()
   const [ data, setData ] = useState(null)
   const [ name, setName ] = useState('')
@@ -146,11 +146,9 @@ const ProfileEdit = () => {
               body: blob,
               headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
             })
-            if (picRes.ok) {
-              setServer(Response.ok)
-              router.replace(`/profile/${userId}`)
-            } else {
+            if (!picRes.ok) {
               setServer(Response.internalServerError)
+              return
             }
           } else {
             const picRes = await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
@@ -158,16 +156,20 @@ const ProfileEdit = () => {
               uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
               headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
             })
-            if (picRes.status >= 200 && picRes.status < 300) {
-              setServer(Response.ok)
-              router.replace(`/profile/${userId}`)
-            } else {
+            if (!(picRes.status >= 200 && picRes.status < 300)) {
               setServer(Response.internalServerError)
+              return
             }
           }
-        } else {
+        }
+        //bust cache, display newest info throughout the app
+        const cacheBuster = await auth.refreshToken()
+        if (cacheBuster) {
+          await reloadUser()
           setServer(Response.ok)
-          router.replace(`/profile/${userId}`)
+          router.replace(`profile/${userId}`)
+        } else {
+          throw new Error('Something went wrong! Try reloading Heteroboxd or contact us for more information.')
         }
       } else {
         setServer(Response.internalServerError)
@@ -269,7 +271,6 @@ const ProfileEdit = () => {
           onClose={() => server.response === 403 ? router.replace('/login') : server.result === 404 ? router.back() : router.replace('/contact')}
         />
 
-        <HText style={{marginTop: 100, color: Colors.text, textAlign: 'center', fontSize: width > 1000 ? 14 : 12}}>Heteroboxd caches profile data on your device for better performance. It may take some time for all the changes to appear throughout the app.</HText>
       </ScrollView>
     </KeyboardAvoidingView>
     </>

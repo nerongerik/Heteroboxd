@@ -310,7 +310,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         />
         <HText style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</HText>
         <Divider marginVertical={20} />
-        <Pressable onPress={() => { closeMenu(); reviewLocalCopy?.id ? router.push(`/review/${reviewLocalCopy.id}`) : router.push(`/review/alter/${filmId}`) }}>
+        <Pressable onPress={() => { closeMenu(); router.push(`/review/alter/${filmId}`) }}>
           <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
             <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</HText>
             <Edit width={28} height={28} />

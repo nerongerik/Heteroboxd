@@ -20,6 +20,7 @@ const Notifications = () => {
   const [ data, setData ] = useState({ page: 1, notifs: [], totalCount: 0 })
   const [ server, setServer ] = useState(Response.initial)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
+  const [ isReadingAll, setIsReadingAll ] = useState(false)
   const router = useRouter()
   const navigation = useNavigation()
   const { width } = useWindowDimensions()
@@ -63,7 +64,7 @@ const Notifications = () => {
 
   const handleReadAll = useCallback(async () => {
     if (!user || !(await isValidSession())) return setServer(Response.forbidden)
-    setServer(Response.loading)
+    setIsReadingAll(true)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/notifications/all`, {
@@ -71,12 +72,14 @@ const Notifications = () => {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
-        loadDataPage(1)
+        await loadDataPage(1)
       } else {
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
+      setIsReadingAll(false)
     }
   }, [user, loadDataPage])
 
@@ -226,7 +229,7 @@ const Notifications = () => {
         </View>
       }
 
-      <LoadingResponse visible={data.notifs.length === 0 && server.result <= 0} />
+      <LoadingResponse visible={(data.notifs.length === 0 && server.result <= 0) || isReadingAll} />
       <Popup
         visible={[403, 500].includes(server.response)}
         message={server.message}

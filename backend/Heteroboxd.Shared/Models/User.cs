@@ -8,6 +8,7 @@ namespace Heteroboxd.Shared.Models
     {
         public string Name { get; set; }
         public string PictureUrl { get; set; }
+        public int PictureUrlCacheVersion { get; set; }
         public string? Bio { get; set; }
         public Gender Gender { get; set; }
         public bool IsAdmin { get; set; }
@@ -24,6 +25,7 @@ namespace Heteroboxd.Shared.Models
         public User()
         {
             PictureUrl = "";
+            PictureUrlCacheVersion = 0;
             IsAdmin = false;
             Date = DateTime.UtcNow;
             Flags = 0;
@@ -49,6 +51,7 @@ namespace Heteroboxd.Shared.Models
         {
             this.Name = string.IsNullOrEmpty(Request.Name) ? this.Name : Request.Name;
             this.Bio = string.IsNullOrEmpty(Request.Bio) ? this.Bio : Request.Bio;
+            if (Request.GeneratePresign) this.PictureUrlCacheVersion++;
         }
     }
 }
