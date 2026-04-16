@@ -47,7 +47,7 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
   ]
 
   const currentYear = new Date().getFullYear()
-  const years = Array.from({length: currentYear - 1888 + 1}, (_, i) => currentYear - i)
+  const years = Array.from({length: currentYear - 1894 + 1}, (_, i) => currentYear - i)
 
   const handleFilterSelect = (filterField) => {
     if (filterField === 'ALL' || filterField === 'POPULAR' || filterField === 'FRIENDS') {

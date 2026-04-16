@@ -33,6 +33,11 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  const reloadUser = async () => {
+    const token = await auth.getJwt()
+    if (token) setUser(auth.decodeUser(token))
+  }
+
   useEffect(() => {
     (async () => {
       let token = await auth.getJwt()
@@ -58,7 +63,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{user, login, logout, isValidSession}}>
+    <AuthContext.Provider value={{user, login, logout, reloadUser, isValidSession}}>
       { children }
     </AuthContext.Provider>
   )

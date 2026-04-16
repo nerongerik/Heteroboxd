@@ -235,7 +235,7 @@ namespace Heteroboxd.API.Service
                 .Select(f => new DelimitedUserFilmInfoResponse
                 {
                     FriendId = f.Id.ToString(),
-                    FriendPictureUrl = f.PictureUrl,
+                    FriendPictureUrl = string.IsNullOrEmpty(f.PictureUrl) ? f.PictureUrl : f.PictureUrl + $"?v={f.PictureUrlCacheVersion}",
                     Rating = Reviews.FirstOrDefault(r => r.AuthorId == f.Id)?.Rating ?? null,
                     ReviewId = Reviews.FirstOrDefault(r => r.AuthorId == f.Id)?.Id.ToString() ?? null
                 })
