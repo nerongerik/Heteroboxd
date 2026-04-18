@@ -144,8 +144,9 @@ const Login = () => {
             <View style={{backgroundColor: Colors.card, padding: 15, borderRadius: 10, alignItems: 'center'}}>
               <HText style={{fontSize: 20, fontWeight: '600', paddingVertical: 7, color: Colors.text_title, textAlign: 'center'}}>Enter your account email:</HText>
               <TextInput
-                placeholder='nerongerik@gmail.com'
+                placeholder='user@email.com'
                 value={recovery}
+                inputMode='email'
                 onChangeText={setRecovery}
                 placeholderTextColor={Colors.text_placeholder}
                 onFocus={() => setBorder3(true)}

@@ -36,6 +36,9 @@ const AlterReview = () => {
       return
     }
     setServer(Response.loading)
+
+    await new Promise(t => setTimeout(t, 1000))
+
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/reviews/user-film?FilmId=${filmId}`, {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { Animated, FlatList, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions, View, KeyboardAvoidingView } from 'react-native'
 import Check from '../../assets/icons/check.svg'
 import Plus from '../../assets/icons/plus.svg'
 import Trophy from '../../assets/icons/trophy.svg'
@@ -258,6 +258,7 @@ const CreateList = () => {
         widescreen={widescreen}
         width={width}
       >
+      <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'height' : 'padding'} enabled>  
         <SearchBox
           onSelected={(res) => {
             setSearchResults(res)
@@ -314,6 +315,7 @@ const CreateList = () => {
             showsVerticalScrollIndicator={false}
           />
         </View>
+      </KeyboardAvoidingView>
       </SlidingMenu>
 
       <LoadingResponse visible={result === 0} />

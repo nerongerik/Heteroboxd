@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions, View, KeyboardAvoidingView } from 'react-native'
 import Trash from '../../../assets/icons/trash.svg'
 import Up from '../../../assets/icons/up.svg'
 import Down from '../../../assets/icons/down.svg'
@@ -385,6 +385,7 @@ const EditList = () => {
         widescreen={widescreen}
         width={width}
       >
+      <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'height' : 'padding'} enabled>
         <SearchBox
           onSelected={(res) => {
             setSearchResults(res)
@@ -413,6 +414,7 @@ const EditList = () => {
             showsVerticalScrollIndicator={false}
           />
         </View>
+      </KeyboardAvoidingView>
       </SlidingMenu>
     </View>
     </>

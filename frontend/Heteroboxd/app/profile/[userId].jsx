@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native'
 import Male from '../../assets/icons/male.svg'
 import Female from '../../assets/icons/female.svg'
 import Heart from '../../assets/icons/heart.svg'
@@ -611,6 +611,7 @@ const Profile = () => {
         widescreen={widescreen} 
         width={width}
       >
+      <KeyboardAvoidingView behavior={Platform.OS === 'android' ? 'height' : 'padding'} enabled>
         <SearchBox
           onSelected={(res) => {setSearchResults(res); setSearchInit(false)}}
           page={searchResults.page}
@@ -633,6 +634,7 @@ const Profile = () => {
             showsVerticalScrollIndicator={false}
           />
         </View>
+      </KeyboardAvoidingView>
       </SlidingMenu>
     </View>
     </>
