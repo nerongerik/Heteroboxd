@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { KeyboardAvoidingView, StyleSheet, TextInput, View, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native'
+import { StyleSheet, TextInput, View, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native'
 import { Colors } from '../constants/colors'
 import { Snackbar } from 'react-native-paper'
 import { BaseUrl } from '../constants/api'
@@ -43,7 +43,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
   return (
     <View keyboardShouldPersistTaps='handled'>
       <>
-        <KeyboardAvoidingView style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
+        <View style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
           <TextInput
             style={[styles.input, {fontFamily: 'Inter_400Regular', borderColor: border ? Colors.heteroboxd : Colors.border_color}]}
             placeholder='Search films...'
@@ -68,7 +68,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
           >
             <Search width={widescreen ? 24 : 22} height={widescreen ? 24 : 22} fill={Colors.text_button} />
           </Pressable>
-        </KeyboardAvoidingView>
+        </View>
         {
           server.result === 0 && (
           <View style={{width: '100%', alignItems: 'center', paddingVertical: 30}}>
