@@ -27,6 +27,7 @@ const Interact = ({ widescreen, filmId, close, fade, del }) => {
   const watchlistedRef = useRef(null)
   const ratingDebounceRef = useRef(null)
   const watchlistRequestRef = useRef(0)
+  const [ ratingPending, setRatingPending ] = useState(false)
 
   const fetchData = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -54,6 +55,9 @@ const Interact = ({ widescreen, filmId, close, fade, del }) => {
     if (!user || !(await isValidSession())) {
       router.replace('login')
     }
+
+    setRatingPending(true)
+
     const currentReview = reviewRef.current
     setSeen(true)
     setWatchlisted(false)
@@ -100,6 +104,8 @@ const Interact = ({ widescreen, filmId, close, fade, del }) => {
         }
       } catch {
         console.log('rate failed; network error')
+      } finally {
+        setRatingPending(false)
       }
     }, 1000)
   }, [user, filmId, router])
@@ -267,7 +273,7 @@ const Interact = ({ widescreen, filmId, close, fade, del }) => {
       />
       <HText style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</HText>
       <Divider marginVertical={20} />
-      <Pressable onPress={() => { close(); router.push(`/review/alter/${filmId}`) }}>
+      <Pressable style={ratingPending && {opacity: 0.5}} disabled={ratingPending} onPress={() => { close(); router.push(`/review/alter/${filmId}`) }}>
         <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
           <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</HText>
           <Edit width={28} height={28} />

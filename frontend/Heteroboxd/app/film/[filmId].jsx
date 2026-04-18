@@ -302,7 +302,7 @@ const Film = () => {
         
         {
           user ? (
-            <FilmInteract widescreen={widescreen} filmId={film.id} seen={uwf} watchlisted={watchlisted} review={usersReview}/>
+            <FilmInteract widescreen={widescreen} filmId={film.id} seen={uwf} watchlisted={watchlisted} review={usersReview} />
           ) : (
             <Link style={{color: Colors.text_link, fontSize: 16, paddingHorizontal: 10, textAlign: 'center'}} href='/login'>Create a Heteroboxd account or log in to interact with this film.</Link>
           )

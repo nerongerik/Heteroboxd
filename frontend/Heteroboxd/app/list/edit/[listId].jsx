@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native'
 import Trash from '../../../assets/icons/trash.svg'
 import Up from '../../../assets/icons/up.svg'
 import Down from '../../../assets/icons/down.svg'
@@ -384,6 +384,7 @@ const EditList = () => {
         translateY={translateY}
         widescreen={widescreen}
         width={width}
+        height={height*0.6}
       >
         <SearchBox
           onSelected={(res) => {
@@ -398,9 +399,10 @@ const EditList = () => {
           style={[
             styles.entryContainer,
             {
-              minHeight: searchInit ? 0 : height/3,
-              maxHeight: height/3,
-              width: widescreen ? width*0.5 : width*0.95
+              minHeight: height*0.6,
+              maxHeight: height*0.6,
+              width: widescreen ? width*0.5 : width*0.95,
+              paddingBottom: 150
             }
           ]}
         >
@@ -432,6 +434,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     alignSelf: 'center',
+  },
+  entryContainer: {
+    alignSelf: 'center',
+    backgroundColor: Colors.card,
+    borderColor: Colors.border_color,
+    overflow: 'hidden'
   },
   fab: {
     position: 'absolute',

@@ -36,6 +36,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const watchlistLocalCopyRef = useRef(null)
   const watchlistRequestRef = useRef(0)
   const ratingDebounceRef = useRef(null)
+  const [ ratingPending, setRatingPending ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -59,6 +60,9 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
       setServer(Response.forbidden)
       return
     }
+
+    setRatingPending(true)
+
     const currentReview = reviewLocalCopyRef.current
     setSeenLocalCopy(true)
     setWatchlistedLocalCopy(false)
@@ -105,6 +109,8 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         }
       } catch {
         setServer(Response.networkError)
+      } finally {
+        setRatingPending(false)
       }
     }, 1000)
   }, [user, filmId])
@@ -310,7 +316,7 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         />
         <HText style={{color: Colors.text, fontSize: 16, alignSelf: 'center'}}>Rate</HText>
         <Divider marginVertical={20} />
-        <Pressable onPress={() => { closeMenu(); router.push(`/review/alter/${filmId}`) }}>
+        <Pressable style={ratingPending && {opacity: 0.5}} disabled={ratingPending} onPress={() => { closeMenu(); router.push(`/review/alter/${filmId}`) }}>
           <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
             <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Review this film</HText>
             <Edit width={28} height={28} />

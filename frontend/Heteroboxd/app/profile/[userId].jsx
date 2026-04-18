@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
 import Male from '../../assets/icons/male.svg'
 import Female from '../../assets/icons/female.svg'
 import Heart from '../../assets/icons/heart.svg'
@@ -582,7 +582,7 @@ const Profile = () => {
       <Popup
         visible={[404, 500].includes(server.result)} 
         message={server.message} 
-        onClose={() => server.result === 404 ? router.back() : router.replace('/contact')}
+        onClose={() => server.result === 404 ? router.replace('/login') : router.replace('/contact')}
       />
 
       <Snackbar
@@ -610,6 +610,7 @@ const Profile = () => {
         translateY={translateY2} 
         widescreen={widescreen} 
         width={width}
+        height={height*0.6}
       >
         <SearchBox
           onSelected={(res) => {setSearchResults(res); setSearchInit(false)}}
@@ -619,9 +620,10 @@ const Profile = () => {
         <View style={[
           styles.entryContainer,
           {
-            minHeight: searchInit ? 0 : height/3,
-            maxHeight: height/3,
-            width: widescreen ? width*0.5 : width*0.95
+            minHeight: height*0.6,
+            maxHeight: height*0.6,
+            width: widescreen ? width*0.5 : width*0.95,
+            paddingBottom: 150
           }
         ]}>
           <FlatList
@@ -732,6 +734,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: Colors.card,
     padding: 5
+  },
+  entryContainer: {
+    alignSelf: 'center',
+    backgroundColor: Colors.card,
+    borderColor: Colors.border_color,
+    overflow: 'hidden'
   },
   statsRow: {
     flexDirection: 'row',
