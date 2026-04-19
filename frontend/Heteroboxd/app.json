@@ -3,7 +3,7 @@
     "scheme": "heteroscheme",
     "name": "Heteroboxd",
     "slug": "Heteroboxd",
-    "version": "1.1.6",
+    "version": "1.1.7",
     "orientation": "portrait",
     "icon": "./assets/master.png",
     "userInterfaceStyle": "dark",

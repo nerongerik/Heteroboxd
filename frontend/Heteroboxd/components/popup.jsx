@@ -11,7 +11,18 @@ const Popup = ({ visible, message, onClose, confirm, onConfirm }) => {
     >
       <View style={styles.overlay}>
         <View style={styles.popup}>
-          <HText style={styles.message}>{message}</HText>
+          <HText style={styles.message}>
+            {message === 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.'
+              ? <>
+                  {'You have successfully joined the Heteroboxd community!\n'}
+                  <HText style={{ fontWeight: 'bold', color: Colors.text_title }}>
+                    We sent you a verification email needed to proceed.
+                  </HText>
+                  {`\n\n(If you don't see our message in your inbox, try checking your spam folder, too!)`}
+                </>
+              : message
+            }
+          </HText>
           {
             !confirm ? (
               <Pressable onPress={onClose} style={styles.button}>

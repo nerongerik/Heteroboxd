@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Platform, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Heart from '../../assets/icons/heart.svg'
 import Heart2 from '../../assets/icons/heart2.svg'
 import Trash from '../../assets/icons/trash.svg'
@@ -421,6 +421,7 @@ const ReviewWithComments = () => {
       <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
     </Head>
     <View style={{flex: 1, backgroundColor: Colors.background}}>
+      <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <FlatList
         ref={listRef}
         data={comments.comments}
@@ -446,7 +447,9 @@ const ReviewWithComments = () => {
             }}
           />
         }
+        keyboardShouldPersistTaps={true}
       />
+      </KeyboardAvoidingView>
 
       <Popup 
         visible={[403, 404, 500].includes(server.result)} 
