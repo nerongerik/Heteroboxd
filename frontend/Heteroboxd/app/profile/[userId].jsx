@@ -53,7 +53,7 @@ const Profile = () => {
   const followingLocalCopyRef = useRef(null)
   const followRequestRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets()
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback(() => {
@@ -610,7 +610,7 @@ const Profile = () => {
         translateY={translateY2} 
         widescreen={widescreen} 
         width={width}
-        height={height*0.6}
+        height={(Platform.OS === 'web' && widescreen) ? null : height*0.6}
       >
         <SearchBox
           onSelected={(res) => {setSearchResults(res); setSearchInit(false)}}
@@ -620,10 +620,10 @@ const Profile = () => {
         <View style={[
           styles.entryContainer,
           {
-            minHeight: height*0.6,
-            maxHeight: height*0.6,
+            minHeight: (Platform.OS === 'web' && widescreen) ? (height*0.4) : (height*0.6),
+            maxHeight: (Platform.OS === 'web' && widescreen) ? (height*0.4) : (height*0.6),
             width: widescreen ? width*0.5 : width*0.95,
-            paddingBottom: 150
+            paddingBottom: Platform.OS !== 'web' ? insets.bottom + 50 : null
           }
         ]}>
           <FlatList

@@ -43,7 +43,7 @@ const SearchBox = ({ onSelected, page, pageSize }) => {
   return (
     <View keyboardShouldPersistTaps='handled'>
       <>
-        <View style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 750 : width*0.75, marginTop: 20, marginBottom: 30}}>
+        <View style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'center', width: widescreen ? 500 : width*0.75, marginTop: 20, marginBottom: 20}}>
           <TextInput
             style={[styles.input, {fontFamily: 'Inter_400Regular', borderColor: border ? Colors.heteroboxd : Colors.border_color}]}
             placeholder='Search films...'

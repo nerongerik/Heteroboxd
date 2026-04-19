@@ -17,7 +17,7 @@ namespace Heteroboxd.API.Service
     {
         Task<List<CountryInfoResponse>> SyncCountries(string? LastSync);
         Task<string?> Register(RegisterRequest Request);
-        Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
+        Task<(bool Success, bool EmailUnverified, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
         (bool Success, string? AdminToken) VerifyAdminKey(string Key);
         Task Logout(string? RefreshToken, string UserId);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string? RefreshToken);
@@ -102,15 +102,17 @@ namespace Heteroboxd.API.Service
             return PresignedUrl;
         }
 
-        public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
+        public async Task<(bool Success, bool EmailUnverified, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
         {
             var User = await _userManager.FindByEmailAsync(Request.Email);
-            if (User == null) return (false, null, null);
+            if (User == null) return (false, false, null, null);
 
             var Check = await _signInManager.CheckPasswordSignInAsync(User, Request.Password, false);
-            if (!Check.Succeeded) return (false, null, null);
 
-            return (true, GenerateJwt(User), (await GenerateRefreshTokenAsync(User)));
+            if (Check.IsNotAllowed) return (false, true, null, null);
+            if (!Check.Succeeded) return (false, false, null, null);
+
+            return (true, false, GenerateJwt(User), (await GenerateRefreshTokenAsync(User)));
         }
 
         public (bool Success, string? AdminToken) VerifyAdminKey(string Key)

@@ -17,6 +17,7 @@ import LoadingResponse from '../../components/loadingResponse'
 import { Poster } from '../../components/poster'
 import SearchBox from '../../components/searchBox'
 import SlidingMenu from '../../components/slidingMenu'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const PAGE_SIZE = 50
 
@@ -37,6 +38,7 @@ const CreateList = () => {
   const [ searchInit, setSearchInit ] = useState(true)
   const [ border1, setBorder1 ] = useState(false)
   const [ border2, setBorder2 ] = useState(false)
+  const insets = useSafeAreaInsets()
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -257,7 +259,7 @@ const CreateList = () => {
         translateY={translateY}
         widescreen={widescreen}
         width={width}
-        height={height*0.6}
+        height={(Platform.OS === 'web' && widescreen) ? null : height*0.6}
       >
         <SearchBox
           onSelected={(res) => {
@@ -270,10 +272,10 @@ const CreateList = () => {
         <View style={[
           styles.entryContainer,
           {
-            minHeight: height*0.6,
-            maxHeight: height*0.6,
+            minHeight: (Platform.OS === 'web' && widescreen) ? (height*0.4) : (height*0.6),
+            maxHeight: (Platform.OS === 'web' && widescreen) ? (height*0.4) : (height*0.6),
             width: widescreen ? width*0.5 : width*0.95,
-            paddingBottom: 150
+            paddingBottom: Platform.OS !== 'web' ? insets.bottom + 50 : null
           }
         ]}>
           <FlatList

@@ -60,11 +60,12 @@ namespace Heteroboxd.API.Controller
         [AllowAnonymous]
         public async Task<IActionResult> Login(LoginRequest Request)
         {
-            _logger.LogInformation($"Login endpoint hit with Email: {Request.Email} and Password: {Request.Password}");
             try
             {
                 var Response = await _service.Login(Request);
-                return Response.Success ? Ok(new { jwt = Response.Jwt, refresh = Response.RefreshToken!.Token }) : Unauthorized();
+                if (Response.Success) return Ok(new { jwt = Response.Jwt, refresh = Response.RefreshToken!.Token });
+                if (Response.EmailUnverified) return Unauthorized();
+                return BadRequest();
             }
             catch
             {

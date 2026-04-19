@@ -66,27 +66,19 @@ const Register = () => {
               xhr.open('GET', profileUri, true)
               xhr.send(null)
             })
-            const picRes = await fetch(json.presignedUrl, {
+            await fetch(json.presignedUrl, {
               method: 'PUT',
               body: blob,
               headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
             })
-            if (picRes.ok) {
-              setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
-            } else {
-              setServer({ result: 200, message: `You have successfully joined the Heteroboxd community, but there was a problem uploading your profile picture: ${picRes.status}\nYou can always update your profile picture at a later time and try again. We sent you a verification email needed to proceed.` })
-            }
+            setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
           } else {
-            const picRes = await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
+            await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
               httpMethod: 'PUT',
               uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
               headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
             })
-            if (picRes.status >= 200 && picRes.status < 300) {
-              setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
-            } else {
-              setServer({ result: 200, message: `You have successfully joined the Heteroboxd community, but there was a problem uploading your profile picture: ${picRes.status}\nYou can always update your profile picture at a later time and try again. We sent you a verification email needed to proceed.` })
-            }
+            setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
           }
         } else {
           setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
@@ -99,7 +91,7 @@ const Register = () => {
     } catch (e) {
       setServer({ result: 500, message: e?.message || 'blob parsing error.' })
     }
-  }, [name, email, password, profileUri, bio, gender])
+  }, [name, email, password, profileUri, bio, gender, pwValid])
 
   const pickImage = async () => {
     try {
