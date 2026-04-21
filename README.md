@@ -15,7 +15,7 @@ Heteroboxd is an open-source, free-speech, social film discovery platform availa
 - Backend: C# (ASP.NET)
 - Frontend: JavaScript (Expo React Native)
 - Database: Postgres (SQL)
-- Integrations: tMDB API (not endorsed!)
+- Integrations: Brevo Email API, CloudFlare R2 Object Storage, TMDB API (not endorsed!)
 
 ## Contributing
 Heteroboxd is a **solo** project, and external contributions are not accepted.
@@ -23,6 +23,7 @@ The repository is public for transparency and learning purposes only.
 
 ## Installation
 Heteroboxd 1.0.x is officially out! Check it out at https://heteroboxd.com
+(the upcoming Android build is currently in the phase of closed testing on Google Play Console - excpect the official release within the next 30 days)
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
