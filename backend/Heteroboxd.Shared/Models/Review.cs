@@ -12,6 +12,7 @@ namespace Heteroboxd.Shared.Models
         public bool Spoiler { get; set; }
         public bool NotificationsOn { get; set; }
         public int LikeCount { get; set; }
+        public int CommentCount { get; set; }
         public Guid AuthorId { get; set; }
         public int FilmId { get; set; }
 
@@ -25,6 +26,7 @@ namespace Heteroboxd.Shared.Models
             this.Spoiler = Spoiler;
             this.NotificationsOn = true;
             this.LikeCount = 0;
+            this.CommentCount = 0;
             this.AuthorId = AuthorId;
             this.FilmId = FilmId;
         }

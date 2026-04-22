@@ -13,6 +13,7 @@ import Notif from '../assets/icons/notifications.svg'
 import Profile from '../assets/icons/profile.svg'
 import Slide from '../assets/icons/slide.svg'
 import List from '../assets/icons/list.svg'
+import Comments from '../assets/icons/comments.svg'
 import { Link, useFocusEffect, useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
 import * as auth from '../helpers/auth'
@@ -588,6 +589,8 @@ const Home = () => {
                                     <View style={styles.statsRow}>
                                       <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
                                       <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
+                                      <Comments height={widescreen ? 18 : 14} width={widescreen ? 18 : 14} />
+                                      <HText style={[styles.statText, {color: Colors.text, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.commentCount)}</HText>
                                     </View>
                                   </Pressable>
                                 </View>
@@ -671,7 +674,7 @@ const Home = () => {
           )
         }
 
-        <HText style={{marginTop: widescreen ? 250 : 100, marginBottom: insets.bottom, color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>Heteroboxd uses <Link style={{color: Colors.heteroboxd}} href='https://developer.themoviedb.org/docs/getting-started'>tMDB's API</Link> for film data, bearing no endorsement whatsoever.</HText>
+        <HText style={{marginTop: widescreen ? 250 : 100, marginBottom: insets.bottom, color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>Heteroboxd uses <Link style={{color: Colors.heteroboxd}} href='https://developer.themoviedb.org/docs/getting-started'>TMDB's API</Link> for film data, bearing no endorsement whatsoever.</HText>
       </ScrollView>
 
       <SlidingMenu

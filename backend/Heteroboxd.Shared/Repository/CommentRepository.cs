@@ -9,6 +9,7 @@ namespace Heteroboxd.Shared.Repository
     {
         Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetAllAsync(int Page, int PageSize);
         Task<JoinResponse<Comment, User>?> GetByIdAsync(Guid CommentId);
+        Task<Comment?> LightweightFetcherAsync(Guid CommentId);
         Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize);
         Task ReportAsync(Guid CommentId);
         Task CreateAsync(Comment Comment);
@@ -48,6 +49,12 @@ namespace Heteroboxd.Shared.Repository
                 .FirstOrDefaultAsync();
             return Response == null ? null : new JoinResponse<Comment, User> { Item = Response.c, Joined = Response.u };
         }
+
+        public async Task<Comment?> LightweightFetcherAsync(Guid CommentId) =>
+            await _context.Comments
+                .AsNoTracking()
+                .Where(c => c.Id == CommentId)
+                .FirstOrDefaultAsync();
 
         public async Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize)
         {

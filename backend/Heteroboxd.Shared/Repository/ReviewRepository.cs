@@ -15,6 +15,7 @@ namespace Heteroboxd.Shared.Repository
         Task<(List<JoinResponse<Review, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<JoinedReviewFilm?> GetByUserFilmAsync(Guid AuthorId, int FilmId);
         Task UpdateLikeCountAsync(Guid ReviewId, int Delta);
+        Task UpdateCommentCountAsync(Guid ReviewId, int Delta);
         Task ToggleNotificationsAsync(Guid ReviewId);
         Task ReportAsync(Guid ReviewId);
         Task CreateAsync(Review Review);
@@ -64,6 +65,9 @@ namespace Heteroboxd.Shared.Repository
                     break;
                 case "rating":
                     Query = Desc ? Query.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
+                    break;
+                case "comment count":
+                    Query = Desc ? Query.OrderByDescending(x => x.r.CommentCount).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.CommentCount).ThenBy(x => x.r.Id);
                     break;
                 case "flags":
                     Query = Query.OrderByDescending(x => x.r.Flags).ThenBy(x => x.r.Id);
@@ -131,6 +135,9 @@ namespace Heteroboxd.Shared.Repository
                 case "rating":
                     FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
+                case "comment count":
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.CommentCount).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.CommentCount).ThenBy(x => x.r.Id);
+                    break;
                 default:
                     //error handling
                     FilmQuery = FilmQuery.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id);
@@ -192,6 +199,9 @@ namespace Heteroboxd.Shared.Repository
                 case "rating":
                     UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
+                case "comment count":
+                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.CommentCount).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.CommentCount).ThenBy(x => x.r.Id);
+                    break;
                 default:
                     //error handling
                     UserQuery = UserQuery.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id);
@@ -225,6 +235,17 @@ namespace Heteroboxd.Shared.Repository
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     r => r.LikeCount,
                     r => Math.Max(r.LikeCount + Delta, 0)
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
+
+        public async Task UpdateCommentCountAsync(Guid ReviewId, int Delta)
+        {
+            var Rows = await _context.Reviews
+                .Where(r => r.Id == ReviewId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    r => r.CommentCount,
+                    r => Math.Max(r.CommentCount + Delta, 0)
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
         }

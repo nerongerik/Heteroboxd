@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import Heart from '../../../assets/icons/heart.svg'
+import Comments from '../../../assets/icons/comments.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
 import * as format from '../../../helpers/format'
@@ -166,6 +167,8 @@ const UserReviews = () => {
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
           <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</HText>
+          <Comments height={widescreen ? 18 : 14} width={widescreen ? 18 : 14} />
+          <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.text, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.commentCount)}</HText>
         </View>
       </Pressable>
     </View>

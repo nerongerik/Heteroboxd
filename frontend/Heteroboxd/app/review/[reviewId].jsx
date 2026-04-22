@@ -83,7 +83,10 @@ const ReviewWithComments = () => {
     }
   }, [user, reviewId])
 
-  const loadCommentsDataPage = useCallback(async (page) => {
+  const loadCommentsDataPage = useCallback(async (page, fromCreate = false) => {
+    if (!review || (!fromCreate && review.commentCount === 0)) {
+      return
+    }
     setServer(Response.loading)
     try {
       if (loadingRef.current) return
@@ -112,7 +115,7 @@ const ReviewWithComments = () => {
     } finally {
       loadingRef.current = false
     }
-  }, [reviewId])
+  }, [reviewId, review])
 
   const totalPages = useMemo(() => Math.ceil(comments?.totalCount / PAGE_SIZE), [comments?.totalCount])
 
@@ -175,7 +178,7 @@ const ReviewWithComments = () => {
         })
       })
       if (res.ok) {
-        loadCommentsDataPage(1)
+        loadCommentsDataPage(1, true)
         if (listRef.current) listRef.current.scrollToOffset({ offset: 0, animated: true })
       } else {
         setSnack({ shown: true, msg: `${res.status}: Something went wrong! Try reloading Heteroboxd.` })
@@ -245,9 +248,8 @@ const ReviewWithComments = () => {
   }, [navigation, user, review])
 
   useEffect(() => {
-    if (!review) return
     loadCommentsDataPage(1) 
-  }, [review?.id, loadCommentsDataPage])
+  }, [loadCommentsDataPage])
 
   useEffect(() => {
     reviewLocalCopyRef.current = review
@@ -325,7 +327,7 @@ const ReviewWithComments = () => {
 
       {user && <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} />}
 
-      <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount})</HText>
+      <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount || 0})</HText>
     </View>
   ), [review, router, widescreen, user, maxRowWidth, showText, handleCreate])
 

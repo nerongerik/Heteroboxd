@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, PanResponder, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
 import ListIco from '../../assets/icons/list.svg'
 import Heart from '../../assets/icons/heart.svg'
+import Comments from '../../assets/icons/comments.svg'
 import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
 import Author from '../author'
@@ -106,6 +107,8 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize, isRefreshing
         <View style={styles.statsRow}>
           <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.likeCount)}</HText>
+          <Comments height={widescreen ? 18 : 14} width={widescreen ? 18 : 14} />
+          <HText style={[styles.statText, {color: Colors.text, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(item.commentCount)}</HText>
         </View>
       </Pressable>
     </View>

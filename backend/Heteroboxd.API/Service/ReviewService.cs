@@ -195,45 +195,39 @@ namespace Heteroboxd.API.Service
             string _text = Text.ToLowerInvariant().Trim();
             int Score = 0;
 
-            //doxxing
             foreach (var p in AutoModerator.SocialPatterns)
             {
                 if (_text.Contains(p) && (_text.Contains("add me") || _text.Contains("dm me") || _text.Contains("message me")))
                 {
                     Score += AutoModerator.SocialMediaSolicitation;
-                    break; //only flag once for doxxing
+                    break;
                 }
             }
-            //queershipping
             foreach (var p in AutoModerator.ShippingPatterns)
             {
                 if (_text.Contains(p))
                 {
                     Score += AutoModerator.Queershipping;
-                    break; //only flag once for queershipping
+                    break;
                 }
             }
-            //simping
             int SimpCount = 0;
             foreach (var p in AutoModerator.SimpPatterns)
             {
                 if (_text.Contains(p)) SimpCount++;
             }
             Score += SimpCount * AutoModerator.SimpingPerTerm;
-            if (_text.Contains("ryan gosling")) Score = Math.Max(0, Score + AutoModerator.GoslingianForgiveness); //we are only human, after all
-            //blasphemy
+            if (_text.Contains("ryan gosling")) Score = Math.Max(0, Score + AutoModerator.GoslingianForgiveness);
             int BlasphemyCount = 0;
             foreach (var p in AutoModerator.BlasphemyPatterns)
             {
                 if (_text.Contains(p)) BlasphemyCount++;
             }
             Score += BlasphemyCount * AutoModerator.BlasphemyPerTerm;
-            //one-liners, millenial humor, redditness...
             int WordCount = _text.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length;
             if (WordCount <= 5) Score += AutoModerator.VeryShortReview;
             else if (WordCount <= 12) Score += AutoModerator.ShortReview;
             if (_text.Count(c => c == '!' || c == '?' || c == '.') > 4 && WordCount < 20) Score += AutoModerator.MemeyPunctuation;
-            //bonus
             if (WordCount >= 80) Score += AutoModerator.LongThoughtfulBonus;
 
             return Math.Max(0, Score);
