@@ -35,8 +35,8 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
     userLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
     filmLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
     exploreLists: ['POPULARITY', 'DATE CREATED', 'SIZE'],
-    userReviews: ['POPULARITY', 'DATE CREATED', 'RATING'],
-    filmReviews: ['POPULARITY', 'DATE CREATED', 'RATING']
+    userReviews: ['POPULARITY', 'DATE CREATED', 'RATING', 'COMMENT COUNT'],
+    filmReviews: ['POPULARITY', 'DATE CREATED', 'RATING', 'COMMENT COUNT']
   }
 
   const genres = [

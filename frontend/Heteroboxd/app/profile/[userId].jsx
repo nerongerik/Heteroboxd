@@ -3,6 +3,7 @@ import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, 
 import Male from '../../assets/icons/male.svg'
 import Female from '../../assets/icons/female.svg'
 import Heart from '../../assets/icons/heart.svg'
+import Comments from '../../assets/icons/comments.svg'
 import { Snackbar } from 'react-native-paper'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
@@ -360,6 +361,8 @@ const Profile = () => {
         <View style={styles.statsRow}>
           <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={[styles.statText, {fontSize: widescreen ? 16 : 12}]}>{format.formatCount(pinned.likeCount)}</HText>
+          <Comments height={widescreen ? 18 : 14} width={widescreen ? 18 : 14} />
+          <HText style={[styles.statText, {color: Colors.text, fontSize: widescreen ? 16 : 12}]}>{format.formatCount(pinned.commentCount)}</HText>
         </View>
       </Pressable>
     </View>

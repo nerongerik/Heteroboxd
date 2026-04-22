@@ -57,8 +57,8 @@ const About = () => {
           Where does Heteroboxd get its films from?
         </HText>
         <HText style={styles.text}>
-          Heteroboxd's film database is powered by the one and only tMDB API, wherefrom we source all film metadata and images
-          in regular syncs. tMDB does not endorse Heteroboxd.
+          Heteroboxd's film database is powered by the one and only TMDB API, wherefrom we source all film metadata and images
+          in regular syncs. TMDB does not endorse Heteroboxd.
         </HText>
     
         <HText style={styles.subtitle}>

@@ -519,7 +519,7 @@ const Film = () => {
         )}
 
         <HText style={[styles.text, {marginTop: widescreen ? 250 : 100, marginBottom: insets.bottom, textAlign: 'center', alignSelf: 'center', fontSize: widescreen ? 18 : 14}]}>
-          This film's metadata was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>tMDB</Link>, bearing no endorsement whatsoever.
+          This film's metadata was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>TMDB</Link>, bearing no endorsement whatsoever.
         </HText>
       </ScrollView>
 

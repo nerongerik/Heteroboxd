@@ -129,6 +129,7 @@
         public bool Spoiler { get; set; }
         public bool NotificationsOn { get; set; }
         public int LikeCount { get; set; }
+        public int CommentCount { get; set; }
         public string AuthorId { get; set; }
         public string? AuthorName { get; set; }
         public string? AuthorPictureUrl { get; set; }
@@ -149,6 +150,7 @@
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
+            this.CommentCount = Review.CommentCount;
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
@@ -172,6 +174,7 @@
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
+            this.CommentCount = Review.CommentCount;
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
@@ -192,6 +195,7 @@
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
+            this.CommentCount = Review.CommentCount;
 
             this.AuthorId = Review.AuthorId.ToString();
 
@@ -211,6 +215,7 @@
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
+            this.CommentCount = Review.CommentCount;
 
             this.AuthorId = Review.AuthorId.ToString();
 
