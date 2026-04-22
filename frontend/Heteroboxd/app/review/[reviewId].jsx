@@ -115,7 +115,7 @@ const ReviewWithComments = () => {
     } finally {
       loadingRef.current = false
     }
-  }, [reviewId, review])
+  }, [reviewId, review?.id])
 
   const totalPages = useMemo(() => Math.ceil(comments?.totalCount / PAGE_SIZE), [comments?.totalCount])
 
