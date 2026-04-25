@@ -67,7 +67,6 @@ const EditList = () => {
       setBase({})
       return
     }
-    setServer(Response.loading)
     try {
       const res = await fetch(`${BaseUrl.api}/lists?UserListId=${listId}`)
       if (res.ok) {
@@ -92,6 +91,7 @@ const EditList = () => {
       setServer(Response.forbidden)
       return
     }
+    setServer(Response.loading)
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/power?UserListId=${listId}`, {
@@ -100,6 +100,7 @@ const EditList = () => {
       if (res.ok) {
         const json = await res.json()
         setEntries(json)
+        setServer(Response.ok)
       } else {
         setServer(Response.internalServerError)
       }
@@ -454,11 +455,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5, //android
+    elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 }, //iOS
+    shadowOffset: { width: 0, height: 2 },
   },
   descWrapper: {
     marginBottom: 10,
