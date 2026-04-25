@@ -12,6 +12,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-masked-view/masked-view": "0.3.2",
     "expo": "~55.0.13",
+    "expo-application": "~55.0.14",
     "expo-blur": "~55.0.14",
     "expo-constants": "~55.0.13",
     "expo-device": "~55.0.14",
