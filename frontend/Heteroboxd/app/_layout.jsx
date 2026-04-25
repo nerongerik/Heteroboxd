@@ -100,7 +100,7 @@ export default RootLayout
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  card: { backgroundColor: Colors.background, borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' },
+  card: { backgroundColor: Colors.card, borderRadius: 16, padding: 24, width: '80%', alignItems: 'center' },
   title: { color: Colors.text_title, fontSize: 20, fontFamily: 'Inter_400Regular', marginBottom: 12 },
   body: { color: Colors.text, fontSize: 14, textAlign: 'center', opacity: 0.7, marginBottom: 24 },
   button: { backgroundColor: Colors._heteroboxd, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32 },
