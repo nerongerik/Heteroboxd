@@ -68,9 +68,9 @@ namespace Heteroboxd.API.Service
 
         public async Task<UserInfoResponse> GetUser(string UserId)
         {
-            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, FollowerCount, FollowingCount, BlockedCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
-            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount);
+            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, FollowerCount, FollowingCount, BlockedCount);
         }
 
         public async Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -176,13 +176,12 @@ namespace Heteroboxd.API.Service
         public async Task<string> DetermineRelationship(string UserId, string TargetId)
         {
             var Status = await _repo.GetRelationshipStatusAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
-            if (Status == null) throw new KeyNotFoundException();
 
             return Status switch
             {
-                { IsBlocked: true } => "blocked",
-                { IsFollowing: true } => "following",
-                { IsFollower: true } => "followed",
+                Shared.Models.Enums.Relationship.Blocked => "blocked",
+                Shared.Models.Enums.Relationship.Following => "following",
+                null => "none",
                 _ => "none"
             };
         }
@@ -280,7 +279,7 @@ namespace Heteroboxd.API.Service
 
         public async Task VerifyUser(string UserId, string Token)
         {
-            var (User, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
 
             var Result = await _userManager.ConfirmEmailAsync(User, Token);

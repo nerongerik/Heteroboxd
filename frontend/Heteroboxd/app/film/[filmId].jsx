@@ -25,6 +25,7 @@ import Stars from '../../components/stars'
 import { UserAvatar } from '../../components/userAvatar'
 import Heart from '../../assets/icons/heart.svg'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Comments from '../../assets/icons/comments.svg'
 
 const TOP_COUNT = 5
 
@@ -474,6 +475,8 @@ const Film = () => {
                       <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
                         <Heart width={widescreen ? 16 : 12} height={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
                         <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(r.likeCount)}</HText>
+                        <Comments height={widescreen ? 18 : 14} width={widescreen ? 18 : 14} />
+                        <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.text, fontSize: widescreen ? 16 : 12}}>{format.formatCount(r.commentCount)}</HText>
                       </View>
                     </Pressable>
                   </View>

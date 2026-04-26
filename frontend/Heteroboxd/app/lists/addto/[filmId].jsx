@@ -332,7 +332,7 @@ const AddToLists = () => {
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.2}
         onEndReached={loadNextPage}
-        keyboardShouldPersistTaps={true}
+        keyboardShouldPersistTaps={"handled"}
       />
 
       <LoadingResponse visible={usersLists.lists.length === 0 && server.result <= 0} />

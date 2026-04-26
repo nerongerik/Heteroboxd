@@ -449,7 +449,7 @@ const ReviewWithComments = () => {
             }}
           />
         }
-        keyboardShouldPersistTaps={true}
+        keyboardShouldPersistTaps={"handled"}
       />
       </KeyboardAvoidingView>
 

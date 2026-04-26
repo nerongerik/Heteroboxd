@@ -1,7 +1,7 @@
 {
   "android": {
-    "minimumVersion": "1.1.10",
-    "currentVersion": "1.1.10",
+    "minimumVersion": "1.1.11",
+    "currentVersion": "1.1.11",
     "forceUpdate": true
   }
 }
