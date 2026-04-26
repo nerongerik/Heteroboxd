@@ -25,6 +25,9 @@ namespace Heteroboxd.Shared.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Trending> Trendings { get; set; }
         public DbSet<Country> Countries { get; set; }
+        public DbSet<UserLikedReview> UserLikedReviews { get; set; }
+        public DbSet<UserLikedList> UserLikedLists { get; set; }
+        public DbSet<UserRelationship> UserRelationships { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -39,48 +42,12 @@ namespace Heteroboxd.Shared.Data
                 b.Property(u => u.Gender).HasConversion<string>();
             });
 
-            //rename Identity tables so they don't get AspNet* names
             modelBuilder.Entity<IdentityRole<Guid>>().ToTable("Roles");
             modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
             modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
             modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
             modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
             modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
-
-            modelBuilder.Entity<User>(entity =>
-            {
-                //Followers/Following (M:M)
-                entity.HasMany(u => u.Following)
-                      .WithMany(u => u.Followers)
-                      .UsingEntity(j => j.ToTable("UserRelationships"));
-
-                //Blocked (M:M)
-                entity.HasMany(u => u.Blocked)
-                      .WithMany()
-                      .UsingEntity(j => j.ToTable("UserBlocked"));
-
-                //LikedReviews (M:M)
-                entity.HasMany(u => u.LikedReviews)
-                    .WithMany()
-                    .UsingEntity(j =>
-                    {
-                        j.ToTable("UserLikedReviews");
-                        j.HasOne(typeof(Review))
-                        .WithMany()
-                        .OnDelete(DeleteBehavior.Cascade);
-                    });
-
-                //LikedLists (M:M)
-                entity.HasMany(u => u.LikedLists)
-                      .WithMany()
-                      .UsingEntity(j =>
-                      {
-                          j.ToTable("UserLikedLists");
-                          j.HasOne(typeof(UserList))
-                          .WithMany()
-                          .OnDelete(DeleteBehavior.Cascade);
-                      });
-            });
 
             //UserFavorites
             modelBuilder.Entity<UserFavorites>(entity =>
@@ -282,6 +249,60 @@ namespace Heteroboxd.Shared.Data
             modelBuilder.Entity<Country>(entity =>
             {
                 entity.HasKey(c => c.Code);
+            });
+
+            modelBuilder.Entity<UserLikedReview>(entity =>
+            {
+                entity.HasKey(ul => ul.Id);
+
+                entity.HasIndex(ul => new { ul.UserId, ul.ReviewId }).IsUnique();
+
+                entity.HasOne<User>()
+                      .WithMany()
+                      .HasForeignKey(ul => ul.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne<Review>()
+                      .WithMany()
+                      .HasForeignKey(ul => ul.ReviewId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserLikedList>(entity =>
+            {
+                entity.HasKey(ul => ul.Id);
+
+                entity.HasIndex(ul => new { ul.UserId, ul.ListId }).IsUnique();
+
+                entity.HasOne<User>()
+                      .WithMany()
+                      .HasForeignKey(ul => ul.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne<UserList>()
+                      .WithMany()
+                      .HasForeignKey(ul => ul.ListId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserRelationship>(entity =>
+            {
+                entity.HasKey(ur => ur.Id);
+
+                entity.HasIndex(ur => new { ur.UserId, ur.TargetId, ur.Relationship }).IsUnique();
+
+                entity.HasOne<User>()
+                      .WithMany()
+                      .HasForeignKey(ur => ur.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne<User>()
+                      .WithMany()
+                      .HasForeignKey(ur => ur.TargetId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(ur => ur.Relationship)
+                      .HasConversion<string>();
             });
         }
     }

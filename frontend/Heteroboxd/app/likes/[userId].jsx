@@ -25,10 +25,10 @@ const UserLikes = () => {
     if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
-      const params = new URLSearchParams({ ReviewsPage: pages.reviews || 1, ListsPage: pages.lists || 1, PageSize: PAGE_SIZE })
       if (loadingRef.current) return
-      const requestId = ++requestRef.current
       loadingRef.current = true
+      const params = new URLSearchParams({ ReviewsPage: pages.reviews || 1, ListsPage: pages.lists || 1, PageSize: PAGE_SIZE })
+      const requestId = ++requestRef.current
       const res = await fetch(`${BaseUrl.api}/users/likes?UserId=${userId}&${params}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return

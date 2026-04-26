@@ -369,7 +369,7 @@
         public string? PinnedListId { get; set; }
         public string? PinnedReviewId { get; set; }
 
-        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0)
+        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
         {
             this.Id = User.Id.ToString();
             this.Name = User.Name;
@@ -381,9 +381,9 @@
             this.Flags = User.Flags;
             this.WatchlistCount = WatchlistCount;
             this.ListsCount = UserListCount;
-            this.FollowersCount = User.Followers != null ? User.Followers.Count : 0;
-            this.FollowingCount = User.Following != null ? User.Following.Count : 0;
-            this.BlockedCount = User.Blocked != null ? User.Blocked.Count : 0;
+            this.FollowersCount = FollowerCount;
+            this.FollowingCount = FollowingCount;
+            this.BlockedCount = BlockedCount;
             this.ReviewsCount = ReviewCount;
             this.LikesCount = LikesCount;
             this.WatchedCount = WatchedFilmCount;

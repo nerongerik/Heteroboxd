@@ -14,11 +14,6 @@ namespace Heteroboxd.Shared.Models
         public bool IsAdmin { get; set; }
         public DateTime Date { get; set; }
         public int Flags { get; set; }
-        public ICollection<User> Followers { get; set; }
-        public ICollection<User> Following { get; set; }
-        public ICollection<User> Blocked { get; set; }
-        public ICollection<Review> LikedReviews { get; set; }
-        public ICollection<UserList> LikedLists { get; set; }
         public Guid? PinnedListId { get; set; }
         public Guid? PinnedReviewId { get; set; }
 
@@ -29,11 +24,6 @@ namespace Heteroboxd.Shared.Models
             IsAdmin = false;
             Date = DateTime.UtcNow;
             Flags = 0;
-            Followers = new List<User>();
-            Following = new List<User>();
-            Blocked = new List<User>();
-            LikedReviews = new List<Review>();
-            LikedLists = new List<UserList>();
             PinnedListId = null;
             PinnedReviewId = null;
         }

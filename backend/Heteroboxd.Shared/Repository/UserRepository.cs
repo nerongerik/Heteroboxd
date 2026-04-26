@@ -2,15 +2,14 @@
 using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Heteroboxd.Shared.Repository
 {
-    public record RelationshipStatus(bool IsBlocked, bool IsFollowing, bool IsFollower);
-
     public interface IUserRepository
     {
         Task<(List<User> Users, int TotalCount)> GetAllAsync(int Page, int PageSize);
-        Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount)> GetByIdAsync(Guid Id);
+        Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id);
         Task<User?> LightweightFetcherAsync(Guid Id);
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
         Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -22,7 +21,7 @@ namespace Heteroboxd.Shared.Repository
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize);
         Task<List<Guid>> GetFriendsAsync(Guid UserId);
-        Task<RelationshipStatus?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
+        Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
         Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task ReportAsync(Guid UserId);
         Task AddToWatchlistAsync(WatchlistEntry Entry);
@@ -33,8 +32,8 @@ namespace Heteroboxd.Shared.Repository
         Task BlockUnblockAsync(Guid UserId, Guid TargetId);
         Task RemoveFollowerAsync(Guid UserId, Guid TargetId);
 
-        Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId);
-        Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId);
+        Task<UserLikedReview?> IsReviewLikedAsync(Guid UserId, Guid ReviewId);
+        Task<UserLikedList?> IsListLikedAsync(Guid UserId, Guid ListId);
         Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId);
 
         Task UpdateAsync(User User);
@@ -73,7 +72,7 @@ namespace Heteroboxd.Shared.Repository
             return (Users, TotalCount);
         }
 
-        public async Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount)> GetByIdAsync(Guid Id)
+        public async Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id)
         {
             var WatchlistCount = await _context.WatchlistEntries
                 .AsNoTracking()
@@ -87,26 +86,25 @@ namespace Heteroboxd.Shared.Repository
             var WatchedFilmCount = await _context.UserWatchedFilms
                 .AsNoTracking()
                 .CountAsync(uwf => uwf.UserId == Id);
-            var LikedListCount = await _context.Users
+            var LikedReviewsCount = await _context.UserLikedReviews
                 .AsNoTracking()
-                .Where(u => u.Id == Id)
-                .SelectMany(u => u.LikedLists)
-                .CountAsync();
-            var LikedReviewCount = await _context.Users
+                .CountAsync(ulr => ulr.UserId == Id);
+            var LikedListCount = await _context.UserLikedLists
                 .AsNoTracking()
-                .Where(u => u.Id == Id)
-                .SelectMany(u => u.LikedReviews)
-                .CountAsync();
+                .CountAsync(ull => ull.UserId == Id);
+            var FollowerCount = await _context.UserRelationships
+                .AsNoTracking()
+                .CountAsync(ur => ur.TargetId == Id && ur.Relationship == Models.Enums.Relationship.Following);
+            var FollowingCount = await _context.UserRelationships
+                .AsNoTracking()
+                .CountAsync(ur => ur.UserId == Id && ur.Relationship == Models.Enums.Relationship.Following);
+            var BlockedCount = await _context.UserRelationships
+                .AsNoTracking()
+                .CountAsync(ur => ur.UserId == Id && ur.Relationship == Models.Enums.Relationship.Blocked);
             var User = await _context.Users
-                .AsSplitQuery()
-                .Include(u => u.Followers)
-                .Include(u => u.Following)
-                .Include(u => u.Blocked)
-                .Include(u => u.LikedLists)
-                .Include(u => u.LikedReviews)
                 .FirstOrDefaultAsync(u => u.Id == Id);
 
-            return (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikedListCount + LikedReviewCount);
+            return (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikedReviewsCount + LikedListCount, FollowerCount, FollowingCount, BlockedCount);
         }
 
         public async Task<User?> LightweightFetcherAsync(Guid Id) =>
@@ -241,11 +239,11 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId)
         {
-            var FriendIds = await _context.Users
+            var FriendIds = await _context.UserRelationships
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Following).Select(f => f.Id)
-                .ToHashSetAsync();
+                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Select(ur => ur.TargetId)
+                .ToListAsync();
 
             if (FriendIds.Count == 0)
             {
@@ -268,21 +266,24 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize)
         {
-            var FollowingQuery = _context.Users
+            var FollowingQuery = _context.UserRelationships
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Following)
-                .OrderBy(u => u.Id);
-            var FollowersQuery = _context.Users
+                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .OrderBy(ur => ur.Date).ThenBy(ur => ur.Id)
+                .Join(_context.Users, ur => ur.TargetId, u => u.Id, (ur, u) => new { ur, u })
+                .Select(x => x.u);
+            var FollowersQuery = _context.UserRelationships
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Followers)
-                .OrderBy(u => u.Id);
-            var BlockedQuery = _context.Users
+                .Where(ur => ur.TargetId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .OrderBy(ur => ur.Date).ThenBy(ur => ur.Id)
+                .Join(_context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
+                .Select(x => x.u);
+            var BlockedQuery = _context.UserRelationships
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Blocked)
-                .OrderBy(u => u.Id);
+                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Blocked)
+                .OrderBy(ur => ur.Date).ThenBy(ur => ur.Id)
+                .Join(_context.Users, ur => ur.TargetId, u => u.Id, (ur, u) => new { ur, u })
+                .Select(x => x.u);
 
             var FollowingCount = FollowingPage > 0 ? await FollowingQuery.CountAsync() : 0;
             var FollowersCount = FollowersPage > 0 ? await FollowersQuery.CountAsync() : 0;
@@ -302,38 +303,35 @@ namespace Heteroboxd.Shared.Repository
         }
 
         public async Task<List<Guid>> GetFriendsAsync(Guid UserId) =>
-            await _context.Users
+            await _context.UserRelationships
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.Following)
-                .Select(f => f.Id)
+                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Select(ur => ur.TargetId)
                 .ToListAsync();
 
-        public async Task<RelationshipStatus?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId) =>
-            await _context.Users
+        public async Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId) =>
+            await _context.UserRelationships
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .Select(u => new RelationshipStatus(
-                    u.Blocked.Any(b => b.Id == TargetId),
-                    u.Following.Any(f => f.Id == TargetId),
-                    u.Followers.Any(f => f.Id == TargetId)
-                ))
+                .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId)
+                .Select(ur => (Models.Enums.Relationship?)ur.Relationship)
                 .FirstOrDefaultAsync();
 
         public async Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize)
         {
-            var ReviewsQuery = _context.Users
+            var ReviewsQuery = _context.UserLikedReviews
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.LikedReviews)
+                .Where(ul => ul.UserId == UserId)
+                .Select(ul => ul.ReviewId)
+                .Join(_context.Reviews, reviewId => reviewId, r => r.Id, (_, r) => r)
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
                 .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
                 .OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id);
 
-            var ListsQuery = _context.Users
+            var ListsQuery = _context.UserLikedLists
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.LikedLists)
+                .Where(ul => ul.UserId == UserId)
+                .Select(ul => ul.ListId)
+                .Join(_context.UserLists, listId => listId, ul => ul.Id, (_, ul) => ul)
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
                 .OrderByDescending(x => x.ul.LikeCount).ThenBy(x => x.ul.Id);
 
@@ -406,121 +404,106 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<bool> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId)
         {
-            var User = await _context.Users
-                .Include(u => u.LikedReviews)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) throw new KeyNotFoundException();
             var Review = await _context.Reviews
+                .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == ReviewId);
             if (Review == null) throw new KeyNotFoundException();
-            if (User.LikedReviews.Any(r => r.Id == ReviewId)) User.LikedReviews.Remove(Review);
-            else User.LikedReviews.Add(Review);
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                _context.UserLikedReviews.Add(new UserLikedReview(UserId, ReviewId));
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+            {
+                _context.ChangeTracker.Clear();
+                await _context.UserLikedReviews
+                    .Where(ul => ul.UserId == UserId && ul.ReviewId == ReviewId)
+                    .ExecuteDeleteAsync();
+            }
+
             return Review.NotificationsOn;
         }
 
         public async Task<bool> UpdateLikedListsAsync(Guid UserId, Guid ListId)
         {
-            var User = await _context.Users
-                .Include(u => u.LikedLists)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) throw new KeyNotFoundException();
             var UserList = await _context.UserLists
+                .AsNoTracking()
                 .FirstOrDefaultAsync(ul => ul.Id == ListId);
             if (UserList == null) throw new KeyNotFoundException();
-            if (User.LikedLists.Any(ul => ul.Id == ListId)) User.LikedLists.Remove(UserList);
-            else User.LikedLists.Add(UserList);
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                _context.UserLikedLists.Add(new UserLikedList(UserId, ListId));
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+            {
+                _context.ChangeTracker.Clear();
+                await _context.UserLikedLists
+                    .Where(ul => ul.UserId == UserId && ul.ListId == ListId)
+                    .ExecuteDeleteAsync();
+            }
+
             return UserList.NotificationsOn;
         }
 
         public async Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId)
         {
-            var User = await _context.Users
-                .Include(u => u.Following)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) throw new KeyNotFoundException();
-            var Target = await _context.Users
-                .Include(u => u.Followers)
-                .FirstOrDefaultAsync(u => u.Id == TargetId);
-            if (Target == null) throw new KeyNotFoundException();
-            if (User.Following.Any(u => u.Id == TargetId))
+            try
             {
-                User.Following.Remove(Target);
-                Target.Followers.Remove(User);
+                _context.UserRelationships.Add(new UserRelationship(UserId, TargetId, Models.Enums.Relationship.Following));
                 await _context.SaveChangesAsync();
-                return (false, "");
+
+                return (true, (await _context.Users.Where(u => u.Id == UserId).Select(u => u.Name).FirstOrDefaultAsync())!);
             }
-            else
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
             {
-                User.Following.Add(Target);
-                Target.Followers.Add(User);
-                await _context.SaveChangesAsync();
-                return (true, User.Name);
+                _context.ChangeTracker.Clear();
+                await _context.UserRelationships
+                    .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId && ur.Relationship == Models.Enums.Relationship.Following)
+                    .ExecuteDeleteAsync();
+
+                return (false, "");
             }
         }
 
         public async Task BlockUnblockAsync(Guid UserId, Guid TargetId)
         {
-            var User = await _context.Users
-                .AsSplitQuery()
-                .Include(u => u.Blocked)
-                .Include(u => u.Following)
-                .Include(u => u.Followers)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) throw new KeyNotFoundException();
-            var Target = await _context.Users
-                .AsSplitQuery()
-                .Include(u => u.Following)
-                .Include(u => u.Followers)
-                .FirstOrDefaultAsync(u => u.Id == TargetId);
-            if (Target == null) throw new KeyNotFoundException();
-            if (User.Blocked.Any(u => u.Id == TargetId))
+            try
             {
-                User.Blocked.Remove(Target);
-            }
-            else
-            {
-                User.Blocked.Add(Target);
-                User.Following.Remove(Target);
-                User.Followers.Remove(Target);
-                Target.Following.Remove(User);
-                Target.Followers.Remove(User);
-            }
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task RemoveFollowerAsync(Guid UserId, Guid TargetId)
-        {
-            var User = await _context.Users
-                .Include(u => u.Followers)
-                .FirstOrDefaultAsync(u => u.Id == UserId);
-            if (User == null) throw new KeyNotFoundException();
-            var Target = await _context.Users
-                .Include(u => u.Following)
-                .FirstOrDefaultAsync(u => u.Id == TargetId);
-            if (Target == null) throw new KeyNotFoundException();
-            if (User.Followers.Any(u => u.Id == TargetId) || Target.Following.Any(u => u.Id == UserId))
-            {
-                User.Followers.Remove(Target);
-                Target.Following.Remove(User);
+                _context.UserRelationships.Add(new UserRelationship(UserId, TargetId, Models.Enums.Relationship.Blocked));
                 await _context.SaveChangesAsync();
+
+                await _context.UserRelationships
+                    .Where(ur => ((ur.UserId == TargetId && ur.TargetId == UserId) || (ur.UserId == UserId && ur.TargetId == TargetId)) && ur.Relationship == Models.Enums.Relationship.Following)
+                    .ExecuteDeleteAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+            {
+                _context.ChangeTracker.Clear();
+                await _context.UserRelationships
+                    .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId && ur.Relationship == Models.Enums.Relationship.Blocked)
+                    .ExecuteDeleteAsync();
             }
         }
 
-        public async Task<Review?> IsReviewLikedAsync(Guid UserId, Guid ReviewId) =>
-            await _context.Users
-                .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.LikedReviews)
-                .FirstOrDefaultAsync(r => r.Id == ReviewId);
+        public async Task RemoveFollowerAsync(Guid UserId, Guid TargetId) =>
+            await _context.UserRelationships
+                .Where(ur => ur.UserId == TargetId && ur.TargetId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .ExecuteDeleteAsync();
 
-        public async Task<UserList?> IsListLikedAsync(Guid UserId, Guid ListId) =>
-            await _context.Users
+        public async Task<UserLikedReview?> IsReviewLikedAsync(Guid UserId, Guid ReviewId) =>
+            await _context.UserLikedReviews
                 .AsNoTracking()
-                .Where(u => u.Id == UserId)
-                .SelectMany(u => u.LikedLists)
-                .FirstOrDefaultAsync(ul => ul.Id == ListId);
+                .Where(ulr => ulr.UserId == UserId && ulr.ReviewId == ReviewId)
+                .FirstOrDefaultAsync();
+
+        public async Task<UserLikedList?> IsListLikedAsync(Guid UserId, Guid ListId) =>
+            await _context.UserLikedLists
+                .AsNoTracking()
+                .Where(ull => ull.UserId == UserId && ull.ListId == ListId)
+                .FirstOrDefaultAsync();
 
         public async Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId)
         {
