@@ -106,7 +106,7 @@ const UserReviews = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: userId == user?.userId ? 'Your reviews' : `${author.authorName}'s reviews`,
+      headerTitle: userId == user?.userId ? 'Your reviews' : author.authorName !== '' ? `${author.authorName}'s reviews` : '',
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (

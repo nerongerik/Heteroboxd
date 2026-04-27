@@ -320,20 +320,20 @@ namespace Heteroboxd.Shared.Repository
         {
             var ReviewsQuery = _context.UserLikedReviews
                 .AsNoTracking()
-                .Where(ul => ul.UserId == UserId)
-                .Select(ul => ul.ReviewId)
+                .Where(ulr => ulr.UserId == UserId)
+                .OrderByDescending(ulr => ulr.Date).ThenBy(ulr => ulr.Id)
+                .Select(ulr => ulr.ReviewId)
                 .Join(_context.Reviews, reviewId => reviewId, r => r.Id, (_, r) => r)
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
-                .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
-                .OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id);
+                .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u });
 
             var ListsQuery = _context.UserLikedLists
                 .AsNoTracking()
-                .Where(ul => ul.UserId == UserId)
-                .Select(ul => ul.ListId)
+                .Where(ull => ull.UserId == UserId)
+                .OrderByDescending(ull => ull.Date).ThenBy(ull => ull.Id)
+                .Select(ull => ull.ListId)
                 .Join(_context.UserLists, listId => listId, ul => ul.Id, (_, ul) => ul)
-                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
-                .OrderByDescending(x => x.ul.LikeCount).ThenBy(x => x.ul.Id);
+                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u });
 
             var ReviewCount = ReviewsPage > 0 ? await ReviewsQuery.CountAsync() : 0;
             var ListCount = ListsPage > 0 ? await ListsQuery.CountAsync() : 0;
