@@ -1,6 +1,8 @@
-import { Animated, Image, Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Animated, Image, Modal, Platform, Pressable, StyleSheet, View } from 'react-native'
 import { Colors } from '../constants/colors'
+import HText from '../components/htext'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as Application from 'expo-application'
 
 const SideNav = ({ menuShown, closeMenu, translateX, width, children, footerImage }) => {
   const insets = useSafeAreaInsets()
@@ -15,8 +17,9 @@ const SideNav = ({ menuShown, closeMenu, translateX, width, children, footerImag
           {children}
         </View>
         {footerImage && (
-          <View style={{ flex: 0.25, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flex: 0.25, alignItems: 'center', justifyContent: 'flex-start' }}>
             <Image source={footerImage} style={{ width: 175, height: 175, resizeMode: 'contain' }} />
+            {Platform.OS !== 'web' && <HText style={{color: Colors.text, fontWeight: '300', fontSize: 12}}>version {Application.nativeApplicationVersion}</HText>}
           </View>
         )}
       </Animated.View>
