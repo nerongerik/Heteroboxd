@@ -217,14 +217,16 @@ const Home = () => {
   const panResponder = useMemo(() => Platform.OS !== 'web' ? PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
       const { dx, dy } = gestureState
-      return dx > 0 && Math.abs(dx) > Math.abs(dy)
+      return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10
     },
     onPanResponderRelease: (evt, gestureState) => {
       if (gestureState.dx > 0) {
         openMenu()
+      } else if (gestureState.dx < 0 && !menuShown) {
+        router.push('/search')
       }
     },
-  }) : null, [openMenu])
+  }) : null, [openMenu, router, menuShown])
 
   return (
     <>
@@ -244,7 +246,7 @@ const Home = () => {
             closeMenu={closeMenu} 
             translateX={translateX} 
             width={width} 
-            footerImage={require('../assets/foreground.png')}
+            footerImage={require('../assets/footer.png')}
           >
             <View style={{flex: 1, justifyContent: 'flex-start', paddingLeft: 5}}>
               <Pressable onPress={() => navPress(`/films/explore`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
