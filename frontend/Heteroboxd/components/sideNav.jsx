@@ -17,9 +17,9 @@ const SideNav = ({ menuShown, closeMenu, translateX, width, children, footerImag
           {children}
         </View>
         {footerImage && (
-          <View style={{ flex: 0.25, alignItems: 'center', justifyContent: 'flex-start' }}>
-            <Image source={footerImage} style={{ width: 175, height: 175, resizeMode: 'contain' }} />
-            {Platform.OS !== 'web' && <HText style={{color: Colors.text, fontWeight: '300', fontSize: 12}}>version {Application.nativeApplicationVersion}</HText>}
+          <View style={{ flex: 0.25, alignItems: 'center', justifyContent: 'center' }}>
+            <Image source={footerImage} style={{ width: 125, height: 125, resizeMode: 'contain' }} />
+            {Platform.OS !== 'web' && <HText style={{color: Colors.text, fontWeight: '300', fontSize: 12, marginTop: -10 }}>version {Application.nativeApplicationVersion}</HText>}
           </View>
         )}
       </Animated.View>
