@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using EFCore.BulkExtensions;
+//using EFCore.BulkExtensions;
 using Microsoft.IdentityModel.Tokens;
-using System.Collections.Concurrent;
+//using System.Collections.Concurrent;
 //using FirebaseAdmin;
 //using Google.Apis.Auth.OAuth2;
 
@@ -92,6 +92,7 @@ builder.Services.AddScoped<ICelebrityRepository, CelebrityRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserListRepository, UserListRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IImportJobRepository, ImportJobRepository>();
 
 //service config
 builder.Services.AddScoped<IFilmService, FilmService>();
@@ -102,6 +103,7 @@ builder.Services.AddScoped<ICelebrityService, CelebrityService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IImportJobService, ImportJobService>();
 builder.Services.AddScoped<ITMDBParser, TMDBParser>();
 
 builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>

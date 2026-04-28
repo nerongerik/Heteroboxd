@@ -12,10 +12,10 @@ namespace Heteroboxd.Maintenance.Background
 {
     public interface IMaintanenceExecutor
     {
-        /*Task ExecuteCountryUpdate(IServiceProvider _provider, CancellationToken CT);*/
         Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteUserPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT);
+        Task ExecuteImportJobPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCountrySync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteTrendingSync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCelebritySync(IServiceProvider _provider, CancellationToken CT);
@@ -24,76 +24,6 @@ namespace Heteroboxd.Maintenance.Background
 
     public class MaintanenceExecutor : IMaintanenceExecutor
     {
-        /*public async Task ExecuteCountryUpdate(IServiceProvider _provider, CancellationToken CT)
-        {
-            using var _scope = _provider.CreateScope();
-            var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
-
-            var Stale = new HashSet<string>()
-            {
-                "XK", "AN", "BU", "CS", "SU", "TP", "XC", "XG", "XI", "YU", "ZR"
-            };
-
-            var ToBeUpdated = await _context.Films
-                .AsNoTracking()
-                .Where(f => f.Country.Any(c => Stale.Contains(c)))
-                .ToListAsync(CT);
-
-            foreach (var Film in ToBeUpdated)
-            {
-                var NewCodes = new List<string>();
-                foreach (var Country in Film.Country)
-                {
-                    var NewCode = "";
-                    switch (Country)
-                    {
-                        case null:
-                            NewCode = "XX";
-                            break;
-                        case "XK":
-                        case "YU":
-                        case "CS":
-                            NewCode = "RS";
-                            break;
-                        case "AN":
-                            NewCode = "NL";
-                            break;
-                        case "BU":
-                            NewCode = "MM";
-                            break;
-                        case "SU":
-                            NewCode = "RU";
-                            break;
-                        case "TP":
-                            NewCode = "TL";
-                            break;
-                        case "XC":
-                            NewCode = "CZ";
-                            break;
-                        case "XG":
-                            NewCode = "DE";
-                            break;
-                        case "XI":
-                            NewCode = "IE";
-                            break;
-                        case "ZR":
-                            NewCode = "CD";
-                            break;
-                        default:
-                            NewCode = Country;
-                            break;
-                    }
-                    if (!NewCodes.Contains(NewCode)) NewCodes.Add(NewCode);
-                }
-                Film.Country = NewCodes;
-            }
-            await _context.BulkUpdateAsync(ToBeUpdated, new BulkConfig
-            {
-                UpdateByProperties = [nameof(Film.Id)],
-                PropertiesToIncludeOnUpdate = [nameof(Film.Country)]
-            });
-        }*/
-
         public async Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
@@ -133,6 +63,24 @@ namespace Heteroboxd.Maintenance.Background
 
             await _context.Notifications
                 .Where(n => n.Date.AddDays(30) < DateTime.UtcNow)
+                .ExecuteDeleteAsync(CT);
+        }
+
+        public async Task ExecuteImportJobPurge(IServiceProvider _provider, CancellationToken CT)
+        {
+            using var _scope = _provider.CreateScope();
+            var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
+            var _r2 = _scope.ServiceProvider.GetRequiredService<IR2Handler>();
+
+            var Keys = await _context.ImportJobs
+                .Where(ij => ij.Status == Shared.Models.Enums.ImportJobStatus.Completed || (ij.Status == Shared.Models.Enums.ImportJobStatus.Failed && ij.Date.AddDays(7) < DateTime.UtcNow))
+                .Select(ij => ij.Key)
+                .ToListAsync(CT);
+
+            foreach (var k in Keys) await _r2.DeleteImportJobByKey(k);
+
+            await _context.ImportJobs
+                .Where(ij => ij.Status == Shared.Models.Enums.ImportJobStatus.Completed || (ij.Status == Shared.Models.Enums.ImportJobStatus.Failed && ij.Date.AddDays(7) < DateTime.UtcNow))
                 .ExecuteDeleteAsync(CT);
         }
 

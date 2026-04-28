@@ -1,3 +1,3 @@
 export const BaseUrl = {
-    api: "https://heteroboxdapi-production.up.railway.app/api"
+    api: "http://192.168.0.6:8080/api"
 }

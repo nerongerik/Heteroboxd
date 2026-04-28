@@ -50,9 +50,6 @@ _logger.LogInformation("=== Maintenance job started at {Time} UTC ===", DateTime
 
 try
 {
-    /*_logger.LogInformation("UPDATING STALE COUNTRIES...");
-    await _executor.ExecuteCountryUpdate(_provider, _ct);*/
-
     _logger.LogInformation("REMOVING INVALID REFRESH TOKENS...");
     await _executor.ExecuteRefreshPurge(_provider, _ct);
 
@@ -61,6 +58,9 @@ try
 
     _logger.LogInformation("REMOVING OLD NOTIFICATIONS...");
     await _executor.ExecuteNotificationPurge(_provider, _ct);
+
+    _logger.LogInformation("REMOVING FINISHED IMPORTS FROM QUEUE...");
+    await _executor.ExecuteImportJobPurge(_provider, _ct);
 
     if (DateTime.UtcNow.Day == 1)
     {
