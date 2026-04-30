@@ -27,7 +27,7 @@ namespace Heteroboxd.API.Controller
             _logger.LogInformation($"GetImportJobStatus endpoint hit for UserId: {UserId}");
             try
             {
-                return Ok(await _service.GetImportJobStatus(UserId!));
+                return Ok((await _service.GetImportJobStatus(UserId!)).ToString().ToUpper());
             }
             catch (KeyNotFoundException)
             {
@@ -41,14 +41,14 @@ namespace Heteroboxd.API.Controller
 
         [HttpPost("sign")]
         [Authorize]
-        public async Task<IActionResult> SignImportJob(string FileName)
+        public async Task<IActionResult> SignImportJob()
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"SignImportJob endpoint hit for UserId: {UserId}");
             try
             {
-                var Response = await _service.SignImportJob(UserId!, FileName);
-                return Ok(new { Url = Response.PresignedUrl, Response.Key });
+                var Response = await _service.SignImportJob(UserId!);
+                return Ok(new { Url = Response.PresignedUrl });
             }
             catch (ArgumentException e)
             {
@@ -66,13 +66,13 @@ namespace Heteroboxd.API.Controller
 
         [HttpPost("enqueue")]
         [Authorize]
-        public async Task<IActionResult> EnqueueImportJob(string Key)
+        public async Task<IActionResult> EnqueueImportJob()
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"EnqueueImportJob endpoint hit for UserId: {UserId}");
             try
             {
-                await _service.EnqueueImportJob(UserId!, Key);
+                await _service.EnqueueImportJob(UserId!);
                 return Ok();
             }
             catch (ArgumentException e)

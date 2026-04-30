@@ -10,8 +10,8 @@ namespace Heteroboxd.API.Service
     public interface IImportJobService
     {
         Task<ImportJobStatus> GetImportJobStatus(string UserId);
-        Task<(string PresignedUrl, string Key)> SignImportJob(string UserId, string FileName);
-        Task EnqueueImportJob(string UserId, string Key);
+        Task<(string PresignedUrl, string Path)> SignImportJob(string UserId);
+        Task EnqueueImportJob(string UserId);
     }
 
     public class ImportJobService : IImportJobService
@@ -32,19 +32,18 @@ namespace Heteroboxd.API.Service
             return ImportJob.Status;
         }
 
-        public async Task<(string PresignedUrl, string Key)> SignImportJob(string UserId, string FileName)
+        public async Task<(string PresignedUrl, string Path)> SignImportJob(string UserId)
         {
             var Existing = await _repo.GetByUserAsync(Guid.Parse(UserId));
             if (Existing != null && Existing.Status != ImportJobStatus.Failed) throw new ArgumentException(Existing.Date.ToString("dd/MM/yyyy HH:mm"));
-            if (!FileName.EndsWith(".zip")) throw new KeyNotFoundException();
-            return await _r2Handler.GenerateImportJobPresignedUrl(Guid.Parse(UserId), FileName);
+            return await _r2Handler.GeneratePresignedUrl(Guid.Parse(UserId), 1);
         }
 
-        public async Task EnqueueImportJob(string UserId, string Key)
+        public async Task EnqueueImportJob(string UserId)
         {
             try
             {
-                await _repo.CreateAsync(new ImportJob(Guid.Parse(UserId), Key));
+                await _repo.CreateAsync(new ImportJob(Guid.Parse(UserId)));
             }
             catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
             {

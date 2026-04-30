@@ -1,4 +1,5 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36408.4
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -7,6 +8,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Heteroboxd.Shared", "Heteroboxd.Shared\Heteroboxd.Shared.csproj", "{A52906BD-2B57-4601-8D7E-11EA2CF9E274}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Heteroboxd.Maintenance", "Heteroboxd.Maintenance\Heteroboxd.Maintenance.csproj", "{F46219B9-682E-434E-A8BE-7B81A721C4EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Heteroboxd.Import", "Heteroboxd.Import\Heteroboxd.Import.csproj", "{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,6 +57,18 @@ Global
 		{F46219B9-682E-434E-A8BE-7B81A721C4EC}.Release|x64.Build.0 = Release|Any CPU
 		{F46219B9-682E-434E-A8BE-7B81A721C4EC}.Release|x86.ActiveCfg = Release|Any CPU
 		{F46219B9-682E-434E-A8BE-7B81A721C4EC}.Release|x86.Build.0 = Release|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Debug|x64.Build.0 = Debug|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Debug|x86.Build.0 = Debug|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Release|x64.ActiveCfg = Release|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Release|x64.Build.0 = Release|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Release|x86.ActiveCfg = Release|Any CPU
+		{1EF73A19-85F7-45BF-BD49-3A7EF25B0483}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

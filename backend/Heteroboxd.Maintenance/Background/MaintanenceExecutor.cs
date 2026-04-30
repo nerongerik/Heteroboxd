@@ -53,7 +53,7 @@ namespace Heteroboxd.Maintenance.Background
                 .Where(u => UnverifiedIds.Contains(u.Id))
                 .ExecuteDeleteAsync(CT);
 
-            foreach (var id in UnverifiedIds) await _r2.DeleteByUser(id);
+            foreach (var id in UnverifiedIds) await _r2.DeleteByUser(id, 0);
         }
 
         public async Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT)
@@ -72,12 +72,12 @@ namespace Heteroboxd.Maintenance.Background
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
             var _r2 = _scope.ServiceProvider.GetRequiredService<IR2Handler>();
 
-            var Keys = await _context.ImportJobs
+            var UserIds = await _context.ImportJobs
                 .Where(ij => ij.Status == Shared.Models.Enums.ImportJobStatus.Completed || (ij.Status == Shared.Models.Enums.ImportJobStatus.Failed && ij.Date.AddDays(7) < DateTime.UtcNow))
-                .Select(ij => ij.Key)
+                .Select(ij => ij.UserId)
                 .ToListAsync(CT);
 
-            foreach (var k in Keys) await _r2.DeleteImportJobByKey(k);
+            foreach (var id in UserIds) await _r2.DeleteByUser(id, 1);
 
             await _context.ImportJobs
                 .Where(ij => ij.Status == Shared.Models.Enums.ImportJobStatus.Completed || (ij.Status == Shared.Models.Enums.ImportJobStatus.Failed && ij.Date.AddDays(7) < DateTime.UtcNow))

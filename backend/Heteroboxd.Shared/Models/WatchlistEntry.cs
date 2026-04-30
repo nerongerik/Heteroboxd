@@ -14,5 +14,13 @@
             this.FilmId = FilmId;
             this.UserId = UserId;
         }
+
+        public WatchlistEntry(DateTime Date, int FilmId, Guid UserId)
+        {
+            this.Id = Guid.NewGuid();
+            this.Date = Date;
+            this.FilmId = FilmId;
+            this.UserId = UserId;
+        }
     }
 }

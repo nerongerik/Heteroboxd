@@ -31,6 +31,21 @@ namespace Heteroboxd.Shared.Models
             this.FilmId = FilmId;
         }
 
+        public Review(double Rating, string? Text, DateTime Date, int Flags, bool Spoiler, Guid AuthorId, int FilmId)
+        {
+            this.Id = Guid.NewGuid();
+            this.Rating = Rating;
+            this.Text = Text;
+            this.Date = Date;
+            this.Flags = Flags;
+            this.Spoiler = Spoiler;
+            this.NotificationsOn = true;
+            this.LikeCount = 0;
+            this.CommentCount = 0;
+            this.AuthorId = AuthorId;
+            this.FilmId = FilmId;
+        }
+
         public void UpdateFields(UpdateReviewRequest ReviewRequest)
         {
             this.Rating = ReviewRequest.Rating ?? this.Rating;

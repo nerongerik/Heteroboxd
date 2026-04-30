@@ -16,5 +16,14 @@
             Date = DateTime.UtcNow;
             TimesWatched = 1;
         }
+
+        public UserWatchedFilm(Guid UserId, int FilmId, DateTime Date)
+        {
+            this.Id = Guid.NewGuid();
+            this.UserId = UserId;
+            this.FilmId = FilmId;
+            this.Date = Date;
+            this.TimesWatched = 1;
+        }
     }
 }

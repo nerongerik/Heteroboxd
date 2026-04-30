@@ -4,7 +4,7 @@ import HText from '../components/htext'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Application from 'expo-application'
 
-const SideNav = ({ menuShown, closeMenu, translateX, width, children, footerImage }) => {
+const SideNav = ({ menuShown, closeMenu, translateX, width, height, children, footerImage }) => {
   const insets = useSafeAreaInsets()
   return (
     <Modal transparent visible={menuShown} animationType='fade' onRequestClose={closeMenu}>
@@ -12,13 +12,13 @@ const SideNav = ({ menuShown, closeMenu, translateX, width, children, footerImag
         style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.8)' }]}
         onPress={closeMenu}
       />
-      <Animated.View style={[styles.menu, { transform: [{ translateX }], width: width / 1.5, height: '100%', alignSelf: 'left', paddingTop: insets.top + 5, paddingBottom: insets.bottom }]}>
+      <Animated.View style={[styles.menu, { transform: [{ translateX }], width: width / 1.25, height: '100%', alignSelf: 'left', paddingTop: insets.top + 5, paddingBottom: insets.bottom }]}>
         <View style={{ flex: 0.75 }}>
           {children}
         </View>
         {footerImage && (
           <View style={{ flex: 0.25, alignItems: 'center', justifyContent: 'center' }}>
-            <Image source={footerImage} style={{ width: 125, height: 125, resizeMode: 'contain' }} />
+            <Image source={footerImage} style={{ width: height < 700 ? 100 : 120, height: height < 700 ? 100 : 120, resizeMode: 'contain' }} />
             {Platform.OS !== 'web' && <HText style={{color: Colors.text, fontWeight: '300', fontSize: 12, marginTop: -10 }}>version {Application.nativeApplicationVersion}</HText>}
           </View>
         )}

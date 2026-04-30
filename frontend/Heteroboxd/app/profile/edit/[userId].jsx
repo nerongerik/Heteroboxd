@@ -144,7 +144,7 @@ const ProfileEdit = () => {
             const picRes = await fetch(json.presignedUrl, {
               method: 'PUT',
               body: blob,
-              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
+              headers: { 'Content-Type': 'image/png' },
             })
             if (!picRes.ok) {
               setServer(Response.internalServerError)
@@ -154,7 +154,7 @@ const ProfileEdit = () => {
             const picRes = await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
               httpMethod: 'PUT',
               uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
+              headers: { 'Content-Type': 'image/png' },
             })
             if (!(picRes.status >= 200 && picRes.status < 300)) {
               setServer(Response.internalServerError)

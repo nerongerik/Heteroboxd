@@ -267,7 +267,7 @@ namespace Heteroboxd.API.Service
             string? PresignedUrl = null;
             if (UserUpdate.GeneratePresign)
             {
-                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id);
+                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id, 0);
                 User.PictureUrl = ImgPath;
                 PresignedUrl = Url;
             }
@@ -464,7 +464,7 @@ namespace Heteroboxd.API.Service
         public async Task DeleteUser(string UserId)
         {
             var Id = Guid.Parse(UserId);
-            await _r2Handler.DeleteByUser(Id);
+            await _r2Handler.DeleteByUser(Id, 0);
             await _repo.DeleteAsync(Id);
             await _authService.RevokeAllUserTokens(Id);
         }
