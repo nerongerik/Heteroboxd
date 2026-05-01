@@ -16,6 +16,7 @@ namespace Heteroboxd.Shared.Models
         public int Flags { get; set; }
         public Guid? PinnedListId { get; set; }
         public Guid? PinnedReviewId { get; set; }
+        public bool FromLetterboxd { get; set; }
 
         public User()
         {
@@ -26,6 +27,7 @@ namespace Heteroboxd.Shared.Models
             Flags = 0;
             PinnedListId = null;
             PinnedReviewId = null;
+            FromLetterboxd = false;
         }
 
         public User(string Name, string Email, string? Bio, string Gender) : this()

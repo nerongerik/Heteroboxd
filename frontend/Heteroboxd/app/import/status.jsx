@@ -148,10 +148,10 @@ const Status = () => {
             The current status of your data import is{'\n'}<HText style={{color: COLOR_MAP[status], fontWeight: 'bold', fontSize: widescreen ? 32 : 24}}>{status}</HText>
           </HText>
           <HText style={{marginTop: widescreen ? 30 : 20, marginBottom: 10, lineHeight: 30, color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: '400', textAlign: 'center'}}>{MSG_MAP[status]}</HText>
-          <Pressable onPress={() => loadStatus(true)} style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', backgroundColor: Colors.heteroboxd, padding: 10, borderRadius: 5}}>
+          {!['COMPLETED', 'FAILED'].includes(status) && <Pressable onPress={() => loadStatus(true)} style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', backgroundColor: Colors.heteroboxd, padding: 10, borderRadius: 5}}>
             <HText style={{color: Colors.text_button, fontSize: widescreen ? 18 : 14}}>RECHECK </HText>
             <Refresh width={widescreen ? 22 : 18} height={widescreen ? 22 : 18} />
-          </Pressable>
+          </Pressable>}
           <View style={{height: widescreen ? 175 : 50}} />
           <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: '400', textAlign: 'center', lineHeight: 24}}>
             the <HText style={{ color: Colors.heteroboxd, fontWeight: '400' }}>L</HText> in Letterboxd stands for 

@@ -139,6 +139,7 @@
         public string? FilmTitle { get; set; }
         public string FilmDate { get; set; }
         public string? FilmPosterUrl { get; set; }
+        public bool FromLetterboxd { get; set; }
 
         public ReviewInfoResponse(Review Review, User Author, Film Film)
         {
@@ -151,6 +152,7 @@
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
             this.CommentCount = Review.CommentCount;
+            this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
@@ -175,6 +177,7 @@
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
             this.CommentCount = Review.CommentCount;
+            this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
@@ -196,6 +199,7 @@
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
             this.CommentCount = Review.CommentCount;
+            this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Review.AuthorId.ToString();
 
@@ -216,6 +220,7 @@
             this.NotificationsOn = Review.NotificationsOn;
             this.LikeCount = Review.LikeCount;
             this.CommentCount = Review.CommentCount;
+            this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Review.AuthorId.ToString();
 
@@ -254,6 +259,7 @@
         public string AuthorPictureUrl { get; set; }
         public bool Admin { get; set; }
         public bool Pinned { get; set; }
+        public bool FromLetterboxd { get; set; }
 
         public UserListInfoResponse(UserList List, User Author)
         {
@@ -272,6 +278,7 @@
             this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedListId == List.Id;
+            this.FromLetterboxd = List.FromLetterboxd;
         }
 
         public UserListInfoResponse(UserList List, List<JoinResponse<ListEntry, Film>?> Entries, User Author)
@@ -291,6 +298,7 @@
             this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedListId == List.Id;
+            this.FromLetterboxd = List.FromLetterboxd;
         }
     }
 
@@ -368,6 +376,7 @@
         public int WatchedCount { get; set; }
         public string? PinnedListId { get; set; }
         public string? PinnedReviewId { get; set; }
+        public bool FromLetterboxd { get; set; }
 
         public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
         {
@@ -389,6 +398,7 @@
             this.WatchedCount = WatchedFilmCount;
             this.PinnedListId = User.PinnedListId?.ToString();
             this.PinnedReviewId = User.PinnedReviewId?.ToString();
+            this.FromLetterboxd = User.FromLetterboxd;
         }
     }
 

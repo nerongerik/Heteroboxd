@@ -72,12 +72,15 @@ namespace Heteroboxd.Maintenance.Background
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
             var _r2 = _scope.ServiceProvider.GetRequiredService<IR2Handler>();
 
-            var UserIds = await _context.ImportJobs
+            var Ids = await _context.ImportJobs
                 .Where(ij => ij.Status == Shared.Models.Enums.ImportJobStatus.Completed || (ij.Status == Shared.Models.Enums.ImportJobStatus.Failed && ij.Date.AddDays(7) < DateTime.UtcNow))
                 .Select(ij => ij.UserId)
                 .ToListAsync(CT);
 
-            foreach (var id in UserIds) await _r2.DeleteByUser(id, 1);
+            foreach (var id in Ids)
+            {
+                await _r2.DeleteByUser(id, 1);
+            }
 
             await _context.ImportJobs
                 .Where(ij => ij.Status == Shared.Models.Enums.ImportJobStatus.Completed || (ij.Status == Shared.Models.Enums.ImportJobStatus.Failed && ij.Date.AddDays(7) < DateTime.UtcNow))
