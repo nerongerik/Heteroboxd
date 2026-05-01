@@ -406,21 +406,22 @@ namespace Heteroboxd.Import.Background
                 return Cached == 0 ? null : Cached;
             }
 
+            if (Year == 0)
+            {
+                MatchedIds[(Title, Year)] = 0;
+                return null;
+            }
+
+            //use full Date object instead of just year to levarage index on Film.Date
+            var YearStart = new DateTime(Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var YearEnd = new DateTime(Year + 1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
             var Candidate = await _context.Films
                 .AsNoTracking()
-                .Where(f => EF.Functions.ILike(f.Title, $"%{Title}%") && f.Date.Year == Year)
+                .Where(f => f.Date >= YearStart && f.Date < YearEnd && EF.Functions.TrigramsSimilarity(f.Title, Title) > 0.5)
+                .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Title))
                 .Select(f => (int?)f.Id)
                 .FirstOrDefaultAsync(CT);
-
-            if (Candidate == null)
-            {
-                Candidate = await _context.Films
-                    .AsNoTracking()
-                    .Where(f => f.Date.Year == Year && EF.Functions.TrigramsSimilarity(f.Title, Title) > 0.5)
-                    .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Title))
-                    .Select(f => (int?)f.Id)
-                    .FirstOrDefaultAsync(CT);
-            }
 
             MatchedIds[(Title, Year)] = Candidate ?? 0;
             return Candidate;
