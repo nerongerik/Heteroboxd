@@ -155,10 +155,11 @@ namespace Heteroboxd.API.Service
                 var Key = Convert.FromBase64String(_config["Jwt:Key"]!);
                 var Claims = new List<Claim>
                 {
-                new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
-                new Claim("name", User.Name!),
-                new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
-                new Claim("admin", User.IsAdmin.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
+                    new Claim("name", User.Name!),
+                    new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
+                    new Claim("admin", User.IsAdmin.ToString()),
+                    new Claim("lb", User.FromLetterboxd.ToString())
                 };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);

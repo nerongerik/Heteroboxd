@@ -143,6 +143,46 @@ const Import = () => {
     )
   }
 
+  if (user.lb) {
+    return (
+      <>
+      <Head>
+        <title>Import your Data from Letterboxd</title>
+        <meta name="description" content="Continue where you left off! Heteroboxd lets you import all your Letterboxd reviews, lists, watched films, watchlist, and profile data." />
+        <meta property="og:title" content="Import your Data from Letterboxd" />
+        <meta property="og:description" content="Continue where you left off! Heteroboxd lets you import all your Letterboxd reviews, lists, watched films, watchlist, and profile data." />
+        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
+      </Head>
+      <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
+        <ScrollView contentContainerStyle={{width: Math.min(width*0.9, 1000), flexGrow: 1, justifyContent: 'center', alignItems: 'center', alignSelf: 'center'}} showsVerticalScrollIndicator={false}>
+          <HText style={{fontSize: widescreen ? 32 : 24, fontWeight: '700'}}>
+            <HText style={{color: '#ffffff'}}>Migrate from </HText><Link href='https://letterboxd.com/settings/data/' target='_blank'><HText style={{color: '#ff8000'}}>Let</HText><HText style={{color: '#00e054'}}>ter</HText><HText style={{color: '#40bcf4'}}>boxd</HText></Link>
+          </HText>
+          
+          {/*TUTORIAL VIDEO*/}
+
+          <HText style={{marginTop: widescreen ? 200 : 100, marginBottom: 20, textAlign: 'center', color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 24 : 18}}>Congratulations for making the switch from Letterboxd to Heteroboxd - we knew you had it in you!</HText>
+          <HText style={{marginBottom: widescreen ? 180 : 80, textAlign: 'center', color: Colors.text, fontWeight: '500', fontSize: widescreen ? 16 : 10}}>Was there a problem with your import? Feel free to <Link href='/contact' style={{color: Colors.heteroboxd}}>contact us</Link> regarding any issues, or to request another import attempt.</HText>
+          
+          
+          <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: '400', textAlign: 'center', lineHeight: 24}}>
+            the <HText style={{ color: Colors.heteroboxd, fontWeight: '400' }}>L</HText> in Letterboxd stands for 
+            <HText style={{ color: Colors.heteroboxd, fontWeight: '400' }}> Loser</HText>
+            {'\n'}
+            the <HText style={{ color: Colors._heteroboxd, fontWeight: '400' }}>H</HText> in Heteroboxd stands for 
+            <HText style={{ color: Colors._heteroboxd, fontWeight: '400' }}> Winner</HText>
+            {'\n'}
+            <HText style={{ color: Colors.text_title, fontSize: widescreen ? 20 : 16, fontWeight: '700' }}>
+              choose wisely.
+            </HText>
+          </HText>
+        </ScrollView>
+      </View>
+      </>
+    )
+  }
+
   return (
     <>
     <Head>

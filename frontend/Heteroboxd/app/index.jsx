@@ -174,12 +174,14 @@ const Home = () => {
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        await new Promise(s => setTimeout(s, 1500))
-        setShowLb(true)
-        await new Promise(s => setTimeout(s, 300000))
-        setShowLb(false)
+        if (!user?.lb) {
+          await new Promise(s => setTimeout(s, 1500))
+          setShowLb(true)
+          await new Promise(s => setTimeout(s, 300000))
+          setShowLb(false)
+        }
       })()
-    }, [])
+    }, [user])
   )
 
   const widescreen = useMemo(() => width > 1000, [width])

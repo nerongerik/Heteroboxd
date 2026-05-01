@@ -39,6 +39,11 @@ const Status = () => {
       router.replace('login')
     }
     if (fromRechek) setStatus(null)
+    if (user.lb && status !== 'COMPLETED') {
+      setStatus('NONE')
+      setServer(Response.ok)
+      return
+    }
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/imports/status`, {

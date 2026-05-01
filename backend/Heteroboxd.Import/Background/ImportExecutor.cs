@@ -50,6 +50,9 @@ namespace Heteroboxd.Import.Background
                     ij => ImportJobStatus.Running
                 ));
 
+            //given the lack of creativity of an average Letterboxd user, it's a safe bet that most of their imports will share films
+            var MatchedIds = new Dictionary<(string Name, int Year), int>();
+
             foreach (var uid in PendingJobs)
             {
                 var Data = await _r2Handler.DownloadUserData(uid);
@@ -69,13 +72,13 @@ namespace Heteroboxd.Import.Background
                 try
                 {
                     await ParseLetterboxdProfile(await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "profile.csv")), uid, _context, CT);
-                    await ParseLetterboxdWatchlist(await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "watchlist.csv")), uid, _context, CT);
-                    await ParseLetterboxdWatched(await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "watched.csv")), uid, _context, CT);
-                    await ParseLetterboxdRatingsAndReviews(await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "ratings.csv")), await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "reviews.csv")), uid, _context, CT);
+                    await ParseLetterboxdWatchlist(MatchedIds, await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "watchlist.csv")), uid, _context, CT);
+                    await ParseLetterboxdWatched(MatchedIds, await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "watched.csv")), uid, _context, CT);
+                    await ParseLetterboxdRatingsAndReviews(MatchedIds, await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "ratings.csv")), await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "reviews.csv")), uid, _context, CT);
                     foreach (var e in Zip.Entries.Where(ze => ze.FullName.StartsWith("lists/")))
                     {
                         var (Header, Entries) = await ParseListCsv(e);
-                        await ParseLetterboxdList(Header, Entries, uid, _context, CT);
+                        await ParseLetterboxdList(MatchedIds, Header, Entries, uid, _context, CT);
                     }
 
                     await _context.ImportJobs
@@ -144,7 +147,7 @@ namespace Heteroboxd.Import.Background
                 );
         }
         
-        private async Task ParseLetterboxdWatchlist(Dictionary<string, List<string>>? Watchlist, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
+        private async Task ParseLetterboxdWatchlist(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, List<string>>? Watchlist, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
         {
             if (Watchlist == null) return;
 
@@ -154,7 +157,7 @@ namespace Heteroboxd.Import.Background
             for (int i = 0; i < Watchlist["Date"].Count; i++)
             {
                 var Year = int.TryParse(Watchlist["Year"][i], out int Temp) ? Temp : 0;
-                var FilmId = await FuzzyMatchFilm(Watchlist["Name"][i], Year, _context, CT);
+                var FilmId = await FuzzyMatchFilm(MatchedIds, Watchlist["Name"][i], Year, _context, CT);
                 Lookup[(Watchlist["Name"][i], Year)] = (Watchlist["Date"][i], FilmId ?? 0);
             }
 
@@ -177,7 +180,7 @@ namespace Heteroboxd.Import.Background
             });
         }
         
-        private async Task ParseLetterboxdWatched(Dictionary<string, List<string>>? Watched, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
+        private async Task ParseLetterboxdWatched(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, List<string>>? Watched, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
         {
             if (Watched == null) return;
 
@@ -187,7 +190,7 @@ namespace Heteroboxd.Import.Background
             for (int i = 0; i < Watched["Date"].Count; i++)
             {
                 var Year = int.TryParse(Watched["Year"][i], out int Temp) ? Temp : 0;
-                var FilmId = await FuzzyMatchFilm(Watched["Name"][i], Year, _context, CT);
+                var FilmId = await FuzzyMatchFilm(MatchedIds, Watched["Name"][i], Year, _context, CT);
 
                 if (!Lookup.TryAdd((Watched["Name"][i], Year), (Watched["Date"][i], 1, FilmId ?? 0)))
                 {
@@ -225,17 +228,17 @@ namespace Heteroboxd.Import.Background
             }
         }
 
-        private async Task ParseLetterboxdRatingsAndReviews(Dictionary<string, List<string>>? Ratings, Dictionary<string, List<string>>? Reviews, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
+        private async Task ParseLetterboxdRatingsAndReviews(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, List<string>>? Ratings, Dictionary<string, List<string>>? Reviews, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
         {
             if (Ratings == null && Reviews == null) return;
 
-            Console.WriteLine($"{UserId}: Parsing {Ratings?["Date"].Count ?? 0 + Reviews?["Date"].Count ?? 0} Ratings and Reviews...");
+            Console.WriteLine($"{UserId}: Parsing {(Ratings?["Date"].Count ?? 0) + (Reviews?["Date"].Count ?? 0)} Ratings and Reviews...");
 
             var Lookup = new Dictionary<(string Name, int Year), (string Date, double Rating, string? Text, int FilmId)>();
             for (int i = 0; i < (Ratings?["Date"].Count ?? 0); i++)
             {
                 var Year = int.TryParse(Ratings!["Year"][i], out int Temp) ? Temp : 0;
-                var FilmId = await FuzzyMatchFilm(Ratings!["Name"][i], Year, _context, CT);
+                var FilmId = await FuzzyMatchFilm(MatchedIds, Ratings!["Name"][i], Year, _context, CT);
                 Lookup[(Ratings!["Name"][i], Year)] = (Ratings!["Date"][i], double.TryParse(Ratings!["Rating"][i], out double Rating) ? Rating : 0.0, null, FilmId ?? 0);
             }
 
@@ -251,7 +254,7 @@ namespace Heteroboxd.Import.Background
 
                     if (!Lookup.TryGetValue((Name, Year), out var Existing))
                     {
-                        var FilmId = await FuzzyMatchFilm(Name, Year, _context, CT);
+                        var FilmId = await FuzzyMatchFilm(MatchedIds, Name, Year, _context, CT);
                         Lookup[(Name, Year)] = (Date, Rating, Text, FilmId ?? 0);
                     }
                     else
@@ -296,7 +299,7 @@ namespace Heteroboxd.Import.Background
             }
         }
 
-        private async Task ParseLetterboxdList(Dictionary<string, string>? Header, Dictionary<string, List<string>>? Entries, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
+        private async Task ParseLetterboxdList(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, string>? Header, Dictionary<string, List<string>>? Entries, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
         {
             if (Header == null || Entries == null) return;
 
@@ -315,7 +318,7 @@ namespace Heteroboxd.Import.Background
             for (int i = 0; i < Entries["Position"].Count; i++)
             {
                 var Year = int.TryParse(Entries["Year"][i], out int Temp) ? Temp : 0;
-                var FilmId = await FuzzyMatchFilm(Entries["Name"][i], Year, _context, CT);
+                var FilmId = await FuzzyMatchFilm(MatchedIds, Entries["Name"][i], Year, _context, CT);
 
                 Lookup[(Entries["Name"][i], Year)] = (FilmId == null ? -1 : i + 1, FilmId ?? 0);
             }
@@ -394,21 +397,33 @@ namespace Heteroboxd.Import.Background
             return (HeaderRecords, EntryRecords);
         }
 
-        private async Task<int?> FuzzyMatchFilm(string Title, int Year, HeteroboxdContext _context, CancellationToken CT)
+        private async Task<int?> FuzzyMatchFilm(Dictionary<(string Name, int Year), int> MatchedIds, string Title, int Year, HeteroboxdContext _context, CancellationToken CT)
         {
+            Title = Title.Trim();
+
+            if (MatchedIds.TryGetValue((Title, Year), out var Cached))
+            {
+                return Cached == 0 ? null : Cached;
+            }
+
             var Candidate = await _context.Films
                 .AsNoTracking()
-                .Where(f => EF.Functions.ILike(f.Title, $"%{Title.Trim()}%") && f.Date.Year == Year)
+                .Where(f => EF.Functions.ILike(f.Title, $"%{Title}%") && f.Date.Year == Year)
                 .Select(f => (int?)f.Id)
                 .FirstOrDefaultAsync(CT);
 
-            if (Candidate != null) return Candidate;
-            else return await _context.Films
-                .AsNoTracking()
-                .Where(f => f.Date.Year == Year && EF.Functions.TrigramsSimilarity(f.Title, Title) > 0.5)
-                .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Title))
-                .Select(f => (int?)f.Id)
-                .FirstOrDefaultAsync(CT);
+            if (Candidate == null)
+            {
+                Candidate = await _context.Films
+                    .AsNoTracking()
+                    .Where(f => f.Date.Year == Year && EF.Functions.TrigramsSimilarity(f.Title, Title) > 0.5)
+                    .OrderByDescending(f => EF.Functions.TrigramsSimilarity(f.Title, Title))
+                    .Select(f => (int?)f.Id)
+                    .FirstOrDefaultAsync(CT);
+            }
+
+            MatchedIds[(Title, Year)] = Candidate ?? 0;
+            return Candidate;
         }
     }
 }
