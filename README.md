@@ -22,7 +22,9 @@ Heteroboxd is a **solo** project, and external contributions are not accepted.
 The repository is public for transparency and learning purposes only.
 
 ## Installation
-Heteroboxd 1.0.x is officially out! Check it out at https://heteroboxd.com
+Heteroboxd 1.2.x is officially out! \ 
+Check out the website at https://heteroboxd.com \
+Download the Android app at https://play.google.com/store/apps/details?id=com.nerongerik.heteroboxd
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
