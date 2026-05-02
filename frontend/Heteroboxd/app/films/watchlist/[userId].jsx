@@ -35,7 +35,7 @@ const Watchlist = () => {
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const listRef = useRef(null)
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
   const [ selected, setSelected ] = useState(null)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
@@ -77,6 +77,9 @@ const Watchlist = () => {
   }, [slideAnim2])
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     if (user?.userId !== userId || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
@@ -84,10 +87,8 @@ const Watchlist = () => {
     if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
-      if (loadingRef.current) return
       const jwt = await auth.getJwt()
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/users/watchlist?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -99,6 +100,7 @@ const Watchlist = () => {
         } else {
           setData(prev => ({...prev, page: json.page, entries: prev.entries.length > 1000 ? [...prev.entries.slice(-980), ...json.items] : [...prev.entries, ...json.items]}))
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -106,8 +108,6 @@ const Watchlist = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [user, userId, currentFilter, currentSort])
 
@@ -116,6 +116,7 @@ const Watchlist = () => {
       setServer(Response.forbidden)
       return
     }
+    lastPageRef.current = 0
     setServer(Response.loading)
     setData({ page: 1, entries: [], totalCount: 0 })
     try {
@@ -228,6 +229,7 @@ const Watchlist = () => {
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
+              lastPageRef.current = 0
               setData({ page: 1, entries: [], totalCount: 0 })
               setIsRefreshing(true)
               loadDataPage(1, true)
@@ -270,9 +272,9 @@ const Watchlist = () => {
           key={`${currentFilter.field}-${currentSort.field}`}
           context={'watchlist'}
           currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {closeMenu(); setData({ page: 1, entries: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
+          onFilterChange={(newFilter) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, entries: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
           currentSort={currentSort}
-          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, entries: [], totalCount: 0 }); setCurrentSort(newSort)}}
+          onSortChange={(newSort) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, entries: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>

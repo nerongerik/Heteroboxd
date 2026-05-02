@@ -98,7 +98,7 @@ namespace Heteroboxd.Import.Background
                 catch
                 {
                     await _context.ImportJobs
-                        .Where(ij => PendingJobs.Contains(ij.UserId))
+                        .Where(ij => ij.UserId == uid)
                         .ExecuteUpdateAsync(s => s.SetProperty(
                             ij => ij.Status,
                             ij => ImportJobStatus.Failed

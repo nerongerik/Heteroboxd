@@ -42,7 +42,7 @@ const ReviewWithComments = () => {
   const reviewLocalCopyRef = useRef(null)
   const likeRequestRef = useRef(0)
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const loadReviewData = useCallback(async (fromRefresh = false) => {
@@ -84,14 +84,15 @@ const ReviewWithComments = () => {
   }, [user, reviewId])
 
   const loadCommentsDataPage = useCallback(async (page, fromCreate = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     if (!review || (!fromCreate && review.commentCount === 0)) {
       return
     }
     setServer(Response.loading)
     try {
-      if (loadingRef.current) return
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/comments/review?ReviewId=${reviewId}&Page=${page}&PageSize=${PAGE_SIZE}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -101,6 +102,7 @@ const ReviewWithComments = () => {
         } else {
           setComments(prev => ({...prev, page: json.page, comments: prev.comments.length > 1000 ? [...prev.comments.slice(-980), ...json.items] : [...prev.comments, ...json.items]}))
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -112,8 +114,6 @@ const ReviewWithComments = () => {
       setComments({ page: 1, comments: [], totalCount: 0 })
       console.log('load comments failed; network error.')
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [reviewId, review?.id])
 
@@ -442,6 +442,7 @@ const ReviewWithComments = () => {
             refreshing={isRefreshing} 
             onRefresh={async () => {
               setReview(null)
+              lastPageRef.current = 0
               setComments({ page: 1, comments: [], totalCount: 0 })
               setIsRefreshing(true)
               await loadReviewData(true)

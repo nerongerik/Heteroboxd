@@ -21,12 +21,21 @@ const Relationships = () => {
   const [ server, setServer ] = useState(Response.initial)
   const router = useRouter()
   const requestRef = useRef(0)
-  const loadingRef = useRef(0)
+  const lastFollowersPageRef = useRef(0)
+  const lastFollowingPageRef = useRef(0)
+  const lastBlockedPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
 
   const loadData = useCallback(async (pages = {}, fromRefresh = false) => {
+    if (
+      (pages.followers !== 0 && pages.followers > 1 && lastFollowersPageRef.current >= pages.followers) &&
+      (pages.following !== 0 && pages.following > 1 && lastFollowingPageRef.current >= pages.following) &&
+      (pages.blocked !== 0 && pages.blocked > 1 && lastBlockedPageRef.current >= pages.blocked)
+    ) {
+      return
+    }
     if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     const params = new URLSearchParams({
@@ -36,9 +45,7 @@ const Relationships = () => {
       PageSize: PAGE_SIZE
     })
     try {
-      if (loadingRef.current) return
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/users/relationships?UserId=${userId}&${params}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -105,6 +112,9 @@ const Relationships = () => {
             }))
           }
         }
+        if (pages.followers !== 0) lastFollowersPageRef.current = pages.followers || 1
+        if (pages.following !== 0) lastFollowingPageRef.current = pages.following || 1
+        if (pages.blocked !== 0) lastBlockedPageRef.current = pages.blocked || 1
         setServer(Response.ok)
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
@@ -115,8 +125,6 @@ const Relationships = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [userId, isOwnProfile])
 
@@ -176,6 +184,9 @@ const Relationships = () => {
         pageSize={PAGE_SIZE}
         isRefreshing={isRefreshing}
         onRefresh={() => {
+          lastFollowersPageRef.current = 0
+          lastFollowingPageRef.current = 0
+          lastBlockedPageRef.current = 0
           setIsRefreshing(true)
           loadData({followers: 1, following: 1, blocked: 1}, true)
         }}

@@ -18,15 +18,20 @@ const UserLikes = () => {
   const router = useRouter()
   const navigation = useNavigation()
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastReviewPageRef = useRef(0)
+  const lastListPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const loadData = useCallback(async (pages = {}, fromRefresh = false) => {
+    if (
+      (pages.reviews !== 0 && pages.reviews > 1 && lastReviewPageRef.current >= pages.reviews) &&
+      (pages.lists !== 0 && pages.lists > 1 && lastListPageRef.current >= pages.lists)
+    ) {
+      return
+    }
     if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
-      if (loadingRef.current) return
-      loadingRef.current = true
       const params = new URLSearchParams({ ReviewsPage: pages.reviews || 1, ListsPage: pages.lists || 1, PageSize: PAGE_SIZE })
       const requestId = ++requestRef.current
       const res = await fetch(`${BaseUrl.api}/users/likes?UserId=${userId}&${params}`)
@@ -47,6 +52,8 @@ const UserLikes = () => {
         } else {
           setLists(prev => ({...prev, page: json.likedLists.page, items: prev.items.length > 250 ? [...prev.items.slice(-230), ...json.likedLists.items] : [...prev.items, ...json.likedLists.items]}))
         }
+        if (pages.reviews !== 0) lastReviewPageRef.current = pages.reviews || 1
+        if (pages.lists !== 0) lastListPageRef.current = pages.lists || 1
         setServer(Response.ok)
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
@@ -57,8 +64,6 @@ const UserLikes = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [userId])
 
@@ -97,6 +102,8 @@ const UserLikes = () => {
         pageSize={PAGE_SIZE}
         isRefreshing={isRefreshing}
         onRefresh={() => {
+          lastReviewPageRef.current = 0
+          lastListPageRef.current = 0
           setIsRefreshing(true)
           loadData({reviews: 1, lists: 1}, true)
         }}

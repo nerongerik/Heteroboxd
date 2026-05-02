@@ -37,7 +37,7 @@ const UserReviews = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
@@ -58,12 +58,13 @@ const UserReviews = () => {
   }, [slideAnim])
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     try {
-      if (loadingRef.current) return
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/reviews/user?UserId=${userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -78,6 +79,7 @@ const UserReviews = () => {
         } else {
           setData(prev => ({...prev, page: json.page, reviews: prev.reviews.length > 1000 ? [...prev.reviews.slice(-980), ...json.items] : [...prev.reviews, ...json.items]}))
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -85,8 +87,6 @@ const UserReviews = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [userId, currentFilter, currentSort])
 
@@ -204,6 +204,7 @@ const UserReviews = () => {
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
+              lastPageRef.current = 0
               setData({ page: 1, reviews: [], totalCount: 0 })
               setIsRefreshing(true)
               loadDataPage(1, true)
@@ -230,9 +231,9 @@ const UserReviews = () => {
           key={`${currentFilter.field}-${currentSort.field}`}
           context={'userReviews'}
           currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {closeMenu(); setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
+          onFilterChange={(newFilter) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
           currentSort={currentSort}
-          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentSort(newSort)}}
+          onSortChange={(newSort) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, reviews: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>
