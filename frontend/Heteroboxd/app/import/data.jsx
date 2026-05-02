@@ -116,15 +116,26 @@ const Import = () => {
         <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
         <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
       </Head>
-      <View style={{flex: 1, paddingBottom: 50, backgroundColor: Colors.background}}>
+      <View style={{flex: 1, paddingBottom: 20, backgroundColor: Colors.background}}>
         <ScrollView contentContainerStyle={{width: Math.min(width*0.9, 1000), flexGrow: 1, justifyContent: 'center', alignItems: 'center', alignSelf: 'center'}} showsVerticalScrollIndicator={false}>
           <HText style={{fontSize: widescreen ? 32 : 24, fontWeight: '700'}}>
             <HText style={{color: '#ffffff'}}>Migrate from </HText><Link href='https://letterboxd.com/settings/data/' target='_blank'><HText style={{color: '#ff8000'}}>Let</HText><HText style={{color: '#00e054'}}>ter</HText><HText style={{color: '#40bcf4'}}>boxd</HText></Link>
           </HText>
           
-          {/*TUTORIAL VIDEO*/}
+          <View style={{width: widescreen ? 560 : 280, height: widescreen ? 315 : 157.5, marginVertical: widescreen ? 50 : 20, alignSelf: 'center'}}>
+            <iframe
+              width="100%" 
+              height="100%" 
+              src="https://www.youtube.com/embed/wE1lGWe9qGY?si=FrQe8C7xZQXxfVVJ" 
+              title="WATCH THIS TUTORIAL VIDEO" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              referrerPolicy="strict-origin-when-cross-origin" 
+              allowFullScreen
+            />
+          </View>
 
-          <Link href='/login' style={{marginVertical: widescreen ? 200 : 100, textAlign: 'center', color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 24 : 18}}><HText style={{color: Colors.heteroboxd}}>SIGN IN</HText> or <HText style={{color: Colors._heteroboxd}}>JOIN</HText> Heteroboxd for <HText style={{color: Colors.text_title}}>FREE</HText> to import all your data from Letterboxd and access other members-only features!</Link>
+          <Link href='/login' style={{marginVertical: widescreen ? 50 : 20, textAlign: 'center', color: Colors.text, fontWeight: 'bold', fontSize: widescreen ? 24 : 18}}><HText style={{color: Colors.heteroboxd}}>SIGN IN</HText> or <HText style={{color: Colors._heteroboxd}}>JOIN</HText> Heteroboxd for <HText style={{color: Colors.text_title}}>FREE</HText> to import all your data from Letterboxd and access other members-only features!</Link>
           
           <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, fontWeight: '400', textAlign: 'center', lineHeight: 24}}>
             the <HText style={{ color: Colors.heteroboxd, fontWeight: '400' }}>L</HText> in Letterboxd stands for 
@@ -159,8 +170,6 @@ const Import = () => {
           <HText style={{fontSize: widescreen ? 32 : 24, fontWeight: '700'}}>
             <HText style={{color: '#ffffff'}}>Migrate from </HText><Link href='https://letterboxd.com/settings/data/' target='_blank'><HText style={{color: '#ff8000'}}>Let</HText><HText style={{color: '#00e054'}}>ter</HText><HText style={{color: '#40bcf4'}}>boxd</HText></Link>
           </HText>
-          
-          {/*TUTORIAL VIDEO*/}
 
           <HText style={{marginTop: widescreen ? 200 : 100, marginBottom: 20, textAlign: 'center', color: Colors.text_title, fontWeight: '700', fontSize: widescreen ? 24 : 18}}>Congratulations for making the switch from Letterboxd to Heteroboxd - we knew you had it in you!</HText>
           <HText style={{marginBottom: widescreen ? 180 : 80, textAlign: 'center', color: Colors.text, fontWeight: '500', fontSize: widescreen ? 16 : 10}}>Was there a problem with your import? Feel free to <Link href='/contact' style={{color: Colors.heteroboxd}}>contact us</Link> regarding any issues, or to request another import attempt.</HText>
@@ -200,9 +209,20 @@ const Import = () => {
         </HText>
         <HText style={{textAlign: 'center', fontSize: widescreen ? 18 : 14, marginTop: 15, color: Colors.text}}>This is a quick & easy guide to importing all your Letterboxd data - in one click. Once you've completed the steps bellow, it usually takes no more than an hour for your history to appear!</HText>
 
-        {/*TUTORIAL VIDEO*/}
+        <View style={{width: widescreen ? 560 : 280, height: widescreen ? 315 : 157.5, marginVertical: widescreen ? 50 : 20, alignSelf: 'center'}}>
+          <iframe
+            width="100%" 
+            height="100%" 
+            src="https://www.youtube.com/embed/wE1lGWe9qGY?si=FrQe8C7xZQXxfVVJ" 
+            title="WATCH THIS TUTORIAL VIDEO" 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerPolicy="strict-origin-when-cross-origin" 
+            allowFullScreen
+          />
+        </View>
 
-        <View style={{height: widescreen ? 100 : 25}} />
+        <View style={{height: widescreen ? 20 : 5}} />
         <HText style={{color: Colors.text_title, fontSize: widescreen ? 18 : 14, lineHeight: 30}}>
           First, head over to <Link style={{color: Colors.heteroboxd, textDecorationLine: 'underline', textDecorationColor: Colors.heteroboxd}} href='https://letterboxd.com/settings/data/' target='_blank'>your Letterboxd account settings</Link> and click <span style={{whiteSpace: 'nowrap'}}><HText style={{backgroundColor: '#5a6675', padding: 7.5, fontWeight: 'bold', borderRadius: 5, color: Colors.text_title}}>EXPORT YOUR DATA</HText></span>
         </HText>
