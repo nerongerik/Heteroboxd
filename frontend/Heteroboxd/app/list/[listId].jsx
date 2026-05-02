@@ -46,7 +46,7 @@ const List = () => {
   const likeRequestRef = useRef(0)
   const requestRef = useRef(0)
   const seenFilmsRef = useRef(new Set())
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
   const [ selected, setSelected ] = useState(null)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
@@ -125,14 +125,15 @@ const List = () => {
   }, [user, listId])
 
   const loadDataPage = useCallback(async (page) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     setServer(Response.loading)
     try {
       const url = user
       ? `${BaseUrl.api}/lists/entries?UserListId=${listId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/lists/entries?UserListId=${listId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-      if (loadingRef.current) return
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(url)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -148,6 +149,7 @@ const List = () => {
             json.seen.forEach(id => seenFilmsRef.current.add(id))
           }
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -155,8 +157,6 @@ const List = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [user, listId, currentFilter, currentSort])
 
@@ -400,6 +400,7 @@ const List = () => {
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
+              lastPageRef.current = 0
               setData({ page: 1, entries: [], totalCount: 0 })
               setIsRefreshing(true)
               loadBaseData(true)
@@ -449,7 +450,7 @@ const List = () => {
             <FilterSort
               context={'list'}
               currentSort={currentSort}
-              onSortChange={(newSort) => {closeMenu2(); setData({ page: 1, entries: [], totalCount: 0, seenCount: 0 }); setCurrentSort(newSort)}}
+              onSortChange={(newSort) => {closeMenu2(); lastPageRef.current = 0; setData({ page: 1, entries: [], totalCount: 0, seenCount: 0 }); setCurrentSort(newSort)}}
             />
           </SlidingMenu>
         )

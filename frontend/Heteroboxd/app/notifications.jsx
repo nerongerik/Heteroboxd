@@ -25,9 +25,12 @@ const Notifications = () => {
   const navigation = useNavigation()
   const { width } = useWindowDimensions()
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
@@ -35,10 +38,8 @@ const Notifications = () => {
     try {
       if (fromRefresh) setIsRefreshing(false)
       setServer(Response.loading)
-      if (loadingRef.current) return
       const jwt = await auth.getJwt()
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/notifications?Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -50,6 +51,7 @@ const Notifications = () => {
         } else {
           setData(prev => ({...prev, page: json.page, notifs: prev.notifs.length > 1000 ? [...prev.notifs.slice(-980), ...json.items] : [...prev.notifs, ...json.items]}))
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -57,8 +59,6 @@ const Notifications = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [user])
 
@@ -207,6 +207,7 @@ const Notifications = () => {
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
+              lastPageRef.current = 0
               setData({ page: 1, notifs: [], totalCount: 0 })
               setIsRefreshing(true)
               loadDataPage(1, true)

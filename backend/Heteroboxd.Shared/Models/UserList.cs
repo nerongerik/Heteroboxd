@@ -14,6 +14,9 @@ namespace Heteroboxd.Shared.Models
         public int Size { get; set; }
         public int LikeCount { get; set; }
         public Guid AuthorId { get; set; }
+        public bool FromLetterboxd { get; set; }
+
+        protected UserList() { }
 
         public UserList(string Name, string? Description, bool Ranked, int Size, Guid AuthorId)
         {
@@ -27,6 +30,22 @@ namespace Heteroboxd.Shared.Models
             this.Size = Size;
             this.LikeCount = 0;
             this.AuthorId = AuthorId;
+            this.FromLetterboxd = false;
+        }
+
+        public UserList(string Name, string? Description, DateTime Date, int Size, Guid AuthorId)
+        {
+            this.Id = Guid.NewGuid();
+            this.Name = Name;
+            this.Description = Description;
+            this.Ranked = false;
+            this.Date = Date;
+            this.Flags = 0;
+            this.NotificationsOn = true;
+            this.Size = Size;
+            this.LikeCount = 0;
+            this.AuthorId = AuthorId;
+            this.FromLetterboxd = true;
         }
 
         public void UpdateFields(UpdateUserListRequest Request, int Count)

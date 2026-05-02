@@ -28,7 +28,7 @@ namespace Heteroboxd.Shared.Data
         public DbSet<UserLikedReview> UserLikedReviews { get; set; }
         public DbSet<UserLikedList> UserLikedLists { get; set; }
         public DbSet<UserRelationship> UserRelationships { get; set; }
-
+        public DbSet<ImportJob> ImportJobs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -302,6 +302,16 @@ namespace Heteroboxd.Shared.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.Property(ur => ur.Relationship)
+                      .HasConversion<string>();
+            });
+
+            modelBuilder.Entity<ImportJob>(entity =>
+            {
+                entity.HasKey(ij => ij.Id);
+
+                entity.HasIndex(ij => new { ij.UserId }).IsUnique();
+
+                entity.Property(ij => ij.Status)
                       .HasConversion<string>();
             });
         }

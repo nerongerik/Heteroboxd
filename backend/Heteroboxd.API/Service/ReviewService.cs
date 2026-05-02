@@ -128,7 +128,7 @@ namespace Heteroboxd.API.Service
             var Film = await _filmRepo.LightweightFetcherAsync(ReviewRequest.FilmId);
             if (Film == null) throw new KeyNotFoundException(); //fail loudly
 
-            var Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, Flag(ReviewRequest.Text), ReviewRequest.Spoiler, UserId, ReviewRequest.FilmId);
+            var Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Spoiler, UserId, ReviewRequest.FilmId);
             try
             {
                 await _repo.CreateAsync(Review);
@@ -165,7 +165,6 @@ namespace Heteroboxd.API.Service
             }
 
             Response.Item.Review.UpdateFields(ReviewRequest);
-            Response.Item.Review.Flags = Flag(Response.Item.Review.Text); //reflag after update
             await _repo.UpdateAsync(Response.Item.Review);
 
             return new ReviewInfoResponse(Response.Item.Review);
@@ -186,51 +185,6 @@ namespace Heteroboxd.API.Service
             if (User != null && User.PinnedReviewId == Response.Item.Review.Id) await _userRepo.PinReviewAsync(User.Id, Response.Item.Review.Id);
 
             await _repo.DeleteAsync(Response.Item.Review.Id);
-        }
-
-        private int Flag(string? Text)
-        {
-            if (string.IsNullOrWhiteSpace(Text)) return 0;
-
-            string _text = Text.ToLowerInvariant().Trim();
-            int Score = 0;
-
-            foreach (var p in AutoModerator.SocialPatterns)
-            {
-                if (_text.Contains(p) && (_text.Contains("add me") || _text.Contains("dm me") || _text.Contains("message me")))
-                {
-                    Score += AutoModerator.SocialMediaSolicitation;
-                    break;
-                }
-            }
-            foreach (var p in AutoModerator.ShippingPatterns)
-            {
-                if (_text.Contains(p))
-                {
-                    Score += AutoModerator.Queershipping;
-                    break;
-                }
-            }
-            int SimpCount = 0;
-            foreach (var p in AutoModerator.SimpPatterns)
-            {
-                if (_text.Contains(p)) SimpCount++;
-            }
-            Score += SimpCount * AutoModerator.SimpingPerTerm;
-            if (_text.Contains("ryan gosling")) Score = Math.Max(0, Score + AutoModerator.GoslingianForgiveness);
-            int BlasphemyCount = 0;
-            foreach (var p in AutoModerator.BlasphemyPatterns)
-            {
-                if (_text.Contains(p)) BlasphemyCount++;
-            }
-            Score += BlasphemyCount * AutoModerator.BlasphemyPerTerm;
-            int WordCount = _text.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length;
-            if (WordCount <= 5) Score += AutoModerator.VeryShortReview;
-            else if (WordCount <= 12) Score += AutoModerator.ShortReview;
-            if (_text.Count(c => c == '!' || c == '?' || c == '.') > 4 && WordCount < 20) Score += AutoModerator.MemeyPunctuation;
-            if (WordCount >= 80) Score += AutoModerator.LongThoughtfulBonus;
-
-            return Math.Max(0, Score);
         }
     }
 }

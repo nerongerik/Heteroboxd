@@ -30,15 +30,16 @@ const SearchTabs = ({ widescreen, router }) => {
   const listRef = useRef(null)
   const requestRef = useRef(0)
   const [ loading, setLoading ] = useState(false)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
 
   const search = useCallback(async (page, overrides = {}, fromButton = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     const activeQuery = overrides.query || queryRef.current
     const activeTab = overrides.tab || tab
-    if (loadingRef.current) return
     if (fromButton) resetParams(activeTab, true)
     const requestId = ++requestRef.current
-    loadingRef.current = true
     setShowHistory(false)
     setLoading(true)
     if (page === 1) saveSearch(activeQuery, activeTab)
@@ -52,12 +53,11 @@ const SearchTabs = ({ widescreen, router }) => {
         } else {
           setResults(prev => ({...prev, page: json.page, items: prev.items.length > 1000 ? [...prev.items.slice(-980), ...json.items] : [...prev.items, ...json.items]}))
         }
+        lastPageRef.current = page
       }
       setLoading(false)
     } catch {
       setLoading(false)
-    } finally {
-      loadingRef.current = false
     }
   }, [tab, saveSearch])
 
@@ -78,6 +78,7 @@ const SearchTabs = ({ widescreen, router }) => {
 
   const resetParams = useCallback((tab, fromSearch = false) => {
     setTab(tab)
+    lastPageRef.current = 0
     setResults({ page: 1, items: [], totalCount: 0 })
     if (!fromSearch) {
       setQuery('')

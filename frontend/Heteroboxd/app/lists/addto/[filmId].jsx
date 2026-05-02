@@ -33,19 +33,20 @@ const AddToLists = () => {
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
 
   const fetchLists = useCallback(async (page) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
       return
     }
     setServer(Response.loading)
     try {
-      if (loadingRef.current) return
       const jwt = await auth.getJwt()
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(`${BaseUrl.api}/lists/film-interact?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -57,6 +58,7 @@ const AddToLists = () => {
         } else {
           setUsersLists(prev => ({...prev, page: json.page, lists: prev.lists.length > 1000 ? [...prev.lists.slice(-980), ...json.items] : [...prev.lists, ...json.items]}))
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -64,8 +66,6 @@ const AddToLists = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [user, filmId])
 

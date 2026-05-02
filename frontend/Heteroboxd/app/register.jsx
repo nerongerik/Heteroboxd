@@ -69,14 +69,14 @@ const Register = () => {
             await fetch(json.presignedUrl, {
               method: 'PUT',
               body: blob,
-              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
+              headers: { 'Content-Type': 'image/png' },
             })
             setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
           } else {
             await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
               httpMethod: 'PUT',
               uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' },
+              headers: { 'Content-Type': 'image/png' },
             })
             setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
           }

@@ -1,7 +1,7 @@
 ﻿using Heteroboxd.Shared.Models.DTO;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using HtmlAgilityPack;
 
 namespace Heteroboxd.Shared.Integrations
 {
@@ -34,14 +34,12 @@ namespace Heteroboxd.Shared.Integrations
     public class TMDBClient : ITMDBClient
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<TMDBClient> _logger;
         private readonly IConfiguration _configuration;
         private static readonly RateLimiter _rateLimiter = new(40, TimeSpan.FromSeconds(1));
 
-        public TMDBClient(HttpClient httpClient, ILogger<TMDBClient> logger, IConfiguration configuration)
+        public TMDBClient(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            _logger = logger;
             _configuration = configuration;
         }
 
@@ -50,7 +48,7 @@ namespace Heteroboxd.Shared.Integrations
             try
             {
                 await _rateLimiter.ThrottleAsync();
-                _logger.LogInformation($"Calling the GET /details/ endpoint for Film of TmdbID: {TmdbId}");
+                Console.WriteLine($"Calling the GET /details/ endpoint for Film of TmdbID: {TmdbId}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/movie/{TmdbId!}?append_to_response=credits");
                 try
                 {
@@ -98,7 +96,7 @@ namespace Heteroboxd.Shared.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex}");
+                Console.WriteLine($"Error occurred: {ex}");
                 return null;
             }
         }
@@ -108,7 +106,7 @@ namespace Heteroboxd.Shared.Integrations
             try
             {
                 await _rateLimiter.ThrottleAsync();
-                _logger.LogInformation($"Calling the GET /details/ endpoint for Collection of TmdbID: {TmdbId}");
+                Console.WriteLine($"Calling the GET /details/ endpoint for Collection of TmdbID: {TmdbId}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/collection/{TmdbId!}");
                 Response.EnsureSuccessStatusCode();
 
@@ -117,7 +115,7 @@ namespace Heteroboxd.Shared.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex}");
+                Console.WriteLine($"Error occurred: {ex}");
                 throw;
             }
         }
@@ -127,7 +125,7 @@ namespace Heteroboxd.Shared.Integrations
             try
             {
                 await _rateLimiter.ThrottleAsync();
-                _logger.LogInformation($"Calling the GET /details/ endpoint for Celebrity of TmdbID: {TmdbId}");
+                Console.WriteLine($"Calling the GET /details/ endpoint for Celebrity of TmdbID: {TmdbId}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/person/{TmdbId!}");
                 Response.EnsureSuccessStatusCode();
 
@@ -136,7 +134,7 @@ namespace Heteroboxd.Shared.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex}");
+                Console.WriteLine($"Error occurred: {ex}");
                 throw;
             }
         }
@@ -146,7 +144,7 @@ namespace Heteroboxd.Shared.Integrations
             try
             {
                 await _rateLimiter.ThrottleAsync();
-                _logger.LogInformation($"Calling the GET /configuration/ endpoint for Countries");
+                Console.WriteLine($"Calling the GET /configuration/ endpoint for Countries");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/configuration/countries?language=en-US");
                 Response.EnsureSuccessStatusCode();
 
@@ -155,7 +153,7 @@ namespace Heteroboxd.Shared.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex}");
+                Console.WriteLine($"Error occurred: {ex}");
                 throw;
             }
         }
@@ -165,7 +163,7 @@ namespace Heteroboxd.Shared.Integrations
             try
             {
                 await _rateLimiter.ThrottleAsync();
-                _logger.LogInformation($"Calling the GET /changes/ endpoint for {Path} at Page: {Page}");
+                Console.WriteLine($"Calling the GET /changes/ endpoint for {Path} at Page: {Page}");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/{Path}/changes?page={Page}");
                 Response.EnsureSuccessStatusCode();
 
@@ -174,7 +172,7 @@ namespace Heteroboxd.Shared.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex}");
+                Console.WriteLine($"Error occurred: {ex}");
                 throw;
             }
         }
@@ -184,7 +182,7 @@ namespace Heteroboxd.Shared.Integrations
             try
             {
                 await _rateLimiter.ThrottleAsync();
-                _logger.LogInformation("Calling the GET /trending/ endpoint");
+                Console.WriteLine("Calling the GET /trending/ endpoint");
                 var Response = await _httpClient.GetAsync($"{_configuration["TMDB:BaseUrl"]}/movie/popular");
                 Response.EnsureSuccessStatusCode();
 
@@ -193,7 +191,7 @@ namespace Heteroboxd.Shared.Integrations
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex}");
+                Console.WriteLine($"Error occurred: {ex}");
                 throw;
             }
         }

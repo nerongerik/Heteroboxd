@@ -15,20 +15,40 @@ namespace Heteroboxd.Shared.Models
         public int CommentCount { get; set; }
         public Guid AuthorId { get; set; }
         public int FilmId { get; set; }
+        public bool FromLetterboxd { get; set; }
 
-        public Review(double Rating, string? Text, int Flags, bool Spoiler, Guid AuthorId, int FilmId)
+        protected Review() { }
+
+        public Review(double Rating, string? Text, bool Spoiler, Guid AuthorId, int FilmId)
         {
             this.Id = Guid.NewGuid();
             this.Rating = Rating;
             this.Text = Text;
             this.Date = DateTime.UtcNow;
-            this.Flags = Flags;
+            this.Flags = 0;
             this.Spoiler = Spoiler;
             this.NotificationsOn = true;
             this.LikeCount = 0;
             this.CommentCount = 0;
             this.AuthorId = AuthorId;
             this.FilmId = FilmId;
+            this.FromLetterboxd = false;
+        }
+
+        public Review(double Rating, string? Text, DateTime Date, Guid AuthorId, int FilmId)
+        {
+            this.Id = Guid.NewGuid();
+            this.Rating = Rating;
+            this.Text = Text;
+            this.Date = Date;
+            this.Flags = 0;
+            this.Spoiler = false;
+            this.NotificationsOn = true;
+            this.LikeCount = 0;
+            this.CommentCount = 0;
+            this.AuthorId = AuthorId;
+            this.FilmId = FilmId;
+            this.FromLetterboxd = true;
         }
 
         public void UpdateFields(UpdateReviewRequest ReviewRequest)

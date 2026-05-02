@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Image, PanResponder, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Image, Linking, PanResponder, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Explore from '../assets/icons/explore.svg'
 import Search from '../assets/icons/search.svg'
 import Ranking from '../assets/icons/ranking.svg'
@@ -7,9 +7,11 @@ import Review from '../assets/icons/review.svg'
 import Watchlist from '../assets/icons/bookmark.svg'
 import Heart from '../assets/icons/heart.svg'
 import About from '../assets/icons/about.svg'
+import Import from '../assets/icons/import.svg'
 import Contact from '../assets/icons/contact.svg'
 import Donate from '../assets/icons/donate.svg'
 import Notif from '../assets/icons/notifications.svg'
+import X from '../assets/icons/x.svg'
 import Profile from '../assets/icons/profile.svg'
 import Slide from '../assets/icons/slide.svg'
 import List from '../assets/icons/list.svg'
@@ -42,7 +44,7 @@ const Home = () => {
   const [ reviews, setReviews ] = useState(null)
   const [ lists, setLists ] = useState(null)
   const [ notifs, setNotifs ] = useState(false)
-  const { width } = useWindowDimensions()
+  const { width, height } = useWindowDimensions()
   const router = useRouter()
   const navigation = useNavigation()
   const [ menuShown, setMenuShown ] = useState(false)
@@ -52,6 +54,7 @@ const Home = () => {
   const [ refreshing, setRefreshing ] = useState(false)
   const [ refreshKey, setRefreshKey ] = useState(0)
   const [ selected, setSelected ] = useState(null)
+  const [ showLb, setShowLb ] = useState(false)
   const insets = useSafeAreaInsets()
 
   const translateX = slideAnim.interpolate({inputRange: [0, 1], outputRange: [-300, 0]})
@@ -93,7 +96,8 @@ const Home = () => {
   
   const navPress = (path) => {
     setMenuShown(false)
-    router.push(path)
+    if (path === 'lb') Linking.openURL('https://www.heteroboxd.com/import/data')
+    else router.push(path)
   }
 
   const getPopularFilms = useCallback(async () => {
@@ -167,7 +171,21 @@ const Home = () => {
     }, [user, refreshKey])
   )
 
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        if (!user?.lb) {
+          await new Promise(s => setTimeout(s, 1500))
+          setShowLb(true)
+          await new Promise(s => setTimeout(s, 300000))
+          setShowLb(false)
+        }
+      })()
+    }, [user])
+  )
+
   const widescreen = useMemo(() => width > 1000, [width])
+  const shortscreen = useMemo(() => height < 700, [height])
 
   useEffect(() => {
     navigation.setOptions({
@@ -222,11 +240,12 @@ const Home = () => {
     onPanResponderRelease: (evt, gestureState) => {
       if (gestureState.dx > 0) {
         openMenu()
-      } else if (gestureState.dx < 0 && !menuShown) {
-        router.push('/search')
+      } else if (gestureState.dx < 0) {
+        if (menuShown) closeMenu()
+        else router.push('/search')
       }
     },
-  }) : null, [openMenu, router, menuShown])
+  }) : null, [openMenu, closeMenu, router, menuShown])
 
   return (
     <>
@@ -246,83 +265,95 @@ const Home = () => {
             closeMenu={closeMenu} 
             translateX={translateX} 
             width={width} 
+            height={height}
             footerImage={require('../assets/footer.png')}
           >
             <View style={{flex: 1, justifyContent: 'flex-start', paddingLeft: 5}}>
-              <Pressable onPress={() => navPress(`/films/explore`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Pressable onPress={() => navPress(`/films/explore`)} style={{marginBottom: shortscreen ? 10 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <Explore width={24} height={24} fill={Colors.text} />
                 </View>
-                <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Explore Films</HText>
+                <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Explore Films</HText>
               </Pressable>
-              <Pressable onPress={() => navPress(`/lists/explore?filter=${'ALL'}&value=${'POPULARITY'}`)} style={{marginBottom: user?.userId ? 20 : null, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Pressable onPress={() => navPress(`/lists/explore?filter=${'ALL'}&value=${'POPULARITY'}`)} style={{marginBottom: user?.userId ? shortscreen ? 10 : 20 : null, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <Ranking width={24} height={24} fill={Colors.text} />
                 </View>
-                <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Popular Lists</HText>
+                <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Popular Lists</HText>
               </Pressable>
               {
                 user?.userId && (
                   <>
-                    <Pressable onPress={() => navPress(`/reviews/user/${user.userId}`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+                    <Pressable onPress={() => navPress(`/reviews/user/${user.userId}`)} style={{marginBottom: shortscreen ? 10 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
                       <Review height={26} width={26} fill={Colors.text} />
                       </View>
-                      <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Your Reviews</HText>
+                      <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Your Reviews</HText>
                     </Pressable>
-                    <Pressable onPress={() => navPress(`/films/watchlist/${user.userId}`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+                    <Pressable onPress={() => navPress(`/films/watchlist/${user.userId}`)} style={{marginBottom: shortscreen ? 10 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
                       <Watchlist height={28} width={28} fill={Colors.text} />
                       </View>
-                      <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Watchlist</HText>
+                      <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Watchlist</HText>
                     </Pressable>
                     <Pressable onPress={() => navPress(`/likes/${user.userId}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
                       <Heart height={22} width={22} fill={Colors.text} />
                       </View>
-                      <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Recently Liked</HText>
+                      <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Recently Liked</HText>
                     </Pressable>
                   </>
                 )
               }
 
-              <View style={{height: 1, width: '90%', alignSelf: 'center', marginVertical: 20, backgroundColor: Colors.text}} />
+              <View style={{height: 1, width: '90%', alignSelf: 'center', marginVertical: shortscreen ? 10 : 20, backgroundColor: Colors.text}} />
 
-              <Pressable onPress={() => navPress(`/about`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Pressable onPress={() => navPress(`lb`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+                <View style={{width: 40, alignItems: 'center'}}>
+                <Import height={22} width={22} />
+                </View>
+                <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500'}}>
+                  <HText style={{color: '#656f76'}}>Import from </HText><HText style={{color: '#ff8000'}}>Let</HText><HText style={{color: '#00e054'}}>ter</HText><HText style={{color: '#40bcf4'}}>boxd</HText>
+                </HText>
+              </Pressable>
+
+              <View style={{height: 1, width: '90%', alignSelf: 'center', marginVertical: shortscreen ? 10 : 20, backgroundColor: Colors.text}} />
+
+              <Pressable onPress={() => navPress(`/about`)} style={{marginBottom: shortscreen ? 10 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <About height={24} width={24} fill={Colors.text} />
                 </View>
-                <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>About</HText>
+                <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>About</HText>
               </Pressable>
-              <Pressable onPress={() => navPress(`/contact`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Pressable onPress={() => navPress(`/contact`)} style={{marginBottom: shortscreen ? 10 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <Contact height={22} width={22} fill={Colors.text} />
                 </View>
-                <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Contact</HText>
+                <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Contact</HText>
               </Pressable>
-              <Pressable onPress={() => navPress(`/sponsor`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+              <Pressable onPress={() => navPress(`/sponsor`)} style={{marginBottom: shortscreen ? 10 :  20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
                 <Donate width={22} height={22} fill={Colors.text} />
                 </View>
-                <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Donate</HText>
+                <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Donate</HText>
               </Pressable>
               {
                 user?.userId ? (
                   <>
-                    <Pressable onPress={() => navPress(`/notifications`)} style={{marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
+                    <Pressable onPress={() => navPress(`/notifications`)} style={{marginBottom: shortscreen ? 10 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
                       <View style={{width: 24, height: 24}}>
                         <Notif height={24} width={24} fill={notifs ? Colors.text_title : Colors.text} />
                         {notifs && <View style={[styles.badge, {top: 2, right: 2}]} />}
                       </View>
                       </View>
-                      <HText style={{fontSize: 20, fontWeight: notifs ? '700' : '500', color: notifs ? Colors.text_title : Colors.text}}>Notifications</HText>
+                      <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: notifs ? '700' : '500', color: notifs ? Colors.text_title : Colors.text}}>Notifications</HText>
                     </Pressable>
                     <Pressable onPress={() => navPress(`/profile/${user.userId}`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                       <View style={{width: 40, alignItems: 'center'}}>
                       <UserAvatar pictureUrl={user.pictureUrl || null} style={{width: 32, height: 32, borderRadius: 16}} />
                       </View>
-                      <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Profile</HText>
+                      <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Profile</HText>
                     </Pressable>
                   </>
                 ) : (
@@ -330,7 +361,7 @@ const Home = () => {
                     <View style={{width: 40, alignItems: 'center'}}>
                     <Profile width={26} height={26} />
                     </View>
-                    <HText style={{fontSize: 20, fontWeight: '500', color: Colors.text}}>Login</HText>
+                    <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Login</HText>
                   </Pressable>
                 )
               }
@@ -694,6 +725,20 @@ const Home = () => {
           del={() => {}}
         />
       </SlidingMenu>
+      {
+        widescreen && showLb && (
+          <View style={{position: 'absolute', paddingHorizontal: 15, bottom: 60, left: 20, backgroundColor: Colors.card, borderRadius: 5, borderWidth: 2, borderColor: Colors._heteroboxd, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+            <Pressable style={{paddingVertical: 25}} onPress={() => Linking.openURL('https://www.heteroboxd.com/import/data')}>
+              <HText style={{textAlign: 'center', fontWeight: '600', color: Colors.text_title, fontSize: 20}}>
+                <HText style={{color: '#ffffff'}}>Migrating from </HText><HText style={{color: '#ff8000'}}>Let</HText><HText style={{color: '#00e054'}}>ter</HText><HText style={{color: '#40bcf4'}}>boxd</HText>? Import all of your data in one click!
+              </HText>
+            </Pressable>
+            <Pressable style={{marginLeft: 10}} onPress={() => setShowLb(false)}>
+              <X width={24} height={24} />
+            </Pressable>
+          </View>
+        )
+      }
     </View>
     </>
   )

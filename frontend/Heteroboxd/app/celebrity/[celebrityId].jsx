@@ -48,7 +48,7 @@ const Celebrity = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
   
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
@@ -88,6 +88,9 @@ const Celebrity = () => {
   }, [celebrityId])
 
   const loadCreditsData = useCallback(async (filter, page = 1, fromRefresh = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     if (fromRefresh) setIsRefreshing(false)
     setServer(Response.loading)
     if (!filter || filter === 'Bio') {
@@ -103,9 +106,7 @@ const Celebrity = () => {
       const url = user
       ? `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
       : `${BaseUrl.api}/celebrities/credits?CelebrityId=${celebrityId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${role}&Sort=${currentSort.field}&Desc=${currentSort.desc}`
-      if (loadingRef.current) return
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(url)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -122,6 +123,7 @@ const Celebrity = () => {
             json.seen.forEach(id => seenFilmsRef.current.add(id))
           }
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else if (res.status === 404) {
         if (requestId !== requestRef.current) return
@@ -132,8 +134,6 @@ const Celebrity = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [user, celebrityId, currentSort])
 
@@ -250,6 +250,7 @@ const Celebrity = () => {
         fadeSeen={fadeSeen}
         isRefreshing={isRefreshing}
         onRefresh={() => {
+          lastPageRef.current = 0
           setCurrentTabData({ page: 1, films: [], totalCount: 0 })
           setIsRefreshing(true)
           loadCreditsData(currentFilter, 1, true)
@@ -273,7 +274,7 @@ const Celebrity = () => {
         <FilterSort
           context={'celebrity'}
           currentSort={currentSort}
-          onSortChange={(newSort) => {closeMenu(); setCurrentTabData({ page: 1, films: [], totalCount: 0 }); setCurrentSort(newSort)}}
+          onSortChange={(newSort) => {closeMenu(); lastPageRef.current = 0; setCurrentTabData({ page: 1, films: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>

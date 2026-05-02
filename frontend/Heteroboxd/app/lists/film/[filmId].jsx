@@ -34,7 +34,7 @@ const FilmsLists = () => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
@@ -55,15 +55,16 @@ const FilmsLists = () => {
   }, [slideAnim])
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     try {
       if (fromRefresh) setIsRefreshing(false)
       setServer(Response.loading)
-      if (loadingRef.current) return
       const url = user
       ? `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/lists/featuring?FilmId=${filmId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(url)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -73,6 +74,7 @@ const FilmsLists = () => {
         } else {
           setData(prev => ({...prev, page: json.page, lists: prev.lists.length > 250 ? [...prev.lists.slice(-230), ...json.items] : [...prev.lists, ...json.items]}))
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -80,8 +82,6 @@ const FilmsLists = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [user, filmId, currentFilter, currentSort])
 
@@ -204,6 +204,7 @@ const FilmsLists = () => {
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
+              lastPageRef.current = 0
               setData({ page: 1, lists: [], totalCount: 0 })
               setIsRefreshing(true)
               loadDataPage(1, true)
@@ -230,9 +231,9 @@ const FilmsLists = () => {
           key={`${currentFilter.field}-${currentSort.field}`}
           context={'filmLists'}
           currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {closeMenu(); setData({ page: 1, lists: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
+          onFilterChange={(newFilter) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, lists: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
           currentSort={currentSort}
-          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, lists: [], totalCount: 0 }); setCurrentSort(newSort)}}
+          onSortChange={(newSort) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, lists: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>

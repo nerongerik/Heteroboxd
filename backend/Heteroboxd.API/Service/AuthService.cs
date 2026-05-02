@@ -77,7 +77,7 @@ namespace Heteroboxd.API.Service
             string? PresignedUrl = null;
             if (!string.IsNullOrEmpty(Request.PictureExtension))
             {
-                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id);
+                var (Url, ImgPath) = await _r2Handler.GeneratePresignedUrl(User.Id, 0);
 
                 User.PictureUrl = ImgPath;
                 await _userManager.UpdateAsync(User);
@@ -155,10 +155,11 @@ namespace Heteroboxd.API.Service
                 var Key = Convert.FromBase64String(_config["Jwt:Key"]!);
                 var Claims = new List<Claim>
                 {
-                new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
-                new Claim("name", User.Name!),
-                new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
-                new Claim("admin", User.IsAdmin.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
+                    new Claim("name", User.Name!),
+                    new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
+                    new Claim("admin", User.IsAdmin.ToString()),
+                    new Claim("lb", User.FromLetterboxd.ToString())
                 };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);

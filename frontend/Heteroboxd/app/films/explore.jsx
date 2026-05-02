@@ -38,7 +38,7 @@ const Explore = () => {
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const requestRef = useRef(0)
-  const loadingRef = useRef(false)
+  const lastPageRef = useRef(0)
   const [ selected, setSelected ] = useState(null)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
 
@@ -80,15 +80,16 @@ const Explore = () => {
   }, [slideAnim2])
 
   const loadDataPage = useCallback(async (page, fromRefresh = false) => {
+    if (page !== 1 && lastPageRef.current >= page) {
+      return
+    }
     try {
       if (fromRefresh) setIsRefreshing(false)
       setServer(Response.loading)
       const url = user
       ? `${BaseUrl.api}/films/all?UserId=${user.userId}&Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
       : `${BaseUrl.api}/films/all?Page=${page}&PageSize=${PAGE_SIZE}&Filter=${currentFilter.field}&Sort=${currentSort.field}&Desc=${currentSort.desc}&FilterValue=${encodeURIComponent(currentFilter.value || '')}`
-      if (loadingRef.current) return
       const requestId = ++requestRef.current
-      loadingRef.current = true
       const res = await fetch(url)
       if (res.ok) {
         if (requestId !== requestRef.current) return
@@ -105,6 +106,7 @@ const Explore = () => {
             json.seen.forEach(id => seenFilmsRef.current.add(id))
           }
         }
+        lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
@@ -112,13 +114,12 @@ const Explore = () => {
       }
     } catch {
       setServer(Response.networkError)
-    } finally {
-      loadingRef.current = false
     }
   }, [user, currentFilter, currentSort])
 
   const shuffle = useCallback(async () => {
     setServer(Response.loading)
+    lastPageRef.current = 0
     setData({ page: 1, films: [], totalCount: 0 })
     try {
       const url = user
@@ -260,6 +261,7 @@ const Explore = () => {
           <RefreshControl 
             refreshing={isRefreshing} 
             onRefresh={() => {
+              lastPageRef.current = 0
               setData({ page: 1, films: [], totalCount: 0 })
               setIsRefreshing(true)
               loadDataPage(1, true)
@@ -308,9 +310,9 @@ const Explore = () => {
           key={`${currentFilter.field}-${currentSort.field}`}
           context={'explore'}
           currentFilter={currentFilter}
-          onFilterChange={(newFilter) => {closeMenu(); setData({ page: 1, films: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
+          onFilterChange={(newFilter) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, films: [], totalCount: 0 }); setCurrentFilter(newFilter)}}
           currentSort={currentSort}
-          onSortChange={(newSort) => {closeMenu(); setData({ page: 1, films: [], totalCount: 0 }); setCurrentSort(newSort)}}
+          onSortChange={(newSort) => {closeMenu(); lastPageRef.current = 0; setData({ page: 1, films: [], totalCount: 0 }); setCurrentSort(newSort)}}
         />
       </SlidingMenu>
     </View>
