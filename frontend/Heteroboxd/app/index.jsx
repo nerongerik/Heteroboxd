@@ -7,6 +7,7 @@ import Review from '../assets/icons/review.svg'
 import Watchlist from '../assets/icons/bookmark.svg'
 import Heart from '../assets/icons/heart.svg'
 import About from '../assets/icons/about.svg'
+import Android from '../assets/icons/android.svg'
 import Import from '../assets/icons/import.svg'
 import Contact from '../assets/icons/contact.svg'
 import Donate from '../assets/icons/donate.svg'
@@ -22,6 +23,7 @@ import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
 import { useAuth } from '../hooks/useAuth'
 import { useTrending } from '../hooks/useTrending'
+import { usePopular } from '../hooks/usePopular'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import Author from '../components/author'
@@ -40,7 +42,7 @@ const PAGE_SIZE = 10
 const Home = () => {
   const { user, isValidSession } = useAuth()
   const { trending } = useTrending()
-  const [ popular, setPopular ] = useState([])
+  const { popular } = usePopular()
   const [ reviews, setReviews ] = useState(null)
   const [ lists, setLists ] = useState(null)
   const [ notifs, setNotifs ] = useState(false)
@@ -99,22 +101,6 @@ const Home = () => {
     if (path === 'lb') Linking.openURL('https://www.heteroboxd.com/import/data')
     else router.push(path)
   }
-
-  const getPopularFilms = useCallback(async () => {
-    try {
-      const res = await fetch(`${BaseUrl.api}/films/all?Page=1&PageSize=${PAGE_SIZE}&Filter=ALL&Sort=POPULARITY&Desc=${true}`)
-      if (res.ok) {
-        const json = await res.json()
-        setPopular(json.items.filter(x => x))
-      } else {
-        setPopular([])
-        console.log('failed to fetch popular; internal server error.')
-      }
-    } catch {
-      setPopular([])
-      console.log('failed to fetch popular; network error.')
-    }
-  }, [refreshKey])
 
   const getFriendsActivity = useCallback(async () => {
     if (!user || !(await isValidSession())) {
@@ -200,7 +186,7 @@ const Home = () => {
       headerRight: () => {
         if (widescreen) return null
         return (
-          <Pressable onPress={() => router.push('/search')}>
+          <Pressable onPress={() => router.push('/search')} style={{marginRight: 15}}>
             <Search width={24} height={24} fill={Colors.text} />
           </Pressable>
         )
@@ -208,7 +194,7 @@ const Home = () => {
       headerLeft: () => {
         if (widescreen) return null
         return (
-          <View style={{width: 28, height: 28}}>
+          <View style={{width: 28, height: 28}} style={{marginLeft: 15}}>
             <Pressable onPress={openMenu}>
               <Slide width={28} height={28} fill={Colors.text} />
             </Pressable>
@@ -220,9 +206,8 @@ const Home = () => {
   }, [navigation, user, notifs, widescreen, router, openMenu, refreshKey])
 
   useEffect(() => {
-    getPopularFilms()
     getFriendsActivity()
-  }, [getPopularFilms, getFriendsActivity])
+  }, [getFriendsActivity])
 
   const spacing = useMemo(() => widescreen ? 50 : 5, [widescreen])
   const maxRowWidth = useMemo(() => widescreen ? 1000 : width * 0.95, [widescreen, width])
@@ -310,7 +295,7 @@ const Home = () => {
 
               <Pressable onPress={() => navPress(`lb`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
                 <View style={{width: 40, alignItems: 'center'}}>
-                <Import height={22} width={22} />
+                <Import height={20} width={20} />
                 </View>
                 <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500'}}>
                   <HText style={{color: '#656f76'}}>Import from </HText><HText style={{color: '#ff8000'}}>Let</HText><HText style={{color: '#00e054'}}>ter</HText><HText style={{color: '#40bcf4'}}>boxd</HText>
@@ -466,6 +451,15 @@ const Home = () => {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        { (Platform.OS === 'web' && /android/i.test(navigator.userAgent)) &&
+          <View style={{backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.text_title, alignSelf: 'flex-end', marginTop: 5, borderRadius: 5, marginBottom: 10 }}>
+            <Pressable style={{padding: 5, justifyContent: 'center', alignItems: 'center', flexDirection: 'row'}} onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.nerongerik.heteroboxd')}>
+              <Android width={20} height={20} />
+              <HText style={{color: Colors.text, fontWeight: '600'}}> Get the App</HText>
+            </Pressable>
+          </View>
+        }
+
         <HText style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, fontWeight: 'bold', textAlign: 'center'}}>What are we watching today, {user?.name || 'stranger'}?</HText>
 
         <HText style={[styles.regionalTitle, {marginBottom: 10, marginTop: widescreen ? 50 : 30}]}>Trending Globally</HText>
@@ -512,7 +506,7 @@ const Home = () => {
           <HText style={[styles.regionalTitle, {marginBottom: 10, marginTop: widescreen ? 50 : 30}]}>Popular on Heteroboxd</HText>
         </Pressable>
         <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>
-          {popular.length === 0 ? (
+          {!popular ? (
             <View style={{width: '100%', alignItems: 'center', paddingVertical: 30}}>
               <ActivityIndicator size='large' color={Colors.text_link} />
             </View>

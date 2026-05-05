@@ -7,6 +7,7 @@ namespace Heteroboxd.API.Service
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
         Task<List<TrendingInfoResponse>> GetTrending(string? LastSync);
+        Task<List<FilmInfoResponse>> GetPopular(int PageSize);
         Task<PagedResponse<FilmInfoResponse?>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<FilmInfoResponse?>> ShuffleFilms(string? UserId, int PageSize); 
         Task<PagedResponse<FilmInfoResponse?>> GetFilmsByUser(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -40,6 +41,9 @@ namespace Heteroboxd.API.Service
                 .Select(t => new TrendingInfoResponse { FilmId = t.FilmId, Title = t.Title, FilmPosterUrl = t.PosterUrl, Rank = t.Rank, LastSync = t.LastSync.ToString("yyyy-MM-dd HH:mm") })
                 .ToList();
         }
+
+        public async Task<List<FilmInfoResponse>> GetPopular(int PageSize) =>
+            (await _repo.GetPopularAsync(PageSize)).Select(f => new FilmInfoResponse(f)).ToList();
 
         public async Task<FilmInfoResponse?> GetFilm(int FilmId)
         {

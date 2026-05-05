@@ -40,6 +40,21 @@ namespace Heteroboxd.API.Controller
             }
         }
 
+        [HttpGet("popular")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPopularFilms(int PageSize = 10)
+        {
+            _logger.LogInformation("GetPopularFilms endpoint hit.");
+            try
+            {
+                return Ok(await _service.GetPopular(PageSize));
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilm(int FilmId)

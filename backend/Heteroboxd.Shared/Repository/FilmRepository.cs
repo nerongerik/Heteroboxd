@@ -12,6 +12,7 @@ namespace Heteroboxd.Shared.Repository
         Task<Film?> LightweightFetcherAsync(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
         Task<List<Trending>> GetTrendingAsync();
+        Task<List<Film>> GetPopularAsync(int PageSize);
         Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetAllAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<Film> Films, List<UserWatchedFilm>? Seen, int? SeenCount)> ShuffleAsync(Guid? UserId, int PageSize);
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -69,6 +70,20 @@ namespace Heteroboxd.Shared.Repository
                 .AsNoTracking()
                 .OrderBy(t => t.Rank)
                 .ToListAsync();
+
+        public async Task<List<Film>> GetPopularAsync(int PageSize)
+        {
+            var Week = DateTime.UtcNow.AddDays(-7);
+
+            return await _context.Films
+                .AsNoTracking()
+                .OrderByDescending(f => _context.Reviews.Count(r => r.FilmId == f.Id && r.Date >= Week))
+                .ThenByDescending(f => _context.UserWatchedFilms.Count(uwf => uwf.FilmId == f.Id && uwf.Date >= Week))
+                .ThenByDescending(f => f.WatchCount)
+                .ThenBy(f => f.Id)
+                .Take(PageSize)
+                .ToListAsync();
+        }
 
         public async Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetAllAsync(Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {

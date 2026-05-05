@@ -7,6 +7,7 @@ import { Colors } from '../constants/colors'
 import { AuthProvider } from '../contexts/authContext'
 import { useCountrySync } from '../hooks/useCountrySync'
 import { useTrendingSync } from '../hooks/useTrendingSync'
+import { usePopularSync } from '../hooks/usePopularSync'
 import { useVersionCheck } from '../hooks/useVersionCheck'
 import './browser.css'
 import Back from '../assets/icons/back.svg'
@@ -52,8 +53,9 @@ const RootLayout = () => {
   const { updateRequired, updateAvailable, openStore } = useVersionCheck()
   const [ softDismissed, setSoftDismissed ] = useState(false)
 
-  useCountrySync()
   useTrendingSync()
+  useCountrySync()
+  usePopularSync()
 
   useEffect(() => {
     if (loaded || error) {

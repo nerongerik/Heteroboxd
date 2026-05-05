@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { onStorageUpdate } from './storageEvents'
 
 export const useTrending = () => {
-  const [trending, setTrending] = useState(null)
+  const [ trending, setTrending ] = useState(null)
 
   const load = async () => {
     try {

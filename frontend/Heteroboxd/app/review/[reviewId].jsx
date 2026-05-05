@@ -355,11 +355,11 @@ const ReviewWithComments = () => {
                 {
                   user.userId !== item.authorId ? (
                     <Pressable onPress={() => handleReport(item.id)}>
-                      <Flag height={widescreen ? 22 : 18} width={widescreen ? 22 : 18} />
+                      <Flag height={widescreen ? 24 : 20} width={widescreen ? 24 : 20} />
                     </Pressable>
                   ) : (
                     <Pressable onPress={() => handleDelete(item.id)}>
-                      <Trash height={20} width={20} />
+                      <Trash height={widescreen ? 22 : 18} width={widescreen ? 22 : 18} />
                     </Pressable>
                   )
                 }
