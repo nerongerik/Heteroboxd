@@ -186,7 +186,7 @@ const Home = () => {
       headerRight: () => {
         if (widescreen) return null
         return (
-          <Pressable onPress={() => router.push('/search')} style={{marginRight: 15}}>
+          <Pressable onPress={() => router.push('/search')} style={{marginRight: Platform.OS === 'web' ? 15 : null}}>
             <Search width={24} height={24} fill={Colors.text} />
           </Pressable>
         )
@@ -194,7 +194,7 @@ const Home = () => {
       headerLeft: () => {
         if (widescreen) return null
         return (
-          <View style={{width: 28, height: 28}} style={{marginLeft: 15}}>
+          <View style={{width: 28, height: 28}} style={{marginLeft: Platform.OS === 'web' ? 15 : null}}>
             <Pressable onPress={openMenu}>
               <Slide width={28} height={28} fill={Colors.text} />
             </Pressable>
