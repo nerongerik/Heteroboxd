@@ -13,7 +13,7 @@ import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
-import ParsedRead from '../../../components/parsedRead'
+import ReviewText from '../../../components/reviewText'
 import Popup from '../../../components/popup'
 import { Poster } from '../../../components/poster'
 import Stars from '../../../components/stars'
@@ -153,16 +153,14 @@ const UserReviews = () => {
               }}
             />
           </View>
-          {
-            item.text?.length > 0 ?
-            <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={maxRowWidth - posterWidth - 10} />
-            </View>
-            :
-            <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
-            </View>
-          }
+          <ReviewText
+            text={item.text}
+            width={maxRowWidth - posterWidth - 10}
+            maxHeight={posterHeight}
+            spoiler={true}
+            revealSpoiler={() => {}}
+            widescreen={widescreen}
+          />
         </View>
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
           <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />

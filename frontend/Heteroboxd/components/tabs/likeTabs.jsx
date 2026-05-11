@@ -7,7 +7,7 @@ import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
 import Author from '../author'
 import HText from '../htext'
-import ParsedRead from '../parsedRead'
+import ReviewText from '../reviewText'
 import { Poster } from '../poster'
 import Stars from '../stars'
 
@@ -94,15 +94,14 @@ const LikeTabs = ({ reviews, lists, onPageChange, router, pageSize, isRefreshing
               }}
             />
           </View>
-          {item.text?.length > 0 ? (
-            <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={maxRowWidth - posterWidth - 10} />
-            </View>
-          ) : (
-            <View style={{width: maxRowWidth - posterWidth - 10, marginLeft: -5}}>
-              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
-            </View>
-          )}
+          <ReviewText
+            text={item.text}
+            width={maxRowWidth - posterWidth - 10}
+            maxHeight={posterHeight}
+            spoiler={true}
+            revealSpoiler={() => {}}
+            widescreen={widescreen}
+          />
         </View>
         <View style={styles.statsRow}>
           <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />

@@ -288,7 +288,7 @@ const SearchTabs = ({ widescreen, router }) => {
             style={{
               minWidth: widescreen ? 800 : '80%',
               maxWidth: widescreen ? 800 : '80%',
-              borderWidth: 1.5,
+              borderWidth: 1,
               borderRightWidth: 0,
               borderColor: border ? Colors.heteroboxd : Colors.border_color,
               borderTopLeftRadius: 10,

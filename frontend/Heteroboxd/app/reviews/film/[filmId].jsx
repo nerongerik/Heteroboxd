@@ -15,7 +15,7 @@ import Author from '../../../components/author'
 import FilterSort from '../../../components/filterSort'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
-import ParsedRead from '../../../components/parsedRead'
+import ReviewText from '../../../components/reviewText'
 import Popup from '../../../components/popup'
 import Stars from '../../../components/stars'
 import SlidingMenu from '../../../components/slidingMenu'
@@ -160,21 +160,14 @@ const FilmsReviews = () => {
         <Stars size={widescreen ? 30 : 20} rating={item.rating} readonly={true} padding={false} align={'flex-end'} />
       </View>
       <Pressable onPress={() => router.push(`/review/${item.id}`)}>
-        {
-          item.text?.length > 0 ?
-            !item.spoiler || uwf || isRevealed(item.id) ? (
-              <View style={{marginVertical: 7.5, overflow: 'hidden'}}>
-                <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 600 : 300)}`} contentWidth={maxRowWidth} />
-              </View>
-            ) : (
-            <Pressable onPress={() => revealSpoiler(item.id)}>
-              <View style={{width: '95%', alignSelf: 'center', padding: 10, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center'}}>
-                <Spoiler width={widescreen ? 30 : 24} height={widescreen ? 30 : 24} />
-                <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>
-              </View>
-            </Pressable>
-            ) : <HText style={{paddingVertical: 10, color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
-        }
+        <ReviewText
+          text={item.text}
+          width={maxRowWidth}
+          maxHeight={widescreen ? 200 : 100}
+          spoiler={(!item.spoiler || uwf || isRevealed(item.id))}
+          revealSpoiler={() => revealSpoiler(item.id)}
+          widescreen={widescreen}
+        />
         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>
           <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />
           <HText style={{marginHorizontal: 4, fontWeight: 'bold', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12}}>{format.formatCount(item.likeCount)}</HText>

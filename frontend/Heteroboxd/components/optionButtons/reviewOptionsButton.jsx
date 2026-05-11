@@ -61,7 +61,7 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
       if (res.ok) {
         setServer(Response.ok)
         closeMenu()
-        router.replace(`/`)
+        router.replace(`/reviews/user/${user.userId}`)
       } else if (res.status === 404) {
         setServer(Response.notFound)
       } else {
