@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Image, Linking, PanResponder, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Explore from '../assets/icons/explore.svg'
 import Search from '../assets/icons/search.svg'
+import Spoiler from '../assets/icons/spoiler.svg'
 import Ranking from '../assets/icons/ranking.svg'
 import Review from '../assets/icons/review.svg'
 import Watchlist from '../assets/icons/bookmark.svg'
@@ -28,7 +29,6 @@ import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import Author from '../components/author'
 import HText from '../components/htext'
-import ParsedRead from '../components/parsedRead'
 import { Poster } from '../components/poster'
 import SideNav from '../components/sideNav'
 import Stars from '../components/stars'
@@ -36,6 +36,7 @@ import { UserAvatar } from '../components/userAvatar'
 import Interact from '../components/interact'
 import SlidingMenu from '../components/slidingMenu'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ReviewText from '../components/reviewText'
 
 const PAGE_SIZE = 10
 
@@ -58,6 +59,7 @@ const Home = () => {
   const [ selected, setSelected ] = useState(null)
   const [ showLb, setShowLb ] = useState(false)
   const insets = useSafeAreaInsets()
+  const [ revealedSpoilers, setRevealedSpoilers ] = useState(() => new Set())
 
   const translateX = slideAnim.interpolate({inputRange: [0, 1], outputRange: [-300, 0]})
   const openMenu = useCallback(() => {
@@ -169,6 +171,16 @@ const Home = () => {
       })()
     }, [user])
   )
+
+  const revealSpoiler = useCallback((reviewId) => {
+    setRevealedSpoilers(prev => {
+      const next = new Set(prev)
+      next.add(reviewId)
+      return next
+    })
+  }, [])
+  
+  const isRevealed = useCallback((reviewId) => revealedSpoilers.has(reviewId), [revealedSpoilers])
 
   const widescreen = useMemo(() => width > 1000, [width])
   const shortscreen = useMemo(() => height < 700, [height])
@@ -603,15 +615,14 @@ const Home = () => {
                                           }}
                                         />
                                       </View>
-                                      {item.text?.length > 0 ? (
-                                        <View style={{width: maxRowWidth - posterWidth - 10, maxHeight: posterHeight, overflow: 'hidden'}}>
-                                          <ParsedRead html={`${format.sliceText(item.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={maxRowWidth - posterWidth - 10} />
-                                        </View>
-                                      ) : (
-                                        <View style={{ width: maxRowWidth - colPosterWidth - 10 }}>
-                                          <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
-                                        </View>
-                                      )}
+                                      <ReviewText
+                                        text={item.text}
+                                        width={maxRowWidth - posterWidth - 10}
+                                        maxHeight={posterHeight}
+                                        spoiler={(!item.spoiler || isRevealed(item.id))}
+                                        revealSpoiler={() => revealSpoiler(item.id)}
+                                        widescreen={widescreen}
+                                      />
                                     </View>
                                     <View style={styles.statsRow}>
                                       <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />

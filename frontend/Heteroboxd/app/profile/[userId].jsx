@@ -24,7 +24,7 @@ import SearchBox from '../../components/searchBox'
 import SlidingMenu from '../../components/slidingMenu'
 import { UserAvatar } from '../../components/userAvatar'
 import Author from '../../components/author'
-import ParsedRead from '../../components/parsedRead'
+import ReviewText from '../../components/reviewText'
 import Stars from '../../components/stars'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -348,15 +348,14 @@ const Profile = () => {
               }}
             />
           </View>
-          {pinned.text?.length > 0 ? (
-            <View style={{width: reviewMaxRowWidth - reviewPosterWidth - 10, maxHeight: reviewPosterHeight, overflow: 'hidden'}}>
-              <ParsedRead html={`${format.sliceText(pinned.text.replace(/\n{2,}/g, '\n').trim(), widescreen ? 250 : 175)}`} contentWidth={reviewMaxRowWidth - reviewPosterWidth - 10} />
-            </View>
-          ) : (
-            <View style={{width: reviewMaxRowWidth - reviewPosterWidth - 10, marginLeft: -5}}>
-              <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>The author was left speechless.</HText>
-            </View>
-          )}
+          <ReviewText
+            text={pinned.text}
+            width={reviewMaxRowWidth - reviewPosterWidth - 10}
+            maxHeight={reviewPosterHeight}
+            spoiler={true}
+            revealSpoiler={() => {}}
+            widescreen={widescreen}
+          />
         </View>
         <View style={styles.statsRow}>
           <Heart height={widescreen ? 16 : 12} width={widescreen ? 16 : 12} fill={Colors.heteroboxd} />

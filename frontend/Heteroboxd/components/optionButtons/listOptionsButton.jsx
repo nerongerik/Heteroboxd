@@ -61,7 +61,7 @@ const ListOptionsButton = ({ listId, authorId, notifsOnInitial, onNotifChange, p
       if (res.ok) {
         setServer(Response.ok)
         closeMenu()
-        router.replace(`/`)
+        router.replace(`/lists/user/${user.userId}`)
       } else if (res.status === 404) {
         setServer(Response.notFound)
       } else {
