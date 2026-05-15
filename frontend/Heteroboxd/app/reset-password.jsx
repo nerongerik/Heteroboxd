@@ -50,7 +50,7 @@ const PasswordReset = () => {
     } catch {
       setServer(Response.networkError)
     }
-  }, [userId, decodedToken, password])
+  }, [userId, decodedToken, password, pwValid])
 
   return (
     <>
