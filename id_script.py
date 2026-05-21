@@ -1,6 +1,6 @@
 import json
 
-INPUT_FILE = 'movie_ids_X_X_X.json'
+INPUT_FILE = 'movie_ids_X_X_X.json' #replace with actual date
 
 def parse_movie_ids(input_file, output_file):
     try:
