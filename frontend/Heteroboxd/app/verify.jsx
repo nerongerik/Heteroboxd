@@ -6,11 +6,14 @@ import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
 import { Response } from '../constants/response'
 import HText from '../components/htext'
+import { useAuth } from '../hooks/useAuth'
+import * as auth from '../helpers/auth'
 
 const Verify = () => {
   const { userId, token } = useLocalSearchParams()
   const [ server, setServer ] = useState(Response.initial)
   const router = useRouter()
+  const { reloadUser } = useAuth()
 
   const verifyUser = useCallback(async () => {
     setServer(Response.loading)
@@ -20,7 +23,13 @@ const Verify = () => {
         headers: { 'Content-Type': 'application/json' }
       })
       if (res.ok) {
-        setServer({ result: 200, message: 'Thank you for verifying your email address! You are now free to use Heteroboxd.' })
+        const cacheBuster = await auth.refreshToken()
+        if (cacheBuster) {
+          await reloadUser()
+          setServer({ result: 200, message: 'Thank you for verifying your email address! Your reviews, lists, and comments are now public.' })
+        } else {
+          console.log('Something went wrong.')
+        }
       } else if (res.status === 404) {
         setServer(Response.notFound)
       } else {

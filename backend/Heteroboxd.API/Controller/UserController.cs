@@ -230,14 +230,15 @@ namespace Heteroboxd.API.Controller
             }
         }
 
-        [HttpPut("send")]
-        [AllowAnonymous]
-        public async Task<IActionResult> SendVerificationEmail(string UserId)
+        [HttpPost("send")]
+        [Authorize]
+        public async Task<IActionResult> SendVerificationEmail()
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"SendVerificationEmail endpoint hit with UserId: {UserId}");
             try
             {
-                await _service.SendVerificationEmail(UserId);
+                await _service.SendVerificationEmail(UserId!);
                 return Ok();
             }
             catch (KeyNotFoundException)

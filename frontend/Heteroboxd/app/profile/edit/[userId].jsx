@@ -169,7 +169,7 @@ const ProfileEdit = () => {
           setServer(Response.ok)
           router.replace(`profile/${userId}`)
         } else {
-          throw new Error('Something went wrong! Try reloading Heteroboxd or contact us for more information.')
+          console.log('Something went wrong! Try reloading Heteroboxd or contact us for more information.')
         }
       } else {
         setServer(Response.internalServerError)

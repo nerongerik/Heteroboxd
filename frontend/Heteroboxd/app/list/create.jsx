@@ -5,7 +5,7 @@ import Plus from '../../assets/icons/plus.svg'
 import Trophy from '../../assets/icons/trophy.svg'
 import Trophy2 from '../../assets/icons/trophy2.svg'
 import { Snackbar } from 'react-native-paper'
-import { useNavigation, useRouter } from 'expo-router'
+import { useNavigation, useRouter, Link } from 'expo-router'
 import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
@@ -135,6 +135,14 @@ const CreateList = () => {
 
   const Header = useMemo(() => (
     <View style={{width: widescreen ? 1000 : width*0.95, alignSelf: 'center'}}>
+      {
+        user && !user.verified && (
+        <>
+          <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>Your account is not verified! Until you verify your account, all your lists will remain private and won't show up for other users.</Link>
+          <View style={{height: 20}} />
+        </>
+        )
+      }
       <TextInput
         style={[styles.input, {borderColor: border1 ? Colors.heteroboxd : Colors.border_color, marginBottom: 15, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular'}]}
         placeholder="List name*"
