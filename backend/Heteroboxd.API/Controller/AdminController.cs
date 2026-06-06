@@ -41,7 +41,7 @@ namespace Heteroboxd.API.Controller
         {
             try
             {
-                return Ok(await _userListService.GetLists(null, Page, PageSize, "ALL", "FLAGS", true, null));
+                return Ok(await _userListService.GetLists(null, Page, PageSize, "ALL", "FLAGS", true, null, true));
             }
             catch
             {

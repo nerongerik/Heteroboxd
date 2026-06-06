@@ -64,8 +64,7 @@ namespace Heteroboxd.API.Controller
             {
                 var Response = await _service.Login(Request);
                 if (Response.Success) return Ok(new { jwt = Response.Jwt, refresh = Response.RefreshToken!.Token });
-                if (Response.EmailUnverified) return Unauthorized();
-                return BadRequest();
+                else return BadRequest();
             }
             catch
             {

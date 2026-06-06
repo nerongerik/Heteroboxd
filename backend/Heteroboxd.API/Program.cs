@@ -39,7 +39,6 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
     options.Password.RequireNonAlphanumeric = true;
-    options.SignIn.RequireConfirmedEmail = true;
 })
 .AddEntityFrameworkStores<HeteroboxdContext>()
 .AddDefaultTokenProviders();

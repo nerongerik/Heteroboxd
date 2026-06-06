@@ -36,6 +36,7 @@ namespace Heteroboxd.Shared.Repository
         Task<UserLikedList?> IsListLikedAsync(Guid UserId, Guid ListId);
         Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId);
 
+        Task Publicize(Guid UserId);
         Task UpdateAsync(User User);
         Task UpdateFavoritesAsync(UserFavorites Favorites);
         Task CreateUserWatchedFilmAsync(UserWatchedFilm WatchedFilm);
@@ -128,7 +129,7 @@ namespace Heteroboxd.Shared.Repository
                 var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
                 var PrefixQuery = _context.Users
                     .AsNoTracking()
-                    .Where(u => EF.Functions.ILike(u.Name, PrefixPattern));
+                    .Where(u => EF.Functions.ILike(u.Name, PrefixPattern) && u.EmailConfirmed);
                 var PrefixCount = await PrefixQuery.CountAsync();
 
                 if (PrefixCount > 0)
@@ -139,7 +140,7 @@ namespace Heteroboxd.Shared.Repository
                 {
                     Query = _context.Users
                         .AsNoTracking()
-                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)) && u.EmailConfirmed);
                 }
 
                 var TotalCount = await Query.CountAsync();
@@ -511,6 +512,22 @@ namespace Heteroboxd.Shared.Repository
                 .AsNoTracking()
                 .FirstOrDefaultAsync(wle => wle.FilmId == FilmId && wle.UserId == UserId);
             return Entry;
+        }
+
+        public async Task Publicize(Guid UserId)
+        {
+            await _context.Reviews
+                .Where(r => r.AuthorId == UserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    r => r.Private,
+                    r => false
+                ));
+            await _context.UserLists
+                .Where(ul => ul.AuthorId == UserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    ul => ul.Private,
+                    ul => false
+                ));
         }
 
         public async Task UpdateAsync(User User)

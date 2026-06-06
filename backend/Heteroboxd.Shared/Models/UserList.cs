@@ -5,6 +5,7 @@ namespace Heteroboxd.Shared.Models
     public class UserList
     {
         public Guid Id { get; set; }
+        public bool Private { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
         public bool Ranked { get; set; }
@@ -18,9 +19,10 @@ namespace Heteroboxd.Shared.Models
 
         protected UserList() { }
 
-        public UserList(string Name, string? Description, bool Ranked, int Size, Guid AuthorId)
+        public UserList(bool Private, string Name, string? Description, bool Ranked, int Size, Guid AuthorId)
         {
             this.Id = Guid.NewGuid();
+            this.Private = Private;
             this.Name = Name;
             this.Description = Description;
             this.Ranked = Ranked;
@@ -33,9 +35,10 @@ namespace Heteroboxd.Shared.Models
             this.FromLetterboxd = false;
         }
 
-        public UserList(string Name, string? Description, DateTime Date, int Size, Guid AuthorId)
+        public UserList(bool Private, string Name, string? Description, DateTime Date, int Size, Guid AuthorId)
         {
             this.Id = Guid.NewGuid();
+            this.Private = Private;
             this.Name = Name;
             this.Description = Description;
             this.Ranked = false;

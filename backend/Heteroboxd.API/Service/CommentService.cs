@@ -1,6 +1,7 @@
 ﻿using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Repository;
+using System.Runtime.CompilerServices;
 
 namespace Heteroboxd.API.Service
 {
@@ -19,12 +20,14 @@ namespace Heteroboxd.API.Service
         private readonly INotificationService _notificationService;
         private readonly ICommentRepository _repo;
         private readonly IReviewRepository _reviewRepo;
+        private readonly IUserRepository _userRepo;
 
-        public CommentService(ICommentRepository repo, IReviewRepository reviewRepo, INotificationService notificationService)
+        public CommentService(ICommentRepository repo, IReviewRepository reviewRepo, INotificationService notificationService, IUserRepository userRepo)
         {
             _repo = repo;
             _reviewRepo = reviewRepo;
             _notificationService = notificationService;
+            _userRepo = userRepo;
         }
 
         public async Task<CommentInfoResponse?> GetComment(string CommentId)
@@ -64,6 +67,10 @@ namespace Heteroboxd.API.Service
 
         public async Task CreateComment(CreateCommentRequest CommentRequest)
         {
+            var User = await _userRepo.LightweightFetcherAsync(Guid.Parse(CommentRequest.AuthorId));
+            if (User == null) throw new KeyNotFoundException();
+            if (!User.EmailConfirmed) throw new InvalidOperationException();
+
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(CommentRequest.ReviewId));
             if (Review == null) throw new KeyNotFoundException();
 

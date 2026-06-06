@@ -71,17 +71,17 @@ const Register = () => {
               body: blob,
               headers: { 'Content-Type': 'image/png' },
             })
-            setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
+            setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community!' })
           } else {
             await FileSystem.uploadAsync(json.presignedUrl, profileUri, {
               httpMethod: 'PUT',
               uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
               headers: { 'Content-Type': 'image/png' },
             })
-            setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
+            setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community!' })
           }
         } else {
-          setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community! We sent you a verification email needed to proceed.' })
+          setServer({ result: 200, message: 'You have successfully joined the Heteroboxd community!' })
         }
       } else if (res.status === 400) {
         setServer({ result: 400, message: 'Registration error! This email is already in use.' })

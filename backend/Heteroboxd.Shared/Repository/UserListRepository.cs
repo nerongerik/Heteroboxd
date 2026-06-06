@@ -7,7 +7,7 @@ namespace Heteroboxd.Shared.Repository
 {
     public interface IUserListRepository
     {
-        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue, bool Admin);
         Task<UserList?> GetByIdAsync(Guid ListId);
         Task<JoinResponse<UserList, User>?> GetJoinedByIdAsync(Guid ListId);
         Task<(List<JoinResponse<ListEntry, Film>> Responses, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -38,12 +38,20 @@ namespace Heteroboxd.Shared.Repository
             _context = context;
         }
 
-        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue, bool Admin)
         {
-            var Query = _context.UserLists
-                .AsNoTracking()
-                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
-                .AsQueryable();
+            var Query = 
+                Admin ?
+                    _context.UserLists
+                        .AsNoTracking()
+                        .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                        .AsQueryable()
+                :
+                    _context.UserLists
+                        .AsNoTracking()
+                        .Where(ul => !ul.Private)
+                        .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                        .AsQueryable();
 
             //filtering
             switch (Filter.ToLower())
@@ -285,10 +293,9 @@ namespace Heteroboxd.Shared.Repository
                 .Select(le => le.UserListId)
                 .Distinct();
 
-            // STEP 2: Base list query
             var ListQuery = _context.UserLists
                 .AsNoTracking()
-                .Where(ul => ListIdsQuery.Contains(ul.Id))
+                .Where(ul => ListIdsQuery.Contains(ul.Id) && !ul.Private)
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u });
 
             //filtering
@@ -350,7 +357,7 @@ namespace Heteroboxd.Shared.Repository
                 var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
                 var PrefixQuery = _context.UserLists
                     .AsNoTracking()
-                    .Where(ul => EF.Functions.ILike(ul.Name, PrefixPattern));
+                    .Where(ul => EF.Functions.ILike(ul.Name, PrefixPattern) && !ul.Private);
                 var PrefixCount = await PrefixQuery.CountAsync();
 
                 if (PrefixCount > 0)
@@ -361,7 +368,7 @@ namespace Heteroboxd.Shared.Repository
                 {
                     Query = _context.UserLists
                         .AsNoTracking()
-                        .Where(ul => EF.Functions.ToTsVector("english", ul.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                        .Where(ul => EF.Functions.ToTsVector("english", ul.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)) && !ul.Private);
                 }
 
                 var TotalCount = await Query.CountAsync();

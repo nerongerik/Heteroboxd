@@ -17,7 +17,7 @@ const ParsedRead = ({ html, contentWidth }) => {
         fontFamily: 'Inter_400Regular',
         fontSize: width > 1000 ? 16 : 14,
         color: Colors.text_input,
-        lineHeight: 24,
+        lineHeight: width > 1000 ? 18 : 16,
         paddingHorizontal: 3,
         userSelect: 'text'
       }}

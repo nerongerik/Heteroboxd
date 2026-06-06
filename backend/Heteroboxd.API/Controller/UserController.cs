@@ -230,6 +230,26 @@ namespace Heteroboxd.API.Controller
             }
         }
 
+        [HttpPut("send")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SendVerificationEmail(string UserId)
+        {
+            _logger.LogInformation($"SendVerificationEmail endpoint hit with UserId: {UserId}");
+            try
+            {
+                await _service.SendVerificationEmail(UserId);
+                return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpPut("verify")]
         [AllowAnonymous]
         public async Task<IActionResult> Verify(string UserId, string Token)
@@ -237,7 +257,7 @@ namespace Heteroboxd.API.Controller
             _logger.LogInformation($"Verify endpoint hit with UserId: {UserId} and Token: {Token}");
             try
             {
-                await _service.VerifyUser(UserId, Token);
+                await _service.Verify(UserId, Token);
                 return Ok();
             }
             catch (KeyNotFoundException)

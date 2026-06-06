@@ -103,7 +103,7 @@ const Profile = () => {
         setServer(Response.ok)
       } else if (res.status === 404) {
         setServer(Response.notFound)
-        setData({})
+        //setData({})
       } else {
         setServer(Response.internalServerError)
         setData({})
@@ -368,26 +368,53 @@ const Profile = () => {
   ), [widescreen, router, userId, data, pinned, reviewPosterWidth, reviewPosterHeight, reviewMaxRowWidth])
 
   if (!data) {
-    return (
-      <>
-      <Head>
-        <title>Profile</title>
-        <meta name="description" content="User's profile page on Heteroboxd." />
-        <meta property="og:title" content="Profile" />
-        <meta property="og:description" content="User's profile page on Heteroboxd" />
-        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
-        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
-      </Head>
-      <View style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        backgroundColor: Colors.background
-      }}>
-        <LoadingResponse visible={true} />
-      </View>
-      </>
-    )
+    if ([404, 500].includes(server.result)) {
+      return (
+        <>
+        <Head>
+          <title>Profile</title>
+          <meta name="description" content="User's profile page on Heteroboxd." />
+          <meta property="og:title" content="Profile" />
+          <meta property="og:description" content="User's profile page on Heteroboxd" />
+          <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+          <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
+        </Head>
+        <View style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          backgroundColor: Colors.background
+        }}>
+          <Popup
+            visible={[404, 500].includes(server.result)} 
+            message={server.message} 
+            onClose={() => server.result === 404 ? router.replace('/login') : router.replace('/contact')}
+          />
+        </View>
+        </>
+      )
+    } else {
+      return (
+        <>
+        <Head>
+          <title>Profile</title>
+          <meta name="description" content="User's profile page on Heteroboxd." />
+          <meta property="og:title" content="Profile" />
+          <meta property="og:description" content="User's profile page on Heteroboxd" />
+          <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+          <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
+        </Head>
+        <View style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          backgroundColor: Colors.background
+        }}>
+          <LoadingResponse visible={true} />
+        </View>
+        </>
+      )
+    }
   }
 
   if (blocked) {
@@ -580,12 +607,6 @@ const Profile = () => {
           <HText style={[styles.text, {marginTop: widescreen ? 50 : 100, marginBottom: insets.bottom, fontSize: widescreen ? 16 : 14}]}>joined {data.joined}</HText>
         </View>
       </ScrollView>
-
-      <Popup
-        visible={[404, 500].includes(server.result)} 
-        message={server.message} 
-        onClose={() => server.result === 404 ? router.replace('/login') : router.replace('/contact')}
-      />
 
       <Snackbar
         visible={snack.shown}

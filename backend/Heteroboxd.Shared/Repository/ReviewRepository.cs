@@ -105,7 +105,7 @@ namespace Heteroboxd.Shared.Repository
         {
             var FilmQuery = _context.Reviews
                 .AsNoTracking()
-                .Where(r => r.FilmId == FilmId)
+                .Where(r => r.FilmId == FilmId && !r.Private)
                 .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
                 .AsQueryable();
 
@@ -158,7 +158,7 @@ namespace Heteroboxd.Shared.Repository
         {
             var Responses = await _context.Reviews
                 .AsNoTracking()
-                .Where(r => r.FilmId == FilmId && r.Text != null && r.Text.Length > 0 && !r.Spoiler)
+                .Where(r => r.FilmId == FilmId && r.Text != null && r.Text.Length > 0 && !r.Spoiler && !r.Private)
                 .OrderByDescending(r => r.LikeCount).ThenBy(r => r.Id)
                 .Take(PageSize)
                 .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
