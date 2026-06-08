@@ -3,6 +3,8 @@ using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using System.Data.Common;
 
 namespace Heteroboxd.Shared.Repository
 {
@@ -11,6 +13,8 @@ namespace Heteroboxd.Shared.Repository
         Task<JoinResponse<Celebrity, List<CelebrityCredit>>?> GetByIdAsync(int Id);
         Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetCreditsAsync(int CelebrityId, Guid? UserId, int Page, int PageSize, Role Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
+        Task<bool> IsUserFollowingAsync(Guid UserId, int CelebrityId);
+        Task FollowUnfollowAsync(Guid UserId, int CelebrityId);
     }
 
     public class CelebrityRepository : ICelebrityRepository
@@ -160,5 +164,28 @@ namespace Heteroboxd.Shared.Repository
             }
         }
 
+        public async Task<bool> IsUserFollowingAsync(Guid UserId, int CelebrityId)
+        {
+            var UserFollowing = await _context.UserFollowingCelebrities
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ufc => ufc.UserId == UserId && ufc.CelebrityId == CelebrityId);
+            return UserFollowing != null;
+        }
+
+        public async Task FollowUnfollowAsync(Guid UserId, int CelebrityId)
+        {
+            try
+            {
+                _context.Add(new UserFollowingCelebrity(UserId, CelebrityId));
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+            {
+                _context.ChangeTracker.Clear();
+                await _context.UserFollowingCelebrities
+                    .Where(ufc => ufc.UserId == UserId && ufc.CelebrityId == CelebrityId)
+                    .ExecuteDeleteAsync();
+            }
+        }
     }
 }

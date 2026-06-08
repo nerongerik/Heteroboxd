@@ -97,9 +97,9 @@ const Profile = () => {
         setData({ 
           name: json.profile.name, pictureUrl: json.profile.pictureUrl, bio: json.profile.bio, gender: json.profile.gender, admin: json.profile.admin,
           joined: format.parseDate(json.profile.date), flags: json.profile.flags, watchlistCount: json.profile.watchlistCount,
-          listsCount: json.profile.listsCount, followersCount: json.profile.followersCount, followingCount: json.profile.followingCount,
-          blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount, likes: json.profile.likesCount,
-          watched: json.profile.watchedCount, pinnedReviewId: json.profile.pinnedReviewId || null
+          listsCount: json.profile.listsCount, stannedCount: json.profile.stannedCount, followersCount: json.profile.followersCount,
+          followingCount: json.profile.followingCount, blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount,
+          likes: json.profile.likesCount, watched: json.profile.watchedCount, pinnedReviewId: json.profile.pinnedReviewId || null
         })
         setServer(Response.ok)
       } else if (res.status === 404) {
@@ -152,6 +152,9 @@ const Profile = () => {
         break
       case 'Likes':
         router.push(`/likes/${userId}`)
+        break
+      case 'Stanned':
+        router.push(`/stanned/${userId}`)
         break
       case 'Followers':
         router.push(`/relationships/${userId}?t=followers`)
@@ -623,6 +626,7 @@ const Profile = () => {
             { label: 'Reviews', count: data.reviewsCount },
             { label: 'Lists', count: data.listsCount },
             { label: 'Likes', count: data.likes },
+            { label: 'Stanned', count: data.stannedCount },
             { label: 'Followers', count: data.followersCount },
             { label: 'Following', count: data.followingCount },
             ...(isOwnProfile ? [{ label: 'Blocked', count: data.blockedCount }] : []),

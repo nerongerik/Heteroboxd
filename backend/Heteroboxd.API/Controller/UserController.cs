@@ -133,6 +133,25 @@ namespace Heteroboxd.API.Controller
             }
         }
 
+        [HttpGet("celebrities")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserFollowingCelebrities(string UserId, int Page = 1, int PageSize = 20)
+        {
+            _logger.LogInformation($"GetUserFollowingCelebrities endpoint hit for User: {UserId}");
+            try
+            {
+                return Ok(await _service.GetFollowedCelebrities(UserId, Page, PageSize));
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("likes")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserLikes(string UserId, int ReviewsPage = 1, int ListsPage = 1, int PageSize = 20)

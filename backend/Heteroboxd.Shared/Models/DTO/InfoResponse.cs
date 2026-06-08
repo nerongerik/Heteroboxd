@@ -377,6 +377,7 @@
         public int Flags { get; set; }
         public int WatchlistCount { get; set; }
         public int ListsCount { get; set; }
+        public int StannedCount { get; set; }
         public int FollowersCount { get; set; }
         public int FollowingCount { get; set; }
         public int BlockedCount { get; set; }
@@ -387,7 +388,7 @@
         public string? PinnedReviewId { get; set; }
         public bool FromLetterboxd { get; set; }
 
-        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
+        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int StannedCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
         {
             this.Id = User.Id.ToString();
             this.Name = User.Name;
@@ -399,6 +400,7 @@
             this.Flags = User.Flags;
             this.WatchlistCount = WatchlistCount;
             this.ListsCount = UserListCount;
+            this.StannedCount = StannedCount;
             this.FollowersCount = FollowerCount;
             this.FollowingCount = FollowingCount;
             this.BlockedCount = BlockedCount;

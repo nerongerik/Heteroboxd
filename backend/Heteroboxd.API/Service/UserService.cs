@@ -16,6 +16,7 @@ namespace Heteroboxd.API.Service
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
+        Task<PagedResponse<CelebrityInfoResponse>> GetFollowedCelebrities(string UserId, int Page, int PageSize);
         Task<string> DetermineRelationship(string UserId, string TargetId);
         Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType);
@@ -74,9 +75,9 @@ namespace Heteroboxd.API.Service
 
         public async Task<UserInfoResponse> GetUser(string UserId)
         {
-            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, FollowerCount, FollowingCount, BlockedCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
-            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, FollowerCount, FollowingCount, BlockedCount);
+            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount);
         }
 
         public async Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -176,6 +177,17 @@ namespace Heteroboxd.API.Service
                     Page = BlockedPage,
                     TotalCount = BlockedCount
                 }
+            };
+        }
+
+        public async Task<PagedResponse<CelebrityInfoResponse>> GetFollowedCelebrities(string UserId, int Page, int PageSize)
+        {
+            var (Responses, TotalCount) = await _repo.GetFollowedCelebritiesAsync(Guid.Parse(UserId), Page, PageSize);
+            return new PagedResponse<CelebrityInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                Items = Responses.Select(c => new CelebrityInfoResponse(c)).ToList()
             };
         }
 
@@ -304,7 +316,7 @@ namespace Heteroboxd.API.Service
 
         public async Task Verify(string UserId, string Token)
         {
-            var (User, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, _, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
 
             var Result = await _userManager.ConfirmEmailAsync(User, Token);
