@@ -3,13 +3,14 @@ using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Net.Sockets;
 
 namespace Heteroboxd.Shared.Repository
 {
     public interface IUserRepository
     {
         Task<(List<User> Users, int TotalCount)> GetAllAsync(int Page, int PageSize);
-        Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id);
+        Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int StannedCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id);
         Task<User?> LightweightFetcherAsync(Guid Id);
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
         Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -20,6 +21,7 @@ namespace Heteroboxd.Shared.Repository
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize);
+        Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize);
         Task<List<Guid>> GetFriendsAsync(Guid UserId);
         Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
         Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize);
@@ -36,6 +38,7 @@ namespace Heteroboxd.Shared.Repository
         Task<UserLikedList?> IsListLikedAsync(Guid UserId, Guid ListId);
         Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId);
 
+        Task Publicize(Guid UserId);
         Task UpdateAsync(User User);
         Task UpdateFavoritesAsync(UserFavorites Favorites);
         Task CreateUserWatchedFilmAsync(UserWatchedFilm WatchedFilm);
@@ -72,7 +75,7 @@ namespace Heteroboxd.Shared.Repository
             return (Users, TotalCount);
         }
 
-        public async Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id)
+        public async Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int StannedCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id)
         {
             var WatchlistCount = await _context.WatchlistEntries
                 .AsNoTracking()
@@ -92,6 +95,9 @@ namespace Heteroboxd.Shared.Repository
             var LikedListCount = await _context.UserLikedLists
                 .AsNoTracking()
                 .CountAsync(ull => ull.UserId == Id);
+            var StannedCount = await _context.UserStannedCelebrities
+                .AsNoTracking()
+                .CountAsync(usc => usc.UserId == Id);
             var FollowerCount = await _context.UserRelationships
                 .AsNoTracking()
                 .CountAsync(ur => ur.TargetId == Id && ur.Relationship == Models.Enums.Relationship.Following);
@@ -104,7 +110,7 @@ namespace Heteroboxd.Shared.Repository
             var User = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == Id);
 
-            return (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikedReviewsCount + LikedListCount, FollowerCount, FollowingCount, BlockedCount);
+            return (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikedReviewsCount + LikedListCount, StannedCount, FollowerCount, FollowingCount, BlockedCount);
         }
 
         public async Task<User?> LightweightFetcherAsync(Guid Id) =>
@@ -128,7 +134,7 @@ namespace Heteroboxd.Shared.Repository
                 var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
                 var PrefixQuery = _context.Users
                     .AsNoTracking()
-                    .Where(u => EF.Functions.ILike(u.Name, PrefixPattern));
+                    .Where(u => EF.Functions.ILike(u.Name, PrefixPattern) && u.EmailConfirmed);
                 var PrefixCount = await PrefixQuery.CountAsync();
 
                 if (PrefixCount > 0)
@@ -139,7 +145,7 @@ namespace Heteroboxd.Shared.Repository
                 {
                     Query = _context.Users
                         .AsNoTracking()
-                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)) && u.EmailConfirmed);
                 }
 
                 var TotalCount = await Query.CountAsync();
@@ -300,6 +306,25 @@ namespace Heteroboxd.Shared.Repository
                 : new();
 
             return (Following, FollowingCount, Followers, FollowersCount, Blocked, BlockedCount);
+        }
+
+        public async Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize)
+        {
+            var Query = _context.UserStannedCelebrities
+                .AsNoTracking()
+                .Where(usc => usc.UserId == UserId)
+                .OrderBy(usc => usc.Date).ThenBy(usc => usc.Id)
+                .Select(usc => usc.CelebrityId)
+                .Join(_context.Celebrities, cid => cid, c => c.Id, (cid, c) => new { c });
+
+            var TotalCount = Query.Count();
+            var Responses = await Query
+                .Skip((Page - 1) * PageSize)
+                .Take(PageSize)
+                .Select(x => x.c)
+                .ToListAsync();
+
+            return (Responses, TotalCount);
         }
 
         public async Task<List<Guid>> GetFriendsAsync(Guid UserId) =>
@@ -511,6 +536,22 @@ namespace Heteroboxd.Shared.Repository
                 .AsNoTracking()
                 .FirstOrDefaultAsync(wle => wle.FilmId == FilmId && wle.UserId == UserId);
             return Entry;
+        }
+
+        public async Task Publicize(Guid UserId)
+        {
+            await _context.Reviews
+                .Where(r => r.AuthorId == UserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    r => r.Private,
+                    r => false
+                ));
+            await _context.UserLists
+                .Where(ul => ul.AuthorId == UserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    ul => ul.Private,
+                    ul => false
+                ));
         }
 
         public async Task UpdateAsync(User User)

@@ -9,12 +9,13 @@ import { Poster } from '../poster'
 import Interact from '../interact'
 import SlidingMenu from '../slidingMenu'
 
-const CelebrityTabs = ({ user, bio, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, updateSeenFilms, seenCount, fadeSeen, isRefreshing, onRefresh, loading }) => {
+const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, updateSeenFilms, seenCount, fadeSeen, isRefreshing, onRefresh, loading }) => {
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ selected, setSelected ] = useState(null)
+  const [ localStanCount, setLocalStanCount ] = useState(stanCount)
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback((id) => {
@@ -198,26 +199,47 @@ const CelebrityTabs = ({ user, bio, currentTabData, availableRoles, activeTab, o
           contentContainerStyle={{width: maxRowWidth, flexDirection: widescreen ? 'row' : 'column', justifyContent: 'flex-start'}} 
           showsVerticalScrollIndicator={false}
         >
-          <Pressable
-            onPress={() => {
-              if (!bio.url) {}
-              else Linking.openURL(bio.url)
-            }}
-          >
-            <Headshot
-              pictureUrl={bio.url}
-              style={{
-                width: headshotWidth,
-                height: headshotHeight,
-                borderWidth: 1,
-                borderColor: Colors.border_color,
-                borderRadius: 4,
-                margin: widescreen ? 10 : 0,
-                alignSelf: widescreen ? 'auto' : 'center'
+          <View style={{margin: widescreen ? 10 : 0, alignSelf: widescreen ? 'auto' : 'center', alignItems: 'center'}}>
+            <Pressable
+              onPress={() => {
+                if (!bio.url) {}
+                else Linking.openURL(bio.url)
               }}
-              wcp={true}
-            />
-          </Pressable>
+            >
+              <Headshot
+                pictureUrl={bio.url}
+                style={{
+                  width: headshotWidth,
+                  height: headshotHeight,
+                  borderWidth: 1,
+                  borderColor: Colors.border_color,
+                  borderRadius: 4,
+                  margin: widescreen ? 10 : 0,
+                  marginBottom: widescreen ? null : 10,
+                  alignSelf: widescreen ? 'auto' : 'center'
+                }}
+                wcp={true}
+              />
+            </Pressable>
+            <View style={{alignItems: 'center'}}>
+              <Pressable
+                onPress={() => {setLocalStanCount(prev => stans ? prev - 1 : prev + 1); onStan()}}
+                style={{
+                  backgroundColor: 'transparent',
+                  borderWidth: 3,
+                  borderColor: stans ? Colors.heteroboxd : Colors._heteroboxd,
+                  borderRadius: 3,
+                  paddingVertical: widescreen ? 8 : 6,
+                  paddingHorizontal: widescreen ? 8 : 6,
+                  justifyContent: 'center',
+                  alignSelf: 'center'
+                }}
+              >
+                <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: stans ? Colors.heteroboxd : Colors._heteroboxd, textAlign: 'center'}}>{stans ? 'UNSTAN' : 'STAN'}</HText>
+              </Pressable>
+              <HText style={{color: Colors.text, fontSize: widescreen ? 14 : 10, marginTop: 5}}>{format.formatCount(localStanCount)} stans</HText>
+            </View>
+          </View>
           <HText style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</HText>
         </ScrollView>
       ) : (

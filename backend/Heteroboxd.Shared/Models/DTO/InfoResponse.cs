@@ -87,6 +87,7 @@
         public string Name { get; set; }
         public string? Description { get; set; }
         public string? HeadshotUrl { get; set; }
+        public int StanCount { get; set; }
         public List<string>? Roles { get; set; }
 
         public CelebrityInfoResponse(Celebrity Celebrity, List<string>? Roles = null)
@@ -95,6 +96,7 @@
             this.Name = Celebrity.Name;
             this.Description = Celebrity.Description;
             this.HeadshotUrl = Celebrity.HeadshotUrl;
+            this.StanCount = Celebrity.StanCount;
             this.Roles = Roles;
         }
     }
@@ -122,6 +124,7 @@
     public class ReviewInfoResponse
     {
         public string Id { get; set; }
+        public bool Private { get; set; }
         public double Rating { get; set; }
         public string? Text { get; set; }
         public string Date { get; set; }
@@ -144,6 +147,7 @@
         public ReviewInfoResponse(Review Review, User Author, Film Film)
         {
             this.Id = Review.Id.ToString();
+            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
@@ -169,6 +173,7 @@
         public ReviewInfoResponse(Review Review, User Author)
         {
             this.Id = Review.Id.ToString();
+            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
@@ -191,6 +196,7 @@
         public ReviewInfoResponse(Review Review, Film Film)
         {
             this.Id = Review.Id.ToString();
+            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
@@ -212,6 +218,7 @@
         public ReviewInfoResponse(Review Review)
         {
             this.Id = Review.Id.ToString();
+            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
@@ -230,6 +237,7 @@
         public ReviewInfoResponse(Film Film)
         {
             this.Id = "";
+            this.Private = true;
             this.Text = "";
             this.Date = "";
 
@@ -245,6 +253,7 @@
     public class UserListInfoResponse
     {
         public string Id { get; set; }
+        public bool Private { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
         public bool Ranked { get; set; }
@@ -264,6 +273,7 @@
         public UserListInfoResponse(UserList List, User Author)
         {
             this.Id = List.Id.ToString();
+            this.Private = List.Private;
             this.Name = List.Name;
             this.Description = List.Description;
             this.Ranked = List.Ranked;
@@ -284,6 +294,7 @@
         public UserListInfoResponse(UserList List, List<JoinResponse<ListEntry, Film>?> Entries, User Author)
         {
             this.Id = List.Id.ToString();
+            this.Private = List.Private;
             this.Name = List.Name;
             this.Description = List.Description;
             this.Ranked = List.Ranked;
@@ -368,6 +379,7 @@
         public int Flags { get; set; }
         public int WatchlistCount { get; set; }
         public int ListsCount { get; set; }
+        public int StannedCount { get; set; }
         public int FollowersCount { get; set; }
         public int FollowingCount { get; set; }
         public int BlockedCount { get; set; }
@@ -378,7 +390,7 @@
         public string? PinnedReviewId { get; set; }
         public bool FromLetterboxd { get; set; }
 
-        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
+        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int StannedCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
         {
             this.Id = User.Id.ToString();
             this.Name = User.Name;
@@ -390,6 +402,7 @@
             this.Flags = User.Flags;
             this.WatchlistCount = WatchlistCount;
             this.ListsCount = UserListCount;
+            this.StannedCount = StannedCount;
             this.FollowersCount = FollowerCount;
             this.FollowingCount = FollowingCount;
             this.BlockedCount = BlockedCount;

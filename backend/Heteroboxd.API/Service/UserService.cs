@@ -3,6 +3,7 @@ using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Repository;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace Heteroboxd.API.Service
 {
@@ -15,6 +16,7 @@ namespace Heteroboxd.API.Service
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
+        Task<PagedResponse<CelebrityInfoResponse>> GetStannedCelebrities(string UserId, int Page, int PageSize);
         Task<string> DetermineRelationship(string UserId, string TargetId);
         Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType);
@@ -24,7 +26,8 @@ namespace Heteroboxd.API.Service
         Task<PagedResponse<UserInfoResponse>> SearchUsers(string Search, int Page, int PageSize);
         Task ReportAsync(string UserId);
         Task<string?> UpdateUser(UpdateUserRequest UserUpdate);
-        Task VerifyUser(string UserId, string Token);
+        Task SendVerificationEmail(string UserId);
+        Task Verify(string UserId, string Token);
         Task UpdateWatchlist(string UserId, int FilmId);
         Task<Dictionary<string, object?>> UpdateFavorites(string UserId, int? FilmId, int Index);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
@@ -43,8 +46,10 @@ namespace Heteroboxd.API.Service
         private readonly UserManager<User> _userManager;
         private readonly INotificationService _notificationService;
         private readonly IR2Handler _r2Handler;
+        private readonly IConfiguration _config;
+        private readonly IEmailSender _emailSender;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler, IConfiguration config, IEmailSender emailSender)
         {
             _repo = repo;
             _filmRepo = filmRepo;
@@ -53,6 +58,8 @@ namespace Heteroboxd.API.Service
             _userManager = userManager;
             _notificationService = notificationService;
             _r2Handler = r2Handler;
+            _config = config;
+            _emailSender = emailSender;
         }
 
         public async Task<PagedResponse<UserInfoResponse>> GetUsers(int Page, int PageSize)
@@ -68,9 +75,9 @@ namespace Heteroboxd.API.Service
 
         public async Task<UserInfoResponse> GetUser(string UserId)
         {
-            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, FollowerCount, FollowingCount, BlockedCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
-            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, FollowerCount, FollowingCount, BlockedCount);
+            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount);
         }
 
         public async Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -170,6 +177,17 @@ namespace Heteroboxd.API.Service
                     Page = BlockedPage,
                     TotalCount = BlockedCount
                 }
+            };
+        }
+
+        public async Task<PagedResponse<CelebrityInfoResponse>> GetStannedCelebrities(string UserId, int Page, int PageSize)
+        {
+            var (Responses, TotalCount) = await _repo.GetStannedCelebritiesAsync(Guid.Parse(UserId), Page, PageSize);
+            return new PagedResponse<CelebrityInfoResponse>
+            {
+                TotalCount = TotalCount,
+                Page = Page,
+                Items = Responses.Select(c => new CelebrityInfoResponse(c)).ToList()
             };
         }
 
@@ -277,13 +295,34 @@ namespace Heteroboxd.API.Service
             return PresignedUrl;
         }
 
-        public async Task VerifyUser(string UserId, string Token)
+        public async Task SendVerificationEmail(string UserId)
         {
-            var (User, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var User = await _repo.LightweightFetcherAsync(Guid.Parse(UserId));
+            if (User == null) throw new KeyNotFoundException();
+
+            var Token = await _userManager.GenerateEmailConfirmationTokenAsync(User);
+            var ConfirmUrl = $"{_config["Frontend:BaseUrl"]}/verify?userId={User.Id}&token={Uri.EscapeDataString(Token)}";
+
+            //confirmation email
+            string Message = $@"
+                <html>
+                    <body>
+                        <p>Verify Your Account!</p>
+                        <p>To complete your account verification, simply click <a href=""{ConfirmUrl}"">HERE</a>. (The link is valid for 24 hours)</p>
+                    </body>
+                </html>";
+            await _emailSender.SendEmailAsync(User.Email!, "Verify Your Account", Message);
+        }
+
+        public async Task Verify(string UserId, string Token)
+        {
+            var (User, _, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
 
             var Result = await _userManager.ConfirmEmailAsync(User, Token);
             if (!Result.Succeeded) throw new Exception();
+
+            await _repo.Publicize(User.Id);
         }
 
         public async Task ReportAsync(string UserId) =>

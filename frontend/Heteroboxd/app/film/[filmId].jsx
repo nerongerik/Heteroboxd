@@ -188,6 +188,33 @@ const Film = () => {
     )
   }
 
+  if ([404, 500].includes(server.result)) {
+    return (
+      <>
+      <Head>
+        <title>Film</title>
+        <meta name="description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
+        <meta property="og:title" content="Film" />
+        <meta property="og:description" content="Film page - poster, title, synopsis, average rating, cast & crew, etc." />
+        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
+      </Head>
+      <View style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        backgroundColor: Colors.background,
+      }}>
+        <Popup
+          visible={[404, 500].includes(server.result)}
+          message={server.message}
+          onClose={() => { server.result === 404 ? router.replace('/') : router.replace('/contact') }}
+        />
+      </View>
+      </>
+    )
+  }
+
   return (
     <>
     <Head>
@@ -223,8 +250,8 @@ const Film = () => {
         <View style={{width: '100%', marginTop: -15, paddingHorizontal: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', alignSelf: 'center'}}>
           <View style={{flex: 1, justifyContent: 'space-around', height: posterHeight}}>
             <View>
-              <HText style={{fontWeight: '700', color: Colors.text_title, textAlign: 'left', fontSize: widescreen ? 50 : 28, lineHeight: widescreen ? 55 : 33, paddingHorizontal: 1 }}>{film.title}</HText>
-              { film.originalTitle && <HText style={[styles.text, { fontSize: widescreen ? 25 : 14 }]}>{film.originalTitle}</HText> }
+              <HText style={{fontWeight: '700', color: Colors.text_title, textAlign: 'left', fontSize: film.title.length > 67 ? (widescreen ? 32 : 16) : (widescreen ? 50 : 28), lineHeight: film.title.length > 67 ? (widescreen ? 37 : 20) : (widescreen ? 55 : 33), paddingHorizontal: 1 }}>{film.title}</HText>
+              { film.originalTitle && <HText style={[styles.text, { fontSize: film.title.length > 67 ? (widescreen ? 16 : 8) : (widescreen ? 25 : 14) }]}>{film.originalTitle}</HText> }
             </View>
             <View>
               <HText style={[styles.subtitle, { fontSize: widescreen ? 20 : 14 }]}>DIRECTED BY</HText>
@@ -532,12 +559,6 @@ const Film = () => {
           This film's metadata was provided by <Link style={styles.link} href={`https://www.themoviedb.org/movie/${film.id}`}>TMDB</Link>, bearing no endorsement whatsoever.
         </HText>
       </ScrollView>
-
-      <Popup
-        visible={[404, 500].includes(server.result)}
-        message={server.message}
-        onClose={() => { server.result === 404 ? router.replace('/') : router.replace('/contact') }}
-      />
 
       <Snackbar
         visible={snack}

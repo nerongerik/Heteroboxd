@@ -4,7 +4,7 @@ import Filter from '../../assets/icons/filter.svg'
 import Eye from '../../assets/icons/eye2.svg'
 import Heart from '../../assets/icons/heart.svg'
 import Heart2 from '../../assets/icons/heart2.svg'
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import { useLocalSearchParams, useNavigation, useRouter, Link } from 'expo-router'
 import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
@@ -243,6 +243,14 @@ const List = () => {
 
   const Header = useMemo(() => (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
+      {
+        user && !user.verified && base?.authorId === user.userId && (
+        <>
+          <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>Your account is not verified! Until you verify your account, all your lists will remain private and won't show up for other users.</Link>
+          <View style={{height: 20}} />
+        </>
+        )
+      }
       <Author
         userId={base?.authorId}
         url={base?.authorPictureUrl || null}

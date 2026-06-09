@@ -3,6 +3,8 @@ using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using System.Data.Common;
 
 namespace Heteroboxd.Shared.Repository
 {
@@ -11,6 +13,8 @@ namespace Heteroboxd.Shared.Repository
         Task<JoinResponse<Celebrity, List<CelebrityCredit>>?> GetByIdAsync(int Id);
         Task<(List<Film> Films, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetCreditsAsync(int CelebrityId, Guid? UserId, int Page, int PageSize, Role Filter, string Sort, bool Desc, string? FilterValue);
         Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
+        Task<bool> StansAsync(Guid UserId, int CelebrityId);
+        Task StanUnstanAsync(Guid UserId, int CelebrityId);
     }
 
     public class CelebrityRepository : ICelebrityRepository
@@ -148,7 +152,7 @@ namespace Heteroboxd.Shared.Repository
 
                 var TotalCount = await Query.CountAsync();
                 var Results = await Query
-                    .OrderBy(c => c.Id)
+                    .OrderByDescending(c => c.StanCount).ThenBy(c => c.Id)
                     .Skip((Page - 1) * PageSize)
                     .Take(PageSize)
                     .ToListAsync();
@@ -160,5 +164,41 @@ namespace Heteroboxd.Shared.Repository
             }
         }
 
+        public async Task<bool> StansAsync(Guid UserId, int CelebrityId)
+        {
+            var UserStanning = await _context.UserStannedCelebrities
+                .AsNoTracking()
+                .FirstOrDefaultAsync(usc => usc.UserId == UserId && usc.CelebrityId == CelebrityId);
+            return UserStanning != null;
+        }
+
+        public async Task StanUnstanAsync(Guid UserId, int CelebrityId)
+        {
+            try
+            {
+                _context.Add(new UserStannedCelebrity(UserId, CelebrityId));
+                await _context.SaveChangesAsync();
+                await UpdateStanCountAsync(CelebrityId, 1);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+            {
+                _context.ChangeTracker.Clear();
+                await _context.UserStannedCelebrities
+                    .Where(usc => usc.UserId == UserId && usc.CelebrityId == CelebrityId)
+                    .ExecuteDeleteAsync();
+                await UpdateStanCountAsync(CelebrityId, -1);
+            }
+        }
+
+        private async Task UpdateStanCountAsync(int CelebrityId, int Delta)
+        {
+            var Rows = await _context.Celebrities
+                .Where(c => c.Id == CelebrityId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    c => c.StanCount,
+                    c => c.StanCount + Delta < 0 ? 0 : c.StanCount + Delta
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
     }
 }

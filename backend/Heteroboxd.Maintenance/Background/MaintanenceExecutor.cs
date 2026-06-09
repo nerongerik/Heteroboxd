@@ -175,6 +175,9 @@ namespace Heteroboxd.Maintenance.Background
                                 UpdateByProperties = [nameof(CelebrityCredit.Id)]
                             });
 
+                        if (Credits.Count != 0)
+                            await NotifyFollowers(_provider, Film.Title, Credits, CT);
+
                         ExistingFilms.Add(Film);
                     }
                     catch { continue; }
@@ -323,13 +326,14 @@ namespace Heteroboxd.Maintenance.Background
                     var (Film, Celebrities, Credits) = await _parser.ParseResponse(details, ThreadsafeCelebs);
 
                     var Existing = ExistingFilms.FirstOrDefault(ef => ef.Id == uf);
-                    if (Existing == null)
+                    bool NewFilm = Existing == null;
+                    if (NewFilm)
                     {
                         _context.Films.Add(Film);
                     }
                     else
                     {
-                        Existing.UpdateFields(Film);
+                        Existing!.UpdateFields(Film);
                         _context.Films.Update(Existing);
                         await _context.CelebrityCredits
                             .Where(cc => cc.FilmId == Existing.Id)
@@ -352,9 +356,52 @@ namespace Heteroboxd.Maintenance.Background
                             SetOutputIdentity = false,
                             UpdateByProperties = [nameof(CelebrityCredit.Id)]
                         });
+
+                    if (NewFilm && Credits.Count != 0)
+                        await NotifyFollowers(_provider, Film.Title, Credits, CT);
                 }
                 catch { continue; }
             }
         }
+
+        private async Task NotifyFollowers(IServiceProvider _provider, string Title, IEnumerable<CelebrityCredit> Credits, CancellationToken CT)
+        {
+            using var _scope = _provider.CreateScope();
+            var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
+
+            var CreditedCelebs = Credits.Select(c => c.CelebrityId).Distinct().ToList();
+            if (CreditedCelebs.Count == 0) return;
+
+            var Stans = await _context.UserStannedCelebrities
+                .Where(usc => CreditedCelebs.Contains(usc.CelebrityId))
+                .Select(usc => new { usc.UserId, usc.CelebrityId })
+                .ToListAsync(CT);
+
+            if (Stans.Count == 0) return;
+
+            var CelebNames = await _context.Celebrities
+                .Where(c => CreditedCelebs.Contains(c.Id))
+                .Select(c => new { c.Id, c.Name })
+                .ToDictionaryAsync(c => c.Id, c => c.Name, CT);
+
+            var Notifications = Stans
+                .Select(x =>
+                {
+                    return new Notification(
+                        $"{TruncateName(CelebNames.GetValueOrDefault(x.CelebrityId, "Celebrity"))} has been credited in {TruncateTitle(Title)}.",
+                        x.UserId
+                    );
+                })
+                .ToList();
+
+            await _context.Notifications.AddRangeAsync(Notifications, CT);
+            await _context.SaveChangesAsync(CT);
+        }
+
+        private string TruncateName(string Name, int MaxLength = 25) =>
+            Name.Length <= MaxLength ? Name : $"{Name[..MaxLength]}...";
+
+        private string TruncateTitle(string Title, int MaxLength = 50) =>
+             Title.Length <= MaxLength ? $"\"{Title}\"" : $"\"{Title[..MaxLength]}...\"";
     }
 }

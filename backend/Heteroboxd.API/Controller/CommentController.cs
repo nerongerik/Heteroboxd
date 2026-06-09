@@ -43,6 +43,14 @@ namespace Heteroboxd.API.Controller
                 await _service.CreateComment(CommentRequest);
                 return Ok();
             }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException)
+            {
+                return Unauthorized();
+            }
             catch
             {
                 return StatusCode(500);

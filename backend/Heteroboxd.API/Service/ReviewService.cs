@@ -123,12 +123,12 @@ namespace Heteroboxd.API.Service
 
         public async Task<ReviewInfoResponse> AddReview(CreateReviewRequest ReviewRequest)
         {
-            Guid UserId = Guid.Parse(ReviewRequest.AuthorId);
-
+            var User = await _userRepo.LightweightFetcherAsync(Guid.Parse(ReviewRequest.AuthorId));
+            if (User == null) throw new KeyNotFoundException();
             var Film = await _filmRepo.LightweightFetcherAsync(ReviewRequest.FilmId);
-            if (Film == null) throw new KeyNotFoundException(); //fail loudly
+            if (Film == null) throw new KeyNotFoundException();
 
-            var Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Spoiler, UserId, ReviewRequest.FilmId);
+            var Review = new Review(!User.EmailConfirmed, ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Spoiler, User.Id, ReviewRequest.FilmId);
             try
             {
                 await _repo.CreateAsync(Review);
@@ -141,14 +141,14 @@ namespace Heteroboxd.API.Service
             await _filmRepo.UpdateRatingCountAsync(ReviewRequest.FilmId, 1);
 
             //if user never clicked "Watched" on this title, we add it here for their lazy arse
-            if ((await _userRepo.GetUserWatchedFilmAsync(UserId, ReviewRequest.FilmId)) == null)
+            if ((await _userRepo.GetUserWatchedFilmAsync(User.Id, ReviewRequest.FilmId)) == null)
             {
-                var Existing = await _userRepo.IsWatchlistedAsync(ReviewRequest.FilmId, UserId);
+                var Existing = await _userRepo.IsWatchlistedAsync(ReviewRequest.FilmId, User.Id);
                 if (Existing != null)
                 {
                     await _userRepo.RemoveFromWatchlistAsync(Existing.Id);
                 }
-                await _userRepo.CreateUserWatchedFilmAsync(new UserWatchedFilm(UserId, ReviewRequest.FilmId));
+                await _userRepo.CreateUserWatchedFilmAsync(new UserWatchedFilm(User.Id, ReviewRequest.FilmId));
                 await _filmRepo.UpdateWatchCountAsync(ReviewRequest.FilmId, 1);
             }
             return new ReviewInfoResponse(Review);

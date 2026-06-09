@@ -9,6 +9,8 @@ namespace Heteroboxd.API.Service
         Task<CelebrityInfoResponse> GetCelebrity(int CelebrityId);
         Task<PagedResponse<FilmInfoResponse?>> GetCreditsDelimited(int CelebrityId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<CelebrityInfoResponse>> SearchCelebrities(string Search, int Page, int PageSize);
+        Task<bool> Stans(string UserId, int CelebrityId);
+        Task StanUnstanCelebrity(string UserId, int CelebrityId);
     }
 
     public class CelebrityService : ICelebrityService
@@ -64,5 +66,11 @@ namespace Heteroboxd.API.Service
                 Items = Results.Select(c => new CelebrityInfoResponse(c)).ToList()
             };
         }
+
+        public async Task<bool> Stans(string UserId, int CelebrityId) =>
+            await _repo.StansAsync(Guid.Parse(UserId), CelebrityId);
+
+        public async Task StanUnstanCelebrity(string UserId, int CelebrityId) =>
+            await _repo.StanUnstanAsync(Guid.Parse(UserId), CelebrityId);
     }
 }

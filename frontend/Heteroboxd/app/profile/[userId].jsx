@@ -54,6 +54,7 @@ const Profile = () => {
   const followingLocalCopyRef = useRef(null)
   const followRequestRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
+  const verifyClicked = useRef(null)
   const insets = useSafeAreaInsets()
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
@@ -96,14 +97,14 @@ const Profile = () => {
         setData({ 
           name: json.profile.name, pictureUrl: json.profile.pictureUrl, bio: json.profile.bio, gender: json.profile.gender, admin: json.profile.admin,
           joined: format.parseDate(json.profile.date), flags: json.profile.flags, watchlistCount: json.profile.watchlistCount,
-          listsCount: json.profile.listsCount, followersCount: json.profile.followersCount, followingCount: json.profile.followingCount,
-          blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount, likes: json.profile.likesCount,
-          watched: json.profile.watchedCount, pinnedReviewId: json.profile.pinnedReviewId || null
+          listsCount: json.profile.listsCount, stannedCount: json.profile.stannedCount, followersCount: json.profile.followersCount,
+          followingCount: json.profile.followingCount, blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount,
+          likes: json.profile.likesCount, watched: json.profile.watchedCount, pinnedReviewId: json.profile.pinnedReviewId || null
         })
         setServer(Response.ok)
       } else if (res.status === 404) {
         setServer(Response.notFound)
-        setData({})
+        //setData({})
       } else {
         setServer(Response.internalServerError)
         setData({})
@@ -152,6 +153,9 @@ const Profile = () => {
       case 'Likes':
         router.push(`/likes/${userId}`)
         break
+      case 'Stanned':
+        router.push(`/stanned/${userId}`)
+        break
       case 'Followers':
         router.push(`/relationships/${userId}?t=followers`)
         break
@@ -189,6 +193,30 @@ const Profile = () => {
       console.log('follow/unfollow failed; network error...')
     }
   }, [user, followRequestRef, userId])
+
+  const handleVerify = useCallback(async () => {
+    if (!verifyClicked.current) {
+      verifyClicked.current = true
+      if (!user || !(await isValidSession())) {
+        setServer(Response.forbidden)
+        router.replace('/login')
+        return
+      }
+      setServer(Response.loading)
+      setData(null)
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/send`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        setServer({ result: 201, message: `We sent the verification link to your e-mail. Please remember to check your spam folder in the case our message doesn't appear in the inbox.` })
+      } else {
+        setServer(Response.internalServerError)
+        verifyClicked.current = false
+      }
+    }
+  }, [user, isValidSession])
 
   const updateFavorites = useCallback(async (filmId, index) => {
     if (!user || !isOwnProfile || !(await isValidSession())) {
@@ -368,26 +396,53 @@ const Profile = () => {
   ), [widescreen, router, userId, data, pinned, reviewPosterWidth, reviewPosterHeight, reviewMaxRowWidth])
 
   if (!data) {
-    return (
-      <>
-      <Head>
-        <title>Profile</title>
-        <meta name="description" content="User's profile page on Heteroboxd." />
-        <meta property="og:title" content="Profile" />
-        <meta property="og:description" content="User's profile page on Heteroboxd" />
-        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
-        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
-      </Head>
-      <View style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        backgroundColor: Colors.background
-      }}>
-        <LoadingResponse visible={true} />
-      </View>
-      </>
-    )
+    if ([201, 404, 500].includes(server.result)) {
+      return (
+        <>
+        <Head>
+          <title>Profile</title>
+          <meta name="description" content="User's profile page on Heteroboxd." />
+          <meta property="og:title" content="Profile" />
+          <meta property="og:description" content="User's profile page on Heteroboxd" />
+          <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+          <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
+        </Head>
+        <View style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          backgroundColor: Colors.background
+        }}>
+          <Popup
+            visible={true} 
+            message={server.message} 
+            onClose={() => server.result === 201 ? router.replace(`/profile/${userId}`) : server.result === 404 ? router.replace('/login') : router.replace('/contact')}
+          />
+        </View>
+        </>
+      )
+    } else {
+      return (
+        <>
+        <Head>
+          <title>Profile</title>
+          <meta name="description" content="User's profile page on Heteroboxd." />
+          <meta property="og:title" content="Profile" />
+          <meta property="og:description" content="User's profile page on Heteroboxd" />
+          <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
+          <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
+        </Head>
+        <View style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          backgroundColor: Colors.background
+        }}>
+          <LoadingResponse visible={true} />
+        </View>
+        </>
+      )
+    }
   }
 
   if (blocked) {
@@ -455,7 +510,7 @@ const Profile = () => {
           <View style={{alignItems: 'center', justifyContent: 'center'}}>
             <HText style={styles.username}>{data.name}{data.admin && <HText style={{color: Colors._heteroboxd}}>{'[ADMIN]'}</HText>}</HText>
           </View>
-          {!isOwnProfile && (
+          {!isOwnProfile ? (
             <Pressable
               onPress={handleFollow}
               style={{
@@ -470,6 +525,22 @@ const Profile = () => {
               }}
             >
               <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: followButtonColor, textAlign: 'center'}}>{followLabel}</HText>
+            </Pressable>
+          ) : !user.verified && (
+            <Pressable
+              onPress={handleVerify}
+              style={{
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                borderColor: Colors.heteroboxd,
+                borderRadius: 3,
+                paddingVertical: widescreen ? 8 : 6,
+                paddingHorizontal: widescreen ? 8 : 6,
+                justifyContent: 'center',
+                alignSelf: 'center'
+              }}
+            >
+              <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: Colors.heteroboxd, textAlign: 'center'}}>VERIFY YOUR ACCOUNT</HText>
             </Pressable>
           )}
         </View>
@@ -555,6 +626,7 @@ const Profile = () => {
             { label: 'Reviews', count: data.reviewsCount },
             { label: 'Lists', count: data.listsCount },
             { label: 'Likes', count: data.likes },
+            { label: 'Stanned', count: data.stannedCount },
             { label: 'Followers', count: data.followersCount },
             { label: 'Following', count: data.followingCount },
             ...(isOwnProfile ? [{ label: 'Blocked', count: data.blockedCount }] : []),
@@ -580,12 +652,6 @@ const Profile = () => {
           <HText style={[styles.text, {marginTop: widescreen ? 50 : 100, marginBottom: insets.bottom, fontSize: widescreen ? 16 : 14}]}>joined {data.joined}</HText>
         </View>
       </ScrollView>
-
-      <Popup
-        visible={[404, 500].includes(server.result)} 
-        message={server.message} 
-        onClose={() => server.result === 404 ? router.replace('/login') : router.replace('/contact')}
-      />
 
       <Snackbar
         visible={snack.shown}

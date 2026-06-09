@@ -6,7 +6,7 @@ import Trash from '../../assets/icons/trash.svg'
 import Flag from '../../assets/icons/flag.svg'
 import Spoiler from '../../assets/icons/spoiler.svg'
 import { Snackbar } from 'react-native-paper'
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
+import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
 import * as auth from '../../helpers/auth'
 import * as format from '../../helpers/format'
@@ -261,6 +261,14 @@ const ReviewWithComments = () => {
 
   const Header = useMemo(() => (
     <View style={{padding: 5, paddingTop: 0, width: widescreen ? 1000 : '100%', alignSelf: 'center'}}>
+      {
+        user && !user.verified && review?.authorId === user.userId && (
+        <>
+          <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>Your account is not verified! Until you verify your account, all your reviews will remain private and won't show up for other users.</Link>
+          <View style={{height: 20}} />
+        </>
+        )
+      }
       <View style={{marginBottom: -5}}>
         <Author
           userId={review?.authorId}
@@ -324,8 +332,16 @@ const ReviewWithComments = () => {
       </View>
       
       <Divider marginVertical={10} />
-
-      {user && <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} />}
+  
+      {(user && user.verified) ?
+        <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} />
+      : (user && !user.verified) ?
+        <>
+          <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>You must verify your account to leave comments.</Link>
+          <Divider marginVertical={10} />
+        </>
+        : null
+      }
 
       <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount || 0})</HText>
     </View>

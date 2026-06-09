@@ -17,7 +17,7 @@ namespace Heteroboxd.API.Service
     {
         Task<List<CountryInfoResponse>> SyncCountries(string? LastSync);
         Task<string?> Register(RegisterRequest Request);
-        Task<(bool Success, bool EmailUnverified, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
+        Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request);
         (bool Success, string? AdminToken) VerifyAdminKey(string Key);
         Task Logout(string? RefreshToken, string UserId);
         Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Refresh(string? RefreshToken);
@@ -85,34 +85,18 @@ namespace Heteroboxd.API.Service
                 PresignedUrl = Url;
             }
 
-
-            var Token = await _userManager.GenerateEmailConfirmationTokenAsync(User);
-            var ConfirmUrl = $"{_config["Frontend:BaseUrl"]}/verify?userId={User.Id}&token={Uri.EscapeDataString(Token)}";
-
-            //confirmation email
-            string Message = $@"
-                <html>
-                    <body>
-                        <p>Welcome Aboard!</p>
-                        <p>Please verify your account by clicking <a href=""{ConfirmUrl}"">HERE</a>. (The link is valid for 24 hours)</p>
-                    </body>
-                </html>";
-            await _emailSender.SendEmailAsync(User.Email!, "Verify Your Account", Message);
-
             return PresignedUrl;
         }
 
-        public async Task<(bool Success, bool EmailUnverified, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
+        public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
         {
             var User = await _userManager.FindByEmailAsync(Request.Email);
-            if (User == null) return (false, false, null, null);
+            if (User == null) return (false, null, null);
 
             var Check = await _signInManager.CheckPasswordSignInAsync(User, Request.Password, false);
+            if (!Check.Succeeded) return (false, null, null);
 
-            if (Check.IsNotAllowed) return (false, true, null, null);
-            if (!Check.Succeeded) return (false, false, null, null);
-
-            return (true, false, GenerateJwt(User), (await GenerateRefreshTokenAsync(User)));
+            return (true, GenerateJwt(User), (await GenerateRefreshTokenAsync(User)));
         }
 
         public (bool Success, string? AdminToken) VerifyAdminKey(string Key)
@@ -159,7 +143,8 @@ namespace Heteroboxd.API.Service
                     new Claim("name", User.Name!),
                     new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
                     new Claim("admin", User.IsAdmin.ToString()),
-                    new Claim("lb", User.FromLetterboxd.ToString())
+                    new Claim("lb", User.FromLetterboxd.ToString()),
+                    new Claim("verified", User.EmailConfirmed.ToString())
                 };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);

@@ -29,6 +29,7 @@ namespace Heteroboxd.Shared.Data
         public DbSet<UserLikedList> UserLikedLists { get; set; }
         public DbSet<UserRelationship> UserRelationships { get; set; }
         public DbSet<ImportJob> ImportJobs { get; set; }
+        public DbSet<UserStannedCelebrity> UserStannedCelebrities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -313,6 +314,23 @@ namespace Heteroboxd.Shared.Data
 
                 entity.Property(ij => ij.Status)
                       .HasConversion<string>();
+            });
+
+            modelBuilder.Entity<UserStannedCelebrity>(entity =>
+            {
+                entity.HasKey(usc => usc.Id);
+
+                entity.HasIndex(usc => new { usc.UserId, usc.CelebrityId }).IsUnique();
+
+                entity.HasOne<User>()
+                      .WithMany()
+                      .HasForeignKey(usc => usc.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne<Celebrity>()
+                      .WithMany()
+                      .HasForeignKey(usc => usc.CelebrityId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

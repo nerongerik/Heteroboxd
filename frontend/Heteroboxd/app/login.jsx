@@ -44,8 +44,6 @@ const Login = () => {
         router.replace('/')
       } else if (res.status === 400) {
         setServer({ result: 400, message: 'Incorrect credentials! Please make sure you entered the correct email and password.' })
-      } else if (res.status === 401) {
-        setServer({ result: 403, message: `Unverified email! Please check your inbox to find the verification link we sent you.\n\n(If you can't see our message, try checking your spam folder, too!)` })
       } else {
         setServer(Response.internalServerError)
       }
@@ -196,7 +194,7 @@ const Login = () => {
           </View>
         </Modal>
         <Popup
-          visible={[201, 400, 403, 500].includes(server.result)}
+          visible={[201, 400, 500].includes(server.result)}
           message={server.message}
           onClose={() => { server.result === 201 ? router.replace('/') : server.result === 500 ? router.replace('/contact') : setServer(Response.initial) }}
         />
