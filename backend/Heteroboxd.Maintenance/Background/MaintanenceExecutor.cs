@@ -372,19 +372,19 @@ namespace Heteroboxd.Maintenance.Background
             var CreditedCelebs = Credits.Select(c => c.CelebrityId).Distinct().ToList();
             if (CreditedCelebs.Count == 0) return;
 
-            var AffectedFollowers = await _context.UserFollowingCelebrities
-                .Where(ufc => CreditedCelebs.Contains(ufc.CelebrityId))
-                .Select(ufc => new { ufc.UserId, ufc.CelebrityId })
+            var Stans = await _context.UserStannedCelebrities
+                .Where(usc => CreditedCelebs.Contains(usc.CelebrityId))
+                .Select(usc => new { usc.UserId, usc.CelebrityId })
                 .ToListAsync(CT);
 
-            if (AffectedFollowers.Count == 0) return;
+            if (Stans.Count == 0) return;
 
             var CelebNames = await _context.Celebrities
                 .Where(c => CreditedCelebs.Contains(c.Id))
                 .Select(c => new { c.Id, c.Name })
                 .ToDictionaryAsync(c => c.Id, c => c.Name, CT);
 
-            var Notifications = AffectedFollowers
+            var Notifications = Stans
                 .Select(x =>
                 {
                     return new Notification(

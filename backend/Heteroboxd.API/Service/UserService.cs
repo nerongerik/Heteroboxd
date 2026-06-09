@@ -16,7 +16,7 @@ namespace Heteroboxd.API.Service
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
-        Task<PagedResponse<CelebrityInfoResponse>> GetFollowedCelebrities(string UserId, int Page, int PageSize);
+        Task<PagedResponse<CelebrityInfoResponse>> GetStannedCelebrities(string UserId, int Page, int PageSize);
         Task<string> DetermineRelationship(string UserId, string TargetId);
         Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType);
@@ -180,9 +180,9 @@ namespace Heteroboxd.API.Service
             };
         }
 
-        public async Task<PagedResponse<CelebrityInfoResponse>> GetFollowedCelebrities(string UserId, int Page, int PageSize)
+        public async Task<PagedResponse<CelebrityInfoResponse>> GetStannedCelebrities(string UserId, int Page, int PageSize)
         {
-            var (Responses, TotalCount) = await _repo.GetFollowedCelebritiesAsync(Guid.Parse(UserId), Page, PageSize);
+            var (Responses, TotalCount) = await _repo.GetStannedCelebritiesAsync(Guid.Parse(UserId), Page, PageSize);
             return new PagedResponse<CelebrityInfoResponse>
             {
                 TotalCount = TotalCount,

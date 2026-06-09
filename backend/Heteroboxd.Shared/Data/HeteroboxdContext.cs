@@ -29,7 +29,7 @@ namespace Heteroboxd.Shared.Data
         public DbSet<UserLikedList> UserLikedLists { get; set; }
         public DbSet<UserRelationship> UserRelationships { get; set; }
         public DbSet<ImportJob> ImportJobs { get; set; }
-        public DbSet<UserFollowingCelebrity> UserFollowingCelebrities { get; set; }
+        public DbSet<UserStannedCelebrity> UserStannedCelebrities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -316,20 +316,20 @@ namespace Heteroboxd.Shared.Data
                       .HasConversion<string>();
             });
 
-            modelBuilder.Entity<UserFollowingCelebrity>(entity =>
+            modelBuilder.Entity<UserStannedCelebrity>(entity =>
             {
-                entity.HasKey(ufc => ufc.Id);
+                entity.HasKey(usc => usc.Id);
 
-                entity.HasIndex(ufc => new { ufc.UserId, ufc.CelebrityId }).IsUnique();
+                entity.HasIndex(usc => new { usc.UserId, usc.CelebrityId }).IsUnique();
 
                 entity.HasOne<User>()
                       .WithMany()
-                      .HasForeignKey(ufc => ufc.UserId)
+                      .HasForeignKey(usc => usc.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne<Celebrity>()
                       .WithMany()
-                      .HasForeignKey(ufc => ufc.CelebrityId)
+                      .HasForeignKey(usc => usc.CelebrityId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
         }

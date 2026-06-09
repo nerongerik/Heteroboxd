@@ -9,12 +9,13 @@ import { Poster } from '../poster'
 import Interact from '../interact'
 import SlidingMenu from '../slidingMenu'
 
-const CelebrityTabs = ({ user, bio, following, onFollow, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, updateSeenFilms, seenCount, fadeSeen, isRefreshing, onRefresh, loading }) => {
+const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, availableRoles, activeTab, onTabChange, onFilmPress, onPageChange, pageSize, showSeen, flipShowSeen, seenFilms, updateSeenFilms, seenCount, fadeSeen, isRefreshing, onRefresh, loading }) => {
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ selected, setSelected ] = useState(null)
+  const [ localStanCount, setLocalStanCount ] = useState(stanCount)
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback((id) => {
@@ -220,21 +221,24 @@ const CelebrityTabs = ({ user, bio, following, onFollow, currentTabData, availab
                 wcp={true}
               />
             </Pressable>
-            <Pressable
-              onPress={() => onFollow()}
-              style={{
-                backgroundColor: 'transparent',
-                borderWidth: 3,
-                borderColor: following ? Colors.heteroboxd : Colors._heteroboxd,
-                borderRadius: 3,
-                paddingVertical: widescreen ? 8 : 6,
-                paddingHorizontal: widescreen ? 8 : 6,
-                justifyContent: 'center',
-                alignSelf: 'center'
-              }}
-            >
-              <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: following ? Colors.heteroboxd : Colors._heteroboxd, textAlign: 'center'}}>{following ? 'UNSTAN' : 'STAN'}</HText>
-            </Pressable>
+            <View style={{alignItems: 'center'}}>
+              <Pressable
+                onPress={() => {setLocalStanCount(prev => stans ? prev - 1 : prev + 1); onStan()}}
+                style={{
+                  backgroundColor: 'transparent',
+                  borderWidth: 3,
+                  borderColor: stans ? Colors.heteroboxd : Colors._heteroboxd,
+                  borderRadius: 3,
+                  paddingVertical: widescreen ? 8 : 6,
+                  paddingHorizontal: widescreen ? 8 : 6,
+                  justifyContent: 'center',
+                  alignSelf: 'center'
+                }}
+              >
+                <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: stans ? Colors.heteroboxd : Colors._heteroboxd, textAlign: 'center'}}>{stans ? 'UNSTAN' : 'STAN'}</HText>
+              </Pressable>
+              <HText style={{color: Colors.text, fontSize: widescreen ? 14 : 10, marginTop: 5}}>{format.formatCount(localStanCount)} stans</HText>
+            </View>
           </View>
           <HText style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</HText>
         </ScrollView>

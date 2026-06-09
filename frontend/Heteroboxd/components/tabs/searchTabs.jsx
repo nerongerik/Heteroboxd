@@ -191,6 +191,7 @@ const SearchTabs = ({ widescreen, router }) => {
           </View>
           <View>
             <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text, fontWeight: '700'}}>{item.name}</HText>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 12, marginTop: 5, opacity: 0.8}}>{format.formatCount(item.stanCount)} stans</HText>
           </View>
         </View>
       </Pressable>

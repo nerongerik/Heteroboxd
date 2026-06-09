@@ -21,7 +21,7 @@ namespace Heteroboxd.Shared.Repository
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize);
-        Task<(List<Celebrity> Responses, int TotalCount)> GetFollowedCelebritiesAsync(Guid UserId, int Page, int PageSize);
+        Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize);
         Task<List<Guid>> GetFriendsAsync(Guid UserId);
         Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
         Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize);
@@ -95,9 +95,9 @@ namespace Heteroboxd.Shared.Repository
             var LikedListCount = await _context.UserLikedLists
                 .AsNoTracking()
                 .CountAsync(ull => ull.UserId == Id);
-            var StannedCount = await _context.UserFollowingCelebrities
+            var StannedCount = await _context.UserStannedCelebrities
                 .AsNoTracking()
-                .CountAsync(ufc => ufc.UserId == Id);
+                .CountAsync(usc => usc.UserId == Id);
             var FollowerCount = await _context.UserRelationships
                 .AsNoTracking()
                 .CountAsync(ur => ur.TargetId == Id && ur.Relationship == Models.Enums.Relationship.Following);
@@ -308,13 +308,13 @@ namespace Heteroboxd.Shared.Repository
             return (Following, FollowingCount, Followers, FollowersCount, Blocked, BlockedCount);
         }
 
-        public async Task<(List<Celebrity> Responses, int TotalCount)> GetFollowedCelebritiesAsync(Guid UserId, int Page, int PageSize)
+        public async Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize)
         {
-            var Query = _context.UserFollowingCelebrities
+            var Query = _context.UserStannedCelebrities
                 .AsNoTracking()
-                .Where(ufc => ufc.UserId == UserId)
-                .OrderBy(ufc => ufc.Date).ThenBy(ufc => ufc.Id)
-                .Select(ufc => ufc.CelebrityId)
+                .Where(usc => usc.UserId == UserId)
+                .OrderBy(usc => usc.Date).ThenBy(usc => usc.Id)
+                .Select(usc => usc.CelebrityId)
                 .Join(_context.Celebrities, cid => cid, c => c.Id, (cid, c) => new { c });
 
             var TotalCount = Query.Count();

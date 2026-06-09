@@ -9,6 +9,7 @@ import LoadingResponse from '../../components/loadingResponse'
 import Popup from '../../components/popup'
 import { Headshot } from '../../components/headshot'
 import { BaseUrl } from '../../constants/api'
+import * as format from '../../helpers/format'
 
 const PAGE_SIZE = 20
 
@@ -93,6 +94,7 @@ const Stanned = () => {
           </View>
           <View>
             <HText style={{marginBottom: widescreen ? 5 : 2, fontSize: widescreen ? 20 : 16, color: Colors.text, fontWeight: '700'}}>{item.name}</HText>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 16 : 12, marginTop: 5, opacity: 0.8}}>{format.formatCount(item.stanCount)} stans</HText>
           </View>
         </View>
       </Pressable>

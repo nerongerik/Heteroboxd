@@ -87,6 +87,7 @@
         public string Name { get; set; }
         public string? Description { get; set; }
         public string? HeadshotUrl { get; set; }
+        public int StanCount { get; set; }
         public List<string>? Roles { get; set; }
 
         public CelebrityInfoResponse(Celebrity Celebrity, List<string>? Roles = null)
@@ -95,6 +96,7 @@
             this.Name = Celebrity.Name;
             this.Description = Celebrity.Description;
             this.HeadshotUrl = Celebrity.HeadshotUrl;
+            this.StanCount = Celebrity.StanCount;
             this.Roles = Roles;
         }
     }

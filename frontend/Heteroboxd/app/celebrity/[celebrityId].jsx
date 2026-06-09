@@ -51,9 +51,9 @@ const Celebrity = () => {
   const requestRef = useRef(0)
   const lastPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
-  const [ following, setFollowing ] = useState(false)
-  const followingLocalCopyRef = useRef(null)
-  const followRequestRef = useRef(0)
+  const [ stans, setStans ] = useState(false)
+  const stansLocalCopyRef = useRef(null)
+  const stanRequestRef = useRef(0)
   
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -83,7 +83,7 @@ const Celebrity = () => {
         const json = await res.json()
         setBio(json.celebrity)
         setAvailableRoles((json.celebrity.roles ?? []).map(role => ROLE_TO_FILTER_MAP[role]).filter(Boolean))
-        setFollowing(json.isFollowing)
+        setStans(json.isFollowing)
         setServer(Response.ok)
       } else if (res.status === 404) {
         setServer(Response.notFound)
@@ -145,29 +145,29 @@ const Celebrity = () => {
     }
   }, [user, celebrityId, currentSort])
 
-  const handleFollow = useCallback(async () => {
+  const handleStan = useCallback(async () => {
     if (!user || !(await isValidSession())) {
       router.replace('/login')
       return
     }
-    const currentFollowing = followingLocalCopyRef.current
-    setFollowing(!currentFollowing)
-    const requestId = ++followRequestRef.current
+    const currentStans = stansLocalCopyRef.current
+    setStans(!currentStans)
+    const requestId = ++stanRequestRef.current
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/celebrities/follow?CelebrityId=${celebrityId}`, {
+      const res = await fetch(`${BaseUrl.api}/celebrities/stan?CelebrityId=${celebrityId}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-      if (requestId !== followRequestRef.current) return
+      if (requestId !== stanRequestRef.current) return
       if (!res.ok) {
-        console.log('follow/unfollow failed; internal server error...')
+        console.log('stan/unstan failed; internal server error...')
       }
     } catch {
-      if (requestId !== followRequestRef.current) return
-      console.log('follow/unfollow failed; network error...')
+      if (requestId !== stanRequestRef.current) return
+      console.log('stan/unstan failed; network error...')
     }
-  }, [user, followRequestRef, celebrityId])
+  }, [user, stanRequestRef, celebrityId])
 
   const handleTabChange = useCallback((newTab) => {
     setCurrentTabData({ page: 1, films: [], totalCount: 0 })
@@ -225,8 +225,8 @@ const Celebrity = () => {
   }, [currentSort])
 
   useEffect(() => {
-    followingLocalCopyRef.current = following
-  }, [following])
+    stansLocalCopyRef.current = stans
+  }, [stans])
 
   if (!bio) {
     return (
@@ -265,8 +265,9 @@ const Celebrity = () => {
       <CelebrityTabs
         user={user}
         bio={{text: bio.description || 'This individual is indescribable.', url: bio.headshotUrl || null}}
-        following={following}
-        onFollow={handleFollow}
+        stanCount={bio.stanCount}
+        stans={stans}
+        onStan={handleStan}
         currentTabData={currentTabData}
         availableRoles={availableRoles}
         activeTab={currentFilter}

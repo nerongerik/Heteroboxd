@@ -28,7 +28,7 @@ namespace Heteroboxd.API.Controller
             {
                 return Ok(new {
                     Celebrity = await _service.GetCelebrity(CelebrityId),
-                    IsFollowing = UserId == null ? false : await _service.IsUserFollowing(UserId, CelebrityId)
+                    IsFollowing = UserId == null ? false : await _service.Stans(UserId, CelebrityId)
                 });
             }
             catch (KeyNotFoundException)
@@ -71,15 +71,15 @@ namespace Heteroboxd.API.Controller
             }
         }
 
-        [HttpPost("follow")]
+        [HttpPost("stan")]
         [Authorize]
-        public async Task<IActionResult> FollowUnfollowCelebrity(int CelebrityId)
+        public async Task<IActionResult> StanUnstanCelebrity(int CelebrityId)
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            _logger.LogInformation($"FollowUnfollowCelebrity endpoint hit for {CelebrityId} by User {UserId}");
+            _logger.LogInformation($"StanUnstanCelebrity endpoint hit for {CelebrityId} by User {UserId}");
             try
             {
-                await _service.FollowUnfollowCelebrity(UserId!, CelebrityId);
+                await _service.StanUnstanCelebrity(UserId!, CelebrityId);
                 return Ok();
             }
             catch

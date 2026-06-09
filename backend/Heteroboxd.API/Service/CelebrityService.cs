@@ -9,8 +9,8 @@ namespace Heteroboxd.API.Service
         Task<CelebrityInfoResponse> GetCelebrity(int CelebrityId);
         Task<PagedResponse<FilmInfoResponse?>> GetCreditsDelimited(int CelebrityId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<CelebrityInfoResponse>> SearchCelebrities(string Search, int Page, int PageSize);
-        Task<bool> IsUserFollowing(string UserId, int CelebrityId);
-        Task FollowUnfollowCelebrity(string UserId, int CelebrityId);
+        Task<bool> Stans(string UserId, int CelebrityId);
+        Task StanUnstanCelebrity(string UserId, int CelebrityId);
     }
 
     public class CelebrityService : ICelebrityService
@@ -67,10 +67,10 @@ namespace Heteroboxd.API.Service
             };
         }
 
-        public async Task<bool> IsUserFollowing(string UserId, int CelebrityId) =>
-            await _repo.IsUserFollowingAsync(Guid.Parse(UserId), CelebrityId);
+        public async Task<bool> Stans(string UserId, int CelebrityId) =>
+            await _repo.StansAsync(Guid.Parse(UserId), CelebrityId);
 
-        public async Task FollowUnfollowCelebrity(string UserId, int CelebrityId) =>
-            await _repo.FollowUnfollowAsync(Guid.Parse(UserId), CelebrityId);
+        public async Task StanUnstanCelebrity(string UserId, int CelebrityId) =>
+            await _repo.StanUnstanAsync(Guid.Parse(UserId), CelebrityId);
     }
 }
