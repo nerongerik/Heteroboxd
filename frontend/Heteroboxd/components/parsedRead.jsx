@@ -19,6 +19,7 @@ const ParsedRead = ({ html, contentWidth }) => {
         color: Colors.text_input,
         lineHeight: width > 1000 ? 18 : 16,
         paddingHorizontal: 3,
+        paddingVertical: 5,
         userSelect: 'text'
       }}
       tagsStyles={{
