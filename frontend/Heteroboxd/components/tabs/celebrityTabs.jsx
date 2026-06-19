@@ -223,7 +223,7 @@ const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, av
             </Pressable>
             <View style={{alignItems: 'center'}}>
               <Pressable
-                onPress={() => {setLocalStanCount(prev => stans ? prev - 1 : prev + 1); onStan()}}
+                onPress={() => {setLocalStanCount(prev => stans ? (prev === 0 ? 0 : prev - 1) : prev + 1); onStan()}}
                 style={{
                   backgroundColor: 'transparent',
                   borderWidth: 3,
