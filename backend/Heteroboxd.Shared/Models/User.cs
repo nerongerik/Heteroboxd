@@ -32,7 +32,7 @@ namespace Heteroboxd.Shared.Models
 
         public User(string Name, string Email, string? Bio, string Gender) : this()
         {
-            this.UserName = Email;
+            this.UserName = PrettyUrl.BuildUserName(Email);
             this.Email = Email;
             this.Name = Name;
             this.Bio = Bio;
@@ -45,5 +45,6 @@ namespace Heteroboxd.Shared.Models
             this.Bio = string.IsNullOrEmpty(Request.Bio) ? this.Bio : Request.Bio;
             if (Request.GeneratePresign) this.PictureUrlCacheVersion++;
         }
+
     }
 }

@@ -68,6 +68,18 @@ namespace Heteroboxd.API.Service
 
             var User = new User(Regex.Replace(Request.Name.Trim(), @"\s+", " "), Request.Email, Request.Bio, Request.Gender);
 
+            var BaseUserName = User.UserName!;
+            var Candidate = BaseUserName;
+            var Suffix = 1;
+
+            while (await _userManager.FindByNameAsync(Candidate) != null)
+            {
+                Candidate = $"{BaseUserName}-{Suffix}";
+                Suffix++;
+            }
+
+            User.UserName = Candidate;
+
             var Result = await _userManager.CreateAsync(User, Request.Password);
             if (!Result.Succeeded) throw new Exception();
 

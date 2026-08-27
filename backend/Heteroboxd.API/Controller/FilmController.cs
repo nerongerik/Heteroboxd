@@ -78,6 +78,31 @@ namespace Heteroboxd.API.Controller
             }
         }
 
+        [HttpGet("slug/{Slug}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFilmBySlug(string Slug)
+        {
+            _logger.LogInformation($"GetFilmBySlug endpoint hit for: {Slug}");
+            try
+            {
+                var Film = await _service.GetFilmBySlug(Slug);
+                return Ok(
+                new
+                {
+                    Film,
+                    Ratings = await _service.GetFilmRatings(Film!.Id)
+                });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("subsequent")]
         [AllowAnonymous]
         public async Task<IActionResult> GetFilmSubsequent(int FilmId, int PageSize = 5)

@@ -3,6 +3,7 @@
     public class FilmInfoResponse
     {
         public int Id { get; set; }
+        public string Slug { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
         public List<string> Country { get; set; }
@@ -20,6 +21,7 @@
         public FilmInfoResponse(Film Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>? Credits = null)
         {
             this.Id = Film.Id;
+            this.Slug = Film.Slug;
             this.Title = Film.Title;
             this.OriginalTitle = Film.OriginalTitle;
             this.Country = Film.Country.ToList();
@@ -370,6 +372,7 @@
     public class UserInfoResponse
     {
         public string Id { get; set; }
+        public string UserName { get; set; }
         public string Name { get; set; }
         public string PictureUrl { get; set; }
         public string? Bio { get; set; }
@@ -393,6 +396,7 @@
         public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int StannedCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
         {
             this.Id = User.Id.ToString();
+            this.UserName = User.UserName!;
             this.Name = User.Name;
             this.PictureUrl = string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}";
             this.Bio = User.Bio;

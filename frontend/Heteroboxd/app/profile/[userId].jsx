@@ -31,8 +31,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 const RECENTS = 8
 const PAGE_SIZE = 50
 
+const normalizeRouteParam = (value) => Array.isArray(value) ? value[0] : value
+const isUuidRouteParam = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value ?? ''))
+
 const Profile = () => {
   const { userId } = useLocalSearchParams()
+  const routeUserKey = useMemo(() => normalizeRouteParam(userId), [userId])
   const { user, isValidSession } = useAuth()
   const [ data, setData ] = useState(null)
   const [ server, setServer ] = useState(Response.initial)
@@ -53,6 +57,8 @@ const Profile = () => {
   const [ searchInit, setSearchInit ] = useState(true)
   const followingLocalCopyRef = useRef(null)
   const followRequestRef = useRef(0)
+  const [ resolvedUserId, setResolvedUserId ] = useState(null)
+  const resolvedUserRef = useRef({ id: null, userName: null, viewerId: null })
   const [ isRefreshing, setIsRefreshing ] = useState(false)
   const verifyClicked = useRef(null)
   const insets = useSafeAreaInsets()
@@ -74,37 +80,73 @@ const Profile = () => {
     }).start(() => setMenuShown2(false))
   }, [slideAnim2])
 
-  const isOwnProfile = useMemo(() => user?.userId === userId, [user, userId])
+  const profileUserId = useMemo(
+    () => data?.id || resolvedUserId || (isUuidRouteParam(routeUserKey) ? routeUserKey : null),
+    [data?.id, resolvedUserId, routeUserKey]
+  )
+  const isOwnProfile = useMemo(
+    () => !!profileUserId && user?.userId === profileUserId,
+    [user?.userId, profileUserId]
+  )
 
   const loadProfileData = useCallback(async (fromRefresh = false) => {
-    if (fromRefresh) setIsRefreshing(false)
+    if (!routeUserKey) {
+      if (fromRefresh) setIsRefreshing(false)
+      return null
+    }
+
+    const viewerId = user?.userId ?? null
+    const resolved = resolvedUserRef.current
+
+    if (!fromRefresh && resolved.id && resolved.viewerId === viewerId && (routeUserKey === resolved.id || routeUserKey === resolved.userName)) {
+      return { id: resolved.id, reused: true }
+    }
+
     setServer(Response.loading)
+
     try {
-      const res = await fetch(`${BaseUrl.api}/users?UserId=${userId}&Inclusive=${true}${!isOwnProfile && user?.userId ? `&VisitorId=${user.userId}` : ''}`)
+      const includeVisitor = viewerId && (!isUuidRouteParam(routeUserKey) || viewerId !== routeUserKey)
+      const visitorQuery = includeVisitor ? `&VisitorId=${viewerId}` : ''
+
+      const endpoint = isUuidRouteParam(routeUserKey)
+        ? `${BaseUrl.api}/users?UserId=${routeUserKey}&Inclusive=true${visitorQuery}`
+        : `${BaseUrl.api}/users/username/${encodeURIComponent(routeUserKey)}?Inclusive=true${visitorQuery}`
+      const res = await fetch(endpoint)
       if (res.ok) {
         const json = await res.json()
+        const profile = json.profile ?? json.user
+
+        resolvedUserRef.current = { id: profile.id, userName: profile.userName, viewerId }
+        setResolvedUserId(profile.id)
         setRatings(json.ratings)
-        if (!isOwnProfile) {
+
+        const ownResolvedProfile = viewerId === profile.id
+        if (!ownResolvedProfile && json.relationship) {
           const trimmed = json.relationship.replace(/^"|"$/g, '').trim().toLowerCase()
-          if (trimmed === 'blocked') {
-            setBlocked(true)
-          } else if (trimmed === 'following') {
-            setFollowing(true)
-          } else {
-            setFollowing(false)
-          }
+          setBlocked(trimmed === 'blocked')
+          setFollowing(trimmed === 'following')
+        } else {
+          setBlocked(false)
+          setFollowing(false)
         }
-        setData({ 
-          name: json.profile.name, pictureUrl: json.profile.pictureUrl, bio: json.profile.bio, gender: json.profile.gender, admin: json.profile.admin,
-          joined: format.parseDate(json.profile.date), flags: json.profile.flags, watchlistCount: json.profile.watchlistCount,
-          listsCount: json.profile.listsCount, stannedCount: json.profile.stannedCount, followersCount: json.profile.followersCount,
-          followingCount: json.profile.followingCount, blockedCount: json.profile.blockedCount, reviewsCount: json.profile.reviewsCount,
-          likes: json.profile.likesCount, watched: json.profile.watchedCount, pinnedReviewId: json.profile.pinnedReviewId || null
+
+        setData({
+          id: profile.id, userName: profile.userName, name: profile.name, pictureUrl: profile.pictureUrl, bio: profile.bio,
+          gender: profile.gender, admin: profile.admin, joined: format.parseDate(profile.date), flags: profile.flags,
+          watchlistCount: profile.watchlistCount, listsCount: profile.listsCount, stannedCount: profile.stannedCount,
+          followersCount: profile.followersCount, followingCount: profile.followingCount, blockedCount: profile.blockedCount,
+          reviewsCount: profile.reviewsCount, likes: profile.likesCount, watched: profile.watchedCount, pinnedReviewId: profile.pinnedReviewId || null
         })
+
         setServer(Response.ok)
+
+        if (profile.userName && routeUserKey !== profile.userName) {
+          router.replace(`/profile/${profile.userName}`)
+        }
+
+        return { id: profile.id, reused: false }
       } else if (res.status === 404) {
         setServer(Response.notFound)
-        //setData({})
       } else {
         setServer(Response.internalServerError)
         setData({})
@@ -112,12 +154,18 @@ const Profile = () => {
     } catch {
       setServer(Response.networkError)
       setData({})
+    } finally {
+      if (fromRefresh) setIsRefreshing(false)
     }
-  }, [userId, user, isOwnProfile])
 
-  const loadFilmData = useCallback(async () => {
+    return null
+  }, [routeUserKey, router, user?.userId])
+
+  const loadFilmData = useCallback(async (targetUserId = resolvedUserRef.current.id) => {
+    if (!targetUserId) return
+
     try {
-      const res = await fetch(`${BaseUrl.api}/users/subsequent?UserId=${userId}&PageSize=${RECENTS}${data?.pinnedReviewId ? `&Pinned=${data?.pinnedReviewId}` : ''}`)
+      const res = await fetch(`${BaseUrl.api}/users/subsequent?UserId=${targetUserId}&PageSize=${RECENTS}${data?.pinnedReviewId ? `&Pinned=${data?.pinnedReviewId}` : ''}`)
       if (res.ok) {
         const json = await res.json()
         setFavorites([json.favorites["1"] || null, json.favorites["2"] || null, json.favorites["3"] || null, json.favorites["4"] || null])
@@ -133,45 +181,45 @@ const Profile = () => {
       setRecent({ films: [], totalCount: 0 })
       console.log('failed to fetch favorites, recents and pinned; network error...')
     }
-  }, [userId, data?.pinnedReviewId])
+  }, [data?.pinnedReviewId])
 
   const handleButtons = useCallback((button) => {
     switch (button) {
       case 'Watched':
-        router.push(`/films/user-watched/${userId}`)
+        router.push(`/films/user-watched/${profileUserId}`)
         break
       case 'Watchlist':
-        router.push(`/films/watchlist/${userId}`)
+        router.push(`/films/watchlist/${profileUserId}`)
         break
       case 'Reviews':
-        router.push(`/reviews/user/${userId}`)
+        router.push(`/reviews/user/${profileUserId}`)
         break
       case 'Lists':
         if (data.listsCount === '0' || data.listsCount === 0) router.push(`/list/create`)
-        else router.push(`/lists/user/${userId}`)
+        else router.push(`/lists/user/${profileUserId}`)
         break
       case 'Likes':
-        router.push(`/likes/${userId}`)
+        router.push(`/likes/${profileUserId}`)
         break
       case 'Stanned':
-        router.push(`/stanned/${userId}`)
+        router.push(`/stanned/${profileUserId}`)
         break
       case 'Followers':
-        router.push(`/relationships/${userId}?t=followers`)
+        router.push(`/relationships/${profileUserId}?t=followers`)
         break
       case 'Following':
-        router.push(`/relationships/${userId}?t=following`)
+        router.push(`/relationships/${profileUserId}?t=following`)
         break
       case 'Blocked':
-        router.push(`/relationships/${userId}?t=blocked`)
+        router.push(`/relationships/${profileUserId}?t=blocked`)
         break
       default:
         setSnack({ shown: true, msg: 'You cannot access that functionality.' })
     }
-  }, [router, userId, data?.listsCount])
+  }, [router, profileUserId, data?.listsCount])
 
   const handleFollow = useCallback(async () => {
-    if (!user || !(await isValidSession())) {
+    if (!profileUserId || !user || !(await isValidSession())) {
       setSnack({ shown: true, msg: 'Session expired! Try logging in again.' })
       return
     }
@@ -180,7 +228,7 @@ const Profile = () => {
     const requestId = ++followRequestRef.current
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=follow-unfollow`, {
+      const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${profileUserId}&Action=follow-unfollow`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
@@ -192,7 +240,7 @@ const Profile = () => {
       if (requestId !== followRequestRef.current) return
       console.log('follow/unfollow failed; network error...')
     }
-  }, [user, followRequestRef, userId])
+  }, [user, isValidSession, profileUserId])
 
   const handleVerify = useCallback(async () => {
     if (!verifyClicked.current) {
@@ -235,7 +283,7 @@ const Profile = () => {
     } else {
       setSnack({ shown: true, msg: `${res.status}: Something went wrong! Try reloading Heteroboxd.` })
     }
-  }, [user, isOwnProfile, favIndex])
+  }, [user, isOwnProfile, isValidSession, favIndex])
 
   useEffect(() => {
     loadProfileData()
@@ -245,13 +293,14 @@ const Profile = () => {
     if (!data) return
     navigation.setOptions({
       headerTitle: '',
-      headerRight: () => user ? <ProfileOptionsButton userId={userId} blocked={blocked} /> : null
+      headerRight: () => user ? <ProfileOptionsButton userId={profileUserId} userName={data.userName} blocked={blocked} /> : null
     })
-  }, [navigation, blocked, data, user, userId])
+  }, [navigation, blocked, data, user, profileUserId])
 
   useEffect(() => {
-    loadFilmData()
-  }, [loadFilmData])
+    if (!profileUserId) return
+    loadFilmData(profileUserId)
+  }, [profileUserId, loadFilmData])
 
   useEffect(() => {
     followingLocalCopyRef.current = following
@@ -276,7 +325,7 @@ const Profile = () => {
       onLongPress={() => isOwnProfile ? updateFavorites(-1, index + 1) : null}
       onPress={() => {
         if (item?.id) {
-          router.push(`/film/${item.id}`)
+          router.push(`/film/${item.slug || item.id}`)
         } else if (!isOwnProfile) {
           setSnack({ shown:  true, msg: 'You cannot choose favorites for other people!' })
         } else {
@@ -300,7 +349,7 @@ const Profile = () => {
   ), [isOwnProfile, updateFavorites, router, openMenu2, posterWidth, posterHeight])
 
   const Recent = useCallback(({item}) => (
-    <Pressable onPress={() => router.push(`/film/${item.id}`)} style={{marginRight: spacing}}>
+    <Pressable onPress={() => router.push(`/film/${item.slug || item.id}`)} style={{marginRight: spacing}}>
       <Poster
         posterUrl={item?.posterUrl || 'noposter'}
         style={{
@@ -349,7 +398,7 @@ const Profile = () => {
     <View style={[styles.card, {marginBottom: 5, borderWidth: 2, borderColor: Colors.heteroboxd}]}>
       <View style={{marginLeft: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Author
-          userId={userId}
+          userId={data?.userName || profileUserId}
           url={data?.pictureUrl || null}
           username={format.sliceText(data?.name || 'Anonymous', widescreen ? 50 : 25)}
           admin={data?.admin}
@@ -393,7 +442,7 @@ const Profile = () => {
         </View>
       </Pressable>
     </View>
-  ), [widescreen, router, userId, data, pinned, reviewPosterWidth, reviewPosterHeight, reviewMaxRowWidth])
+  ), [widescreen, router, profileUserId, data, pinned, reviewPosterWidth, reviewPosterHeight, reviewMaxRowWidth])
 
   if (!data) {
     if ([201, 404, 500].includes(server.result)) {
@@ -416,7 +465,7 @@ const Profile = () => {
           <Popup
             visible={true} 
             message={server.message} 
-            onClose={() => server.result === 201 ? router.replace(`/profile/${userId}`) : server.result === 404 ? router.replace('/login') : router.replace('/contact')}
+            onClose={() => server.result === 201 ? router.replace(`/profile/${resolvedUserRef.current.userName || profileUserId || routeUserKey}`) : server.result === 404 ? router.replace('/login') : router.replace('/contact')}
           />
         </View>
         </>
@@ -487,8 +536,8 @@ const Profile = () => {
             refreshing={isRefreshing} 
             onRefresh={async () => {
               setIsRefreshing(true)
-              await loadProfileData(true)
-              loadFilmData()
+              const result = await loadProfileData(true)
+              await loadFilmData(result?.id || resolvedUserRef.current.id || profileUserId)
             }}
           />
         }
@@ -497,7 +546,7 @@ const Profile = () => {
           <Pressable
             onPress={() => {
               if (!data.pictureUrl) {
-                if (isOwnProfile) router.push(`profile/edit/${userId}`)
+                if (isOwnProfile) router.push(`/profile/edit/${profileUserId}`)
                 else setSnack({ shown: true, msg: 'This user never uploaded a profile picture.' })
               } else {
                 Linking.openURL(data.pictureUrl)
@@ -593,7 +642,7 @@ const Profile = () => {
             </>
         }
 
-        <Pressable onPress={() => {router.push(`/films/user-watched/${userId}`)}}>
+        <Pressable onPress={() => {router.push(`/films/user-watched/${profileUserId}`)}}>
           <HText style={[styles.subtitle, {marginBottom: 10}]}>Recents</HText>
         </Pressable>
         <View style={{width: colPosterWidth * 4.1 + spacing * 4, maxWidth: '100%', alignSelf: 'center'}}>

@@ -393,7 +393,7 @@ const ReviewWithComments = () => {
 
   const NoComments = useMemo(() => server.result > 0 ? (
     <View style={{width: maxRowWidth, height: 50, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
-      <HText style={{color: Colors.text, fontSize: widescreen ? 20 : 16, textAlign: 'center'}}>No comments yet. Be the first to respond!</HText>
+      <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>Nothing to see here.</HText>
     </View>
   ) : (
     <View style={{width: maxRowWidth, height: 50, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>

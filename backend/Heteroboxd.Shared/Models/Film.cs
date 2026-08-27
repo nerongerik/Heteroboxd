@@ -1,8 +1,9 @@
-﻿namespace Heteroboxd.Shared.Models
+namespace Heteroboxd.Shared.Models
 {
     public class Film
     {
         public int Id { get; set; }
+        public string Slug { get; set; }
         public string Title { get; set; }
         public string? OriginalTitle { get; set; }
         public ICollection<string> Country { get; set; }
@@ -21,6 +22,7 @@
         public Film(int Id, string Title, string? OriginalTitle, string Tagline, string Synopsis, string PosterUrl, string BackdropUrl, int Length, DateTime Date)
         {
             this.Id = Id;
+            this.Slug = PrettyUrl.BuildFilmSlug(Title, Date);
             this.Title = Title;
             this.OriginalTitle = OriginalTitle;
             this.Country = new List<string>();
@@ -51,5 +53,6 @@
             this.Date = Film.Date;
             this.Collection = Film.Collection;
         }
+
     }
 }
