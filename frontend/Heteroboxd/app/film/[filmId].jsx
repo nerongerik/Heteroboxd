@@ -28,11 +28,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Comments from '../../assets/icons/comments.svg'
 
 const TOP_COUNT = 5
+const normalizeRouteParam = (value) => Array.isArray(value) ? value[0] : value
+const isIntegerRouteParam = (value) => /^\d+$/.test(String(value ?? ''))
 
 const Film = () => {
   const { filmId } = useLocalSearchParams()
+  const routeFilmKey = useMemo(() => normalizeRouteParam(filmId), [filmId])
   const { user, isValidSession } = useAuth()
-  const [ film, setFilm ] = useState({ id: null, title: '', originalTitle: '', country: [], genres: [], tagline: '', synopsis: '', posterUrl: '', backdropUrl: '', length: 0, releaseYear: 0, watchCount: 0, collection: {}, castAndCrew: [] })
+  const [ film, setFilm ] = useState({ id: null, title: '', originalTitle: '', country: [], genres: [], tagline: '', synopsis: '', posterUrl: '', backdropUrl: '', length: 0, releaseYear: 0, watchCount: 0, collection: {}, castAndCrew: [], slug: '' })
   const [ uwf, setUwf ] = useState(null)
   const [ usersReview, setUsersReview ] = useState(null)
   const [ topReviews, setTopReviews ] = useState([])
@@ -46,24 +49,45 @@ const Film = () => {
   const { width } = useWindowDimensions()
   const [ snack, setSnack ] = useState(false)
   const snackRef = useRef(false)
+  const resolvedFilmRef = useRef({ id: null, slug: null })
   const [ server, setServer ] = useState(Response.initial)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
   const insets = useSafeAreaInsets()
 
   const loadBasicData = useCallback(async (fromRefresh = false) => {
+    if (!routeFilmKey) {
+      if (fromRefresh) setIsRefreshing(false)
+      return null
+    }
+
+    const resolved = resolvedFilmRef.current
+    if (!fromRefresh && resolved.id && (routeFilmKey === String(resolved.id) || routeFilmKey === resolved.slug)) {
+      return { id: resolved.id, reused: true }
+    }
+
     setServer(Response.loading)
     try {
-      if (fromRefresh) setIsRefreshing(false)
-      const res = await fetch(`${BaseUrl.api}/films?FilmId=${filmId}`)
+      const endpoint = isIntegerRouteParam(routeFilmKey) ? `${BaseUrl.api}/films?FilmId=${routeFilmKey}` : `${BaseUrl.api}/films/slug/${encodeURIComponent(routeFilmKey)}`
+      const res = await fetch(endpoint)
       if (res.ok) {
         const json = await res.json()
-        setFilm({
-          id: json.film.id, title: json.film.title, originalTitle: json.film.originalTitle, country: format.parseCountry(json.film.country, Platform.OS),
-          genres: json.film.genres, tagline: json.film.tagline, synopsis: json.film.synopsis, posterUrl: json.film.posterUrl, backdropUrl: json.film.backdropUrl,
-          length: json.film.length, releaseYear: format.parseOutYear(json.film.date), watchCount: json.film.watchCount, collection: json.film.collection, castAndCrew: json.film.castAndCrew
-        })
+        const data = {
+          id: json.film.id, slug: json.film.slug, title: json.film.title, originalTitle: json.film.originalTitle,
+          country: format.parseCountry(json.film.country, Platform.OS), genres: json.film.genres, tagline: json.film.tagline,
+          synopsis: json.film.synopsis, posterUrl: json.film.posterUrl, backdropUrl: json.film.backdropUrl, length: json.film.length,
+          releaseYear: format.parseOutYear(json.film.date), watchCount: json.film.watchCount, collection: json.film.collection, castAndCrew: json.film.castAndCrew
+        }
+
+        resolvedFilmRef.current = { id: data.id, slug: data.slug }
+        setFilm(data)
         setRatings(json.ratings)
         setServer(Response.ok)
+
+        if (data.slug && routeFilmKey !== data.slug) {
+          router.replace(`/film/${data.slug}`)
+        }
+
+        return { id: data.id, reused: false }
       } else if (res.status === 404) {
         setServer(Response.notFound)
       } else {
@@ -71,44 +95,47 @@ const Film = () => {
       }
     } catch {
       setServer(Response.networkError)
+    } finally {
+      if (fromRefresh) setIsRefreshing(false)
     }
-  }, [filmId])
+
+    return null
+  }, [routeFilmKey, router])
   
-  const loadUserData = useCallback(async () => {
+  const loadUserData = useCallback(async (targetFilmId = resolvedFilmRef.current.id) => {
+    if (!targetFilmId) return
     if (!user || !(await isValidSession())) {
       console.log('anonymous browsing; not loading user data.')
       return
     }
+
     try {
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/interactions/${filmId}`, {
+      const res = await fetch(`${BaseUrl.api}/users/interactions/${targetFilmId}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
         const json = await res.json()
-        if (json.uwf?.date && json.uwf?.timesWatched) {
-          setUwf({ dateWatched: `Last watched on ${format.parseDate(json.uwf.date)}`, timesWatched: json.uwf.timesWatched })
-        }
-        if (json.watchlisted) {
-          setWatchlisted(json.watchlisted)
-        }
-        if (json.review?.id?.length > 0) {
-          setUsersReview(json.review)
-        }
-        if (json.friends) {
-          setFriends(json.friends)
-        }
+        setUwf(json.uwf?.date && json.uwf?.timesWatched
+          ? { dateWatched: `Last watched on ${format.parseDate(json.uwf.date)}`, timesWatched: json.uwf.timesWatched }
+          : null
+        )
+        setWatchlisted(!!json.watchlisted)
+        setUsersReview(json.review?.id?.length > 0 ? json.review : null)
+        setFriends(json.friends || null)
       } else {
         console.log('internal server error in loadUserData; debugging...')
       }
     } catch {
       console.log('network error in loadUserData; handled above.')
     }
-  }, [filmId, user])
+  }, [user, isValidSession])
 
-  const loadSubsequentData = useCallback(async () => {
+  const loadSubsequentData = useCallback(async (targetFilmId = resolvedFilmRef.current.id) => {
+    if (!targetFilmId) return
+
     try {
-      const res = await fetch(`${BaseUrl.api}/films/subsequent?FilmId=${filmId}&PageSize=${TOP_COUNT}`)
+      const res = await fetch(`${BaseUrl.api}/films/subsequent?FilmId=${targetFilmId}&PageSize=${TOP_COUNT}`)
       if (res.ok) {
         const json = await res.json()
         setListsCount(json.lists)
@@ -120,13 +147,22 @@ const Film = () => {
     } catch {
       console.log('network error in loadSubsequentData; handled above.')
     }
-  }, [filmId])
+  }, [])
 
   useEffect(() => {
-    loadBasicData()
-    loadUserData()
-    loadSubsequentData()
-  }, [loadBasicData, loadUserData, loadSubsequentData])
+    let cancelled = false
+    ;(async () => {
+      const result = await loadBasicData()
+      if (cancelled || !result?.id || result.reused) return
+      await loadSubsequentData(result.id)
+    })()
+    return () => { cancelled = true }
+  }, [loadBasicData, loadSubsequentData])
+
+  useEffect(() => {
+    if (!film.id) return
+    loadUserData(film.id)
+  }, [film.id, loadUserData])
 
   useEffect(() => {
     navigation.setOptions({
@@ -148,7 +184,7 @@ const Film = () => {
   useEffect(() => {
     snackRef.current = false
     setSnack(false)
-  }, [filmId])
+  }, [routeFilmKey])
   
   const widescreen = useMemo(() => width > 1000, [width])
   const actors = useMemo(() => film.castAndCrew?.filter(credit => credit.role.toLowerCase() === 'actor').sort((a, b) => a.order - b.order) ?? [], [film.castAndCrew])
@@ -236,11 +272,14 @@ const Film = () => {
         refreshControl={
           <RefreshControl 
             refreshing={isRefreshing} 
-            onRefresh={() => {
+            onRefresh={async () => {
               setIsRefreshing(true)
-              loadBasicData(true)
-              loadUserData()
-              loadSubsequentData()
+              const result = await loadBasicData(true)
+              const id = result?.id || resolvedFilmRef.current.id
+              await Promise.all([
+                loadUserData(id),
+                loadSubsequentData(id)
+              ])
             }}
           />
         }
@@ -330,7 +369,7 @@ const Film = () => {
         
         {
           user ? (
-            <FilmInteract widescreen={widescreen} filmId={film.id} seen={uwf} watchlisted={watchlisted} review={usersReview} />
+            <FilmInteract widescreen={widescreen} filmId={film.id} slug={film.slug} seen={uwf} watchlisted={watchlisted} review={usersReview} />
           ) : (
             <Link style={{color: Colors.text_link, fontSize: 16, paddingHorizontal: 10, textAlign: 'center'}} href='/login'>Create a Heteroboxd account or log in to interact with this film.</Link>
           )
@@ -437,7 +476,7 @@ const Film = () => {
                 data={friends}
                 keyExtractor={(item, index) => `${item.friendId}-${index}`}
                 renderItem={({item}) => (
-                  <Pressable onPress={() => item.reviewId ? router.push(`/review/${item.reviewId}`) : router.push(`/profile/${item.friendId}`)} style={{marginRight: 15}}>
+                  <Pressable onPress={() => item.reviewId ? router.push(`/review/${item.reviewId}`) : router.push(`/profile/${item.friendUserName || item.friendUsername || item.userName || item.username || item.friendId}`)} style={{marginRight: 15}}>
                     <View style={{width: headshotSize + expansionScaling, alignItems: 'center'}}>
                       <UserAvatar
                         pictureUrl={item.friendPictureUrl}
@@ -488,7 +527,7 @@ const Film = () => {
                       borderColor: Colors.border_color
                     }}>
                     <Author
-                      userId={r.authorId}
+                      userId={r.authorUserName || r.authorUsername || r.userName || r.username || r.authorId}
                       url={r.authorPictureUrl || null}
                       username={format.sliceText(r.authorName || 'Anonymous', widescreen ? 50 : 25)}
                       admin={r.admin}

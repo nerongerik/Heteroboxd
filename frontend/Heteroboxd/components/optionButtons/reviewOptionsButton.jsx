@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import More from '../../assets/icons/more.svg'
 import Flag from '../../assets/icons/flag.svg'
 import Trash from '../../assets/icons/trash.svg'
@@ -8,6 +9,8 @@ import NotifOff from '../../assets/icons/notifications-off.svg'
 import Edit from '../../assets/icons/edit.svg'
 import Pin from '../../assets/icons/pin.svg'
 import Unpin from '../../assets/icons/unpin.svg'
+import Share from '../../assets/icons/share.svg'
+import Check from '../../assets/icons/check.svg'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -28,6 +31,7 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
   const [ notifsOnLocal, setNotifsOnLocal ] = useState(true)
   const [ pinnedLocal, setPinnedLocal ] = useState(false)
   const [ server, setServer ] = useState(Response.initial)
+  const [ shared, setShared ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -155,10 +159,25 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
     }
   }, [user, authorId, reviewId])
 
+  const handleShare = useCallback(async () => {
+    if (!reviewId) return
+
+    try {
+      await Clipboard.setStringAsync(`https://www.heteroboxd.com/review/${reviewId}`)
+      setShared(true)
+    } catch {
+      return
+    }
+  }, [reviewId])
+
   useEffect(() => {
     setNotifsOnLocal(notifsOnInitial)
     setPinnedLocal(pinnedInitial)
   }, [notifsOnInitial, pinnedInitial])
+
+  useEffect(() => {
+    setShared(false)
+  }, [reviewId])
 
   const widescreen = useMemo((() => width > 1000), [width])
 
@@ -219,6 +238,11 @@ const ReviewOptionsButton = ({ reviewId, authorId, filmId, notifsOnInitial, onNo
             </>
           )
         }
+
+        <Pressable style={[styles.option, {opacity: shared ? 0.5 : 1}]} disabled={shared} onPress={handleShare}>
+          <HText style={styles.optionText}>{shared ? 'Copied to Clipboard ' : 'Share '}</HText>
+          {shared ? <Check height={18} width={18} /> : <Share height={20} width={20} />}
+        </Pressable>
 
         <LoadingResponse visible={server.result === 0} />
         <Snackbar

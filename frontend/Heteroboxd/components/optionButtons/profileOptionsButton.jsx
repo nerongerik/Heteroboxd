@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import More from '../../assets/icons/more.svg'
 import Flag from '../../assets/icons/flag.svg'
 import Edit from '../../assets/icons/edit.svg'
@@ -7,6 +8,8 @@ import Trash from '../../assets/icons/trash.svg'
 import Logout from '../../assets/icons/logout.svg'
 import Block from '../../assets/icons/block.svg'
 import Unblock from '../../assets/icons/unblock.svg'
+import Share from '../../assets/icons/share.svg'
+import Check from '../../assets/icons/check.svg'
 import { useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
 import { useAuth } from '../../hooks/useAuth'
@@ -18,7 +21,7 @@ import LoadingResponse from '../loadingResponse'
 import Popup from '../popup'
 import SlidingMenu from '../slidingMenu'
 
-const ProfileOptionsButton = ({ userId, blocked }) => {
+const ProfileOptionsButton = ({ userId, userName, blocked }) => {
   const { user, logout, isValidSession } = useAuth()
   const [ other, setOther ] = useState(false)
   const [ menuShown, setMenuShown ] = useState(false)
@@ -27,6 +30,7 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
   const [ deleteConfirm, setDeleteConfirm ] = useState(false)
   const [ blockConfirm, setBlockConfirm ] = useState(false)
   const [ blockedLocalCopy, setBlockedLocalCopy ] = useState(false)
+  const [ shared, setShared ] = useState(false)
   const router = useRouter()
   const { width } = useWindowDimensions()
 
@@ -130,6 +134,17 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
     }
   }, [user, userId, blockedLocalCopy])
 
+  const handleShare = useCallback(async () => {
+    if (!userName) return
+
+    try {
+      await Clipboard.setStringAsync(`https://www.heteroboxd.com/profile/${userName}`)
+      setShared(true)
+    } catch {
+      return
+    }
+  }, [userName])
+
   useEffect(() => {
     setBlockedLocalCopy(blocked)
   }, [blocked])
@@ -137,6 +152,10 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
   useEffect(() => {
     setOther(user?.userId !== userId)
   }, [user, userId])
+
+  useEffect(() => {
+    setShared(false)
+  }, [userName])
 
   const widescreen = useMemo((() => width > 1000), [width])
 
@@ -188,6 +207,10 @@ const ProfileOptionsButton = ({ userId, blocked }) => {
             </Pressable>
           </>
         )}
+        <Pressable disabled={shared} style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', opacity: shared ? 0.5 : 1}]} onPress={handleShare}>
+          <HText style={styles.optionText}>{shared ? 'Copied to Clipboard  ' : 'Share  '}</HText>
+          {shared ? <Check width={18} height={18} /> : <Share width={20} height={20} />}
+        </Pressable>
       </SlidingMenu>
       
       <LoadingResponse visible={server.result === 0} />

@@ -57,6 +57,39 @@ namespace Heteroboxd.API.Controller
             }
         }
 
+        [HttpGet("username/{UserName}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserByUserName(string UserName, bool Inclusive = false, string? VisitorId = null)
+        {
+            _logger.LogInformation($"GetUserByUserName endpoint hit with UserName: {UserName}");
+            try
+            {
+                var User = await _service.GetUserByUserName(UserName);
+                if (Inclusive)
+                {
+                    return Ok(
+                    new
+                    {
+                        Profile = User,
+                        Ratings = await _service.GetUserRatings(User.Id.ToString()),
+                        Relationship = VisitorId == null ? "" : await _service.DetermineRelationship(VisitorId, User.Id.ToString())
+                    });
+                }
+                else
+                {
+                    return Ok(User);
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         [HttpGet("subsequent")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUserSubsequent(string UserId, int PageSize = 8, string? Pinned = null)

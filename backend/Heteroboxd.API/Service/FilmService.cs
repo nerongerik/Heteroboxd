@@ -6,6 +6,7 @@ namespace Heteroboxd.API.Service
     public interface IFilmService
     {
         Task<FilmInfoResponse?> GetFilm(int FilmId);
+        Task<FilmInfoResponse?> GetFilmBySlug(string Slug);
         Task<List<TrendingInfoResponse>> GetTrending(string? LastSync);
         Task<List<FilmInfoResponse>> GetPopular(int PageSize);
         Task<PagedResponse<FilmInfoResponse?>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -50,6 +51,13 @@ namespace Heteroboxd.API.Service
             var Response = await _repo.GetByIdAsync(FilmId);
             if (Response == null) throw new KeyNotFoundException();
             return new FilmInfoResponse(Response.Item, Response.Joined);
+        }
+
+        public async Task<FilmInfoResponse?> GetFilmBySlug(string Slug)
+        {
+            var FilmId = await _repo.GetIdBySlugAsync(Slug);
+            if (FilmId == null) throw new KeyNotFoundException();
+            return await GetFilm(FilmId.Value);
         }
 
         public async Task<PagedResponse<FilmInfoResponse?>> GetFilms(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)

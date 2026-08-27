@@ -222,21 +222,24 @@ const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, av
               />
             </Pressable>
             <View style={{alignItems: 'center'}}>
-              <Pressable
-                onPress={() => {setLocalStanCount(prev => stans ? (prev === 0 ? 0 : prev - 1) : prev + 1); onStan()}}
-                style={{
-                  backgroundColor: 'transparent',
-                  borderWidth: 3,
-                  borderColor: stans ? Colors.heteroboxd : Colors._heteroboxd,
-                  borderRadius: 3,
-                  paddingVertical: widescreen ? 8 : 6,
-                  paddingHorizontal: widescreen ? 8 : 6,
-                  justifyContent: 'center',
-                  alignSelf: 'center'
-                }}
-              >
-                <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: stans ? Colors.heteroboxd : Colors._heteroboxd, textAlign: 'center'}}>{stans ? 'UNSTAN' : 'STAN'}</HText>
-              </Pressable>
+              {
+                user && 
+                  <Pressable
+                    onPress={() => {setLocalStanCount(prev => stans ? (prev === 0 ? 0 : prev - 1) : prev + 1); onStan()}}
+                    style={{
+                      backgroundColor: 'transparent',
+                      borderWidth: 3,
+                      borderColor: stans ? Colors.heteroboxd : Colors._heteroboxd,
+                      borderRadius: 3,
+                      paddingVertical: widescreen ? 8 : 6,
+                      paddingHorizontal: widescreen ? 8 : 6,
+                      justifyContent: 'center',
+                      alignSelf: 'center'
+                    }}
+                  >
+                    <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: stans ? Colors.heteroboxd : Colors._heteroboxd, textAlign: 'center'}}>{stans ? 'UNSTAN' : 'STAN'}</HText>
+                  </Pressable>
+              }
               <HText style={{color: Colors.text, fontSize: widescreen ? 14 : 10, marginTop: 5}}>{format.formatCount(localStanCount)} stans</HText>
             </View>
           </View>

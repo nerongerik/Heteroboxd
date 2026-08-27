@@ -26,7 +26,7 @@ The repository is public for transparency and learning purposes only.
 
 ## Installation
 
-Heteroboxd 1.3 is officially out!
+Heteroboxd 1.4 is officially out!
 
 Check out the website at https://heteroboxd.com
 

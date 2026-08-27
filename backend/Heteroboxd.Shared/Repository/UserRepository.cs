@@ -3,7 +3,6 @@ using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using System.Net.Sockets;
 
 namespace Heteroboxd.Shared.Repository
 {
@@ -11,6 +10,7 @@ namespace Heteroboxd.Shared.Repository
     {
         Task<(List<User> Users, int TotalCount)> GetAllAsync(int Page, int PageSize);
         Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int StannedCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id);
+        Task<Guid?> GetIdByUserNameAsync(string UserName);
         Task<User?> LightweightFetcherAsync(Guid Id);
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
         Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
@@ -112,6 +112,13 @@ namespace Heteroboxd.Shared.Repository
 
             return (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikedReviewsCount + LikedListCount, StannedCount, FollowerCount, FollowingCount, BlockedCount);
         }
+
+        public async Task<Guid?> GetIdByUserNameAsync(string UserName) =>
+            await _context.Users
+                .AsNoTracking()
+                .Where(u => u.UserName == UserName)
+                .Select(u => u.Id)
+                .FirstOrDefaultAsync();
 
         public async Task<User?> LightweightFetcherAsync(Guid Id) =>
             await _context.Users
