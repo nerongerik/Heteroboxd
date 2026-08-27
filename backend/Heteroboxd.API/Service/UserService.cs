@@ -11,6 +11,7 @@ namespace Heteroboxd.API.Service
     {
         Task<PagedResponse<UserInfoResponse>> GetUsers(int Page, int PageSize);
         Task<UserInfoResponse> GetUser(string UserId);
+        Task<UserInfoResponse> GetUserByUserName(string UserName);
         Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<WatchlistEntryInfoResponse?>> ShuffleWatchlist(string UserId, int PageSize);
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
@@ -78,6 +79,13 @@ namespace Heteroboxd.API.Service
             var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
             return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount);
+        }
+
+        public async Task<UserInfoResponse> GetUserByUserName(string UserName)
+        {
+            var UserId = await _repo.GetIdByUserNameAsync(UserName);
+            if (UserId == null) throw new KeyNotFoundException();
+            return await GetUser(UserId.Value.ToString());
         }
 
         public async Task<PagedResponse<WatchlistEntryInfoResponse?>> GetWatchlist(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)

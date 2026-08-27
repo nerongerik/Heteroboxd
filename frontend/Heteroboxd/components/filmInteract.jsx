@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import More from '../assets/icons/more2.svg'
 import Eye from '../assets/icons/eye.svg'
 import EyeOff from '../assets/icons/eye-off2.svg'
@@ -8,6 +9,8 @@ import Rewatch from '../assets/icons/rewatch.svg'
 import Watched from '../assets/icons/watched.svg'
 import Edit from '../assets/icons/edit.svg'
 import Addto from '../assets/icons/addto.svg'
+import Share from '../assets/icons/share.svg'
+import Check from '../assets/icons/check.svg'
 import { Snackbar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import * as auth from '../helpers/auth'
@@ -21,7 +24,7 @@ import Stars from './stars'
 import SlidingMenu from './slidingMenu'
 import { UserAvatar } from './userAvatar'
 
-const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
+const FilmInteract = ({ widescreen, filmId, slug, seen, watchlisted, review }) => {
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const { width } = useWindowDimensions()
@@ -31,12 +34,14 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
   const [ seenPressed, setSeenPressed ] = useState(false)
   const { user, isValidSession } = useAuth()
   const [ server, setServer ] = useState(Response.initial)
+  const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const router = useRouter()
   const reviewLocalCopyRef = useRef(null)
   const watchlistLocalCopyRef = useRef(null)
   const watchlistRequestRef = useRef(0)
   const ratingDebounceRef = useRef(null)
   const [ ratingPending, setRatingPending ] = useState(false)
+  const [ shared, setShared ] = useState(false)
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
@@ -196,6 +201,17 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
     }
   }, [user, watchlistRequestRef, filmId])
 
+  const handleShare = useCallback(async () => {
+    if (!slug) return
+
+    try {
+      await Clipboard.setStringAsync(`https://www.heteroboxd.com/film/${slug}`)
+      setShared(true)
+    } catch {
+      return
+    }
+  }, [slug])
+
   useEffect(() => {
     setWatchlistedLocalCopy(watchlisted)
     if (review) {
@@ -325,9 +341,17 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         <Divider marginVertical={20} />
         
         <Pressable onPress={() => {closeMenu(); router.push(`/lists/addto/${filmId}`)}}>
-          <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
+          <View style={{padding: 20, paddingTop: 0, paddingBottom: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
             <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>Add to lists</HText>
             <Addto width={28} height={28} />
+          </View>
+        </Pressable>
+        <Divider marginVertical={20} />
+
+        <Pressable onPress={handleShare} disabled={shared} style={{ opacity: shared ? 0.5 : 1 }}>
+          <View style={{padding: 20, paddingTop: 0, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', alignSelf: 'center'}}>
+            <HText style={{color: Colors.text, fontSize: widescreen ? 24 : 20, marginRight: 10}}>{shared ? 'Copied to Clipboard' : 'Share'}</HText>
+            {shared ? <Check width={22} height={22} /> : <Share width={24} height={24} />}
           </View>
         </Pressable>
 
@@ -349,7 +373,27 @@ const FilmInteract = ({ widescreen, filmId, seen, watchlisted, review }) => {
         >
           {server.message}
         </Snackbar>
+
       </SlidingMenu>
+
+      <Snackbar
+        visible={snack.shown}
+        onDismiss={() => setSnack(prev => ({...prev, shown: false}))}
+        duration={3000}
+        style={{
+          backgroundColor: Colors.card,
+          width: widescreen ? '50%' : '90%',
+          alignSelf: 'center',
+          borderRadius: 8,
+        }}
+        action={{
+          label: 'OK',
+          onPress: () => setSnack(prev => ({...prev, shown: false})),
+          textColor: Colors.text_link
+        }}
+      >
+        {snack.msg}
+      </Snackbar>
     </>
   )
 }

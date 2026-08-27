@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
+using Npgsql;
 
 namespace Heteroboxd.Maintenance.Background
 {
     public interface IMaintanenceExecutor
     {
+        Task ExecuteStanRepair(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteUserPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT);
@@ -24,6 +26,32 @@ namespace Heteroboxd.Maintenance.Background
 
     public class MaintanenceExecutor : IMaintanenceExecutor
     {
+        public async Task ExecuteStanRepair(IServiceProvider _provider, CancellationToken CT)
+        {
+            using var _scope = _provider.CreateScope();
+            var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
+
+            await _context.Database.ExecuteSqlRawAsync(
+                """
+                WITH "TrueStanCounts" AS (
+                    SELECT
+                        c."Id" AS "CelebrityId",
+                        COUNT(usc."Id")::integer AS "TrueStanCount"
+                    FROM "Celebrities" c
+                    LEFT JOIN "UserStannedCelebrities" usc
+                        ON usc."CelebrityId" = c."Id"
+                    GROUP BY c."Id"
+                )
+                UPDATE "Celebrities" c
+                SET "StanCount" = t."TrueStanCount"
+                FROM "TrueStanCounts" t
+                WHERE c."Id" = t."CelebrityId"
+                  AND c."StanCount" <> t."TrueStanCount";
+                """,
+                CT
+            );
+        }
+
         public async Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
@@ -157,15 +185,14 @@ namespace Heteroboxd.Maintenance.Background
                     {
                         var (Film, Celebrities, Credits) = await _parser.ParseResponse(details, ThreadsafeCelebs);
 
-                        _context.Films.Add(Film);
-                        await _context.SaveChangesAsync(CT);
+                        await SaveNewFilmWithUniqueSlugAsync(_context, Film, CT);
 
                         if (Celebrities.Count != 0)
                             await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
                             {
                                 SetOutputIdentity = false,
                                 UpdateByProperties = [nameof(Celebrity.Id)],
-                                PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl)]
+                                PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl), nameof(Celebrity.StanCount)]
                             });
 
                         if (Credits.Count != 0)
@@ -263,7 +290,8 @@ namespace Heteroboxd.Maintenance.Background
                 await _context.BulkInsertOrUpdateAsync(Batch, new BulkConfig
                 {
                     SetOutputIdentity = false,
-                    UpdateByProperties = [nameof(Celebrity.Id)]
+                    UpdateByProperties = [nameof(Celebrity.Id)],
+                    PropertiesToExcludeOnUpdate = [nameof(Celebrity.StanCount)]
                 });
             }
         }
@@ -327,27 +355,31 @@ namespace Heteroboxd.Maintenance.Background
 
                     var Existing = ExistingFilms.FirstOrDefault(ef => ef.Id == uf);
                     bool NewFilm = Existing == null;
+
                     if (NewFilm)
                     {
-                        _context.Films.Add(Film);
+                        await SaveNewFilmWithUniqueSlugAsync(_context, Film, CT);
+                        ExistingFilms.Add(Film);
                     }
                     else
                     {
                         Existing!.UpdateFields(Film);
+
                         _context.Films.Update(Existing);
+
                         await _context.CelebrityCredits
                             .Where(cc => cc.FilmId == Existing.Id)
                             .ExecuteDeleteAsync(CT);
-                    }
 
-                    await _context.SaveChangesAsync(CT);
+                        await _context.SaveChangesAsync(CT);
+                    }
 
                     if (Celebrities.Count != 0)
                         await _context.BulkInsertOrUpdateAsync(Celebrities, new BulkConfig
                         {
                             SetOutputIdentity = false,
                             UpdateByProperties = [nameof(Celebrity.Id)],
-                            PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl)]
+                            PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl), nameof(Celebrity.StanCount)]
                         });
 
                     if (Credits.Count != 0)
@@ -396,6 +428,53 @@ namespace Heteroboxd.Maintenance.Background
 
             await _context.Notifications.AddRangeAsync(Notifications, CT);
             await _context.SaveChangesAsync(CT);
+        }
+
+        private async Task SaveNewFilmWithUniqueSlugAsync(HeteroboxdContext _context, Film Film, CancellationToken CT)
+        {
+            var BaseSlug = Film.Slug;
+
+            for (int Attempt = 0; Attempt < 5; Attempt++)
+            {
+                Film.Slug = await ResolveUniqueFilmSlugAsync(_context, BaseSlug, CT);
+                _context.Films.Add(Film);
+
+                try
+                {
+                    await _context.SaveChangesAsync(CT);
+                    return;
+                }
+                catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+                {
+                    _context.Entry(Film).State = EntityState.Detached;
+                }
+                catch
+                {
+                    _context.Entry(Film).State = EntityState.Detached;
+                    throw;
+                }
+            }
+
+            throw new DbUpdateException($"Could not generate a unique slug for film {Film.Id}.");
+        }
+
+        private async Task<string> ResolveUniqueFilmSlugAsync(HeteroboxdContext _context, string BaseSlug, CancellationToken CT)
+        {
+            var Taken = await _context.Films
+                .AsNoTracking()
+                .Where(f => f.Slug == BaseSlug || EF.Functions.Like(f.Slug, BaseSlug + "-%"))
+                .Select(f => f.Slug)
+                .ToListAsync(CT);
+
+            var TakenSet = Taken.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (!TakenSet.Contains(BaseSlug)) return BaseSlug;
+
+            for (int Suffix = 1; ; Suffix++)
+            {
+                var Candidate = $"{BaseSlug}-{Suffix}";
+                if (!TakenSet.Contains(Candidate)) return Candidate;
+            }
         }
 
         private string TruncateName(string Name, int MaxLength = 25) =>

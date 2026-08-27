@@ -40,6 +40,7 @@ namespace Heteroboxd.Shared.Data
             {
                 b.ToTable("Users");
                 b.HasIndex(u => u.Email).IsUnique();
+                b.HasIndex(u => u.UserName).IsUnique();
                 b.Property(u => u.Gender).HasConversion<string>();
             });
 
@@ -85,6 +86,8 @@ namespace Heteroboxd.Shared.Data
             modelBuilder.Entity<Film>(entity =>
             {
                 entity.HasKey(f => f.Id);
+
+                entity.HasIndex(f => f.Slug).IsUnique();
 
                 entity.Property(f => f.Collection)
                     .HasConversion(

@@ -50,6 +50,9 @@ _logger.LogInformation("=== Maintenance job started at {Time} UTC ===", DateTime
 
 try
 {
+    _logger.LogInformation("REPAIRING CELEBRITY STAN COUNTS...");
+    await _executor.ExecuteStanRepair(_provider, _ct);
+
     _logger.LogInformation("REMOVING INVALID REFRESH TOKENS...");
     await _executor.ExecuteRefreshPurge(_provider, _ct);
 

@@ -9,6 +9,7 @@ namespace Heteroboxd.Shared.Repository
     public interface IFilmRepository
     {
         Task<JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>>?> GetByIdAsync(int Id);
+        Task<int?> GetIdBySlugAsync(string Slug);
         Task<Film?> LightweightFetcherAsync(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
         Task<List<Trending>> GetTrendingAsync();
@@ -49,6 +50,13 @@ namespace Heteroboxd.Shared.Repository
                 .ToListAsync();
             return new JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>> { Item = Film, Joined = Credits };
         }
+
+        public async Task<int?> GetIdBySlugAsync(string Slug) =>
+            await _context.Films
+                .AsNoTracking()
+                .Where(f => f.Slug == Slug)
+                .Select(f => f.Id)
+                .FirstOrDefaultAsync();
 
         public async Task<Film?> LightweightFetcherAsync(int Id) =>
             await _context.Films
