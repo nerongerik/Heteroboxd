@@ -59,6 +59,7 @@ namespace Heteroboxd.Shared.Models
             this.Rating = ReviewRequest.Rating ?? this.Rating;
             this.Text = ReviewRequest.Text ?? this.Text;
             this.Spoiler = ReviewRequest.Spoiler ?? this.Spoiler;
+            this.Date = DateTime.UtcNow;
         }
     }
 }
