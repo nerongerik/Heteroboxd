@@ -8,8 +8,10 @@
         public int Flags { get; set; }
         public Guid AuthorId { get; set; }
         public Guid ReviewId { get; set; }
+        public Guid? RepliedCommentId { get; set; }
+        public Guid? RepliedUserId { get; set; }
 
-        public Comment(string Text, Guid AuthorId, Guid ReviewId)
+        public Comment(string Text, Guid AuthorId, Guid ReviewId, Guid? RepliedCommentId = null, Guid? RepliedUserId = null)
         {
             this.Id = Guid.NewGuid();
             this.Text = Text;
@@ -17,6 +19,8 @@
             this.Date = DateTime.UtcNow;
             this.AuthorId = AuthorId;
             this.ReviewId = ReviewId;
+            this.RepliedCommentId = RepliedCommentId;
+            this.RepliedUserId = RepliedUserId;
         }
     }
 }

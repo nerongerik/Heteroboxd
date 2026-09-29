@@ -25,7 +25,7 @@ const PAGE_SIZE = 20
 const UsersLists = () => {
   const { userId } = useLocalSearchParams()
   const { user } = useAuth()
-  const [ author, setAuthor ] = useState({ username: '', avatar: '', admin: false })
+  const [ author, setAuthor ] = useState({ name: '', username: '', avatar: '', admin: false })
   const navigation = useNavigation()
   const router = useRouter()
   const { width } = useWindowDimensions()
@@ -104,14 +104,14 @@ const UsersLists = () => {
   useEffect(() => {
     const first = data.lists[0]
     if (!first) return
-    setAuthor({ username: first.authorName || 'Anonymous', avatar: first.authorPictureUrl || null, admin: first.admin })
+    setAuthor({ name: first.authorName || 'Anonymous', username: first.authorUserName || null, avatar: first.authorPictureUrl || null, admin: first.admin })
   }, [data.lists])
 
   const widescreen = useMemo(() => width > 1000, [width])
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: author.username?.length > 0 ? `${author.username}'s lists` : '',
+      headerTitle: author.name?.length > 0 ? `${author.name}'s lists` : '',
       headerTitleAlign: 'center',
       headerTitleStyle: {color: Colors.text_title, fontFamily: 'Inter_400Regular'},
       headerRight: () => (
@@ -140,7 +140,8 @@ const UsersLists = () => {
       <Author
         userId={userId}
         url={author.avatar}
-        username={format.sliceText(author.username, widescreen ? 50 : 25)}
+        name={format.sliceText(author.name, widescreen ? 50 : 25)}
+        username={author.username ? format.sliceText(author.username, widescreen ? 50 : 25) : null}
         admin={author.admin}
         router={router}
         widescreen={widescreen}
@@ -204,9 +205,9 @@ const UsersLists = () => {
   return (
     <>
     <Head>
-      <title>{author.username}'s lists</title>
+      <title>{author.name}'s lists</title>
       <meta name="description" content="All lists created by the selected author." />
-      <meta property="og:title" content={`${author.username}'s lists`} />
+      <meta property="og:title" content={`${author.name}'s lists`} />
       <meta property="og:description" content="All lists created by the selected author." />
       <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
       <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />

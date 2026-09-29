@@ -25,4 +25,6 @@
     public record JoinedReviewFilm(Review Review, Film Film);
 
     public record JoinedListEntries(JoinResponse<UserList, User?> List, List<JoinResponse<ListEntry, Film>?> Entries);
+
+    public record JoinedCommentAuthor(Comment Item, User Joined, string? RepliedUserName);
 }

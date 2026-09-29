@@ -83,7 +83,7 @@ const Film = () => {
         setRatings(json.ratings)
         setServer(Response.ok)
 
-        if (data.slug && routeFilmKey !== data.slug) {
+        if (data.slug && routeFilmKey !== data.slug && Platform.OS === 'web') {
           router.replace(`/film/${data.slug}`)
         }
 
@@ -527,9 +527,10 @@ const Film = () => {
                       borderColor: Colors.border_color
                     }}>
                     <Author
-                      userId={r.authorUserName || r.authorUsername || r.userName || r.username || r.authorId}
+                      userId={r.authorId}
                       url={r.authorPictureUrl || null}
-                      username={format.sliceText(r.authorName || 'Anonymous', widescreen ? 50 : 25)}
+                      name={format.sliceText(r.authorName || 'Anonymous', widescreen ? 50 : 25)}
+                      username={r.authorUserName ? format.sliceText(r.authorUserName, widescreen ? 50 : 25) : null}
                       admin={r.admin}
                       router={router}
                       widescreen={widescreen}

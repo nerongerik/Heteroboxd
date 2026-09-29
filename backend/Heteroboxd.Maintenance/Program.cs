@@ -62,6 +62,9 @@ try
     _logger.LogInformation("REMOVING FINISHED IMPORTS FROM QUEUE...");
     await _executor.ExecuteImportJobPurge(_provider, _ct);
 
+    _logger.LogInformation("REMOVING DANGLING COMMENT REPLIES...");
+    await _executor.ExecuteDanglingCommentPurge(_provider, _ct);
+
     if (DateTime.UtcNow.Day == 1)
     {
         _logger.LogInformation("SYNCING COUNTRIES FROM TMDB...");

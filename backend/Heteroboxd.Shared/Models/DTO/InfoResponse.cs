@@ -137,6 +137,7 @@
         public int CommentCount { get; set; }
         public string AuthorId { get; set; }
         public string? AuthorName { get; set; }
+        public string? AuthorUserName { get; set; }
         public string? AuthorPictureUrl { get; set; }
         public bool? Admin { get; set; }
         public bool? Pinned { get; set; }
@@ -162,6 +163,7 @@
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
+            this.AuthorUserName = Author.UserName;
             this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedReviewId == Review.Id;
@@ -188,6 +190,7 @@
 
             this.AuthorId = Author.Id.ToString();
             this.AuthorName = Author.Name;
+            this.AuthorUserName = Author.UserName;
             this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedReviewId == Review.Id;
@@ -267,6 +270,7 @@
         public int LikeCount { get; set; }
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
+        public string? AuthorUserName { get; set; }
         public string AuthorPictureUrl { get; set; }
         public bool Admin { get; set; }
         public bool Pinned { get; set; }
@@ -287,6 +291,7 @@
             this.LikeCount = List.LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
+            this.AuthorUserName = Author.UserName;
             this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedListId == List.Id;
@@ -308,6 +313,7 @@
             this.LikeCount = List.LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
+            this.AuthorUserName = Author.UserName;
             this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.Pinned = Author.PinnedListId == List.Id;
@@ -351,11 +357,14 @@
         public int Flags { get; set; }
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
+        public string? AuthorUserName { get; set; }
         public string AuthorPictureUrl { get; set; }
         public bool Admin { get; set; }
         public string ReviewId { get; set; }
+        public string? RepliedCommentId { get; set; }
+        public string? RepliedUserName { get; set; }
 
-        public CommentInfoResponse(Comment Comment, User Author)
+        public CommentInfoResponse(Comment Comment, User Author, string? RepliedUserName = null)
         {
             this.Id = Comment.Id.ToString();
             this.Text = Comment.Text;
@@ -363,9 +372,12 @@
             this.Flags = Comment.Flags;
             this.AuthorId = Comment.AuthorId.ToString();
             this.AuthorName = Author.Name;
+            this.AuthorUserName = Author.UserName;
             this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
             this.Admin = Author.IsAdmin;
             this.ReviewId = Comment.ReviewId.ToString();
+            this.RepliedCommentId = Comment.RepliedCommentId?.ToString();
+            this.RepliedUserName = RepliedUserName;
         }
     }
 

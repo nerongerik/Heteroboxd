@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, KeyboardAvoidingView, PanResponder, Platform, Pressable, useWindowDimensions, Vibration, View, RefreshControl, StyleSheet, TextInput } from 'react-native'
 import Heart from '../../assets/icons/heart.svg'
 import Heart2 from '../../assets/icons/heart2.svg'
 import Trash from '../../assets/icons/trash.svg'
 import Flag from '../../assets/icons/flag.svg'
+import Reply from '../../assets/icons/reply.svg'
+import X from '../../assets/icons/x.svg'
 import Spoiler from '../../assets/icons/spoiler.svg'
 import { Snackbar } from 'react-native-paper'
 import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -15,7 +17,6 @@ import { BaseUrl } from '../../constants/api'
 import { Colors } from '../../constants/colors'
 import { Response } from '../../constants/response'
 import Author from '../../components/author'
-import CommentInput from '../../components/commentInput'
 import Divider from '../../components/divider'
 import HText from '../../components/htext'
 import LoadingResponse from '../../components/loadingResponse'
@@ -26,6 +27,231 @@ import ReviewOptionsButton from '../../components/optionButtons/reviewOptionsBut
 import Stars from '../../components/stars'
 
 const PAGE_SIZE = 20
+const SWIPE_REPLY_OFFSET = 50
+const REPLY_HOLD_DELAY = 50
+
+const isMobileWebBrowser = () => {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined') return false
+  const mobileUserAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '')
+  const touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
+  return mobileUserAgent || touchMac
+}
+
+const MOBILE_WEB = isMobileWebBrowser()
+const DESKTOP_WEB = Platform.OS === 'web' && !MOBILE_WEB
+const SWIPE_REPLY = Platform.OS === 'android' || MOBILE_WEB
+
+const CommentText = ({ item, widescreen }) => {
+  const isReply = item.repliedCommentId !== null && item.repliedCommentId !== undefined && item.repliedUserName !== null && item.repliedUserName !== undefined
+
+  return (
+    <HText style={{fontSize: widescreen ? 16 : 14, color: Colors.text}}>
+      {isReply ? (
+        <>
+          <Link push href={`/profile/${item.repliedUserName}`} style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular', textDecorationLine: 'none'}}>{item.repliedUserName}</Link>
+          {' '}
+        </>
+      ) : null}
+      {item.text || ''}
+    </HText>
+  )
+}
+
+const ReplyPreview = ({ item, widescreen, router, onCancel }) => (
+  <View style={{backgroundColor: Colors.background, borderWidth: 1, borderRadius: 4, borderColor: Colors._heteroboxd, opacity: 0.8}}>
+    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+      <View style={{flex: 1}}>
+        <View style={{marginLeft: 10}}>
+          <Author
+            userId={item.authorId}
+            url={item.authorPictureUrl || null}
+            name={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
+            username={item.authorUserName ? format.sliceText(item.authorUserName, widescreen ? 50 : 25) : null}
+            admin={item.admin}
+            router={router}
+            widescreen={widescreen}
+            dim={widescreen ? 38 : 28}
+          />
+        </View>
+        <View style={{padding: 10}}>
+          <CommentText item={item} widescreen={widescreen} />
+        </View>
+      </View>
+      <Pressable onPress={onCancel} style={{padding: 10, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
+        <X width={widescreen ? 22 : 18} height={widescreen ? 22 : 18} />
+      </Pressable>
+    </View>
+  </View>
+)
+
+const CommentCard = ({ item, maxRowWidth, widescreen, router, user, handleReport, handleDelete, handleCommentReply, spacing, replyEnabled, desktopReply, swipeReply, commentHovered, setCommentHovered }) => {
+  const translateX = useRef(new Animated.Value(0)).current
+  const holdTimerRef = useRef(null)
+  const armedRef = useRef(false)
+  const reachedThresholdRef = useRef(false)
+  const vibratedRef = useRef(false)
+  const replyEligible = replyEnabled && user?.userId !== item.authorId
+
+  const handleHoverIn = useCallback(() => {
+    if (!replyEligible || !desktopReply) return
+    setCommentHovered(item.id)
+  }, [replyEligible, desktopReply, setCommentHovered, item.id])
+
+  const handleHoverOut = useCallback(() => {
+    if (!replyEligible || !desktopReply) return
+    setCommentHovered(current => current === item.id ? null : current)
+  }, [replyEligible, desktopReply, setCommentHovered, item.id])
+
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current)
+      holdTimerRef.current = null
+    }
+  }, [])
+
+  const handleTouchStart = useCallback(() => {
+    if (!replyEligible || !swipeReply) return
+    clearHoldTimer()
+    translateX.setValue(0)
+    armedRef.current = false
+    reachedThresholdRef.current = false
+    vibratedRef.current = false
+    holdTimerRef.current = setTimeout(() => {
+      holdTimerRef.current = null
+      armedRef.current = true
+      if (Platform.OS === 'android' && !vibratedRef.current) {
+        vibratedRef.current = true
+        Vibration.vibrate(30)
+      }
+    }, REPLY_HOLD_DELAY)
+  }, [replyEligible, swipeReply, clearHoldTimer, translateX])
+
+  const handleTouchEnd = useCallback(() => {
+    if (!replyEligible || !swipeReply) return
+    clearHoldTimer()
+    armedRef.current = false
+  }, [replyEligible, swipeReply, clearHoldTimer])
+
+  const replyIconOpacity = translateX.interpolate({
+    inputRange: [0, SWIPE_REPLY_OFFSET],
+    outputRange: [0, 1],
+    extrapolate: 'clamp'
+  })
+
+  const resetSwipeInteraction = useCallback(() => {
+    clearHoldTimer()
+    translateX.setValue(0)
+    armedRef.current = false
+    reachedThresholdRef.current = false
+    vibratedRef.current = false
+  }, [clearHoldTimer, translateX])
+
+  const handleTouchCancel = useCallback(() => {
+    if (!replyEligible || !swipeReply) return
+    resetSwipeInteraction()
+  }, [replyEligible, swipeReply, resetSwipeInteraction])
+
+  useEffect(() => () => {
+    clearHoldTimer()
+    translateX.stopAnimation()
+    translateX.setValue(0)
+    armedRef.current = false
+    reachedThresholdRef.current = false
+    vibratedRef.current = false
+  }, [clearHoldTimer, translateX])
+
+  const panResponder = useMemo(() => {
+    if (!replyEligible || !swipeReply) return null
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, { dx, dy }) => {
+        if (!armedRef.current) {
+          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) clearHoldTimer()
+          return false
+        }
+        return dx > 5 && dx > Math.abs(dy) * 1.5
+      },
+      onPanResponderGrant: () => {
+        translateX.setValue(0)
+        reachedThresholdRef.current = false
+      },
+      onPanResponderMove: (_, { dx }) => {
+        const clampedX = Math.max(0, Math.min(dx, SWIPE_REPLY_OFFSET))
+        translateX.setValue(clampedX)
+        reachedThresholdRef.current = clampedX === SWIPE_REPLY_OFFSET
+      },
+      onPanResponderRelease: () => {
+        const shouldReply = reachedThresholdRef.current
+        resetSwipeInteraction()
+        if (shouldReply) handleCommentReply(item.id, item.authorId)
+      },
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderTerminate: resetSwipeInteraction
+    })
+  }, [replyEligible, swipeReply, clearHoldTimer, translateX, resetSwipeInteraction, handleCommentReply, item.id, item.authorId])
+
+  const showDesktopReply = replyEligible && desktopReply && commentHovered === item.id
+
+  return (
+    <View style={{width: maxRowWidth, alignSelf: 'center'}}>
+      <View
+        style={{position: 'relative', overflow: 'hidden'}}
+        {...(replyEligible && desktopReply ? { onPointerEnter: handleHoverIn, onPointerLeave: handleHoverOut } : {})}
+        {...(replyEligible && swipeReply ? { onTouchStart: handleTouchStart, onTouchEnd: handleTouchEnd, onTouchCancel: handleTouchCancel } : {})}
+        {...(panResponder?.panHandlers ?? {})}
+      >
+        {replyEligible && swipeReply ? (
+          <Animated.View style={{position: 'absolute', left: 0, top: 0, bottom: 0, width: SWIPE_REPLY_OFFSET, opacity: replyIconOpacity, pointerEvents: 'none', alignItems: 'center', justifyContent: 'center'}}>
+            <Reply width={widescreen ? 20 : 16} height={widescreen ? 20 : 16} />
+          </Animated.View>
+        ) : null}
+        <Animated.View style={[{backgroundColor: Colors.background}, replyEligible && swipeReply ? { transform: [{ translateX }] } : null]}>
+          <View style={{marginLeft: 10}}>
+            <Author
+              userId={item.authorId}
+              url={item.authorPictureUrl || null}
+              name={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
+              username={item.authorUserName ? format.sliceText(item.authorUserName, widescreen ? 50 : 25) : null}
+              admin={item.admin}
+              router={router}
+              widescreen={widescreen}
+              dim={widescreen ? 38 : 28}
+            />
+            {user?.admin && Platform.OS === 'web' && <HText style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 14}}>{item.id}</HText>}
+          </View>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            {showDesktopReply ? (
+              <Pressable onPress={() => handleCommentReply(item.id, item.authorId)} style={{padding: 10, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
+                <Reply width={widescreen ? 20 : 16} height={widescreen ? 20 : 16} />
+              </Pressable>
+            ) : null}
+            <View style={{padding: 10, flex: 1}}>
+              <CommentText item={item} widescreen={widescreen} />
+            </View>
+            {
+              user ? (
+                <View style={{marginRight: 20}}>
+                  {
+                    user.userId !== item.authorId ? (
+                      <Pressable onPress={() => handleReport(item.id)}>
+                        <Flag height={widescreen ? 24 : 20} width={widescreen ? 24 : 20} />
+                      </Pressable>
+                    ) : (
+                      <Pressable onPress={() => handleDelete(item.id)}>
+                        <Trash height={widescreen ? 22 : 18} width={widescreen ? 22 : 18} />
+                      </Pressable>
+                    )
+                  }
+                </View>
+              ) : null
+            }
+          </View>
+        </Animated.View>
+      </View>
+      <Divider marginVertical={spacing} />
+    </View>
+  )
+}
 
 const ReviewWithComments = () => {
   const { reviewId } = useLocalSearchParams()
@@ -36,14 +262,57 @@ const ReviewWithComments = () => {
   const router = useRouter()
   const navigation = useNavigation()
   const [ comments, setComments ] = useState({ page: 1, comments: [], totalCount: 0 })
+  const [ replyTarget, setReplyTarget ] = useState({
+    repliedCommentId: null,
+    repliedUserId: null
+  })
+  const [ replyPreview, setReplyPreview ] = useState(null)
+  const [ commentHovered, setCommentHovered ] = useState(null)
+  const [ commentText, setCommentText ] = useState('')
+  const commentInputRef = useRef(null)
+  const [ commentInputFocused, setCommentInputFocused ] = useState(false)
   const [ snack, setSnack ] = useState({ shown: false, msg: '' })
   const [ server, setServer ] = useState(Response.initial)
   const listRef = useRef(null)
+  const composerOffsetRef = useRef(null)
+  const pendingReplyFocusRef = useRef(false)
+  const replyFocusFrameRef = useRef(null)
   const reviewLocalCopyRef = useRef(null)
   const likeRequestRef = useRef(0)
   const requestRef = useRef(0)
   const lastPageRef = useRef(0)
   const [ isRefreshing, setIsRefreshing ] = useState(false)
+
+  const cancelScheduledReplyFocus = useCallback(() => {
+    if (replyFocusFrameRef.current !== null) {
+      cancelAnimationFrame(replyFocusFrameRef.current)
+      replyFocusFrameRef.current = null
+    }
+    pendingReplyFocusRef.current = false
+  }, [])
+
+  const completeReplyScroll = useCallback(() => {
+    if (!pendingReplyFocusRef.current || composerOffsetRef.current === null) return
+    pendingReplyFocusRef.current = false
+    listRef.current?.scrollToOffset({ offset: Math.max(composerOffsetRef.current - 10, 0), animated: true })
+  }, [])
+
+  const scheduleReplyFocus = useCallback(() => {
+    if (replyFocusFrameRef.current !== null) cancelAnimationFrame(replyFocusFrameRef.current)
+    pendingReplyFocusRef.current = true
+    replyFocusFrameRef.current = requestAnimationFrame(() => {
+      replyFocusFrameRef.current = requestAnimationFrame(() => {
+        replyFocusFrameRef.current = null
+        completeReplyScroll()
+        commentInputRef.current?.focus()
+      })
+    })
+  }, [completeReplyScroll])
+
+  const handleCommentComposerLayout = useCallback((event) => {
+    composerOffsetRef.current = event.nativeEvent.layout.y
+    if (pendingReplyFocusRef.current && replyFocusFrameRef.current === null) scheduleReplyFocus()
+  }, [scheduleReplyFocus])
 
   const loadReviewData = useCallback(async (fromRefresh = false) => {
     if (fromRefresh) setIsRefreshing(false)
@@ -159,6 +428,15 @@ const ReviewWithComments = () => {
     }
   }, [user, likeRequestRef, reviewId])
 
+  const clearCommentReply = useCallback(() => {
+    cancelScheduledReplyFocus()
+    setReplyTarget({
+      repliedCommentId: null,
+      repliedUserId: null
+    })
+    setReplyPreview(null)
+  }, [cancelScheduledReplyFocus])
+
   const handleCreate = useCallback(async (text) => {
     if (!user || !(await isValidSession())) {
       setServer(Response.forbidden)
@@ -166,6 +444,7 @@ const ReviewWithComments = () => {
     }
     try {
       const jwt = await auth.getJwt()
+      const hasReplyTarget = replyTarget.repliedCommentId !== null && replyTarget.repliedUserId !== null
       const res = await fetch(`${BaseUrl.api}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
@@ -174,7 +453,9 @@ const ReviewWithComments = () => {
           AuthorId: user.userId,
           AuthorName: user.name,
           ReviewId: reviewId,
-          FilmTitle: review?.filmTitle
+          FilmTitle: review?.filmTitle,
+          RepliedCommentId: hasReplyTarget ? replyTarget.repliedCommentId : null,
+          RepliedUserId: hasReplyTarget ? replyTarget.repliedUserId : null
         })
       })
       if (res.ok) {
@@ -186,7 +467,15 @@ const ReviewWithComments = () => {
     } catch {
       setSnack({ shown: true, msg: 'Network error! Please check your internet connection and try again.' })
     }
-  }, [user, reviewId, review, comments])
+  }, [user, reviewId, review, comments, replyTarget])
+
+  const handleCommentSubmit = useCallback(() => {
+    if (commentText.trim().length > 0 && commentText.trim().length <= 500) {
+      handleCreate(commentText)
+      clearCommentReply()
+      setCommentText('')
+    }
+  }, [commentText, handleCreate, clearCommentReply])
 
   const handleDelete = useCallback(async (id) => {
     if (!user || !(await isValidSession())) {
@@ -236,6 +525,35 @@ const ReviewWithComments = () => {
     }
   }, [user])
 
+  const handleCommentReply = useCallback(async (commentId, authorId) => {
+    if (!user || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+    if (authorId === user.userId) return
+    const selectedComment = comments.comments.find(comment => comment.id === commentId && comment.authorId === authorId)
+    if (!selectedComment) return
+    const previewVisible = replyTarget.repliedCommentId !== null && replyTarget.repliedUserId !== null && replyPreview !== null
+    if (!previewVisible) composerOffsetRef.current = null
+    setReplyPreview(selectedComment)
+    setReplyTarget({
+      repliedCommentId: commentId,
+      repliedUserId: authorId
+    })
+    scheduleReplyFocus()
+  }, [user, isValidSession, comments.comments, replyTarget.repliedCommentId, replyTarget.repliedUserId, replyPreview, scheduleReplyFocus])
+
+  const handleCancelCommentReply = useCallback(() => {
+    clearCommentReply()
+    setCommentText('')
+    commentInputRef.current?.blur()
+    setCommentInputFocused(false)
+  }, [clearCommentReply])
+
+  useEffect(() => () => {
+    cancelScheduledReplyFocus()
+  }, [cancelScheduledReplyFocus])
+
   useEffect(() => {
     loadReviewData()
   }, [loadReviewData])
@@ -273,7 +591,8 @@ const ReviewWithComments = () => {
         <Author
           userId={review?.authorId}
           url={review?.authorPictureUrl || null}
-          username={format.sliceText(review?.authorName || 'Anonymous', widescreen ? 50 : 25)}
+          name={format.sliceText(review?.authorName || 'Anonymous', widescreen ? 50 : 25)}
+          username={review?.authorUserName ? format.sliceText(review.authorUserName, widescreen ? 50 : 25) : null}
           admin={review?.admin}
           router={router}
           widescreen={widescreen}
@@ -332,64 +651,76 @@ const ReviewWithComments = () => {
       </View>
       
       <Divider marginVertical={10} />
-  
-      {(user && user.verified) ?
-        <CommentInput onSubmit={handleCreate} widescreen={widescreen} maxRowWidth={maxRowWidth} />
-      : (user && !user.verified) ?
-        <>
-          <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>You must verify your account to leave comments.</Link>
-          <Divider marginVertical={10} />
-        </>
-        : null
-      }
+
+      {replyTarget.repliedCommentId !== null && replyTarget.repliedUserId !== null && replyPreview ? (
+        <View style={{width: maxRowWidth*0.75, alignSelf: 'center', marginBottom: 5}}>
+          <ReplyPreview item={replyPreview} widescreen={widescreen} router={router} onCancel={handleCancelCommentReply} />
+        </View>
+      ) : null}
+
+      <View onLayout={handleCommentComposerLayout}>
+        {(user && user.verified) ?
+          <View style={[styles.commentInputContainer, {width: maxRowWidth, alignSelf: 'center'}]}>
+            <View style={styles.descWrapper}>
+              <TextInput
+                ref={commentInputRef}
+                value={commentText}
+                onChangeText={setCommentText}
+                placeholder='Add a comment…'
+                placeholderTextColor={Colors.text_placeholder}
+                style={[styles.commentInput, {fontSize: widescreen ? 16 : 14, height: widescreen ? 60 : 50, borderWidth: commentInputFocused ? 1 : null, borderColor: commentInputFocused ? Colors.heteroboxd : null}]}
+                onFocus={() => setCommentInputFocused(true)}
+                onBlur={() => setCommentInputFocused(false)}
+                onSubmitEditing={() => {
+                  if (commentText.trim().length > 0 && commentText.trim().length < 500) {
+                    handleCommentSubmit()
+                  }
+                }}
+                returnKeyType='send'
+              />
+              <HText style={[styles.counterText, {fontSize: widescreen ? 14 : 12}, {color: commentText.trim().length < 501 ? Colors.text_title : Colors.password_meager}]}>
+                {commentText.trim().length}/500
+              </HText>
+            </View>
+            <Pressable
+              style={(commentText.trim().length === 0 || commentText.trim().length > 500) && { opacity: 0.5 }}
+              onPress={handleCommentSubmit}
+              disabled={commentText.trim().length === 0 || commentText.trim().length > 500}
+            >
+              <HText style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, marginBottom: 10}}>{' ➜'}</HText>
+            </Pressable>
+          </View>
+        : (user && !user.verified) ?
+          <>
+            <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>You must verify your account to leave comments.</Link>
+            <Divider marginVertical={10} />
+          </>
+          : null
+        }
+      </View>
 
       <HText style={{color: Colors.text_title, fontSize: widescreen ? 20 : 18, fontWeight: 'bold', marginBottom: 10, paddingLeft: 5}}>Comments ({comments?.totalCount || 0})</HText>
     </View>
-  ), [review, router, widescreen, user, maxRowWidth, showText, handleCreate])
+  ), [review, router, widescreen, user, maxRowWidth, showText, commentText, commentInputFocused, handleCommentSubmit, handleCommentComposerLayout, replyTarget, replyPreview, handleCancelCommentReply])
 
   const Comment = useCallback(({ item }) => (
-    <View style={{width: maxRowWidth, alignSelf: 'center'}}>
-      <View>
-        <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-          <View style={{marginLeft: 10}}>
-            <>
-            <Author
-              userId={item.authorId}
-              url={item.authorPictureUrl || null}
-              username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
-              admin={item.admin}
-              router={router}
-              widescreen={widescreen}
-              dim={widescreen ? 38 : 28}
-            />
-            {user?.admin && Platform.OS === 'web' && <HText style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 14}}>{item.id}</HText>}
-            </>
-          </View>
-          {
-            user ? (
-              <View style={{marginRight: 20}}>
-                {
-                  user.userId !== item.authorId ? (
-                    <Pressable onPress={() => handleReport(item.id)}>
-                      <Flag height={widescreen ? 24 : 20} width={widescreen ? 24 : 20} />
-                    </Pressable>
-                  ) : (
-                    <Pressable onPress={() => handleDelete(item.id)}>
-                      <Trash height={widescreen ? 22 : 18} width={widescreen ? 22 : 18} />
-                    </Pressable>
-                  )
-                }
-              </View>
-            ) : null
-          }
-        </View>
-        <View style={{padding: 10}}>
-          <HText style={{fontSize: widescreen ? 16 : 14, color: Colors.text}}>{item.text || ''}</HText>
-        </View>
-      </View>
-      <Divider marginVertical={spacing} />
-    </View>
-  ), [spacing, widescreen, user, handleDelete, handleReport, router, maxRowWidth])
+    <CommentCard
+      item={item}
+      maxRowWidth={maxRowWidth}
+      widescreen={widescreen}
+      router={router}
+      user={user}
+      handleReport={handleReport}
+      handleDelete={handleDelete}
+      handleCommentReply={handleCommentReply}
+      spacing={spacing}
+      replyEnabled={Boolean(user)}
+      desktopReply={DESKTOP_WEB}
+      swipeReply={SWIPE_REPLY}
+      commentHovered={commentHovered}
+      setCommentHovered={setCommentHovered}
+    />
+  ), [spacing, widescreen, user, handleDelete, handleReport, handleCommentReply, router, maxRowWidth, commentHovered])
 
   const NoComments = useMemo(() => server.result > 0 ? (
     <View style={{width: maxRowWidth, height: 50, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
@@ -500,3 +831,30 @@ const ReviewWithComments = () => {
 }
 
 export default ReviewWithComments
+
+const styles = StyleSheet.create({
+  commentInputContainer: {
+    marginTop: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentInput: {
+    color: Colors.text_input,
+    padding: 10,
+    backgroundColor: Colors.card,
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
+    borderRadius: 4,
+    textAlignVertical: 'top',
+  },
+  descWrapper: {
+    marginBottom: 10,
+    flex: 1,
+  },
+  counterText: {
+    bottom: 5,
+    position: 'absolute',
+    right: 10
+  }
+})

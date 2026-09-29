@@ -123,7 +123,8 @@ const FilmsLists = () => {
         <Author
           userId={item.authorId}
           url={item.authorPictureUrl || null}
-          username={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
+          name={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
+          username={item.authorUserName ? format.sliceText(item.authorUserName, widescreen ? 50 : 25) : null}
           admin={item.admin}
           router={router}
           widescreen={widescreen}

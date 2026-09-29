@@ -7,10 +7,10 @@ namespace Heteroboxd.Shared.Repository
 {
     public interface ICommentRepository
     {
-        Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetAllAsync(int Page, int PageSize);
-        Task<JoinResponse<Comment, User>?> GetByIdAsync(Guid CommentId);
+        Task<(List<JoinedCommentAuthor> Comments, int TotalCount)> GetAllAsync(int Page, int PageSize);
+        Task<JoinedCommentAuthor?> GetByIdAsync(Guid CommentId);
         Task<Comment?> LightweightFetcherAsync(Guid CommentId);
-        Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize);
+        Task<(List<JoinedCommentAuthor> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize);
         Task ReportAsync(Guid CommentId);
         Task CreateAsync(Comment Comment);
         Task DeleteAsync(Guid CommentId);
@@ -25,29 +25,33 @@ namespace Heteroboxd.Shared.Repository
             _context = context;
         }
 
-        public async Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetAllAsync(int Page, int PageSize)
+        public async Task<(List<JoinedCommentAuthor> Comments, int TotalCount)> GetAllAsync(int Page, int PageSize)
         {
             var CommentQuery = _context.Comments
                 .AsNoTracking()
                 .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
+                .GroupJoin(_context.Users, x => x.c.RepliedUserId, u => (Guid?)u.Id, (x, RepliedUsers) => new { x.c, x.u, RepliedUsers })
+                .SelectMany(x => x.RepliedUsers.DefaultIfEmpty(), (x, RepliedUser) => new { x.c, x.u, RepliedUserName = RepliedUser == null ? null : RepliedUser.UserName })
                 .OrderByDescending(x => x.c.Flags).ThenBy(x => x.c.Id);
             var TotalCount = await CommentQuery.CountAsync();
             var Responses = await CommentQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<Comment, User> { Item = x.c, Joined = x.u })
+                .Select(x => new JoinedCommentAuthor(x.c, x.u, x.RepliedUserName))
                 .ToListAsync();
             return (Responses, TotalCount);
         }
 
-        public async Task<JoinResponse<Comment, User>?> GetByIdAsync(Guid CommentId)
+        public async Task<JoinedCommentAuthor?> GetByIdAsync(Guid CommentId)
         {
             var Response = await _context.Comments
                 .AsNoTracking()
                 .Where(c => c.Id == CommentId)
                 .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
+                .GroupJoin(_context.Users, x => x.c.RepliedUserId, u => (Guid?)u.Id, (x, RepliedUsers) => new { x.c, x.u, RepliedUsers })
+                .SelectMany(x => x.RepliedUsers.DefaultIfEmpty(), (x, RepliedUser) => new { x.c, x.u, RepliedUserName = RepliedUser == null ? null : RepliedUser.UserName })
                 .FirstOrDefaultAsync();
-            return Response == null ? null : new JoinResponse<Comment, User> { Item = Response.c, Joined = Response.u };
+            return Response == null ? null : new JoinedCommentAuthor(Response.c, Response.u, Response.RepliedUserName);
         }
 
         public async Task<Comment?> LightweightFetcherAsync(Guid CommentId) =>
@@ -56,19 +60,21 @@ namespace Heteroboxd.Shared.Repository
                 .Where(c => c.Id == CommentId)
                 .FirstOrDefaultAsync();
 
-        public async Task<(List<JoinResponse<Comment, User>> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize)
+        public async Task<(List<JoinedCommentAuthor> Comments, int TotalCount)> GetByReviewAsync(Guid ReviewId, int Page, int PageSize)
         {
             var ReviewQuery = _context.Comments
                 .AsNoTracking()
                 .Where(c => c.ReviewId == ReviewId)
                 .Join(_context.Users, c => c.AuthorId, u => u.Id, (c, u) => new { c, u })
+                .GroupJoin(_context.Users, x => x.c.RepliedUserId, u => (Guid?)u.Id, (x, RepliedUsers) => new { x.c, x.u, RepliedUsers })
+                .SelectMany(x => x.RepliedUsers.DefaultIfEmpty(), (x, RepliedUser) => new { x.c, x.u, RepliedUserName = RepliedUser == null ? null : RepliedUser.UserName })
                 .OrderBy(x => x.c.Date).ThenBy(x => x.c.Id);
 
             var TotalCount = await ReviewQuery.CountAsync();
             var Responses = await ReviewQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<Comment, User> { Item = x.c, Joined = x.u })
+                .Select(x => new JoinedCommentAuthor(x.c, x.u, x.RepliedUserName))
                 .ToListAsync();
 
             return (Responses, TotalCount);

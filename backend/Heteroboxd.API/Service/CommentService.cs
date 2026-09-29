@@ -34,7 +34,7 @@ namespace Heteroboxd.API.Service
         {
             var Response = await _repo.GetByIdAsync(Guid.Parse(CommentId));
             if (Response == null) return null;
-            return new CommentInfoResponse(Response.Item, Response.Joined);
+            return new CommentInfoResponse(Response.Item, Response.Joined, Response.RepliedUserName);
         }
 
         public async Task<PagedResponse<CommentInfoResponse>> GetComments(int Page, int PageSize)
@@ -44,7 +44,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined)).ToList()
+                Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined, x.RepliedUserName)).ToList()
             };
         }
 
@@ -58,7 +58,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined)).ToList()
+                Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined, x.RepliedUserName)).ToList()
             };
         }
 
@@ -74,14 +74,47 @@ namespace Heteroboxd.API.Service
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(CommentRequest.ReviewId));
             if (Review == null) throw new KeyNotFoundException();
 
-            await _repo.CreateAsync(new Comment(CommentRequest.Text, Guid.Parse(CommentRequest.AuthorId), Review.Id));
+            Guid? RepliedCommentId = null;
+            Guid? RepliedUserId = null;
+            var HasReplyPair = !string.IsNullOrWhiteSpace(CommentRequest.RepliedCommentId)
+                && !string.IsNullOrWhiteSpace(CommentRequest.RepliedUserId);
+            if (HasReplyPair)
+            {
+                if (!Guid.TryParse(CommentRequest.RepliedCommentId, out var ParsedRepliedCommentId)
+                    || !Guid.TryParse(CommentRequest.RepliedUserId, out var ParsedRepliedUserId))
+                {
+                    throw new ArgumentException();
+                }
+                RepliedCommentId = ParsedRepliedCommentId;
+                RepliedUserId = ParsedRepliedUserId;
+            }
+            if (RepliedCommentId.HasValue && RepliedUserId.HasValue)
+            {
+                var RepliedComment = await _repo.LightweightFetcherAsync(RepliedCommentId.Value);
+                if (RepliedComment == null) throw new KeyNotFoundException();
+                if (RepliedComment.ReviewId != Review.Id || RepliedComment.AuthorId != RepliedUserId.Value)
+                {
+                    throw new ArgumentException();
+                }
+            }
+
+            await _repo.CreateAsync(new Comment(CommentRequest.Text, Guid.Parse(CommentRequest.AuthorId), Review.Id, RepliedCommentId, RepliedUserId));
             await _reviewRepo.UpdateCommentCountAsync(Review.Id, 1);
 
-            if (!Review.NotificationsOn || Review.AuthorId == Guid.Parse(CommentRequest.AuthorId)) return;
-            await _notificationService.AddNotification(
-                $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
-                Review.AuthorId
-            );
+            if (Review.NotificationsOn && Review.AuthorId != User.Id)
+            {
+                await _notificationService.AddNotification(
+                    $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
+                    Review.AuthorId
+                );
+            }
+            if (RepliedUserId.HasValue)
+            {
+                await _notificationService.AddNotification(
+                    $"{TruncateName(CommentRequest.AuthorName)} replied to your comment on the review of {TruncateTitle(CommentRequest.FilmTitle)}",
+                    RepliedUserId.Value
+                );
+            }
         }
 
         public async Task DeleteComment(string CommentId)

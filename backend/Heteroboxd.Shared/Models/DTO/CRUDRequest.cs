@@ -54,6 +54,8 @@
         public string AuthorName { get; set; }
         public string ReviewId { get; set; }
         public string FilmTitle { get; set; }
+        public string? RepliedCommentId { get; set; }
+        public string? RepliedUserId { get; set; }
     }
 
     public class UpdateUserRequest
