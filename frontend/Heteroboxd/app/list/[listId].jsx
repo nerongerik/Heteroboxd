@@ -254,7 +254,8 @@ const List = () => {
       <Author
         userId={base?.authorId}
         url={base?.authorPictureUrl || null}
-        username={format.sliceText(base?.authorName || 'Anonymous', widescreen ? 50 : 25)}
+        name={format.sliceText(base?.authorName || 'Anonymous', widescreen ? 50 : 25)}
+        username={base?.authorUserName ? format.sliceText(base.authorUserName, widescreen ? 50 : 25) : null}
         admin={base?.admin}
         router={router}
         widescreen={widescreen}

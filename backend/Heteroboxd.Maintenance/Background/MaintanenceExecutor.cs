@@ -18,6 +18,7 @@ namespace Heteroboxd.Maintenance.Background
         Task ExecuteUserPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteImportJobPurge(IServiceProvider _provider, CancellationToken CT);
+        Task ExecuteDanglingCommentPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCountrySync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteTrendingSync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCelebritySync(IServiceProvider _provider, CancellationToken CT);
@@ -112,6 +113,35 @@ namespace Heteroboxd.Maintenance.Background
 
             await _context.ImportJobs
                 .Where(ij => ij.Status == Shared.Models.Enums.ImportJobStatus.Completed || (ij.Status == Shared.Models.Enums.ImportJobStatus.Failed && ij.Date.AddDays(7) < DateTime.UtcNow))
+                .ExecuteDeleteAsync(CT);
+        }
+
+        public async Task ExecuteDanglingCommentPurge(IServiceProvider _provider, CancellationToken CT)
+        {
+            using var _scope = _provider.CreateScope();
+            var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
+
+            var RepliedCommentIds = await _context.Comments
+                .Where(c => c.RepliedCommentId.HasValue)
+                .Select(c => c.RepliedCommentId!.Value)
+                .Distinct()
+                .ToListAsync(CT);
+
+            if (RepliedCommentIds.Count == 0) return;
+
+            var ExistingCommentIds = await _context.Comments
+                .Where(c => RepliedCommentIds.Contains(c.Id))
+                .Select(c => c.Id)
+                .ToHashSetAsync(CT);
+
+            var MissingCommentIds = RepliedCommentIds
+                .Where(id => !ExistingCommentIds.Contains(id))
+                .ToList();
+
+            if (MissingCommentIds.Count == 0) return;
+
+            await _context.Comments
+                .Where(c => c.RepliedCommentId.HasValue && MissingCommentIds.Contains(c.RepliedCommentId.Value))
                 .ExecuteDeleteAsync(CT);
         }
 

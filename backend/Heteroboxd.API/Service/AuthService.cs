@@ -153,6 +153,7 @@ namespace Heteroboxd.API.Service
                 {
                     new Claim(JwtRegisteredClaimNames.Sub, User.Id.ToString()),
                     new Claim("name", User.Name!),
+                    new Claim("username", User.UserName!),
                     new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
                     new Claim("admin", User.IsAdmin.ToString()),
                     new Claim("lb", User.FromLetterboxd.ToString()),

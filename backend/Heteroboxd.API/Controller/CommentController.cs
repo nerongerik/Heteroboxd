@@ -47,6 +47,10 @@ namespace Heteroboxd.API.Controller
             {
                 return NotFound();
             }
+            catch (ArgumentException)
+            {
+                return BadRequest();
+            }
             catch (InvalidOperationException)
             {
                 return Unauthorized();

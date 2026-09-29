@@ -29,7 +29,7 @@ const UserReviews = () => {
   const router = useRouter()
   const { width } = useWindowDimensions()
   const [ data, setData ] = useState({ page: 1, reviews: [], totalCount: 0 })
-  const [ author, setAuthor ] = useState({ authorPic: '', authorName: '', authorAdmin: false })
+  const [ author, setAuthor ] = useState({ authorPic: '', authorName: '', authorUserName: '', authorAdmin: false })
   const [ server, setServer ] = useState(Response.initial)
   const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'DATE CREATED', desc: true })
@@ -74,6 +74,7 @@ const UserReviews = () => {
           setAuthor({
             authorPic: json.items[0]?.authorPictureUrl || null,
             authorName: json.items[0]?.authorName || 'Anonymous',
+            authorUserName: json.items[0]?.authorUserName || null,
             authorAdmin: json.items[0]?.admin || false
           })
         } else {
@@ -124,7 +125,8 @@ const UserReviews = () => {
     <Author
       userId={userId}
       url={author.authorPic}
-      username={format.sliceText(author.authorName, widescreen ? 50 : 25)}
+      name={format.sliceText(author.authorName, widescreen ? 50 : 25)}
+      username={author.authorUserName ? format.sliceText(author.authorUserName, widescreen ? 50 : 25) : null}
       admin={author.authorAdmin}
       router={router}
       widescreen={widescreen}

@@ -140,7 +140,7 @@ const Profile = () => {
 
         setServer(Response.ok)
 
-        if (profile.userName && routeUserKey !== profile.userName) {
+        if (profile.userName && routeUserKey !== profile.userName && Platform.OS === 'web') {
           router.replace(`/profile/${profile.userName}`)
         }
 
@@ -400,7 +400,8 @@ const Profile = () => {
         <Author
           userId={data?.userName || profileUserId}
           url={data?.pictureUrl || null}
-          username={format.sliceText(data?.name || 'Anonymous', widescreen ? 50 : 25)}
+          name={format.sliceText(data?.name || 'Anonymous', widescreen ? 50 : 25)}
+          username={data?.userName ? format.sliceText(data.userName, widescreen ? 50 : 25) : null}
           admin={data?.admin}
           router={router}
           widescreen={widescreen}
