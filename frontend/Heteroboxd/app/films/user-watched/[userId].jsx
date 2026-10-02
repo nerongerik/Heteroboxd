@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Platform, Pressable, useWindowDimensions, Vibration, View, RefreshControl } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
@@ -57,6 +57,7 @@ const UserWatchedFilms = () => {
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback((id) => {
     if (!user) return
+    if (Platform.OS === 'android') Vibration.vibrate(30)
     setSelected(id)
     setMenuShown2(true)
     Animated.timing(slideAnim2, {

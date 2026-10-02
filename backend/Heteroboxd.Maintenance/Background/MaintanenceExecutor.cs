@@ -13,12 +13,11 @@ namespace Heteroboxd.Maintenance.Background
 {
     public interface IMaintanenceExecutor
     {
-        Task ExecuteStanRepair(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteUserPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteImportJobPurge(IServiceProvider _provider, CancellationToken CT);
-        Task ExecuteDanglingCommentPurge(IServiceProvider _provider, CancellationToken CT);
+        Task ExecuteFilmRepair(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCountrySync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteTrendingSync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCelebritySync(IServiceProvider _provider, CancellationToken CT);
@@ -27,32 +26,6 @@ namespace Heteroboxd.Maintenance.Background
 
     public class MaintanenceExecutor : IMaintanenceExecutor
     {
-        public async Task ExecuteStanRepair(IServiceProvider _provider, CancellationToken CT)
-        {
-            using var _scope = _provider.CreateScope();
-            var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
-
-            await _context.Database.ExecuteSqlRawAsync(
-                """
-                WITH "TrueStanCounts" AS (
-                    SELECT
-                        c."Id" AS "CelebrityId",
-                        COUNT(usc."Id")::integer AS "TrueStanCount"
-                    FROM "Celebrities" c
-                    LEFT JOIN "UserStannedCelebrities" usc
-                        ON usc."CelebrityId" = c."Id"
-                    GROUP BY c."Id"
-                )
-                UPDATE "Celebrities" c
-                SET "StanCount" = t."TrueStanCount"
-                FROM "TrueStanCounts" t
-                WHERE c."Id" = t."CelebrityId"
-                  AND c."StanCount" <> t."TrueStanCount";
-                """,
-                CT
-            );
-        }
-
         public async Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
@@ -116,33 +89,54 @@ namespace Heteroboxd.Maintenance.Background
                 .ExecuteDeleteAsync(CT);
         }
 
-        public async Task ExecuteDanglingCommentPurge(IServiceProvider _provider, CancellationToken CT)
+        public async Task ExecuteFilmRepair(IServiceProvider _provider, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
 
-            var RepliedCommentIds = await _context.Comments
-                .Where(c => c.RepliedCommentId.HasValue)
-                .Select(c => c.RepliedCommentId!.Value)
-                .Distinct()
-                .ToListAsync(CT);
+            await _context.Database.ExecuteSqlRawAsync(
+                """
+                WITH "WatchAggregates" AS (
+                    SELECT
+                        f."Id" AS "FilmId",
+                        COALESCE(SUM(uwf."TimesWatched"), 0)::integer AS "WatchCount"
+                    FROM "Films" AS f
+                    LEFT JOIN "UserWatchedFilms" AS uwf ON uwf."FilmId" = f."Id"
+                    GROUP BY f."Id"
+                )
+                UPDATE "Films" AS f
+                SET "WatchCount" = aggregates."WatchCount"
+                FROM "WatchAggregates" AS aggregates
+                WHERE f."Id" = aggregates."FilmId"
+                  AND f."WatchCount" IS DISTINCT FROM aggregates."WatchCount";
+                """,
+                CT
+            );
 
-            if (RepliedCommentIds.Count == 0) return;
-
-            var ExistingCommentIds = await _context.Comments
-                .Where(c => RepliedCommentIds.Contains(c.Id))
-                .Select(c => c.Id)
-                .ToHashSetAsync(CT);
-
-            var MissingCommentIds = RepliedCommentIds
-                .Where(id => !ExistingCommentIds.Contains(id))
-                .ToList();
-
-            if (MissingCommentIds.Count == 0) return;
-
-            await _context.Comments
-                .Where(c => c.RepliedCommentId.HasValue && MissingCommentIds.Contains(c.RepliedCommentId.Value))
-                .ExecuteDeleteAsync(CT);
+            await _context.Database.ExecuteSqlRawAsync(
+                """
+                WITH "RatingAggregates" AS (
+                    SELECT
+                        f."Id" AS "FilmId",
+                        COUNT(r."Id")::integer AS "RatingCount",
+                        COALESCE(AVG(r."Rating"), 0.0)::double precision AS "AverageRating"
+                    FROM "Films" AS f
+                    LEFT JOIN "Reviews" AS r ON r."FilmId" = f."Id"
+                    GROUP BY f."Id"
+                )
+                UPDATE "Films" AS f
+                SET
+                    "RatingCount" = aggregates."RatingCount",
+                    "AverageRating" = aggregates."AverageRating"
+                FROM "RatingAggregates" AS aggregates
+                WHERE f."Id" = aggregates."FilmId"
+                  AND (
+                      f."RatingCount" IS DISTINCT FROM aggregates."RatingCount"
+                      OR f."AverageRating" IS DISTINCT FROM aggregates."AverageRating"
+                  );
+                """,
+                CT
+            );
         }
 
         public async Task ExecuteCountrySync(IServiceProvider _provider, CancellationToken CT)
@@ -222,7 +216,7 @@ namespace Heteroboxd.Maintenance.Background
                             {
                                 SetOutputIdentity = false,
                                 UpdateByProperties = [nameof(Celebrity.Id)],
-                                PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl), nameof(Celebrity.StanCount)]
+                                PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl)]
                             });
 
                         if (Credits.Count != 0)
@@ -320,8 +314,7 @@ namespace Heteroboxd.Maintenance.Background
                 await _context.BulkInsertOrUpdateAsync(Batch, new BulkConfig
                 {
                     SetOutputIdentity = false,
-                    UpdateByProperties = [nameof(Celebrity.Id)],
-                    PropertiesToExcludeOnUpdate = [nameof(Celebrity.StanCount)]
+                    UpdateByProperties = [nameof(Celebrity.Id)]
                 });
             }
         }
@@ -395,8 +388,6 @@ namespace Heteroboxd.Maintenance.Background
                     {
                         Existing!.UpdateFields(Film);
 
-                        _context.Films.Update(Existing);
-
                         await _context.CelebrityCredits
                             .Where(cc => cc.FilmId == Existing.Id)
                             .ExecuteDeleteAsync(CT);
@@ -409,7 +400,7 @@ namespace Heteroboxd.Maintenance.Background
                         {
                             SetOutputIdentity = false,
                             UpdateByProperties = [nameof(Celebrity.Id)],
-                            PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl), nameof(Celebrity.StanCount)]
+                            PropertiesToExcludeOnUpdate = [nameof(Celebrity.Name), nameof(Celebrity.Description), nameof(Celebrity.HeadshotUrl)]
                         });
 
                     if (Credits.Count != 0)

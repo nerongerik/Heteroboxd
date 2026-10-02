@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Linking, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl } from "react-native"
+import { ActivityIndicator, Animated, FlatList, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, Vibration, View, RefreshControl } from "react-native"
 import Eye from '../../assets/icons/eye2.svg'
 import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
@@ -15,11 +15,11 @@ const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, av
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ selected, setSelected ] = useState(null)
-  const [ localStanCount, setLocalStanCount ] = useState(stanCount)
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback((id) => {
     if (!user) return
+    if (Platform.OS === 'android') Vibration.vibrate(30)
     setSelected(id)
     setMenuShown2(true)
     Animated.timing(slideAnim2, {
@@ -225,7 +225,7 @@ const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, av
               {
                 user && 
                   <Pressable
-                    onPress={() => {setLocalStanCount(prev => stans ? (prev === 0 ? 0 : prev - 1) : prev + 1); onStan()}}
+                    onPress={onStan}
                     style={{
                       backgroundColor: 'transparent',
                       borderWidth: 3,
@@ -240,7 +240,7 @@ const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, av
                     <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: stans ? Colors.heteroboxd : Colors._heteroboxd, textAlign: 'center'}}>{stans ? 'UNSTAN' : 'STAN'}</HText>
                   </Pressable>
               }
-              <HText style={{color: Colors.text, fontSize: widescreen ? 14 : 10, marginTop: 5}}>{format.formatCount(localStanCount)} stans</HText>
+              <HText style={{color: Colors.text, fontSize: widescreen ? 14 : 10, marginTop: 5}}>{format.formatCount(stanCount)} stans</HText>
             </View>
           </View>
           <HText style={{textAlign: 'left', fontSize: widescreen ? 18 : 14, color: Colors.text, padding: 10}}>{bio.text}</HText>

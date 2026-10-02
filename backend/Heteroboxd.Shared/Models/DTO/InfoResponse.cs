@@ -40,6 +40,12 @@
             }
             else this.CastAndCrew = null;
         }
+
+        public FilmInfoResponse(Film Film, int WatchCount, List<JoinResponse<Celebrity, List<CelebrityCredit>>>? Credits = null)
+            : this(Film, Credits)
+        {
+            this.WatchCount = WatchCount;
+        }
     }
 
     public class WatchlistEntryInfoResponse
@@ -92,13 +98,13 @@
         public int StanCount { get; set; }
         public List<string>? Roles { get; set; }
 
-        public CelebrityInfoResponse(Celebrity Celebrity, List<string>? Roles = null)
+        public CelebrityInfoResponse(Celebrity Celebrity, List<string>? Roles = null, int StanCount = 0)
         {
             this.Id = Celebrity.Id;
             this.Name = Celebrity.Name;
             this.Description = Celebrity.Description;
             this.HeadshotUrl = Celebrity.HeadshotUrl;
-            this.StanCount = Celebrity.StanCount;
+            this.StanCount = StanCount;
             this.Roles = Roles;
         }
     }
@@ -147,7 +153,7 @@
         public string? FilmPosterUrl { get; set; }
         public bool FromLetterboxd { get; set; }
 
-        public ReviewInfoResponse(Review Review, User Author, Film Film)
+        public ReviewInfoResponse(Review Review, User Author, Film Film, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
             this.Private = Review.Private;
@@ -157,8 +163,8 @@
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
-            this.LikeCount = Review.LikeCount;
-            this.CommentCount = Review.CommentCount;
+            this.LikeCount = LikeCount;
+            this.CommentCount = CommentCount;
             this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Author.Id.ToString();
@@ -174,7 +180,7 @@
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
-        public ReviewInfoResponse(Review Review, User Author)
+        public ReviewInfoResponse(Review Review, User Author, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
             this.Private = Review.Private;
@@ -184,8 +190,8 @@
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
-            this.LikeCount = Review.LikeCount;
-            this.CommentCount = Review.CommentCount;
+            this.LikeCount = LikeCount;
+            this.CommentCount = CommentCount;
             this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Author.Id.ToString();
@@ -198,7 +204,7 @@
             this.FilmId = Review.FilmId;
         }
 
-        public ReviewInfoResponse(Review Review, Film Film)
+        public ReviewInfoResponse(Review Review, Film Film, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
             this.Private = Review.Private;
@@ -208,8 +214,8 @@
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
-            this.LikeCount = Review.LikeCount;
-            this.CommentCount = Review.CommentCount;
+            this.LikeCount = LikeCount;
+            this.CommentCount = CommentCount;
             this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Review.AuthorId.ToString();
@@ -220,7 +226,7 @@
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
-        public ReviewInfoResponse(Review Review)
+        public ReviewInfoResponse(Review Review, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
             this.Private = Review.Private;
@@ -230,8 +236,8 @@
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
-            this.LikeCount = Review.LikeCount;
-            this.CommentCount = Review.CommentCount;
+            this.LikeCount = LikeCount;
+            this.CommentCount = CommentCount;
             this.FromLetterboxd = Review.FromLetterboxd;
 
             this.AuthorId = Review.AuthorId.ToString();
@@ -245,6 +251,8 @@
             this.Private = true;
             this.Text = "";
             this.Date = "";
+            this.LikeCount = 0;
+            this.CommentCount = 0;
 
             this.AuthorId = "";
 
@@ -276,7 +284,7 @@
         public bool Pinned { get; set; }
         public bool FromLetterboxd { get; set; }
 
-        public UserListInfoResponse(UserList List, User Author)
+        public UserListInfoResponse(UserList List, User Author, int LikeCount, int ListEntryCount)
         {
             this.Id = List.Id.ToString();
             this.Private = List.Private;
@@ -286,9 +294,9 @@
             this.Date = List.Date.ToString("dd/MM/yyyy HH:mm");
             this.Flags = List.Flags;
             this.NotificationsOn = List.NotificationsOn;
-            this.ListEntryCount = List.Size;
+            this.ListEntryCount = ListEntryCount;
             this.Films = new();
-            this.LikeCount = List.LikeCount;
+            this.LikeCount = LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
             this.AuthorUserName = Author.UserName;
@@ -298,7 +306,7 @@
             this.FromLetterboxd = List.FromLetterboxd;
         }
 
-        public UserListInfoResponse(UserList List, List<JoinResponse<ListEntry, Film>?> Entries, User Author)
+        public UserListInfoResponse(UserList List, List<JoinResponse<ListEntry, Film>?> Entries, User Author, int LikeCount, int ListEntryCount)
         {
             this.Id = List.Id.ToString();
             this.Private = List.Private;
@@ -308,9 +316,9 @@
             this.Date = List.Date.ToString("dd/MM/yyyy HH:mm");
             this.Flags = List.Flags;
             this.NotificationsOn = List.NotificationsOn;
-            this.ListEntryCount = List.Size;
+            this.ListEntryCount = ListEntryCount;
             this.Films = Entries.Select(x => x == null ? null : (ListEntryInfoResponse?) new ListEntryInfoResponse(x.Item, x.Joined)).ToList();
-            this.LikeCount = List.LikeCount;
+            this.LikeCount = LikeCount;
             this.AuthorId = List.AuthorId.ToString();
             this.AuthorName = Author.Name;
             this.AuthorUserName = Author.UserName;
@@ -355,29 +363,33 @@
         public string Text { get; set; }
         public string Date { get; set; }
         public int Flags { get; set; }
-        public string AuthorId { get; set; }
-        public string AuthorName { get; set; }
+        public string? AuthorId { get; set; }
+        public string? AuthorName { get; set; }
         public string? AuthorUserName { get; set; }
-        public string AuthorPictureUrl { get; set; }
-        public bool Admin { get; set; }
+        public string? AuthorPictureUrl { get; set; }
+        public bool? Admin { get; set; }
         public string ReviewId { get; set; }
         public string? RepliedCommentId { get; set; }
+        public string? ThreadRootId { get; set; }
         public string? RepliedUserName { get; set; }
+        public string? Tombstone { get; set; }
 
-        public CommentInfoResponse(Comment Comment, User Author, string? RepliedUserName = null)
+        public CommentInfoResponse(Comment Comment, User? Author, string? RepliedUserName = null)
         {
             this.Id = Comment.Id.ToString();
-            this.Text = Comment.Text;
+            this.Text = Comment.Tombstone == null ? Comment.Text : "";
             this.Date = Comment.Date.ToString("dd/MM/yyyy HH:mm");
             this.Flags = Comment.Flags;
-            this.AuthorId = Comment.AuthorId.ToString();
-            this.AuthorName = Author.Name;
-            this.AuthorUserName = Author.UserName;
-            this.AuthorPictureUrl = string.IsNullOrEmpty(Author.PictureUrl) ? Author.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
-            this.Admin = Author.IsAdmin;
+            this.AuthorId = Author == null ? null : Comment.AuthorId?.ToString();
+            this.AuthorName = Author?.Name;
+            this.AuthorUserName = Author?.UserName;
+            this.AuthorPictureUrl = Author == null || string.IsNullOrEmpty(Author.PictureUrl) ? Author?.PictureUrl : Author.PictureUrl + $"?v={Author.PictureUrlCacheVersion}";
+            this.Admin = Author?.IsAdmin;
             this.ReviewId = Comment.ReviewId.ToString();
             this.RepliedCommentId = Comment.RepliedCommentId?.ToString();
+            this.ThreadRootId = Comment.ThreadRootId?.ToString();
             this.RepliedUserName = RepliedUserName;
+            this.Tombstone = Comment.Tombstone?.ToString();
         }
     }
 

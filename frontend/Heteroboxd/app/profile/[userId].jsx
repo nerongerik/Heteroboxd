@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, RefreshControl, Platform } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, Vibration, View, RefreshControl, Platform } from 'react-native'
 import Male from '../../assets/icons/male.svg'
 import Female from '../../assets/icons/female.svg'
 import Heart from '../../assets/icons/heart.svg'
@@ -219,6 +219,7 @@ const Profile = () => {
   }, [router, profileUserId, data?.listsCount])
 
   const handleFollow = useCallback(async () => {
+    if (Platform.OS === 'android') Vibration.vibrate(30)
     if (!profileUserId || !user || !(await isValidSession())) {
       setSnack({ shown: true, msg: 'Session expired! Try logging in again.' })
       return

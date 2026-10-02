@@ -12,7 +12,8 @@ namespace Heteroboxd.API.Service
         Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize);
         Task ReportCommentEfCore7(string CommentId);
         Task CreateComment(CreateCommentRequest CommentRequest);
-        Task DeleteComment(string CommentId);
+        Task DeleteComment(string CommentId, string AuthenticatedUserId);
+        Task DeleteCommentAsAdmin(string CommentId);
     }
 
     public class CommentService : ICommentService
@@ -51,12 +52,13 @@ namespace Heteroboxd.API.Service
         public async Task<PagedResponse<CommentInfoResponse>> GetCommentsByReview(string ReviewId, int Page, int PageSize)
         {
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(ReviewId));
-            if (Review == null) return new PagedResponse<CommentInfoResponse> { TotalCount = 0, Page = 1, Items = new() };
+            if (Review == null) return new PagedResponse<CommentInfoResponse> { TotalCount = 0, ThreadCount = 0, Page = 1, Items = new() };
 
-            var (Responses, TotalCount) = await _repo.GetByReviewAsync(Review.Id, Page, PageSize);
+            var (Responses, TotalCount, ThreadCount) = await _repo.GetByReviewAsync(Review.Id, Page, PageSize);
             return new PagedResponse<CommentInfoResponse>
             {
                 TotalCount = TotalCount,
+                ThreadCount = ThreadCount,
                 Page = Page,
                 Items = Responses.Select(x => new CommentInfoResponse(x.Item, x.Joined, x.RepliedUserName)).ToList()
             };
@@ -76,8 +78,12 @@ namespace Heteroboxd.API.Service
 
             Guid? RepliedCommentId = null;
             Guid? RepliedUserId = null;
-            var HasReplyPair = !string.IsNullOrWhiteSpace(CommentRequest.RepliedCommentId)
-                && !string.IsNullOrWhiteSpace(CommentRequest.RepliedUserId);
+            Guid? ThreadRootId = null;
+            var HasRepliedComment = !string.IsNullOrWhiteSpace(CommentRequest.RepliedCommentId);
+            var HasRepliedUser = !string.IsNullOrWhiteSpace(CommentRequest.RepliedUserId);
+            if (HasRepliedComment != HasRepliedUser) throw new ArgumentException();
+
+            var HasReplyPair = HasRepliedComment && HasRepliedUser;
             if (HasReplyPair)
             {
                 if (!Guid.TryParse(CommentRequest.RepliedCommentId, out var ParsedRepliedCommentId)
@@ -92,14 +98,22 @@ namespace Heteroboxd.API.Service
             {
                 var RepliedComment = await _repo.LightweightFetcherAsync(RepliedCommentId.Value);
                 if (RepliedComment == null) throw new KeyNotFoundException();
-                if (RepliedComment.ReviewId != Review.Id || RepliedComment.AuthorId != RepliedUserId.Value)
+                if (RepliedComment.Tombstone != null
+                    || !RepliedComment.AuthorId.HasValue
+                    || RepliedComment.ReviewId != Review.Id
+                    || RepliedComment.AuthorId.Value != RepliedUserId.Value)
                 {
                     throw new ArgumentException();
                 }
+                if (RepliedComment.ThreadRootId.HasValue
+                    && !await _repo.IsThreadRootInReviewAsync(RepliedComment.ThreadRootId.Value, Review.Id))
+                {
+                    throw new ArgumentException();
+                }
+                ThreadRootId = RepliedComment.ThreadRootId ?? RepliedComment.Id;
             }
 
-            await _repo.CreateAsync(new Comment(CommentRequest.Text, Guid.Parse(CommentRequest.AuthorId), Review.Id, RepliedCommentId, RepliedUserId));
-            await _reviewRepo.UpdateCommentCountAsync(Review.Id, 1);
+            await _repo.CreateAsync(new Comment(CommentRequest.Text, Guid.Parse(CommentRequest.AuthorId), Review.Id, RepliedCommentId, RepliedUserId, ThreadRootId));
 
             if (Review.NotificationsOn && Review.AuthorId != User.Id)
             {
@@ -117,13 +131,17 @@ namespace Heteroboxd.API.Service
             }
         }
 
-        public async Task DeleteComment(string CommentId)
+        public async Task DeleteComment(string CommentId, string AuthenticatedUserId)
         {
-            var Comment = await _repo.LightweightFetcherAsync(Guid.Parse(CommentId));
-            if (Comment == null) throw new KeyNotFoundException();
+            var Result = await _repo.TombstoneByAuthorAsync(Guid.Parse(CommentId), Guid.Parse(AuthenticatedUserId));
+            if (Result == CommentTombstoneResult.NotFound) throw new KeyNotFoundException();
+            if (Result == CommentTombstoneResult.Forbidden) throw new UnauthorizedAccessException();
+        }
 
-            await _repo.DeleteAsync(Comment.Id);
-            await _reviewRepo.UpdateCommentCountAsync(Comment.ReviewId, -1);
+        public async Task DeleteCommentAsAdmin(string CommentId)
+        {
+            var Tombstoned = await _repo.TombstoneByAdminAsync(Guid.Parse(CommentId));
+            if (!Tombstoned) throw new KeyNotFoundException();
         }
 
         private string TruncateName(string Name, int MaxLength = 25) =>

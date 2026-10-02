@@ -2,6 +2,7 @@
 using Heteroboxd.API.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Heteroboxd.API.Controller
 {
@@ -85,11 +86,25 @@ namespace Heteroboxd.API.Controller
         [Authorize]
         public async Task<IActionResult> DeleteComment(string CommentId)
         {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation($"DeleteComment endpoint hit for {CommentId}");
+            if (string.IsNullOrWhiteSpace(UserId)) return Forbid();
             try
             {
-                await _service.DeleteComment(CommentId);
+                await _service.DeleteComment(CommentId, UserId);
                 return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (FormatException)
+            {
+                return BadRequest();
             }
             catch
             {

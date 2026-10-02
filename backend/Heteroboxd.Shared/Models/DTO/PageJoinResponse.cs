@@ -3,6 +3,7 @@
     public class PagedResponse<T>
     {
         public int TotalCount { get; set; }
+        public int? ThreadCount { get; set; }
         public int Page { get; set; }
         public List<T> Items { get; set; }
         public List<int>? Seen { get; set; }
@@ -22,9 +23,15 @@
             Items.Concat(Enumerable.Repeat<T?>(null, (4 - Items.Count % 4) % 4)).ToList();
     }
 
-    public record JoinedReviewFilm(Review Review, Film Film);
+    public record ReviewWithCounts(Review Review, int LikeCount, int CommentCount);
 
-    public record JoinedListEntries(JoinResponse<UserList, User?> List, List<JoinResponse<ListEntry, Film>?> Entries);
+    public record JoinedReviewFilm(Review Review, Film Film, int LikeCount, int CommentCount);
 
-    public record JoinedCommentAuthor(Comment Item, User Joined, string? RepliedUserName);
+    public record FilmDetails(Film Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>> Credits, int WatchCount);
+
+    public record JoinedUserList(UserList Item, User? Joined, int LikeCount, int ListEntryCount);
+
+    public record JoinedListEntries(JoinedUserList List, List<JoinResponse<ListEntry, Film>?> Entries);
+
+    public record JoinedCommentAuthor(Comment Item, User? Joined, string? RepliedUserName);
 }

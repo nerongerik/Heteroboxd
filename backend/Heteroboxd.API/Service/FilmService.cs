@@ -50,7 +50,7 @@ namespace Heteroboxd.API.Service
         {
             var Response = await _repo.GetByIdAsync(FilmId);
             if (Response == null) throw new KeyNotFoundException();
-            return new FilmInfoResponse(Response.Item, Response.Joined);
+            return new FilmInfoResponse(Response.Film, Response.WatchCount, Response.Credits);
         }
 
         public async Task<FilmInfoResponse?> GetFilmBySlug(string Slug)

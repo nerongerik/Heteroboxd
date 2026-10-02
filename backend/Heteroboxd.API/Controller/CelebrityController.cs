@@ -79,8 +79,7 @@ namespace Heteroboxd.API.Controller
             _logger.LogInformation($"StanUnstanCelebrity endpoint hit for {CelebrityId} by User {UserId}");
             try
             {
-                await _service.StanUnstanCelebrity(UserId!, CelebrityId);
-                return Ok();
+                return Ok(new { StanCount = await _service.StanUnstanCelebrity(UserId!, CelebrityId) });
             }
             catch
             {

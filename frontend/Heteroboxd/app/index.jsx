@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Image, Linking, PanResponder, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Image, Linking, PanResponder, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, Vibration, View } from 'react-native'
 import Explore from '../assets/icons/explore.svg'
 import Search from '../assets/icons/search.svg'
 import Spoiler from '../assets/icons/spoiler.svg'
@@ -81,6 +81,7 @@ const Home = () => {
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu2 = useCallback((id) => {
     if (!user) return
+    if (Platform.OS === 'android') Vibration.vibrate(30)
     setSelected(id)
     setMenuShown2(true)
     Animated.timing(slideAnim2, {
@@ -149,6 +150,7 @@ const Home = () => {
           if (res.ok) {
             const json = await res.json()
             setNotifs(json > 0)
+            if (json > 0 && Platform.OS === 'android') Vibration.vibrate(30)
           } else {
             console.log('failed to count notifs; internal server error.')
           }

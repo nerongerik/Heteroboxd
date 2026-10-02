@@ -26,8 +26,7 @@ const Privacy = () => {
         >
           <HText style={styles.title}>Heteroboxd Privacy Policy</HText>
           <HText style={styles.lastUpdated}>
-            Last Updated: April 12, 2026{' '}
-            <HText style={styles.risen}>(Christ is Risen!)</HText>
+            Last Updated: October 1, 2026
           </HText>
 
           <HText style={styles.text}>
@@ -45,8 +44,8 @@ const Privacy = () => {
             When creating an account, you provide the following information:
           </HText>
           {[
-            'Username (your publicly displayed name)',
-            'Email address (used to verify your account and identify you uniquely)',
+            'Name (the full name or alias of your profile)',
+            'Email address (used to verify your account, identify you uniquely, and form your public username)',
             'Password (stored securely as a hashed value, never as plaintext)',
             'Gender (shown on your profile page)',
             'Bio (an optional description shown on your profile page)',
@@ -131,10 +130,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: Colors.text,
     textAlign: 'center',
-  },
-  risen: {
-    fontStyle: 'italic',
-    color: Colors.text,
   },
   subtitle: {
     fontSize: 18,

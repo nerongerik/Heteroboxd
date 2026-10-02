@@ -1,4 +1,4 @@
-import { View, Pressable } from 'react-native'
+import { Platform, Pressable, Vibration, View } from 'react-native'
 import ParsedRead from './parsedRead'
 import Spoiler from '../assets/icons/spoiler.svg'
 import HText from './htext'
@@ -14,7 +14,10 @@ const ReviewText = ({ text, width, maxHeight, spoiler, revealSpoiler, widescreen
       )
     } else {
       return (
-        <Pressable onPress={revealSpoiler}>
+        <Pressable onPress={() => {
+          if (Platform.OS === 'android') Vibration.vibrate(30)
+          revealSpoiler()
+        }}>
           <View style={{width: width, alignSelf: 'center', padding: 10, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center'}}>
             <Spoiler width={widescreen ? 30 : 24} height={widescreen ? 30 : 24} />
             <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>

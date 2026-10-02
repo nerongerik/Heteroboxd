@@ -7,6 +7,7 @@ using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using System.Globalization;
 using System.IO.Compression;
 
@@ -217,16 +218,29 @@ namespace Heteroboxd.Import.Background
                 SetOutputIdentity = false,
                 UpdateByProperties = [nameof(UserWatchedFilm.FilmId), nameof(UserWatchedFilm.UserId)],
                 PropertiesToExcludeOnUpdate = [nameof(UserWatchedFilm.Id)]
-            });
+            }, cancellationToken: CT);
 
-            foreach (var nuwf in UserWatchedFilms)
-            {
-                await _context.Films
-                .Where(f => nuwf.FilmId == f.Id)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(f => f.WatchCount, f => f.WatchCount + nuwf.TimesWatched)
-                );
-            }
+            var FilmIdsParameter = new NpgsqlParameter("FilmIds", UserWatchedFilmIds.Distinct().ToArray());
+            await _context.Database.ExecuteSqlRawAsync(
+                """
+                WITH "WatchAggregates" AS (
+                    SELECT
+                        f."Id" AS "FilmId",
+                        COALESCE(SUM(uwf."TimesWatched"), 0)::integer AS "WatchCount"
+                    FROM "Films" AS f
+                    LEFT JOIN "UserWatchedFilms" AS uwf ON uwf."FilmId" = f."Id"
+                    WHERE f."Id" = ANY (@FilmIds)
+                    GROUP BY f."Id"
+                )
+                UPDATE "Films" AS f
+                SET "WatchCount" = aggregates."WatchCount"
+                FROM "WatchAggregates" AS aggregates
+                WHERE f."Id" = aggregates."FilmId"
+                  AND f."WatchCount" IS DISTINCT FROM aggregates."WatchCount";
+                """,
+                [FilmIdsParameter],
+                CT
+            );
         }
 
         private async Task ParseLetterboxdRatingsAndReviews(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, List<string>>? Ratings, Dictionary<string, List<string>>? Reviews, Guid UserId, bool EmailConfirmed, HeteroboxdContext _context, CancellationToken CT)
@@ -286,18 +300,36 @@ namespace Heteroboxd.Import.Background
             {
                 SetOutputIdentity = false,
                 UpdateByProperties = [nameof(Review.FilmId), nameof(Review.AuthorId)],
-                PropertiesToExcludeOnUpdate = [nameof(Review.Id), nameof(Review.LikeCount), nameof(Review.CommentCount), nameof(Review.NotificationsOn), nameof(Review.Spoiler)]
-            });
+                PropertiesToExcludeOnUpdate = [nameof(Review.Id), nameof(Review.NotificationsOn), nameof(Review.Spoiler)]
+            }, cancellationToken: CT);
 
-            foreach (var ur in UserReviews)
-            {
-                await _context.Films
-                    .Where(f => ur.FilmId == f.Id)
-                    .ExecuteUpdateAsync(s => s
-                        .SetProperty(f => f.AverageRating, f => ((f.AverageRating * f.RatingCount) + ur.Rating) / (f.RatingCount + 1))
-                        .SetProperty(f => f.RatingCount, f => f.RatingCount + 1)
-                    );
-            }
+            var FilmIdsParameter = new NpgsqlParameter("FilmIds", UserReviewIds.Distinct().ToArray());
+            await _context.Database.ExecuteSqlRawAsync(
+                """
+                WITH "RatingAggregates" AS (
+                    SELECT
+                        f."Id" AS "FilmId",
+                        COUNT(r."Id")::integer AS "RatingCount",
+                        COALESCE(AVG(r."Rating"), 0.0)::double precision AS "AverageRating"
+                    FROM "Films" AS f
+                    LEFT JOIN "Reviews" AS r ON r."FilmId" = f."Id"
+                    WHERE f."Id" = ANY (@FilmIds)
+                    GROUP BY f."Id"
+                )
+                UPDATE "Films" AS f
+                SET
+                    "RatingCount" = aggregates."RatingCount",
+                    "AverageRating" = aggregates."AverageRating"
+                FROM "RatingAggregates" AS aggregates
+                WHERE f."Id" = aggregates."FilmId"
+                  AND (
+                      f."RatingCount" IS DISTINCT FROM aggregates."RatingCount"
+                      OR f."AverageRating" IS DISTINCT FROM aggregates."AverageRating"
+                  );
+                """,
+                [FilmIdsParameter],
+                CT
+            );
         }
 
         private async Task ParseLetterboxdList(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, string>? Header, Dictionary<string, List<string>>? Entries, Guid UserId, bool EmailConfirmed, HeteroboxdContext _context, CancellationToken CT)
@@ -310,29 +342,27 @@ namespace Heteroboxd.Import.Background
             try { Date = DateTime.SpecifyKind(DateTime.ParseExact(Header["Date"], "yyyy-MM-dd", CultureInfo.InvariantCulture), DateTimeKind.Utc); }
             catch { }
 
-            var UserList = new UserList(!EmailConfirmed, Header["Name"], string.IsNullOrEmpty(Header["Description"].Trim()) ? null : Header["Description"].Trim(), Date, 0, UserId);
+            var UserList = new UserList(!EmailConfirmed, Header["Name"], string.IsNullOrEmpty(Header["Description"].Trim()) ? null : Header["Description"].Trim(), Date, UserId);
             
             _context.UserLists.Add(UserList);
             await _context.SaveChangesAsync(CT);
 
-            var Lookup = new Dictionary<(string Name, int Year), (int Position, int FilmId)>();
+            var Lookup = new Dictionary<(string Name, int Year), int>();
             for (int i = 0; i < Entries["Position"].Count; i++)
             {
                 var Year = int.TryParse(Entries["Year"][i], out int Temp) ? Temp : 0;
                 var FilmId = await FuzzyMatchFilm(MatchedIds, Entries["Name"][i], Year, _context, CT);
 
-                Lookup[(Entries["Name"][i], Year)] = (FilmId == null ? -1 : i + 1, FilmId ?? 0);
+                Lookup[(Entries["Name"][i], Year)] = FilmId ?? 0;
             }
 
-            var ListEntries = new List<ListEntry>();
-            Lookup.Values.Where(l => l.FilmId != 0).DistinctBy(l => l.FilmId).ToList().ForEach(l =>
-            {
-                ListEntries.Add(new ListEntry(l.Position, l.FilmId, UserList.Id));
-            });
+            var ListEntries = Lookup.Values
+                .Where(FilmId => FilmId != 0)
+                .Distinct()
+                .Select((FilmId, Index) => new ListEntry(Index + 1, FilmId, UserList.Id))
+                .ToList();
 
             _context.ListEntries.AddRange(ListEntries);
-            UserList.Size = ListEntries.Count;
-            _context.UserLists.Update(UserList);
             await _context.SaveChangesAsync(CT);
         }
 

@@ -53,6 +53,7 @@ const Celebrity = () => {
   const [ isRefreshing, setIsRefreshing ] = useState(false)
   const [ stans, setStans ] = useState(false)
   const stansLocalCopyRef = useRef(null)
+  const stanCountLocalCopyRef = useRef(0)
   const stanRequestRef = useRef(0)
   
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
@@ -84,6 +85,8 @@ const Celebrity = () => {
         setBio(json.celebrity)
         setAvailableRoles((json.celebrity.roles ?? []).map(role => ROLE_TO_FILTER_MAP[role]).filter(Boolean))
         setStans(json.isFollowing)
+        stansLocalCopyRef.current = json.isFollowing
+        stanCountLocalCopyRef.current = json.celebrity.stanCount
         setServer(Response.ok)
       } else if (res.status === 404) {
         setServer(Response.notFound)
@@ -151,8 +154,20 @@ const Celebrity = () => {
       return
     }
     const currentStans = stansLocalCopyRef.current
-    setStans(!currentStans)
+    const currentStanCount = stanCountLocalCopyRef.current
+    const nextStans = !currentStans
+    const nextStanCount = currentStans ? Math.max(0, currentStanCount - 1) : currentStanCount + 1
+    stansLocalCopyRef.current = nextStans
+    stanCountLocalCopyRef.current = nextStanCount
+    setStans(nextStans)
+    setBio(prev => ({...prev, stanCount: nextStanCount}))
     const requestId = ++stanRequestRef.current
+    const restorePreviousState = () => {
+      stansLocalCopyRef.current = currentStans
+      stanCountLocalCopyRef.current = currentStanCount
+      setStans(currentStans)
+      setBio(prev => ({...prev, stanCount: currentStanCount}))
+    }
     try {
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/celebrities/stan?CelebrityId=${celebrityId}`, {
@@ -161,13 +176,20 @@ const Celebrity = () => {
       })
       if (requestId !== stanRequestRef.current) return
       if (!res.ok) {
+        restorePreviousState()
         console.log('stan/unstan failed; internal server error...')
+        return
       }
+      const json = await res.json()
+      if (requestId !== stanRequestRef.current) return
+      stanCountLocalCopyRef.current = json.stanCount
+      setBio(prev => ({...prev, stanCount: json.stanCount}))
     } catch {
       if (requestId !== stanRequestRef.current) return
+      restorePreviousState()
       console.log('stan/unstan failed; network error...')
     }
-  }, [user, stanRequestRef, celebrityId])
+  }, [user, isValidSession, router, celebrityId])
 
   const handleTabChange = useCallback((newTab) => {
     setCurrentTabData({ page: 1, films: [], totalCount: 0 })
@@ -227,6 +249,10 @@ const Celebrity = () => {
   useEffect(() => {
     stansLocalCopyRef.current = stans
   }, [stans])
+
+  useEffect(() => {
+    stanCountLocalCopyRef.current = bio?.stanCount ?? 0
+  }, [bio?.stanCount])
 
   if (!bio) {
     return (

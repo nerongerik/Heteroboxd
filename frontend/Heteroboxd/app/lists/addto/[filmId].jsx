@@ -89,7 +89,7 @@ const AddToLists = () => {
       return
     }
     try {
-      const lists = usersLists.lists.filter(item => item && selectedIds.includes(item.listId)).map(item => ({ key: item.listId, value: item.size }))
+      const lists = usersLists.lists.filter(item => item && selectedIds.includes(item.listId)).map(item => item.listId)
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists/bulk`, {
         method: 'PUT',
@@ -134,7 +134,7 @@ const AddToLists = () => {
           Description: '',
           Ranked: false,
           AuthorId: user.userId,
-          Entries: [{FilmId: filmId, Position: 1}]
+          Entries: [{FilmId: filmId}]
         })
       })
       if (!res.ok) {

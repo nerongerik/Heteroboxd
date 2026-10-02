@@ -10,12 +10,10 @@ namespace Heteroboxd.Shared.Repository
         Task<(List<JoinResponse<JoinedReviewFilm, User>> Responses, int TotalCount)> GetAllAsync(List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Review?> GetByIdAsync(Guid Id);
         Task<JoinResponse<JoinedReviewFilm, User>?> GetJoinedByIdAsync(Guid Id);
-        Task<(List<JoinResponse<Review, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task<(List<JoinResponse<Review, User>> Responses, int TotalCount)> GetTopAsync(int FilmId, int PageSize);
-        Task<(List<JoinResponse<Review, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinResponse<ReviewWithCounts, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
+        Task<(List<JoinResponse<ReviewWithCounts, User>> Responses, int TotalCount)> GetTopAsync(int FilmId, int PageSize);
+        Task<(List<JoinResponse<ReviewWithCounts, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<JoinedReviewFilm?> GetByUserFilmAsync(Guid AuthorId, int FilmId);
-        Task UpdateLikeCountAsync(Guid ReviewId, int Delta);
-        Task UpdateCommentCountAsync(Guid ReviewId, int Delta);
         Task ToggleNotificationsAsync(Guid ReviewId);
         Task ReportAsync(Guid ReviewId);
         Task CreateAsync(Review Review);
@@ -38,6 +36,14 @@ namespace Heteroboxd.Shared.Repository
                 .AsNoTracking()
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
                 .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
+                .Select(x => new
+                {
+                    x.r,
+                    x.f,
+                    x.u,
+                    LikeCount = _context.UserLikedReviews.Count(ulr => ulr.ReviewId == x.r.Id),
+                    CommentCount = _context.Comments.Count(c => c.ReviewId == x.r.Id)
+                })
                 .AsQueryable();
 
             //filtering
@@ -58,7 +64,7 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "popularity":
-                    Query = Desc ? Query.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.LikeCount).ThenBy(x => x.r.Id);
+                    Query = Desc ? Query.OrderByDescending(x => x.LikeCount).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.LikeCount).ThenBy(x => x.r.Id);
                     break;
                 case "date created":
                     Query = Desc ? Query.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.Date).ThenBy(x => x.r.Id);
@@ -67,7 +73,7 @@ namespace Heteroboxd.Shared.Repository
                     Query = Desc ? Query.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
                 case "comment count":
-                    Query = Desc ? Query.OrderByDescending(x => x.r.CommentCount).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.r.CommentCount).ThenBy(x => x.r.Id);
+                    Query = Desc ? Query.OrderByDescending(x => x.CommentCount).ThenBy(x => x.r.Id) : Query.OrderBy(x => x.CommentCount).ThenBy(x => x.r.Id);
                     break;
                 case "flags":
                     Query = Query.OrderByDescending(x => x.r.Flags).ThenBy(x => x.r.Id);
@@ -82,7 +88,7 @@ namespace Heteroboxd.Shared.Repository
             var Responses = await Query
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
+                .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f, x.LikeCount, x.CommentCount), Joined = x.u })
                 .ToListAsync();
             return (Responses, TotalCount);
         }
@@ -98,15 +104,31 @@ namespace Heteroboxd.Shared.Repository
                 .Where(r => r.Id == Id)
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
                 .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u })
-                .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
+                .Select(x => new JoinResponse<JoinedReviewFilm, User>
+                {
+                    Item = new JoinedReviewFilm(
+                        x.r,
+                        x.f,
+                        _context.UserLikedReviews.Count(ulr => ulr.ReviewId == x.r.Id),
+                        _context.Comments.Count(c => c.ReviewId == x.r.Id)
+                    ),
+                    Joined = x.u
+                })
                 .FirstOrDefaultAsync();
 
-        public async Task<(List<JoinResponse<Review, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinResponse<ReviewWithCounts, User>> Reviews, int TotalCount)> GetByFilmAsync(int FilmId, List<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var FilmQuery = _context.Reviews
                 .AsNoTracking()
                 .Where(r => r.FilmId == FilmId && !r.Private)
                 .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
+                .Select(x => new
+                {
+                    x.r,
+                    x.u,
+                    LikeCount = _context.UserLikedReviews.Count(ulr => ulr.ReviewId == x.r.Id),
+                    CommentCount = _context.Comments.Count(c => c.ReviewId == x.r.Id)
+                })
                 .AsQueryable();
 
             //filtering
@@ -127,7 +149,7 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "popularity":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.LikeCount).ThenBy(x => x.r.Id);
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.LikeCount).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.LikeCount).ThenBy(x => x.r.Id);
                     break;
                 case "date created":
                     FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.Date).ThenBy(x => x.r.Id);
@@ -136,11 +158,11 @@ namespace Heteroboxd.Shared.Repository
                     FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
                 case "comment count":
-                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.r.CommentCount).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.r.CommentCount).ThenBy(x => x.r.Id);
+                    FilmQuery = Desc ? FilmQuery.OrderByDescending(x => x.CommentCount).ThenBy(x => x.r.Id) : FilmQuery.OrderBy(x => x.CommentCount).ThenBy(x => x.r.Id);
                     break;
                 default:
                     //error handling
-                    FilmQuery = FilmQuery.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id);
+                    FilmQuery = FilmQuery.OrderByDescending(x => x.LikeCount).ThenBy(x => x.r.Id);
                     break;
             }
 
@@ -148,32 +170,53 @@ namespace Heteroboxd.Shared.Repository
             var Responses = await FilmQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<Review, User> { Item = x.r, Joined = x.u })
+                .Select(x => new JoinResponse<ReviewWithCounts, User>
+                {
+                    Item = new ReviewWithCounts(x.r, x.LikeCount, x.CommentCount),
+                    Joined = x.u
+                })
                 .ToListAsync();
 
             return (Responses, TotalCount);
         }
 
-        public async Task<(List<JoinResponse<Review, User>> Responses, int TotalCount)> GetTopAsync(int FilmId, int PageSize)
+        public async Task<(List<JoinResponse<ReviewWithCounts, User>> Responses, int TotalCount)> GetTopAsync(int FilmId, int PageSize)
         {
             var Responses = await _context.Reviews
                 .AsNoTracking()
                 .Where(r => r.FilmId == FilmId && r.Text != null && r.Text.Length > 0 && !r.Spoiler && !r.Private)
-                .OrderByDescending(r => r.LikeCount).ThenBy(r => r.Id)
+                .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new
+                {
+                    r,
+                    u,
+                    LikeCount = _context.UserLikedReviews.Count(ulr => ulr.ReviewId == r.Id),
+                    CommentCount = _context.Comments.Count(c => c.ReviewId == r.Id)
+                })
+                .OrderByDescending(x => x.LikeCount).ThenBy(x => x.r.Id)
                 .Take(PageSize)
-                .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
-                .Select(x => new JoinResponse<Review, User> { Item = x.r, Joined = x.u })
+                .Select(x => new JoinResponse<ReviewWithCounts, User>
+                {
+                    Item = new ReviewWithCounts(x.r, x.LikeCount, x.CommentCount),
+                    Joined = x.u
+                })
                 .ToListAsync();
             var TotalCount = await _context.Reviews.AsNoTracking().CountAsync(r => r.FilmId == FilmId);
             return (Responses, TotalCount);
         }
 
-        public async Task<(List<JoinResponse<Review, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
+        public async Task<(List<JoinResponse<ReviewWithCounts, Film>> Responses, int TotalCount)> GetByAuthorAsync(Guid AuthorId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             var UserQuery = _context.Reviews
                 .AsNoTracking()
                 .Where(r => r.AuthorId == AuthorId)
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
+                .Select(x => new
+                {
+                    x.r,
+                    x.f,
+                    LikeCount = _context.UserLikedReviews.Count(ulr => ulr.ReviewId == x.r.Id),
+                    CommentCount = _context.Comments.Count(c => c.ReviewId == x.r.Id)
+                })
                 .AsQueryable();
 
             //filtering
@@ -191,7 +234,7 @@ namespace Heteroboxd.Shared.Repository
             switch (Sort.ToLower())
             {
                 case "popularity":
-                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.LikeCount).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.LikeCount).ThenBy(x => x.r.Id);
+                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.LikeCount).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.LikeCount).ThenBy(x => x.r.Id);
                     break;
                 case "date created":
                     UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.Date).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.Date).ThenBy(x => x.r.Id);
@@ -200,7 +243,7 @@ namespace Heteroboxd.Shared.Repository
                     UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.Rating).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.Rating).ThenBy(x => x.r.Id);
                     break;
                 case "comment count":
-                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.r.CommentCount).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.r.CommentCount).ThenBy(x => x.r.Id);
+                    UserQuery = Desc ? UserQuery.OrderByDescending(x => x.CommentCount).ThenBy(x => x.r.Id) : UserQuery.OrderBy(x => x.CommentCount).ThenBy(x => x.r.Id);
                     break;
                 default:
                     //error handling
@@ -212,7 +255,11 @@ namespace Heteroboxd.Shared.Repository
             var Responses = await UserQuery
                 .Skip((Page - 1) * PageSize)
                 .Take(PageSize)
-                .Select(x => new JoinResponse<Review, Film> { Item = x.r, Joined = x.f })
+                .Select(x => new JoinResponse<ReviewWithCounts, Film>
+                {
+                    Item = new ReviewWithCounts(x.r, x.LikeCount, x.CommentCount),
+                    Joined = x.f
+                })
                 .ToListAsync();
 
             return (Responses, TotalCount);
@@ -220,34 +267,17 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<JoinedReviewFilm?> GetByUserFilmAsync(Guid AuthorId, int FilmId)
         {
-            var JoinedReviewFilm = await _context.Reviews
+            return await _context.Reviews
                 .AsNoTracking()
+                .Where(r => r.AuthorId == AuthorId && r.FilmId == FilmId)
                 .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
-                .FirstOrDefaultAsync(x => x.r.AuthorId == AuthorId && x.r.FilmId == FilmId);
-
-            return JoinedReviewFilm == null ? null : new JoinedReviewFilm(JoinedReviewFilm.r, JoinedReviewFilm.f);
-        }
-
-        public async Task UpdateLikeCountAsync(Guid ReviewId, int Delta)
-        {
-            var Rows = await _context.Reviews
-                .Where(r => r.Id == ReviewId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    r => r.LikeCount,
-                    r => Math.Max(r.LikeCount + Delta, 0)
-                ));
-            if (Rows == 0) throw new KeyNotFoundException();
-        }
-
-        public async Task UpdateCommentCountAsync(Guid ReviewId, int Delta)
-        {
-            var Rows = await _context.Reviews
-                .Where(r => r.Id == ReviewId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    r => r.CommentCount,
-                    r => Math.Max(r.CommentCount + Delta, 0)
-                ));
-            if (Rows == 0) throw new KeyNotFoundException();
+                .Select(x => new JoinedReviewFilm(
+                    x.r,
+                    x.f,
+                    _context.UserLikedReviews.Count(ulr => ulr.ReviewId == x.r.Id),
+                    _context.Comments.Count(c => c.ReviewId == x.r.Id)
+                ))
+                .FirstOrDefaultAsync();
         }
 
         public async Task ToggleNotificationsAsync(Guid ReviewId)

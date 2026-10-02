@@ -88,6 +88,8 @@ namespace Heteroboxd.Shared.Data
                 entity.HasKey(f => f.Id);
 
                 entity.HasIndex(f => f.Slug).IsUnique();
+                entity.HasIndex(f => f.WatchCount);
+                entity.HasIndex(f => f.AverageRating);
 
                 entity.Property(f => f.Collection)
                     .HasConversion(
@@ -112,6 +114,7 @@ namespace Heteroboxd.Shared.Data
             modelBuilder.Entity<UserWatchedFilm>(entity =>
             {
                 entity.HasKey(uwf => uwf.Id);
+                entity.HasIndex(uwf => uwf.FilmId);
 
                 entity.HasOne<User>()
                       .WithMany()
@@ -130,6 +133,7 @@ namespace Heteroboxd.Shared.Data
                 entity.HasKey(r => r.Id);
 
                 entity.HasIndex(r => new { r.AuthorId, r.FilmId }).IsUnique(); //one review per user per film
+                entity.HasIndex(r => r.FilmId);
 
                 entity.HasOne<User>()
                       .WithMany()
@@ -147,6 +151,12 @@ namespace Heteroboxd.Shared.Data
             {
                 entity.HasKey(c => c.Id);
 
+                entity.HasIndex(c => c.ReviewId);
+                entity.HasIndex(c => c.AuthorId);
+
+                entity.Property(c => c.Tombstone)
+                      .HasConversion<string>();
+
                 entity.HasOne<Review>()
                       .WithMany()
                       .HasForeignKey(c => c.ReviewId)
@@ -155,7 +165,8 @@ namespace Heteroboxd.Shared.Data
                 entity.HasOne<User>()
                       .WithMany()
                       .HasForeignKey(c => c.AuthorId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             //Celebrity
@@ -184,6 +195,7 @@ namespace Heteroboxd.Shared.Data
             modelBuilder.Entity<ListEntry>(entity =>
             {
                 entity.HasKey(le => le.Id);
+                entity.HasIndex(le => le.UserListId);
 
                 entity.HasOne<UserList>()
                       .WithMany()
@@ -260,6 +272,7 @@ namespace Heteroboxd.Shared.Data
                 entity.HasKey(ul => ul.Id);
 
                 entity.HasIndex(ul => new { ul.UserId, ul.ReviewId }).IsUnique();
+                entity.HasIndex(ul => ul.ReviewId);
 
                 entity.HasOne<User>()
                       .WithMany()
@@ -277,6 +290,7 @@ namespace Heteroboxd.Shared.Data
                 entity.HasKey(ul => ul.Id);
 
                 entity.HasIndex(ul => new { ul.UserId, ul.ListId }).IsUnique();
+                entity.HasIndex(ul => ul.ListId);
 
                 entity.HasOne<User>()
                       .WithMany()
