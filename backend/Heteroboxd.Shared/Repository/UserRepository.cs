@@ -28,8 +28,8 @@ namespace Heteroboxd.Shared.Repository
         Task ReportAsync(Guid UserId);
         Task AddToWatchlistAsync(WatchlistEntry Entry);
         Task RemoveFromWatchlistAsync(Guid WeId);
-        Task<bool> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId);
-        Task<bool> UpdateLikedListsAsync(Guid UserId, Guid ListId);
+        Task<(bool Added, bool NotificationsOn)> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId);
+        Task<(bool Added, bool NotificationsOn)> UpdateLikedListsAsync(Guid UserId, Guid ListId);
         Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId);
         Task BlockUnblockAsync(Guid UserId, Guid TargetId);
         Task RemoveFollowerAsync(Guid UserId, Guid TargetId);
@@ -353,19 +353,32 @@ namespace Heteroboxd.Shared.Repository
             var ReviewsQuery = _context.UserLikedReviews
                 .AsNoTracking()
                 .Where(ulr => ulr.UserId == UserId)
-                .OrderByDescending(ulr => ulr.Date).ThenBy(ulr => ulr.Id)
-                .Select(ulr => ulr.ReviewId)
-                .Join(_context.Reviews, reviewId => reviewId, r => r.Id, (_, r) => r)
-                .Join(_context.Films, r => r.FilmId, f => f.Id, (r, f) => new { r, f })
-                .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new { x.r, x.f, u });
+                .Join(_context.Reviews, ulr => ulr.ReviewId, r => r.Id, (ulr, r) => new { ulr, r })
+                .Join(_context.Films, x => x.r.FilmId, f => f.Id, (x, f) => new { x.ulr, x.r, f })
+                .Join(_context.Users, x => x.r.AuthorId, u => u.Id, (x, u) => new
+                {
+                    x.ulr,
+                    x.r,
+                    x.f,
+                    u,
+                    LikeCount = _context.UserLikedReviews.Count(ulr => ulr.ReviewId == x.r.Id),
+                    CommentCount = _context.Comments.Count(c => c.ReviewId == x.r.Id)
+                })
+                .OrderByDescending(x => x.ulr.Date).ThenBy(x => x.ulr.Id);
 
             var ListsQuery = _context.UserLikedLists
                 .AsNoTracking()
                 .Where(ull => ull.UserId == UserId)
-                .OrderByDescending(ull => ull.Date).ThenBy(ull => ull.Id)
-                .Select(ull => ull.ListId)
-                .Join(_context.UserLists, listId => listId, ul => ul.Id, (_, ul) => ul)
-                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u });
+                .Join(_context.UserLists, ull => ull.ListId, ul => ul.Id, (ull, ul) => new { ull, ul })
+                .Join(_context.Users, x => x.ul.AuthorId, u => u.Id, (x, u) => new
+                {
+                    x.ull,
+                    x.ul,
+                    u,
+                    LikeCount = _context.UserLikedLists.Count(ull => ull.ListId == x.ul.Id),
+                    ListEntryCount = _context.ListEntries.Count(le => le.UserListId == x.ul.Id)
+                })
+                .OrderByDescending(x => x.ull.Date).ThenBy(x => x.ull.Id);
 
             var ReviewCount = ReviewsPage > 0 ? await ReviewsQuery.CountAsync() : 0;
             var ListCount = ListsPage > 0 ? await ListsQuery.CountAsync() : 0;
@@ -374,7 +387,11 @@ namespace Heteroboxd.Shared.Repository
                 ? await ReviewsQuery
                     .Skip((ReviewsPage - 1) * PageSize)
                     .Take(PageSize)
-                    .Select(x => new JoinResponse<JoinedReviewFilm, User> { Item = new JoinedReviewFilm(x.r, x.f), Joined = x.u })
+                    .Select(x => new JoinResponse<JoinedReviewFilm, User>
+                    {
+                        Item = new JoinedReviewFilm(x.r, x.f, x.LikeCount, x.CommentCount),
+                        Joined = x.u
+                    })
                     .ToListAsync()
                 : new();
 
@@ -388,9 +405,18 @@ namespace Heteroboxd.Shared.Repository
                 var ListIds = PreListResponses.Select(x => x.ul.Id).ToHashSet();
                 var Entries = await _context.ListEntries
                     .AsNoTracking()
-                    .Where(le => ListIds.Contains(le.UserListId))
-                    .OrderBy(le => le.Position)
+                    .Where(le => ListIds.Contains(le.UserListId)
+                        && _context.ListEntries
+                            .Where(candidate => candidate.UserListId == le.UserListId)
+                            .OrderBy(candidate => candidate.Position)
+                            .ThenBy(candidate => candidate.Id)
+                            .Take(4)
+                            .Select(candidate => candidate.Id)
+                            .Contains(le.Id))
                     .Join(_context.Films, le => le.FilmId, f => f.Id, (le, f) => new { le, f })
+                    .OrderBy(x => x.le.UserListId)
+                    .ThenBy(x => x.le.Position)
+                    .ThenBy(x => x.le.Id)
                     .ToListAsync();
                 var EntriesByList = Entries
                     .GroupBy(x => x.le.UserListId)
@@ -402,7 +428,7 @@ namespace Heteroboxd.Shared.Repository
                              .ToList()
                     );
                 ListResponses = PreListResponses.Select(x => new JoinedListEntries(
-                    new JoinResponse<UserList, User> { Item = x.ul, Joined = x.u }!,
+                    new JoinedUserList(x.ul, x.u, x.LikeCount, x.ListEntryCount),
                     EntriesByList.TryGetValue(x.ul.Id, out var entries)
                         ? entries
                         : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
@@ -434,17 +460,19 @@ namespace Heteroboxd.Shared.Repository
                 .Where(wle => wle.Id == WeId)
                 .ExecuteDeleteAsync();
 
-        public async Task<bool> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId)
+        public async Task<(bool Added, bool NotificationsOn)> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId)
         {
             var Review = await _context.Reviews
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == ReviewId);
             if (Review == null) throw new KeyNotFoundException();
 
+            var Added = false;
             try
             {
                 _context.UserLikedReviews.Add(new UserLikedReview(UserId, ReviewId));
                 await _context.SaveChangesAsync();
+                Added = true;
             }
             catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
             {
@@ -454,20 +482,22 @@ namespace Heteroboxd.Shared.Repository
                     .ExecuteDeleteAsync();
             }
 
-            return Review.NotificationsOn;
+            return (Added, Review.NotificationsOn);
         }
 
-        public async Task<bool> UpdateLikedListsAsync(Guid UserId, Guid ListId)
+        public async Task<(bool Added, bool NotificationsOn)> UpdateLikedListsAsync(Guid UserId, Guid ListId)
         {
             var UserList = await _context.UserLists
                 .AsNoTracking()
                 .FirstOrDefaultAsync(ul => ul.Id == ListId);
             if (UserList == null) throw new KeyNotFoundException();
 
+            var Added = false;
             try
             {
                 _context.UserLikedLists.Add(new UserLikedList(UserId, ListId));
                 await _context.SaveChangesAsync();
+                Added = true;
             }
             catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
             {
@@ -477,7 +507,7 @@ namespace Heteroboxd.Shared.Repository
                     .ExecuteDeleteAsync();
             }
 
-            return UserList.NotificationsOn;
+            return (Added, UserList.NotificationsOn);
         }
 
         public async Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId)
@@ -607,10 +637,35 @@ namespace Heteroboxd.Shared.Repository
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public async Task DeleteAsync(Guid UserId) =>
-            await _context.Users
-                .Where(u => u.Id == UserId)
-                .ExecuteDeleteAsync();
+        public async Task DeleteAsync(Guid UserId)
+        {
+            var Strategy = _context.Database.CreateExecutionStrategy();
+            await Strategy.ExecuteAsync(async () =>
+            {
+                await using var Transaction = await _context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    await _context.Comments
+                        .Where(c => c.AuthorId == UserId)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(c => c.Text, "")
+                            .SetProperty(c => c.Tombstone, Heteroboxd.Shared.Models.Enums.Tombstone.OriginalAuthorDeleted));
+
+                    var DeletedUsers = await _context.Users
+                        .Where(u => u.Id == UserId)
+                        .ExecuteDeleteAsync();
+                    if (DeletedUsers == 0) throw new KeyNotFoundException();
+
+                    await Transaction.CommitAsync();
+                }
+                catch
+                {
+                    await Transaction.RollbackAsync();
+                    throw;
+                }
+            });
+        }
 
         public async Task DeleteUserWatchedFilmAsync(Guid UwfId) =>
             await _context.UserWatchedFilms

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Platform, Pressable, RefreshControl, useWindowDimensions, Vibration, View } from 'react-native'
 import Seen from '../assets/icons/seen.svg'
 import { useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
@@ -63,6 +63,7 @@ const Notifications = () => {
   }, [user])
 
   const handleReadAll = useCallback(async () => {
+    if (Platform.OS === 'android') Vibration.vibrate(30)
     if (!user || !(await isValidSession())) return setServer(Response.forbidden)
     setIsReadingAll(true)
     try {

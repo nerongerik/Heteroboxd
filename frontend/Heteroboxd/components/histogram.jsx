@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { Platform, TouchableOpacity, useWindowDimensions, Vibration, View } from 'react-native'
 import * as format from '../helpers/format'
 import { Colors } from '../constants/colors'
 import HText from './htext'
@@ -40,7 +40,15 @@ const Histogram = ({ histogram }) => {
       <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', alignSelf: 'center'}}>
         <View style={{flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', marginRight: 5}}>
           {data.map(({ rating, count, height }) => (
-              <TouchableOpacity key={rating} onPressIn={() => {setActiveOutput(format.formatCount(count)); setPressed(rating)}} onPressOut={() => {setActiveOutput(format.round1(averageRating)); setPressed(-1)}}>
+              <TouchableOpacity
+                key={rating}
+                onPressIn={() => {
+                  if (Platform.OS === 'android') Vibration.vibrate(30)
+                  setActiveOutput(format.formatCount(count))
+                  setPressed(rating)
+                }}
+                onPressOut={() => {setActiveOutput(format.round1(averageRating)); setPressed(-1)}}
+              >
                 <View
                   style={{
                     backgroundColor: Colors.text,

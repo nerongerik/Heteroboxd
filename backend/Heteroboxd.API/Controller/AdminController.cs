@@ -121,12 +121,16 @@ namespace Heteroboxd.API.Controller
                         await _reviewService.DeleteReview(Id);
                         break;
                     case "comment":
-                        await _commentService.DeleteComment(Id);
+                        await _commentService.DeleteCommentAsAdmin(Id);
                         break;
                     default:
                         return BadRequest();
                 }
                 return Ok();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
             catch
             {

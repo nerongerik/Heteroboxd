@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, useWindowDimensions, View, RefreshControl } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Platform, Pressable, StyleSheet, useWindowDimensions, Vibration, View, RefreshControl } from 'react-native'
 import Filter from '../../assets/icons/filter.svg'
 import Eye from '../../assets/icons/eye2.svg'
 import Heart from '../../assets/icons/heart.svg'
@@ -70,6 +70,7 @@ const List = () => {
   const translateY3 = slideAnim3.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu3 = useCallback((id) => {
     if (!user) return
+    if (Platform.OS === 'android') Vibration.vibrate(30)
     setSelected(id)
     setMenuShown3(true)
     Animated.timing(slideAnim3, {

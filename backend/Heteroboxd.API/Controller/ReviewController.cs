@@ -161,7 +161,6 @@ namespace Heteroboxd.API.Controller
             _logger.LogInformation($"UpdateLikes endpoint hit for {Request.ReviewId!}");
             try
             {
-                await _service.UpdateReviewLikeCount(Request.ReviewId!, Request.LikeChange);
                 await _userService.UpdateLikes(Request);
                 return Ok();
             }

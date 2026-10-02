@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, View, Text, Pressable, StyleSheet, BackHandler } from 'react-native'
+import { Modal, View, Text, Pressable, StyleSheet, BackHandler, Platform, Vibration } from 'react-native'
 import { Stack } from 'expo-router'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
@@ -56,6 +56,10 @@ const RootLayout = () => {
   useTrendingSync()
   useCountrySync()
   usePopularSync()
+
+  useEffect(() => {
+    if ((updateRequired || updateAvailable) && Platform.OS === 'android') Vibration.vibrate(30)
+  }, [updateRequired, updateAvailable])
 
   useEffect(() => {
     if (loaded || error) {

@@ -6,7 +6,6 @@
         public string Name { get; set; }
         public string? Description { get; set; }
         public string? HeadshotUrl { get; set; }
-        public int StanCount { get; set; }
 
         public Celebrity(int Id, string Name, string? Description, string? HeadshotUrl)
         {
@@ -14,7 +13,6 @@
             this.Name = Name;
             this.Description = Description;
             this.HeadshotUrl = HeadshotUrl;
-            this.StanCount = 0;
         }
 
         public void UpdateFields(Celebrity Celebrity)

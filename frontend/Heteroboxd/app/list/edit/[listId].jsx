@@ -121,10 +121,7 @@ const EditList = () => {
       return
     }
     try {
-      const cler = entries?.map((e, i) => ({
-        FilmId: e.filmId,
-        Position: i + 1
-      }))
+      const cler = entries?.map(e => ({ FilmId: e.filmId }))
       const jwt = await auth.getJwt()
       const res = await fetch(`${BaseUrl.api}/lists`, {
         method: 'PUT',

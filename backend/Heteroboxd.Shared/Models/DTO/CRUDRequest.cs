@@ -38,13 +38,12 @@
     public class UpdateUserListBulkRequest
     {
         public int FilmId { get; set; }
-        public List<KeyValuePair<string, int>> Lists { get; set; }
+        public List<string> Lists { get; set; }
     }
 
     public class CreateListEntryRequest
     {
         public int FilmId { get; set; }
-        public int Position { get; set; }
     }
 
     public class CreateCommentRequest

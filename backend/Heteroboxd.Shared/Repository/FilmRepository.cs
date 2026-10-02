@@ -8,7 +8,7 @@ namespace Heteroboxd.Shared.Repository
 {
     public interface IFilmRepository
     {
-        Task<JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>>?> GetByIdAsync(int Id);
+        Task<FilmDetails?> GetByIdAsync(int Id);
         Task<int?> GetIdBySlugAsync(string Slug);
         Task<Film?> LightweightFetcherAsync(int Id);
         Task<List<Film>> GetByIdsAsync(IReadOnlyCollection<int> Ids);
@@ -19,9 +19,11 @@ namespace Heteroboxd.Shared.Repository
         Task<(List<Film> Films, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<Dictionary<double, int>> GetRatingsAsync(int FilmId);
         Task<(List<JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize);
-        Task UpdateAverageRatingAsync(int FilmId, double AvgRating);
-        Task UpdateRatingCountAsync(int FilmId, int Delta);
-        Task UpdateWatchCountAsync(int FilmId, int Delta);
+        Task AddRatingAsync(int FilmId, double Rating);
+        Task ReplaceRatingAsync(int FilmId, double OldRating, double NewRating);
+        Task RemoveRatingAsync(int FilmId, double Rating);
+        Task IncrementWatchCountAsync(int FilmId, int Amount = 1);
+        Task RemoveWatchCountAsync(int FilmId, int Amount);
     }
 
     public class FilmRepository : IFilmRepository
@@ -33,7 +35,7 @@ namespace Heteroboxd.Shared.Repository
             _context = context;
         }
 
-        public async Task<JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>>?> GetByIdAsync(int Id)
+        public async Task<FilmDetails?> GetByIdAsync(int Id)
         {
             var Film = await _context.Films
                 .AsNoTracking()
@@ -48,7 +50,13 @@ namespace Heteroboxd.Shared.Repository
                 .Join( _context.Celebrities, g => g.CelebrityId, c => c.Id, (g, c) => new { c, g })
                 .Select(x => new JoinResponse<Celebrity, List<CelebrityCredit>> { Item = x.c, Joined = x.g.Credits })
                 .ToListAsync();
-            return new JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>> { Item = Film, Joined = Credits };
+
+            var WatchCount = await _context.UserWatchedFilms
+                .AsNoTracking()
+                .Where(uwf => uwf.FilmId == Id)
+                .SumAsync(uwf => (int?)uwf.TimesWatched) ?? 0;
+
+            return new FilmDetails(Film, Credits, WatchCount);
         }
 
         public async Task<int?> GetIdBySlugAsync(string Slug) =>
@@ -375,35 +383,82 @@ namespace Heteroboxd.Shared.Repository
             }
         }
 
-        public async Task UpdateAverageRatingAsync(int FilmId, double AvgRating)
+        public async Task AddRatingAsync(int FilmId, double Rating)
         {
             var Rows = await _context.Films
                 .Where(f => f.Id == FilmId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    f => f.AverageRating,
-                    f => AvgRating
-                ));
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(
+                        f => f.AverageRating,
+                        f => f.RatingCount > 0
+                            ? ((f.AverageRating * f.RatingCount) + Rating) / (f.RatingCount + 1)
+                            : Rating
+                    )
+                    .SetProperty(
+                        f => f.RatingCount,
+                        f => f.RatingCount > 0 ? f.RatingCount + 1 : 1
+                    ));
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public async Task UpdateRatingCountAsync(int FilmId, int Delta)
+        public async Task ReplaceRatingAsync(int FilmId, double OldRating, double NewRating)
         {
             var Rows = await _context.Films
                 .Where(f => f.Id == FilmId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    f => f.RatingCount,
-                    f => f.RatingCount + Delta
-                ));
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(
+                        f => f.AverageRating,
+                        f => f.RatingCount > 0
+                            ? ((f.AverageRating * f.RatingCount) - OldRating + NewRating) / f.RatingCount
+                            : 0
+                    )
+                    .SetProperty(
+                        f => f.RatingCount,
+                        f => f.RatingCount > 0 ? f.RatingCount : 0
+                    ));
             if (Rows == 0) throw new KeyNotFoundException();
         }
 
-        public async Task UpdateWatchCountAsync(int FilmId, int Delta)
+        public async Task RemoveRatingAsync(int FilmId, double Rating)
         {
+            var Rows = await _context.Films
+                .Where(f => f.Id == FilmId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(
+                        f => f.AverageRating,
+                        f => f.RatingCount <= 1
+                            ? 0
+                            : ((f.AverageRating * f.RatingCount) - Rating) / (f.RatingCount - 1)
+                    )
+                    .SetProperty(
+                        f => f.RatingCount,
+                        f => f.RatingCount > 0 ? f.RatingCount - 1 : 0
+                    ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
+
+        public async Task IncrementWatchCountAsync(int FilmId, int Amount = 1)
+        {
+            if (Amount < 0) throw new ArgumentOutOfRangeException(nameof(Amount));
+
             var Rows = await _context.Films
                 .Where(f => f.Id == FilmId)
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     f => f.WatchCount,
-                    f => f.WatchCount + Delta
+                    f => f.WatchCount + Amount > 0 ? f.WatchCount + Amount : 0
+                ));
+            if (Rows == 0) throw new KeyNotFoundException();
+        }
+
+        public async Task RemoveWatchCountAsync(int FilmId, int Amount)
+        {
+            if (Amount < 0) throw new ArgumentOutOfRangeException(nameof(Amount));
+
+            var Rows = await _context.Films
+                .Where(f => f.Id == FilmId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    f => f.WatchCount,
+                    f => f.WatchCount > Amount ? f.WatchCount - Amount : 0
                 ));
             if (Rows == 0) throw new KeyNotFoundException();
         }

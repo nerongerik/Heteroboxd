@@ -3,16 +3,16 @@ import { Colors } from '../constants/colors'
 import HText from './htext'
 import { UserAvatar } from './userAvatar'
 
-const Author = ({ userId, url, name, username, admin, router, widescreen, dim = 28 }) => {
+const Author = ({ userId, url, name, username, admin, router, widescreen, dim = 28, compact = false }) => {
   return (
     <Pressable onPress={() => router.push(`/profile/${userId}`)}>
       <View style={{flexDirection: 'row', paddingTop: 5, alignItems: 'center'}}>
         <UserAvatar pictureUrl={url || null} style={[styles.pic, {width: dim, height: dim, borderRadius: dim/2}]} />
         <View style={styles.usernameContainer}>
-          <HText style={[styles.name, {fontSize: widescreen ? 16 : 12}]}>
+          <HText style={[styles.name, {fontSize: compact ? (widescreen ? 14 : 11) : (widescreen ? 16 : 12)}]}>
             {name || 'Anonymous'}{admin && <HText style={{color: Colors._heteroboxd}}>{' [ADMIN]'}</HText>}
           </HText>
-          {username && <HText style={[styles.username, {fontSize: widescreen ? 14 : 10}]}>{username}</HText>}
+          {username && <HText style={[styles.username, {fontSize: compact ? (widescreen ? 12 : 9) : (widescreen ? 14 : 10)}]}>{username}</HText>}
         </View>
       </View>
     </Pressable>

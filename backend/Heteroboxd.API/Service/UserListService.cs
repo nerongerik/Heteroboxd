@@ -18,7 +18,6 @@ namespace Heteroboxd.API.Service
         Task AddList(CreateUserListRequest ListRequest);
         Task UpdateList(UpdateUserListRequest ListRequest);
         Task UpdateListsBulk(UpdateUserListBulkRequest Request);
-        Task UpdateListLikeCount(string ListId, int Delta);
         Task ToggleListNotifications(string ListId);
         Task ReportList(string ListId);
         Task DeleteList(string ListId);
@@ -52,7 +51,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList()
+                Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!, x.List.LikeCount, x.List.ListEntryCount)).ToList()
             };
         }
 
@@ -61,7 +60,7 @@ namespace Heteroboxd.API.Service
             var Response = await _repo.GetJoinedByIdAsync(Guid.Parse(ListId));
             if (Response == null) throw new KeyNotFoundException();
 
-            return new UserListInfoResponse(Response.Item, Response.Joined);
+            return new UserListInfoResponse(Response.Item, Response.Joined!, Response.LikeCount, Response.ListEntryCount);
         }
 
         public async Task<PagedResponse<ListEntryInfoResponse?>> GetListEntries(string ListId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -106,8 +105,8 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Where(x => x.List.Item.Id != Author.PinnedListId).Select(x => new UserListInfoResponse(x.List.Item, x.Entries, Author)).ToList(),
-                Pinned = Responses.FirstOrDefault(x => x.List.Item.Id == Author.PinnedListId) == null ? null : new UserListInfoResponse(Responses.First(x => x.List.Item.Id == Author.PinnedListId).List.Item, Responses.First(x => x.List.Item.Id == Author.PinnedListId).Entries, Author)
+                Items = Responses.Where(x => x.List.Item.Id != Author.PinnedListId).Select(x => new UserListInfoResponse(x.List.Item, x.Entries, Author, x.List.LikeCount, x.List.ListEntryCount)).ToList(),
+                Pinned = Responses.FirstOrDefault(x => x.List.Item.Id == Author.PinnedListId) == null ? null : new UserListInfoResponse(Responses.First(x => x.List.Item.Id == Author.PinnedListId).List.Item, Responses.First(x => x.List.Item.Id == Author.PinnedListId).Entries, Author, Responses.First(x => x.List.Item.Id == Author.PinnedListId).List.LikeCount, Responses.First(x => x.List.Item.Id == Author.PinnedListId).List.ListEntryCount)
             };
         }
 
@@ -137,7 +136,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList()
+                Items = Responses.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!, x.List.LikeCount, x.List.ListEntryCount)).ToList()
             };
         }
 
@@ -151,7 +150,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Results.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!)).ToList()
+                Items = Results.Select(x => new UserListInfoResponse(x.List.Item, x.Entries, x.List.Joined!, x.List.LikeCount, x.List.ListEntryCount)).ToList()
             };
         }
 
@@ -160,7 +159,7 @@ namespace Heteroboxd.API.Service
             var User = await _userRepo.LightweightFetcherAsync(Guid.Parse(ListRequest.AuthorId));
             if (User == null) throw new KeyNotFoundException();
 
-            var NewList = new UserList(!User.EmailConfirmed, ListRequest.Name, ListRequest.Description, ListRequest.Ranked, ListRequest.Entries.Count, User.Id);
+            var NewList = new UserList(!User.EmailConfirmed, ListRequest.Name, ListRequest.Description, ListRequest.Ranked, User.Id);
             await _repo.CreateAsync(NewList);
             await AddListEntries(NewList.Id, ListRequest.Entries);
         }
@@ -171,9 +170,9 @@ namespace Heteroboxd.API.Service
             if (List == null) throw new KeyNotFoundException();
 
             await _repo.DeleteAllEntriesAsync(List.Id);
-            var Count = await AddListEntries(List.Id, ListRequest.Entries);
+            await AddListEntries(List.Id, ListRequest.Entries);
 
-            List.UpdateFields(ListRequest, Count);
+            List.UpdateFields(ListRequest);
             await _repo.UpdateAsync(List);
         }
         
@@ -181,19 +180,21 @@ namespace Heteroboxd.API.Service
         {
             var Film = await _filmRepo.LightweightFetcherAsync(Request.FilmId);
             if (Film == null) throw new KeyNotFoundException();
-            List<ListEntry> Created = new();
-            foreach (var kvp in Request.Lists)
-            {
-                var ListId = Guid.Parse(kvp.Key);
-                Created.Add(new ListEntry(kvp.Value + 1, Film.Id, ListId));
-                await _repo.IncrementSizeAsync(ListId);
-                await _repo.RedateAsync(ListId);
-            }
+
+            var ListIds = Request.Lists
+                .Select(Guid.Parse)
+                .Distinct()
+                .ToList();
+            var MaxPositions = await _repo.GetMaxPositionsAsync(ListIds);
+            if (MaxPositions.Count != ListIds.Count) throw new KeyNotFoundException();
+
+            var Created = ListIds
+                .Select(ListId => new ListEntry(MaxPositions[ListId] + 1, Film.Id, ListId))
+                .ToList();
+
+            await _repo.RedateAsync(ListIds);
             await _repo.CreateEntriesAsync(Created);
         }
-
-        public async Task UpdateListLikeCount(string ListId, int Delta) =>
-            await _repo.UpdateLikeCountAsync(Guid.Parse(ListId), Delta);
 
         public async Task ToggleListNotifications(string ListId) =>
             await _repo.ToggleNotificationsAsync(Guid.Parse(ListId));
@@ -212,7 +213,7 @@ namespace Heteroboxd.API.Service
             await _repo.DeleteAsync(Guid.Parse(ListId));
         }
 
-        private async Task<int> AddListEntries(Guid ListId, List<CreateListEntryRequest> Entries)
+        private async Task AddListEntries(Guid ListId, List<CreateListEntryRequest> Entries)
         {
             var FilmIds = Entries.Select(e => e.FilmId).ToList();
             var Films = await _filmRepo.GetByIdsAsync(FilmIds);
@@ -220,11 +221,10 @@ namespace Heteroboxd.API.Service
 
             var Created = Entries
                 .Where(e => FilmMap.ContainsKey(e.FilmId))
-                .Select(e => new ListEntry(e.Position, e.FilmId, ListId))
+                .Select((e, Index) => new ListEntry(Index + 1, e.FilmId, ListId))
                 .ToList();
 
             await _repo.CreateEntriesAsync(Created);
-            return Created.Count;
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Heteroboxd.API.Service
         Task<PagedResponse<FilmInfoResponse?>> GetCreditsDelimited(int CelebrityId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<CelebrityInfoResponse>> SearchCelebrities(string Search, int Page, int PageSize);
         Task<bool> Stans(string UserId, int CelebrityId);
-        Task StanUnstanCelebrity(string UserId, int CelebrityId);
+        Task<int> StanUnstanCelebrity(string UserId, int CelebrityId);
     }
 
     public class CelebrityService : ICelebrityService
@@ -27,7 +27,8 @@ namespace Heteroboxd.API.Service
             var Response = await _repo.GetByIdAsync(CelebrityId);
             if (Response == null) throw new KeyNotFoundException();
 
-            return new CelebrityInfoResponse(Response.Item, Response.Joined.Select(c => c.Role.ToString()).Distinct().ToList());
+            var StanCount = await _repo.GetStanCountAsync(CelebrityId);
+            return new CelebrityInfoResponse(Response.Item, Response.Joined.Select(c => c.Role.ToString()).Distinct().ToList(), StanCount);
         }
 
         public async Task<PagedResponse<FilmInfoResponse?>> GetCreditsDelimited(int CelebrityId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -70,7 +71,7 @@ namespace Heteroboxd.API.Service
         public async Task<bool> Stans(string UserId, int CelebrityId) =>
             await _repo.StansAsync(Guid.Parse(UserId), CelebrityId);
 
-        public async Task StanUnstanCelebrity(string UserId, int CelebrityId) =>
+        public async Task<int> StanUnstanCelebrity(string UserId, int CelebrityId) =>
             await _repo.StanUnstanAsync(Guid.Parse(UserId), CelebrityId);
     }
 }

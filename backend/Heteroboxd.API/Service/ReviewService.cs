@@ -12,7 +12,6 @@ namespace Heteroboxd.API.Service
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<PagedResponse<ReviewInfoResponse>> GetTopX(int FilmId, int X);
         Task<PagedResponse<ReviewInfoResponse>> GetReviewsByAuthor(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
-        Task UpdateReviewLikeCount(string ReviewId, int Delta);
         Task ToggleNotifications(string ReviewId);
         Task ReportReview(string ReviewId);
         Task<ReviewInfoResponse> AddReview(CreateReviewRequest ReviewRequest);
@@ -45,7 +44,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new ReviewInfoResponse(x.Item.Review, x.Joined, x.Item.Film)).ToList()
+                Items = Responses.Select(x => new ReviewInfoResponse(x.Item.Review, x.Joined, x.Item.Film, x.Item.LikeCount, x.Item.CommentCount)).ToList()
             };
         }
 
@@ -53,7 +52,7 @@ namespace Heteroboxd.API.Service
         {
             var Response = await _repo.GetJoinedByIdAsync(Guid.Parse(ReviewId));
             if (Response == null) throw new KeyNotFoundException();
-            return new ReviewInfoResponse(Response.Item.Review, Response.Joined, Response.Item.Film);
+            return new ReviewInfoResponse(Response.Item.Review, Response.Joined, Response.Item.Film, Response.Item.LikeCount, Response.Item.CommentCount);
         }
 
         public async Task<ReviewInfoResponse?> GetReviewByUserFilm(string UserId, int FilmId)
@@ -65,7 +64,7 @@ namespace Heteroboxd.API.Service
                 if (Film == null) return null;
                 return new ReviewInfoResponse(Film);
             }
-            return new ReviewInfoResponse(Response.Review, Response.Film);
+            return new ReviewInfoResponse(Response.Review, Response.Film, Response.LikeCount, Response.CommentCount);
         }
 
         public async Task<PagedResponse<ReviewInfoResponse>> GetReviewsByFilm(int FilmId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -83,7 +82,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new ReviewInfoResponse(x.Item, x.Joined)).ToList()
+                Items = Responses.Select(x => new ReviewInfoResponse(x.Item.Review, x.Joined, x.Item.LikeCount, x.Item.CommentCount)).ToList()
             };
         }
 
@@ -94,7 +93,7 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = 1,
-                Items = Responses.Select(x => new ReviewInfoResponse(x.Item, x.Joined)).ToList()
+                Items = Responses.Select(x => new ReviewInfoResponse(x.Item.Review, x.Joined, x.Item.LikeCount, x.Item.CommentCount)).ToList()
             };
         }
 
@@ -108,12 +107,9 @@ namespace Heteroboxd.API.Service
             {
                 TotalCount = TotalCount,
                 Page = Page,
-                Items = Responses.Select(x => new ReviewInfoResponse(x.Item, Author, x.Joined)).ToList()
+                Items = Responses.Select(x => new ReviewInfoResponse(x.Item.Review, Author, x.Joined, x.Item.LikeCount, x.Item.CommentCount)).ToList()
             };
         }
-
-        public async Task UpdateReviewLikeCount(string ReviewId, int Delta) =>
-            await _repo.UpdateLikeCountAsync(Guid.Parse(ReviewId), Delta);
 
         public async Task ToggleNotifications(string ReviewId) =>
             await _repo.ToggleNotificationsAsync(Guid.Parse(ReviewId));
@@ -137,8 +133,7 @@ namespace Heteroboxd.API.Service
             {
                 throw new ArgumentException();
             }
-            await _filmRepo.UpdateAverageRatingAsync(Film.Id, ((Film.AverageRating * Film.RatingCount) + Review.Rating) / (Film.RatingCount + 1));
-            await _filmRepo.UpdateRatingCountAsync(ReviewRequest.FilmId, 1);
+            await _filmRepo.AddRatingAsync(Film.Id, Review.Rating);
 
             //if user never clicked "Watched" on this title, we add it here for their lazy arse
             if ((await _userRepo.GetUserWatchedFilmAsync(User.Id, ReviewRequest.FilmId)) == null)
@@ -149,9 +144,9 @@ namespace Heteroboxd.API.Service
                     await _userRepo.RemoveFromWatchlistAsync(Existing.Id);
                 }
                 await _userRepo.CreateUserWatchedFilmAsync(new UserWatchedFilm(User.Id, ReviewRequest.FilmId));
-                await _filmRepo.UpdateWatchCountAsync(ReviewRequest.FilmId, 1);
+                await _filmRepo.IncrementWatchCountAsync(ReviewRequest.FilmId);
             }
-            return new ReviewInfoResponse(Review);
+            return new ReviewInfoResponse(Review, 0, 0);
         }
 
         public async Task<ReviewInfoResponse> UpdateReview(UpdateReviewRequest ReviewRequest)
@@ -161,13 +156,13 @@ namespace Heteroboxd.API.Service
 
             if (ReviewRequest.Rating != null && ReviewRequest.Rating != Response.Item.Review.Rating)
             {
-                await _filmRepo.UpdateAverageRatingAsync(Response.Item.Film.Id, ((Response.Item.Film.AverageRating * Response.Item.Film.RatingCount) - Response.Item.Review.Rating + ReviewRequest.Rating.Value) / Response.Item.Film.RatingCount);
+                await _filmRepo.ReplaceRatingAsync(Response.Item.Film.Id, Response.Item.Review.Rating, ReviewRequest.Rating.Value);
             }
 
             Response.Item.Review.UpdateFields(ReviewRequest);
             await _repo.UpdateAsync(Response.Item.Review);
 
-            return new ReviewInfoResponse(Response.Item.Review);
+            return new ReviewInfoResponse(Response.Item.Review, Response.Item.LikeCount, Response.Item.CommentCount);
         }
 
         public async Task DeleteReview(string ReviewId)
@@ -175,11 +170,7 @@ namespace Heteroboxd.API.Service
             var Response = await _repo.GetJoinedByIdAsync(Guid.Parse(ReviewId));
             if (Response == null) throw new KeyNotFoundException();
 
-            await _filmRepo.UpdateAverageRatingAsync(
-                Response.Item.Film.Id,
-                Response.Item.Film.RatingCount <= 1 ? 0 : ((Response.Item.Film.AverageRating * Response.Item.Film.RatingCount) - Response.Item.Review.Rating) / (Response.Item.Film.RatingCount - 1)
-            );
-            await _filmRepo.UpdateRatingCountAsync(Response.Item.Film.Id, -1);
+            await _filmRepo.RemoveRatingAsync(Response.Item.Film.Id, Response.Item.Review.Rating);
 
             var User = await _userRepo.LightweightFetcherAsync(Response.Item.Review.AuthorId);
             if (User != null && User.PinnedReviewId == Response.Item.Review.Id) await _userRepo.PinReviewAsync(User.Id, Response.Item.Review.Id);

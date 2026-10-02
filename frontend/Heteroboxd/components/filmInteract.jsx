@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, Vibration, View } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import More from '../assets/icons/more2.svg'
 import Eye from '../assets/icons/eye.svg'
@@ -45,6 +45,7 @@ const FilmInteract = ({ widescreen, filmId, slug, seen, watchlisted, review }) =
 
   const translateY = slideAnim.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
   const openMenu = useCallback(() => {
+    if (Platform.OS === 'android') Vibration.vibrate(30)
     setMenuShown(true)
     Animated.timing(slideAnim, {
       toValue: 1,

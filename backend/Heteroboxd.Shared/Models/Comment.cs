@@ -6,12 +6,19 @@
         public string Text { get; set; }
         public DateTime Date { get; set; }
         public int Flags { get; set; }
-        public Guid AuthorId { get; set; }
+        public Guid? AuthorId { get; set; }
         public Guid ReviewId { get; set; }
         public Guid? RepliedCommentId { get; set; }
         public Guid? RepliedUserId { get; set; }
+        public Guid? ThreadRootId { get; set; }
+        public Enums.Tombstone? Tombstone { get; set; }
 
-        public Comment(string Text, Guid AuthorId, Guid ReviewId, Guid? RepliedCommentId = null, Guid? RepliedUserId = null)
+        private Comment()
+        {
+            this.Text = string.Empty;
+        }
+
+        public Comment(string Text, Guid AuthorId, Guid ReviewId, Guid? RepliedCommentId = null, Guid? RepliedUserId = null, Guid? ThreadRootId = null)
         {
             this.Id = Guid.NewGuid();
             this.Text = Text;
@@ -21,6 +28,8 @@
             this.ReviewId = ReviewId;
             this.RepliedCommentId = RepliedCommentId;
             this.RepliedUserId = RepliedUserId;
+            this.ThreadRootId = ThreadRootId;
+            this.Tombstone = null;
         }
     }
 }

@@ -17,6 +17,11 @@ import { UserAvatar } from '../components/userAvatar'
 import * as format from '../helpers/format'
 
 const PAGE_SIZE = 100
+const COMMENT_TOMBSTONE_MESSAGES = {
+  DeletedByAuthor: 'This comment was deleted by the original author',
+  DeletedByAdmin: 'This comment was deleted by a community moderator',
+  OriginalAuthorDeleted: 'This comment was written by a user that no longer exists'
+}
 
 const Admin = () => {
   const [ aJwt, setAJwt ] = useState(null)
@@ -635,24 +640,38 @@ const Admin = () => {
             data={comments.items}
             keyExtractor={(item) => item.id}
             ListHeaderComponent={CommentHeader}
-            renderItem={({item}) => (
-              <View style={{backgroundColor: Colors.card, padding: 10, borderRadius: 5, marginBottom: 20, width: width/4.1 - 20, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-                <Pressable style={{width: (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/review/${item.reviewId}`)}>
-                  <View style={{alignItems: 'center', justifyContent: 'flex-start', flexDirection: 'row'}}>
-                    <UserAvatar
-                      pictureUrl={item.authorPictureUrl || null}
-                      style={{width: 50, height: 50, borderRadius: 25, marginRight: 10}}
-                    />
-                    <HText style={{color: Colors.text_title, fontSize: 20, fontWeight: '500'}}>{item.authorName}</HText>
-                  </View>
-                  <HText style={{color: Colors.text, fontSize: 16, fontWeight: '400'}}>{format.sliceText(item.text || '', 50)}</HText>
-                </Pressable>
-                <Pressable style={{flexDirection: 'row', alignItems: 'center'}} onPress={() => handleDelete('comment', item.id, () => get('comments', comments.page))}>
-                  <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
-                  <Trash width={20} height={20} />
-                </Pressable>
-              </View>
-            )}
+            renderItem={({item}) => {
+              const isTombstoned = item.tombstone !== null && item.tombstone !== undefined
+              const tombstoneMessage = COMMENT_TOMBSTONE_MESSAGES[item.tombstone] || 'This comment is unavailable'
+              const showTombstoneAuthor = ['DeletedByAuthor', 'DeletedByAdmin'].includes(item.tombstone) && item.authorId
+
+              return (
+                <View style={{backgroundColor: Colors.card, padding: 10, borderRadius: 5, marginBottom: 20, width: width/4.1 - 20, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+                  <Pressable style={{width: isTombstoned ? width/4.1 - 40 : (width/4.1 - 20)/3*2}} onPress={() => Linking.openURL(`/review/${item.reviewId}`)}>
+                    {(!isTombstoned || showTombstoneAuthor) ? (
+                      <View style={{alignItems: 'center', justifyContent: 'flex-start', flexDirection: 'row'}}>
+                        <UserAvatar
+                          pictureUrl={item.authorPictureUrl || null}
+                          style={{width: 50, height: 50, borderRadius: 25, marginRight: 10}}
+                        />
+                        <HText style={{color: Colors.text_title, fontSize: 20, fontWeight: '500'}}>{item.authorName}</HText>
+                      </View>
+                    ) : null}
+                    {isTombstoned ? (
+                      <HText style={{color: Colors.text, fontSize: 16, fontStyle: 'italic'}}>{tombstoneMessage}</HText>
+                    ) : (
+                      <HText style={{color: Colors.text, fontSize: 16, fontWeight: '400'}}>{format.sliceText(item.text || '', 50)}</HText>
+                    )}
+                  </Pressable>
+                  {!isTombstoned ? (
+                    <Pressable style={{flexDirection: 'row', alignItems: 'center'}} onPress={() => handleDelete('comment', item.id, () => get('comments', comments.page))}>
+                      <HText style={{fontSize: 20, fontWeight: '600', color: Colors.heteroboxd}}>{item.flags}</HText>
+                      <Trash width={20} height={20} />
+                    </Pressable>
+                  ) : null}
+                </View>
+              )
+            }}
             ListFooterComponent={servers.comments.result === 0 ? (<ActivityIndicator size='small' color={Colors.text_link} />) : null}
             ListEmptyComponent={
               servers.comments.result === 0

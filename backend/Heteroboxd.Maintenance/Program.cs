@@ -62,8 +62,8 @@ try
     _logger.LogInformation("REMOVING FINISHED IMPORTS FROM QUEUE...");
     await _executor.ExecuteImportJobPurge(_provider, _ct);
 
-    _logger.LogInformation("REMOVING DANGLING COMMENT REPLIES...");
-    await _executor.ExecuteDanglingCommentPurge(_provider, _ct);
+    _logger.LogInformation("REPAIRING FILM AGGREGATES...");
+    await _executor.ExecuteFilmRepair(_provider, _ct);
 
     if (DateTime.UtcNow.Day == 1)
     {
@@ -79,9 +79,6 @@ try
 
     _logger.LogInformation("SYNCING FILM CHANGES FROM TMDB...");
     await _executor.ExecuteFilmSync(_provider, _ct);
-
-    _logger.LogInformation("REPAIRING CELEBRITY STAN COUNTS...");
-    await _executor.ExecuteStanRepair(_provider, _ct);
 
     _logger.LogInformation("=== Maintenance job finished at {Time} UTC ===", DateTime.UtcNow);
     Environment.Exit(0);

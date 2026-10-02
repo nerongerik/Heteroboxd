@@ -29,6 +29,36 @@ import Stars from '../../components/stars'
 const PAGE_SIZE = 20
 const SWIPE_REPLY_OFFSET = 50
 const REPLY_HOLD_DELAY = 50
+const TOMBSTONE_MESSAGES = {
+  DeletedByAuthor: 'This comment was deleted by the original author',
+  DeletedByAdmin: 'This comment was deleted by a community moderator',
+  OriginalAuthorDeleted: 'This comment was written by a user that no longer exists'
+}
+
+const getTombstoneMessage = (tombstone) => TOMBSTONE_MESSAGES[tombstone] || null
+
+const retainCompleteCommentThreads = (comments, limit = 1000) => {
+  const threads = []
+  const threadIndexes = new Map()
+
+  comments.forEach(comment => {
+    const threadKey = comment.threadRootId ?? comment.id
+    if (!threadIndexes.has(threadKey)) {
+      threadIndexes.set(threadKey, threads.length)
+      threads.push([])
+    }
+    threads[threadIndexes.get(threadKey)].push(comment)
+  })
+
+  let retainedCount = comments.length
+  let firstRetainedThread = 0
+  while (retainedCount > limit && firstRetainedThread < threads.length - 1) {
+    retainedCount -= threads[firstRetainedThread].length
+    firstRetainedThread += 1
+  }
+
+  return threads.slice(firstRetainedThread).flat()
+}
 
 const isMobileWebBrowser = () => {
   if (Platform.OS !== 'web' || typeof navigator === 'undefined') return false
@@ -41,14 +71,14 @@ const MOBILE_WEB = isMobileWebBrowser()
 const DESKTOP_WEB = Platform.OS === 'web' && !MOBILE_WEB
 const SWIPE_REPLY = Platform.OS === 'android' || MOBILE_WEB
 
-const CommentText = ({ item, widescreen }) => {
+const CommentText = ({ item, widescreen, compact = false }) => {
   const isReply = item.repliedCommentId !== null && item.repliedCommentId !== undefined && item.repliedUserName !== null && item.repliedUserName !== undefined
 
   return (
-    <HText style={{fontSize: widescreen ? 16 : 14, color: Colors.text}}>
+    <HText style={{fontSize: compact ? (widescreen ? 14 : 12) : (widescreen ? 16 : 14), color: Colors.text}}>
       {isReply ? (
         <>
-          <Link push href={`/profile/${item.repliedUserName}`} style={{color: Colors.heteroboxd, fontSize: widescreen ? 16 : 14, fontFamily: 'Inter_400Regular', textDecorationLine: 'none'}}>{item.repliedUserName}</Link>
+          <Link push href={`/profile/${item.repliedUserName}`} style={{color: Colors.heteroboxd, fontSize: compact ? (widescreen ? 14 : 12) : (widescreen ? 16 : 14), fontFamily: 'Inter_400Regular', textDecorationLine: 'none'}}>{item.repliedUserName}</Link>
           {' '}
         </>
       ) : null}
@@ -84,13 +114,28 @@ const ReplyPreview = ({ item, widescreen, router, onCancel }) => (
   </View>
 )
 
-const CommentCard = ({ item, maxRowWidth, widescreen, router, user, handleReport, handleDelete, handleCommentReply, spacing, replyEnabled, desktopReply, swipeReply, commentHovered, setCommentHovered }) => {
+const CommentCard = ({ item, maxRowWidth, widescreen, router, user, handleReport, handleDelete, handleCommentReply, spacing, replyEnabled, desktopReply, swipeReply, commentHovered, setCommentHovered, hasThreadReplies, hasNextThreadReply }) => {
   const translateX = useRef(new Animated.Value(0)).current
   const holdTimerRef = useRef(null)
   const armedRef = useRef(false)
   const reachedThresholdRef = useRef(false)
   const vibratedRef = useRef(false)
-  const replyEligible = replyEnabled && user?.userId !== item.authorId
+  const tombstoneMessage = getTombstoneMessage(item.tombstone)
+  const isTombstoned = item.tombstone !== null && item.tombstone !== undefined
+  const isThreadReply = item.threadRootId !== null && item.threadRootId !== undefined
+  const threadIndent = Math.min(widescreen ? 50 : 30, maxRowWidth)
+  const replyIndent = isThreadReply ? threadIndent : 0
+  const commentWidth = Math.max(maxRowWidth - replyIndent, 0)
+  const threadConnectorX = threadIndent/2
+  const replyConnectorY = widescreen ? 21 : 17
+  const showAuthor = item.tombstone !== 'OriginalAuthorDeleted'
+  const replyEligible = !isTombstoned && replyEnabled && user?.userId !== item.authorId
+  const canReport = user?.userId !== item.authorId
+  const actionIconSize = canReport
+    ? (isThreadReply ? (widescreen ? 20 : 18) : (widescreen ? 24 : 20))
+    : (isThreadReply ? (widescreen ? 18 : 16) : (widescreen ? 22 : 18))
+  const rootActionIconSize = canReport ? (widescreen ? 24 : 20) : (widescreen ? 22 : 18)
+  const actionMarginRight = isThreadReply ? 20 + (rootActionIconSize - actionIconSize)/2 : 20
 
   const handleHoverIn = useCallback(() => {
     if (!replyEligible || !desktopReply) return
@@ -190,65 +235,98 @@ const CommentCard = ({ item, maxRowWidth, widescreen, router, user, handleReport
     })
   }, [replyEligible, swipeReply, clearHoldTimer, translateX, resetSwipeInteraction, handleCommentReply, item.id, item.authorId])
 
-  const showDesktopReply = replyEligible && desktopReply && commentHovered === item.id
+  const showDesktopReply = !isTombstoned && replyEligible && desktopReply && commentHovered === item.id
 
   return (
     <View style={{width: maxRowWidth, alignSelf: 'center'}}>
-      <View
-        style={{position: 'relative', overflow: 'hidden'}}
-        {...(replyEligible && desktopReply ? { onPointerEnter: handleHoverIn, onPointerLeave: handleHoverOut } : {})}
-        {...(replyEligible && swipeReply ? { onTouchStart: handleTouchStart, onTouchEnd: handleTouchEnd, onTouchCancel: handleTouchCancel } : {})}
-        {...(panResponder?.panHandlers ?? {})}
-      >
-        {replyEligible && swipeReply ? (
-          <Animated.View style={{position: 'absolute', left: 0, top: 0, bottom: 0, width: SWIPE_REPLY_OFFSET, opacity: replyIconOpacity, pointerEvents: 'none', alignItems: 'center', justifyContent: 'center'}}>
-            <Reply width={widescreen ? 20 : 16} height={widescreen ? 20 : 16} />
-          </Animated.View>
-        ) : null}
-        <Animated.View style={[{backgroundColor: Colors.background}, replyEligible && swipeReply ? { transform: [{ translateX }] } : null]}>
-          <View style={{marginLeft: 10}}>
-            <Author
-              userId={item.authorId}
-              url={item.authorPictureUrl || null}
-              name={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
-              username={item.authorUserName ? format.sliceText(item.authorUserName, widescreen ? 50 : 25) : null}
-              admin={item.admin}
-              router={router}
-              widescreen={widescreen}
-              dim={widescreen ? 38 : 28}
-            />
-            {user?.admin && Platform.OS === 'web' && <HText style={{marginTop: 5, color: Colors.text_placeholder, fontSize: 14}}>{item.id}</HText>}
-          </View>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            {showDesktopReply ? (
-              <Pressable onPress={() => handleCommentReply(item.id, item.authorId)} style={{padding: 10, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
-                <Reply width={widescreen ? 20 : 16} height={widescreen ? 20 : 16} />
-              </Pressable>
+      {hasThreadReplies ? (
+        <View pointerEvents='none' style={{position: 'absolute', left: threadConnectorX, top: 0, bottom: 0, width: 2, backgroundColor: Colors.text}} />
+      ) : null}
+      {isThreadReply ? (
+        <>
+          <View
+            pointerEvents='none'
+            style={{
+              position: 'absolute',
+              left: threadConnectorX,
+              top: -spacing,
+              width: Math.max(threadIndent - threadConnectorX, 0),
+              height: spacing*2 + replyConnectorY,
+              borderLeftWidth: 2,
+              borderBottomWidth: 2,
+              borderBottomLeftRadius: widescreen ? 10 : 8,
+              borderColor: Colors.text
+            }}
+          />
+          {hasNextThreadReply ? (
+            <View pointerEvents='none' style={{position: 'absolute', left: threadConnectorX, top: replyConnectorY, bottom: 0, width: 2, backgroundColor: Colors.text}} />
+          ) : null}
+        </>
+      ) : null}
+      <View style={{width: commentWidth, marginLeft: replyIndent}}>
+        <View
+          style={{position: 'relative', overflow: 'hidden'}}
+          {...(replyEligible && desktopReply ? { onMouseEnter: handleHoverIn, onMouseLeave: handleHoverOut } : {})}
+          {...(replyEligible && swipeReply ? { onTouchStart: handleTouchStart, onTouchEnd: handleTouchEnd, onTouchCancel: handleTouchCancel } : {})}
+          {...(panResponder?.panHandlers ?? {})}
+        >
+          {replyEligible && swipeReply ? (
+            <Animated.View style={{position: 'absolute', left: 0, top: 0, bottom: 0, width: SWIPE_REPLY_OFFSET, opacity: replyIconOpacity, pointerEvents: 'none', alignItems: 'center', justifyContent: 'center'}}>
+              <Reply width={isThreadReply ? (widescreen ? 18 : 14) : (widescreen ? 20 : 16)} height={isThreadReply ? (widescreen ? 18 : 14) : (widescreen ? 20 : 16)} />
+            </Animated.View>
+          ) : null}
+          <Animated.View style={[{backgroundColor: Colors.background}, replyEligible && swipeReply ? { transform: [{ translateX }] } : null]}>
+            {showAuthor ? (
+              <View style={{marginLeft: isThreadReply ? 8 : 10}}>
+                <Author
+                  userId={item.authorId}
+                  url={item.authorPictureUrl || null}
+                  name={format.sliceText(item.authorName || 'Anonymous', widescreen ? 50 : 25)}
+                  username={item.authorUserName ? format.sliceText(item.authorUserName, widescreen ? 50 : 25) : null}
+                  admin={item.admin}
+                  router={router}
+                  widescreen={widescreen}
+                  dim={isThreadReply ? (widescreen ? 32 : 24) : (widescreen ? 38 : 28)}
+                  compact={isThreadReply}
+                />
+                {!isTombstoned && user?.admin && Platform.OS === 'web' && <HText style={{marginTop: isThreadReply ? 4 : 5, color: Colors.text_placeholder, fontSize: isThreadReply ? (widescreen ? 12 : 10) : 14}}>{item.id}</HText>}
+              </View>
             ) : null}
-            <View style={{padding: 10, flex: 1}}>
-              <CommentText item={item} widescreen={widescreen} />
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              {showDesktopReply ? (
+                <Pressable onPress={() => handleCommentReply(item.id, item.authorId)} style={{padding: isThreadReply ? 8 : 10, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center'}}>
+                  <Reply width={isThreadReply ? (widescreen ? 18 : 14) : (widescreen ? 20 : 16)} height={isThreadReply ? (widescreen ? 18 : 14) : (widescreen ? 20 : 16)} />
+                </Pressable>
+              ) : null}
+              <View style={{padding: isThreadReply ? 8 : 10, flex: 1}}>
+                {tombstoneMessage ? (
+                  <HText style={{color: Colors.text, fontStyle: 'italic', fontSize: isThreadReply ? (widescreen ? 16 : 12) : (widescreen ? 18 : 14), textAlign: 'left'}}>{tombstoneMessage}</HText>
+                ) : (
+                  <CommentText item={item} widescreen={widescreen} compact={isThreadReply} />
+                )}
+              </View>
+              {
+                user && !isTombstoned ? (
+                  <View style={{marginRight: actionMarginRight}}>
+                    {
+                      canReport ? (
+                        <Pressable onPress={() => handleReport(item.id)} hitSlop={isThreadReply ? 4 : undefined}>
+                          <Flag height={actionIconSize} width={actionIconSize} />
+                        </Pressable>
+                      ) : (
+                        <Pressable onPress={() => handleDelete(item.id)} hitSlop={isThreadReply ? 4 : undefined}>
+                          <Trash height={actionIconSize} width={actionIconSize} />
+                        </Pressable>
+                      )
+                    }
+                  </View>
+                ) : null
+              }
             </View>
-            {
-              user ? (
-                <View style={{marginRight: 20}}>
-                  {
-                    user.userId !== item.authorId ? (
-                      <Pressable onPress={() => handleReport(item.id)}>
-                        <Flag height={widescreen ? 24 : 20} width={widescreen ? 24 : 20} />
-                      </Pressable>
-                    ) : (
-                      <Pressable onPress={() => handleDelete(item.id)}>
-                        <Trash height={widescreen ? 22 : 18} width={widescreen ? 22 : 18} />
-                      </Pressable>
-                    )
-                  }
-                </View>
-              ) : null
-            }
-          </View>
-        </Animated.View>
+          </Animated.View>
+        </View>
+        <View height={spacing*2} />
       </View>
-      <Divider marginVertical={spacing} />
     </View>
   )
 }
@@ -261,7 +339,7 @@ const ReviewWithComments = () => {
   const { width } = useWindowDimensions()
   const router = useRouter()
   const navigation = useNavigation()
-  const [ comments, setComments ] = useState({ page: 1, comments: [], totalCount: 0 })
+  const [ comments, setComments ] = useState({ page: 1, comments: [], totalCount: 0, threadCount: 0 })
   const [ replyTarget, setReplyTarget ] = useState({
     repliedCommentId: null,
     repliedUserId: null
@@ -367,26 +445,26 @@ const ReviewWithComments = () => {
         if (requestId !== requestRef.current) return
         const json = await res.json()
         if (page === 1) {
-          setComments({ page: json.page, comments: json.items, totalCount: json.totalCount })
+          setComments({ page: json.page, comments: json.items, totalCount: json.totalCount, threadCount: json.threadCount ?? json.totalCount })
         } else {
-          setComments(prev => ({...prev, page: json.page, comments: prev.comments.length > 1000 ? [...prev.comments.slice(-980), ...json.items] : [...prev.comments, ...json.items]}))
+          setComments(prev => ({...prev, page: json.page, comments: retainCompleteCommentThreads([...prev.comments, ...json.items])}))
         }
         lastPageRef.current = page
         setServer(Response.ok)
       } else {
         if (requestId !== requestRef.current) return
-        setComments({ page: 1, comments: [], totalCount: 0 })
+        setComments({ page: 1, comments: [], totalCount: 0, threadCount: 0 })
         console.log('load comments failed; internal server error.')
         setServer(Response.internalServerError)
       }
     } catch {
-      setComments({ page: 1, comments: [], totalCount: 0 })
+      setComments({ page: 1, comments: [], totalCount: 0, threadCount: 0 })
       console.log('load comments failed; network error.')
       setServer(Response.networkError)
     }
   }, [reviewId, review?.id])
 
-  const totalPages = useMemo(() => Math.ceil(comments?.totalCount / PAGE_SIZE), [comments?.totalCount])
+  const totalPages = useMemo(() => Math.ceil((comments?.threadCount ?? comments?.totalCount ?? 0) / PAGE_SIZE), [comments?.threadCount, comments?.totalCount])
 
   const loadNextPage = useCallback(() => {
     if (comments?.page < totalPages) {
@@ -482,9 +560,16 @@ const ReviewWithComments = () => {
       setServer(Response.forbidden)
       return
     }
-    const prevComments = comments.comments
-    const prevCount = comments.totalCount
-    setComments(prev => ({...prev, comments: prev.comments.filter(c => c.id !== id), totalCount: prev.totalCount - 1}))
+    const previousComment = comments.comments.find(comment => comment.id === id)
+    if (!previousComment) return
+    const restoreComment = () => setComments(prev => ({
+      ...prev,
+      comments: prev.comments.map(comment => comment.id === id ? previousComment : comment)
+    }))
+    setComments(prev => ({
+      ...prev,
+      comments: prev.comments.map(comment => comment.id === id ? { ...comment, text: '', tombstone: 'DeletedByAuthor' } : comment)
+    }))
     setSnack({ shown: true, msg: 'Comment deleted!' })
     try {
       const jwt = await auth.getJwt()
@@ -493,11 +578,11 @@ const ReviewWithComments = () => {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (!res.ok) {
-        setComments(prev => ({ ...prev, comments: prevComments, totalCount: prevCount }))
+        restoreComment()
         setSnack({ shown: true, msg: `${res.status}: Something went wrong! Try reloading Heteroboxd.` })
       }
     } catch {
-      setComments(prev => ({ ...prev, comments: prevComments, totalCount: prevCount }))
+      restoreComment()
       setSnack({ shown: true, msg: 'Network error! Please check your internet connection and try again.' })
     }
   }, [user, comments])
@@ -531,7 +616,7 @@ const ReviewWithComments = () => {
       return
     }
     if (authorId === user.userId) return
-    const selectedComment = comments.comments.find(comment => comment.id === commentId && comment.authorId === authorId)
+    const selectedComment = comments.comments.find(comment => comment.id === commentId && comment.authorId === authorId && !comment.tombstone)
     if (!selectedComment) return
     const previewVisible = replyTarget.repliedCommentId !== null && replyTarget.repliedUserId !== null && replyPreview !== null
     if (!previewVisible) composerOffsetRef.current = null
@@ -624,7 +709,10 @@ const ReviewWithComments = () => {
           showText ?
             <ParsedRead html={review.text} contentWidth={maxRowWidth} />
           : (
-            <Pressable onPress={() => setShowText(true)}>
+            <Pressable onPress={() => {
+              if (Platform.OS === 'android') Vibration.vibrate(30)
+              setShowText(true)
+            }}>
               <View style={{width: widescreen ? 750 : '95%', alignSelf: 'center', padding: 25, backgroundColor: Colors.card, borderRadius: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: Colors.border_color, marginVertical: 10, alignItems: 'center', justifyContent: 'center'}}>
                 <Spoiler height={widescreen ? 30 : 24} width={widescreen ? 30 : 24} />
                 <HText style={{color: Colors.text, fontSize: widescreen ? 18 : 14, textAlign: 'center'}}>This review contains spoilers.{'\n'}<HText style={{color: Colors.text_link}}>Read anyway?</HText></HText>
@@ -703,24 +791,33 @@ const ReviewWithComments = () => {
     </View>
   ), [review, router, widescreen, user, maxRowWidth, showText, commentText, commentInputFocused, handleCommentSubmit, handleCommentComposerLayout, replyTarget, replyPreview, handleCancelCommentReply])
 
-  const Comment = useCallback(({ item }) => (
-    <CommentCard
-      item={item}
-      maxRowWidth={maxRowWidth}
-      widescreen={widescreen}
-      router={router}
-      user={user}
-      handleReport={handleReport}
-      handleDelete={handleDelete}
-      handleCommentReply={handleCommentReply}
-      spacing={spacing}
-      replyEnabled={Boolean(user)}
-      desktopReply={DESKTOP_WEB}
-      swipeReply={SWIPE_REPLY}
-      commentHovered={commentHovered}
-      setCommentHovered={setCommentHovered}
-    />
-  ), [spacing, widescreen, user, handleDelete, handleReport, handleCommentReply, router, maxRowWidth, commentHovered])
+  const Comment = useCallback(({ item, index }) => {
+    const nextComment = comments.comments[index + 1]
+    const isThreadReply = item.threadRootId !== null && item.threadRootId !== undefined
+    const hasThreadReplies = !isThreadReply && nextComment?.threadRootId === item.id
+    const hasNextThreadReply = isThreadReply && nextComment?.threadRootId === item.threadRootId
+
+    return (
+      <CommentCard
+        item={item}
+        maxRowWidth={maxRowWidth}
+        widescreen={widescreen}
+        router={router}
+        user={user}
+        handleReport={handleReport}
+        handleDelete={handleDelete}
+        handleCommentReply={handleCommentReply}
+        spacing={spacing}
+        replyEnabled={Boolean(user)}
+        desktopReply={DESKTOP_WEB}
+        swipeReply={SWIPE_REPLY}
+        commentHovered={commentHovered}
+        setCommentHovered={setCommentHovered}
+        hasThreadReplies={hasThreadReplies}
+        hasNextThreadReply={hasNextThreadReply}
+      />
+    )
+  }, [comments.comments, spacing, widescreen, user, handleDelete, handleReport, handleCommentReply, router, maxRowWidth, commentHovered])
 
   const NoComments = useMemo(() => server.result > 0 ? (
     <View style={{width: maxRowWidth, height: 50, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}>
@@ -790,7 +887,7 @@ const ReviewWithComments = () => {
             onRefresh={async () => {
               setReview(null)
               lastPageRef.current = 0
-              setComments({ page: 1, comments: [], totalCount: 0 })
+              setComments({ page: 1, comments: [], totalCount: 0, threadCount: 0 })
               setIsRefreshing(true)
               await loadReviewData(true)
               loadCommentsDataPage(1)
