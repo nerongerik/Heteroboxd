@@ -48,7 +48,6 @@ const SearchTabs = ({ widescreen, router }) => {
       if (res.ok) {
         if (requestId !== requestRef.current) return
         const json = await res.json()
-        if (page === 1 && (json.totalCount === 0 || json.items?.length === 0) && Platform.OS === 'android') Vibration.vibrate(30)
         if (page === 1) {
           setResults({ page: json.page, items: json.items, totalCount: json.totalCount })
         } else {
@@ -59,6 +58,8 @@ const SearchTabs = ({ widescreen, router }) => {
       setLoading(false)
     } catch {
       setLoading(false)
+    } finally {
+      if (Platform.OS === 'android') Vibration.vibrate(30)
     }
   }, [tab, saveSearch])
 

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, Vibration, View, RefreshControl } from "react-native"
+import { ActivityIndicator, Animated, FlatList, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, Vibration, View, RefreshControl } from "react-native"
 import Eye from '../../assets/icons/eye2.svg'
 import * as format from '../../helpers/format'
 import { Colors } from '../../constants/colors'
@@ -121,26 +121,35 @@ const CelebrityTabs = ({ user, bio, stanCount, stans, onStan, currentTabData, av
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
     const isSeen = fadeSeen && seenFilms.has(item.id)
+    const title = item.title || item.filmTitle || ''
+    const year = format.parseOutYear(item.date || item.filmDate) || item.releaseYear || ''
     return (
-      <Pressable
-        onPress={() => onFilmPress(item.id)}
-        onLongPress={() => openMenu2(item.id)}
-        style={{margin: spacing / 2}}
-      >
-        <Poster
-          posterUrl={item.posterUrl || 'noposter'}
-          style={{
-            width: posterWidth,
-            height: posterHeight,
-            borderRadius: 6,
-            borderWidth: 2,
-            borderColor: isSeen ? Colors.heteroboxd : Colors.border_color,
-            opacity: isSeen ? 0.3 : 1
-          }}
-        />
-      </Pressable>
+      <View style={{width: posterWidth, margin: spacing / 2, alignItems: 'center'}}>
+        <Pressable
+          onPress={() => onFilmPress(item.id)}
+          onLongPress={() => openMenu2(item.id)}
+        >
+          <Poster
+            posterUrl={item.posterUrl || 'noposter'}
+            style={{
+              width: posterWidth,
+              height: posterHeight,
+              borderRadius: 6,
+              borderWidth: 2,
+              borderColor: isSeen ? Colors.heteroboxd : Colors.border_color,
+              opacity: isSeen ? 0.3 : 1
+            }}
+          />
+        </Pressable>
+        <Text numberOfLines={1} ellipsizeMode='tail' style={{width: posterWidth, marginTop: widescreen ? 6 : 4, color: Colors.text, fontFamily: 'Inter_400Regular', fontSize: widescreen ? 16 : 12, textAlign: 'center'}}>
+          {title}
+        </Text>
+        <Text numberOfLines={1} ellipsizeMode='tail' style={{width: posterWidth, marginBottom: widescreen ? 2 : 4, opacity: 0.8, color: Colors.text, fontFamily: 'Inter_400Regular', fontSize: widescreen ? 14 : 10, textAlign: 'center'}}>
+          ({year})
+        </Text>
+      </View>
     )
-  }, [posterWidth, posterHeight, spacing, fadeSeen, seenFilms])
+  }, [posterWidth, posterHeight, spacing, fadeSeen, seenFilms, widescreen])
 
   const Footer = useMemo(() => loading ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
