@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, FlatList, Platform, Pressable, useWindowDimensions, Vibration, View, RefreshControl } from 'react-native'
+import { ActivityIndicator, Animated, FlatList, Platform, Pressable, Text, useWindowDimensions, Vibration, View, RefreshControl } from 'react-native'
 import Filter from '../../../assets/icons/filter.svg'
 import Shuffle from '../../../assets/icons/shuffle.svg'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
@@ -9,6 +9,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { BaseUrl } from '../../../constants/api'
 import { Colors } from '../../../constants/colors'
 import { Response } from '../../../constants/response'
+import * as format from '../../../helpers/format'
 import FilterSort from '../../../components/filterSort'
 import HText from '../../../components/htext'
 import LoadingResponse from '../../../components/loadingResponse'
@@ -178,24 +179,34 @@ const Watchlist = () => {
     if (!item) {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
+    const title = item.title || item.filmTitle || ''
+    const year = format.parseOutYear(item.date || item.filmDate) || item.releaseYear || ''
     return (
-      <Pressable
-        onPress={() => router.push(`/film/${item.filmId}`)}
-        onLongPress={() => openMenu2(item.filmId)}
-        style={{margin: spacing / 2}}>
-        <Poster
-          posterUrl={item.filmPosterUrl || 'noposter'}
-          style={{
-            width: posterWidth,
-            height: posterHeight,
-            borderRadius: 6,
-            borderWidth: 2,
-            borderColor: Colors.border_color
-          }}
-        />
-      </Pressable>
+      <View style={{width: posterWidth, margin: spacing / 2, alignItems: 'center'}}>
+        <Pressable
+          onPress={() => router.push(`/film/${item.filmId}`)}
+          onLongPress={() => openMenu2(item.filmId)}
+        >
+          <Poster
+            posterUrl={item.filmPosterUrl || 'noposter'}
+            style={{
+              width: posterWidth,
+              height: posterHeight,
+              borderRadius: 6,
+              borderWidth: 2,
+              borderColor: Colors.border_color
+            }}
+          />
+        </Pressable>
+        <Text numberOfLines={1} ellipsizeMode='tail' style={{width: posterWidth, marginTop: widescreen ? 6 : 4, color: Colors.text, fontFamily: 'Inter_400Regular', fontSize: widescreen ? 16 : 12, textAlign: 'center'}}>
+          {title}
+        </Text>
+        <Text numberOfLines={1} ellipsizeMode='tail' style={{width: posterWidth, marginBottom: widescreen ? 2 : 4, opacity: 0.8, color: Colors.text, fontFamily: 'Inter_400Regular', fontSize: widescreen ? 14 : 10, textAlign: 'center'}}>
+          ({year})
+        </Text>
+      </View>
     )
-  }, [posterWidth, posterHeight, spacing, router])
+  }, [posterWidth, posterHeight, spacing, router, widescreen])
 
   const Footer = useMemo(() => data.entries.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
