@@ -1,6 +1,7 @@
 ﻿using Heteroboxd.Shared.Integrations;
 using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
+using Heteroboxd.Shared.Models.Enums;
 using Heteroboxd.Shared.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -397,8 +398,15 @@ namespace Heteroboxd.API.Service
                     if (SendNotif)
                     {
                         await _notificationService.AddNotification(
-                            $"{TruncateName(UserName)} just followed you!",
-                            Guid.Parse(TargetId)
+                            new List<Notification>
+                            {
+                                new Notification(
+                                    $"{TruncateName(UserName)} just followed you!",
+                                    Guid.Parse(TargetId),
+                                    ReferencedObject.Profile,
+                                    Guid.Parse(UserId).ToString()
+                                )
+                            }
                         );
                     }
                     break;
@@ -420,8 +428,15 @@ namespace Heteroboxd.API.Service
                 if (!Added || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
                 
                 await _notificationService.AddNotification(
-                    $"{TruncateName(LikeRequest.UserName)} liked your review of {TruncateTitle(LikeRequest.FilmTitle!)}",
-                    Guid.Parse(LikeRequest.AuthorId)
+                    new List<Notification>
+                    {
+                        new Notification(
+                            $"{TruncateName(LikeRequest.UserName)} liked your review of {TruncateTitle(LikeRequest.FilmTitle!)}",
+                            Guid.Parse(LikeRequest.AuthorId),
+                            ReferencedObject.Review,
+                            LikeRequest.ReviewId
+                        )
+                    }
                 );
             }
             else if (LikeRequest.ListId != null)
@@ -431,8 +446,15 @@ namespace Heteroboxd.API.Service
                 if (!Added || !NotificationsOn || LikeRequest.UserId == LikeRequest.AuthorId) return;
 
                 await _notificationService.AddNotification(
-                    $"{TruncateName(LikeRequest.UserName)} liked your list {TruncateTitle(LikeRequest.ListName!)}",
-                    Guid.Parse(LikeRequest.AuthorId)
+                    new List<Notification>
+                    {
+                        new Notification(
+                            $"{TruncateName(LikeRequest.UserName)} liked your list {TruncateTitle(LikeRequest.ListName!)}",
+                            Guid.Parse(LikeRequest.AuthorId),
+                            ReferencedObject.UserList,
+                            LikeRequest.ListId
+                        )
+                    }
                 );
             }
             else throw new ArgumentNullException();

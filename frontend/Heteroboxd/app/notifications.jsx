@@ -15,6 +15,25 @@ import Popup from '../components/popup'
 
 const PAGE_SIZE = 20
 
+const getNotificationRoute = (notification) => {
+  if (!notification.referenceId) return null
+
+  switch (notification.referencedObject) {
+    case 'Profile':
+      return `/profile/${notification.referenceId}`
+    case 'Film':
+      return `/film/${notification.referenceId}`
+    case 'Review':
+      return `/review/${notification.referenceId}`
+    case 'UserList':
+      return `/list/${notification.referenceId}`
+    case 'Comment':
+      return `/review/${notification.referenceId}`
+    default:
+      return null
+  }
+}
+
 const Notifications = () => {
   const { user, isValidSession } = useAuth()
   const [ data, setData ] = useState({ page: 1, notifs: [], totalCount: 0 })
@@ -73,6 +92,7 @@ const Notifications = () => {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (res.ok) {
+        lastPageRef.current = 0
         await loadDataPage(1)
       } else {
         setServer(Response.internalServerError)
@@ -84,24 +104,29 @@ const Notifications = () => {
     }
   }, [user, loadDataPage])
 
-  const handleNotifRead = useCallback(async (i) => {
-    if (!user || !(await isValidSession())) return setServer(Response.forbidden)
-    const notif = data.notifs[i]
-    setData(prev => ({...prev, notifs: prev.notifs.map((n, idx) => idx === i ? { ...n, read: true } : n)}))
+  const markNotificationRead = useCallback(async (notification) => {
     try {
+      if (!user || !(await isValidSession())) return setServer(Response.forbidden)
       const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/notifications/${notif?.id}`, {
+      const res = await fetch(`${BaseUrl.api}/notifications/${notification.id}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
       if (!res.ok) {
-        setData(prev => ({...prev, notifs: prev.notifs.map((n, idx) => idx === i ? notif : n)}))
+        setData(prev => ({...prev, notifs: prev.notifs.map(n => n.id === notification.id ? notification : n)}))
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
-  }, [user, data])
+  }, [user, isValidSession])
+
+  const handleNotificationPress = useCallback((notification) => {
+    setData(prev => ({...prev, notifs: prev.notifs.map(n => n.id === notification.id ? { ...n, read: true } : n)}))
+    markNotificationRead(notification)
+    const route = getNotificationRoute(notification)
+    if (route) router.push(route)
+  }, [markNotificationRead, router])
 
   const handleNotifDelete = useCallback(async (i) => {
     if (!user || !(await isValidSession())) return setServer(Response.forbidden)
@@ -171,7 +196,7 @@ const Notifications = () => {
           borderWidth: 1,
           borderColor: Colors.border_color
         }}
-        onPress={item.read ? null : () => handleNotifRead(index)}
+        onPress={() => handleNotificationPress(item)}
         onLongPress={() => handleNotifDelete(index)}
       >
         <View style={{flexShrink: 0, backgroundColor: item.read ? 'transparent' : Colors.heteroboxd, width: 15, height: 15, borderRadius: 999, marginLeft: 10}} />
@@ -179,7 +204,7 @@ const Notifications = () => {
         <HText style={{color: item.read ? Colors.text : Colors.text_title, textAlign: 'center', fontSize: 12, marginRight: 10}}>{format.parseDateShort(item.date)}</HText>
       </Pressable>
     )
-  }, [handleNotifRead, handleNotifDelete, maxRowWidth])
+  }, [handleNotificationPress, handleNotifDelete, maxRowWidth])
 
   const Footer = useMemo(() => data.notifs.length > 0 && server.result === 0 ? (
     <ActivityIndicator size='small' color={Colors.text_link} />
@@ -233,9 +258,9 @@ const Notifications = () => {
 
       <LoadingResponse visible={(data.notifs.length === 0 && server.result <= 0) || isReadingAll} />
       <Popup
-        visible={[403, 500].includes(server.response)}
+        visible={[403, 500].includes(server.result)}
         message={server.message}
-        onClose={() => server.response === 403 ? router.replace('/login') : router.replace('/contact')}
+        onClose={() => server.result === 403 ? router.replace('/login') : router.replace('/contact')}
       />
     </View>
     </>

@@ -243,6 +243,9 @@ namespace Heteroboxd.Shared.Data
             {
                 entity.HasKey(n => n.Id);
 
+                entity.Property(n => n.ReferencedObject)
+                      .HasConversion<string>();
+
                 entity.HasOne<User>()
                       .WithMany()
                       .HasForeignKey(n => n.UserId)

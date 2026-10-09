@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
+using Heteroboxd.Shared.Models.Enums;
 using Heteroboxd.Shared.Repository;
 using System.Runtime.CompilerServices;
 
@@ -118,15 +119,29 @@ namespace Heteroboxd.API.Service
             if (Review.NotificationsOn && Review.AuthorId != User.Id)
             {
                 await _notificationService.AddNotification(
-                    $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
-                    Review.AuthorId
+                    new List<Notification>
+                    {
+                        new Notification(
+                            $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
+                            Review.AuthorId,
+                            ReferencedObject.Comment,
+                            Review.Id.ToString()
+                        )
+                    }
                 );
             }
             if (RepliedUserId.HasValue)
             {
                 await _notificationService.AddNotification(
-                    $"{TruncateName(CommentRequest.AuthorName)} replied to your comment on the review of {TruncateTitle(CommentRequest.FilmTitle)}",
-                    RepliedUserId.Value
+                    new List<Notification>
+                    {
+                        new Notification(
+                            $"{TruncateName(CommentRequest.AuthorName)} replied to your comment on the review of {TruncateTitle(CommentRequest.FilmTitle)}",
+                            RepliedUserId.Value,
+                            ReferencedObject.Comment,
+                            Review.Id.ToString()
+                        )
+                    }
                 );
             }
         }

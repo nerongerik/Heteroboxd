@@ -23,6 +23,7 @@ namespace Heteroboxd.Shared.Repository
         Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize);
         Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize);
         Task<List<Guid>> GetFriendsAsync(Guid UserId);
+        Task<List<Guid>> GetFollowerIdsAsync(Guid UserId);
         Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
         Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task ReportAsync(Guid UserId);
@@ -339,6 +340,13 @@ namespace Heteroboxd.Shared.Repository
                 .AsNoTracking()
                 .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
                 .Select(ur => ur.TargetId)
+                .ToListAsync();
+
+        public async Task<List<Guid>> GetFollowerIdsAsync(Guid UserId) =>
+            await _context.UserRelationships
+                .AsNoTracking()
+                .Where(ur => ur.TargetId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Select(ur => ur.UserId)
                 .ToListAsync();
 
         public async Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId) =>

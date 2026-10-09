@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
+using Heteroboxd.Shared.Models.Enums;
 using Heteroboxd.Shared.Repository;
 
 namespace Heteroboxd.API.Service
@@ -28,12 +29,14 @@ namespace Heteroboxd.API.Service
         private readonly IUserListRepository _repo;
         private readonly IUserRepository _userRepo;
         private readonly IFilmRepository _filmRepo;
+        private readonly INotificationService _notificationService;
 
-        public UserListService(IUserListRepository repo, IUserRepository userRepo, IFilmRepository filmRepo)
+        public UserListService(IUserListRepository repo, IUserRepository userRepo, IFilmRepository filmRepo, INotificationService notificationService)
         {
             _repo = repo;
             _userRepo = userRepo;
             _filmRepo = filmRepo;
+            _notificationService = notificationService;
         }
 
         public async Task<PagedResponse<UserListInfoResponse>> GetLists(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue, bool Admin = false)
@@ -162,6 +165,23 @@ namespace Heteroboxd.API.Service
             var NewList = new UserList(!User.EmailConfirmed, ListRequest.Name, ListRequest.Description, ListRequest.Ranked, User.Id);
             await _repo.CreateAsync(NewList);
             await AddListEntries(NewList.Id, ListRequest.Entries);
+
+            if (!NewList.Private)
+            {
+                var FollowerIds = await _userRepo.GetFollowerIdsAsync(User.Id);
+                var Notifications = new List<Notification>();
+                foreach (var FollowerId in FollowerIds)
+                {
+                    Notifications.Add(new Notification(
+                        $"Your friend {TruncateName(User.Name)} just created a new list {TruncateTitle(NewList.Name)} - check it out!",
+                        FollowerId,
+                        ReferencedObject.UserList,
+                        NewList.Id.ToString()
+                    ));
+                }
+
+                if (Notifications.Count > 0) await _notificationService.AddNotification(Notifications);
+            }
         }
 
         public async Task UpdateList(UpdateUserListRequest ListRequest)
@@ -226,5 +246,11 @@ namespace Heteroboxd.API.Service
 
             await _repo.CreateEntriesAsync(Created);
         }
+
+        private string TruncateName(string Name, int MaxLength = 25) =>
+             Name.Length <= MaxLength ? Name : $"{Name[..MaxLength]}...";
+
+        private string TruncateTitle(string Title, int MaxLength = 50) =>
+             Title.Length <= MaxLength ? $"\"{Title}\"" : $"\"{Title[..MaxLength]}...\"";
     }
 }

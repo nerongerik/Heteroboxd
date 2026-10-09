@@ -1,5 +1,6 @@
 ﻿using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
+using Heteroboxd.Shared.Models.Enums;
 using Heteroboxd.Shared.Repository;
 
 namespace Heteroboxd.API.Service
@@ -23,12 +24,14 @@ namespace Heteroboxd.API.Service
         private readonly IReviewRepository _repo;
         private readonly IUserRepository _userRepo;
         private readonly IFilmRepository _filmRepo;
+        private readonly INotificationService _notificationService;
 
-        public ReviewService(IReviewRepository repo, IUserRepository userRepo, IFilmRepository filmRepo)
+        public ReviewService(IReviewRepository repo, IUserRepository userRepo, IFilmRepository filmRepo, INotificationService notificationService)
         {
             _repo = repo;
             _userRepo = userRepo;
             _filmRepo = filmRepo;
+            _notificationService = notificationService;
         }
 
         public async Task<PagedResponse<ReviewInfoResponse>> GetReviews(string UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
@@ -146,6 +149,23 @@ namespace Heteroboxd.API.Service
                 await _userRepo.CreateUserWatchedFilmAsync(new UserWatchedFilm(User.Id, ReviewRequest.FilmId));
                 await _filmRepo.IncrementWatchCountAsync(ReviewRequest.FilmId);
             }
+
+            if (!Review.Private)
+            {
+                var FollowerIds = await _userRepo.GetFollowerIdsAsync(User.Id);
+                var Notifications = new List<Notification>();
+                foreach (var FollowerId in FollowerIds)
+                {
+                    Notifications.Add(new Notification(
+                        $"Your friend {TruncateName(User.Name)} just reviewed {TruncateTitle(Film.Title)} with {FormatStars(Review.Rating)}!",
+                        FollowerId,
+                        ReferencedObject.Review,
+                        Review.Id.ToString()
+                    ));
+                }
+
+                if (Notifications.Count > 0) await _notificationService.AddNotification(Notifications);
+            }
             return new ReviewInfoResponse(Review, 0, 0);
         }
 
@@ -176,6 +196,20 @@ namespace Heteroboxd.API.Service
             if (User != null && User.PinnedReviewId == Response.Item.Review.Id) await _userRepo.PinReviewAsync(User.Id, Response.Item.Review.Id);
 
             await _repo.DeleteAsync(Response.Item.Review.Id);
+        }
+
+        private string TruncateName(string Name, int MaxLength = 25) =>
+             Name.Length <= MaxLength ? Name : $"{Name[..MaxLength]}...";
+
+        private string TruncateTitle(string Title, int MaxLength = 50) =>
+             Title.Length <= MaxLength ? $"\"{Title}\"" : $"\"{Title[..MaxLength]}...\"";
+
+        private string FormatStars(double Rating)
+        {
+            if (Rating == 0) return "zero stars";
+
+            var Stars = new string('★', (int)Rating);
+            return Rating % 1 == 0.5 ? $"{Stars}⯪" : Stars;
         }
     }
 }

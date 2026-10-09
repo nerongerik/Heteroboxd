@@ -3,6 +3,7 @@ using Heteroboxd.Shared.Data;
 using Heteroboxd.Shared.Integrations;
 using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
+using Heteroboxd.Shared.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -227,7 +228,7 @@ namespace Heteroboxd.Maintenance.Background
                             });
 
                         if (Credits.Count != 0)
-                            await NotifyFollowers(_provider, Film.Title, Credits, CT);
+                            await NotifyFollowers(_provider, Film.Id, Film.Title, Credits, CT);
 
                         ExistingFilms.Add(Film);
                     }
@@ -411,13 +412,13 @@ namespace Heteroboxd.Maintenance.Background
                         });
 
                     if (NewFilm && Credits.Count != 0)
-                        await NotifyFollowers(_provider, Film.Title, Credits, CT);
+                        await NotifyFollowers(_provider, Film.Id, Film.Title, Credits, CT);
                 }
                 catch { continue; }
             }
         }
 
-        private async Task NotifyFollowers(IServiceProvider _provider, string Title, IEnumerable<CelebrityCredit> Credits, CancellationToken CT)
+        private async Task NotifyFollowers(IServiceProvider _provider, int FilmId, string Title, IEnumerable<CelebrityCredit> Credits, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
@@ -442,7 +443,9 @@ namespace Heteroboxd.Maintenance.Background
                 {
                     return new Notification(
                         $"{TruncateName(CelebNames.GetValueOrDefault(x.CelebrityId, "Celebrity"))} has been credited in {TruncateTitle(Title)}.",
-                        x.UserId
+                        x.UserId,
+                        ReferencedObject.Film,
+                        FilmId.ToString()
                     );
                 })
                 .ToList();
