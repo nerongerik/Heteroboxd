@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useWindowDimensions, View } from 'react-native'
+import { useWindowDimensions, View, Image } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Colors } from '../constants/colors'
-import { Image } from 'expo-image'
 
 export const Backdrop = ({ backdropUrl }) => {
   const [ resolvedUrl, setResolvedUrl ] = useState(null)

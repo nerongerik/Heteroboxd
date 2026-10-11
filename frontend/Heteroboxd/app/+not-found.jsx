@@ -1,8 +1,7 @@
-import { useWindowDimensions, View } from 'react-native'
+import { useWindowDimensions, View, Image } from 'react-native'
 import Head from 'expo-router/head'
 import { Colors } from '../constants/colors'
 import HText from '../components/htext'
-import { Image } from 'expo-image'
 
 const NotFound = () => {
   const { width } = useWindowDimensions()

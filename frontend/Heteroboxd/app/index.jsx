@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Image, Linking, PanResponder, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, Vibration, View } from 'react-native'
 import Explore from '../assets/icons/explore.svg'
 import Search from '../assets/icons/search.svg'
-import Spoiler from '../assets/icons/spoiler.svg'
 import Ranking from '../assets/icons/ranking.svg'
 import Review from '../assets/icons/review.svg'
 import Watchlist from '../assets/icons/bookmark.svg'
@@ -208,7 +207,7 @@ const Home = () => {
       headerLeft: () => {
         if (widescreen) return null
         return (
-          <View style={{width: 28, height: 28}} style={{marginLeft: Platform.OS === 'web' ? 15 : null}}>
+          <View style={{width: 28, height: 28, marginLeft: Platform.OS === 'web' ? 15 : null}}>
             <Pressable onPress={openMenu}>
               <Slide width={28} height={28} fill={Colors.text} />
             </Pressable>
