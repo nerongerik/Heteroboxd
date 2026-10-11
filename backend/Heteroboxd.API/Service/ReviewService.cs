@@ -209,7 +209,7 @@ namespace Heteroboxd.API.Service
             if (Rating == 0) return "zero stars";
 
             var Stars = new string('★', (int)Rating);
-            return Rating % 1 == 0.5 ? $"{Stars}⯪" : Stars;
+            return Rating % 1 == 0.5 ? $"{Stars}1/2" : Stars;
         }
     }
 }

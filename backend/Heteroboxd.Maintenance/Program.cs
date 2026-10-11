@@ -2,6 +2,7 @@
 using Heteroboxd.Shared.Data;
 using Heteroboxd.Shared.Integrations;
 using Heteroboxd.Shared.Models;
+using Heteroboxd.Shared.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -39,12 +40,24 @@ services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 
 services.AddScoped<ITMDBParser, TMDBParser>();
 services.AddScoped<IR2Handler, R2Handler>();
+services.AddScoped<IPushTokenRepository, PushTokenRepository>();
+
+var PushInitialization = PushNotificationBootstrap.Configure(services, config);
 
 var _provider = services.BuildServiceProvider();
 var _logger = _provider.GetRequiredService<ILogger<MaintanenceExecutor>>();
 var _executor = new MaintanenceExecutor();
 var _cts = new CancellationTokenSource(TimeSpan.FromHours(3));
 var _ct = _cts.Token;
+
+if (PushInitialization.Status == PushNotificationInitializationStatus.Enabled)
+    _logger.LogInformation("Firebase push delivery initialized and enabled");
+else if (PushInitialization.Status == PushNotificationInitializationStatus.Disabled)
+    _logger.LogInformation("Firebase push delivery is disabled; using no-op delivery");
+else
+    _logger.LogError(
+        "Firebase push initialization failed; using no-op delivery. Verify GOOGLE_APPLICATION_CREDENTIALS and Firebase permissions. Exception type {ExceptionType}",
+        PushInitialization.ExceptionType);
 
 _logger.LogInformation("=== Maintenance job started at {Time} UTC ===", DateTime.UtcNow);
 

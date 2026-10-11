@@ -32,7 +32,14 @@
     "plugins": [
       "expo-router",
       "expo-image-picker",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default",
+          "icon": "./assets/notifications-icon.png"
+        }
+      ]
     ],
     "extra": {
       "router": {},

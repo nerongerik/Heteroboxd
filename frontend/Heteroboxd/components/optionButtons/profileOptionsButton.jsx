@@ -181,12 +181,12 @@ const ProfileOptionsButton = ({ userId, userName, blocked }) => {
             {
               blockedLocalCopy ? (
                 <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-                  <HText style={styles.optionText}>Unblock user  </HText>
+                  <HText style={styles.optionText}>Unblock User  </HText>
                   <Unblock width={20} height={20} />
                 </Pressable>
               ) : (
                 <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-                  <HText style={styles.optionText}>Block user  </HText>
+                  <HText style={styles.optionText}>Block User  </HText>
                   <Block width={20} height={20} />
                 </Pressable>
               )

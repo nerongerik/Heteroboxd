@@ -54,11 +54,14 @@ export const logout = async (userId) => {
       headers: { 'Content-Type': 'application/json' }
     })
     if (!res.ok) console.log(`logout failed; ${res.status}`)
-    await AsyncStorage.removeItem('token')
-    await AsyncStorage.removeItem('refresh')
     return res.ok
   } catch {
     return false
+  } finally {
+    await Promise.allSettled([
+      AsyncStorage.removeItem('token'),
+      AsyncStorage.removeItem('refresh')
+    ])
   }
 }
 

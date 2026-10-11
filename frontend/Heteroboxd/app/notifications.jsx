@@ -5,6 +5,7 @@ import { useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
 import * as auth from '../helpers/auth'
 import * as format from '../helpers/format'
+import { getNotificationRoute } from '../helpers/notifications'
 import { useAuth } from '../hooks/useAuth'
 import { BaseUrl } from '../constants/api'
 import { Colors } from '../constants/colors'
@@ -14,25 +15,6 @@ import LoadingResponse from '../components/loadingResponse'
 import Popup from '../components/popup'
 
 const PAGE_SIZE = 20
-
-const getNotificationRoute = (notification) => {
-  if (!notification.referenceId) return null
-
-  switch (notification.referencedObject) {
-    case 'Profile':
-      return `/profile/${notification.referenceId}`
-    case 'Film':
-      return `/film/${notification.referenceId}`
-    case 'Review':
-      return `/review/${notification.referenceId}`
-    case 'UserList':
-      return `/list/${notification.referenceId}`
-    case 'Comment':
-      return `/review/${notification.referenceId}`
-    default:
-      return null
-  }
-}
 
 const Notifications = () => {
   const { user, isValidSession } = useAuth()
@@ -124,7 +106,7 @@ const Notifications = () => {
   const handleNotificationPress = useCallback((notification) => {
     setData(prev => ({...prev, notifs: prev.notifs.map(n => n.id === notification.id ? { ...n, read: true } : n)}))
     markNotificationRead(notification)
-    const route = getNotificationRoute(notification)
+    const route = getNotificationRoute(notification.referencedObject, notification.referenceId)
     if (route) router.push(route)
   }, [markNotificationRead, router])
 

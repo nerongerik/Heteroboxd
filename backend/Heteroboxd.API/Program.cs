@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-//using FirebaseAdmin;
-//using Google.Apis.Auth.OAuth2;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -90,6 +88,7 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserListRepository, UserListRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IImportJobRepository, ImportJobRepository>();
+builder.Services.AddScoped<IPushTokenRepository, PushTokenRepository>();
 
 //service config
 builder.Services.AddScoped<IFilmService, FilmService>();
@@ -101,7 +100,10 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserListService, UserListService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IImportJobService, ImportJobService>();
+builder.Services.AddScoped<IPushTokenService, PushTokenService>();
 builder.Services.AddScoped<ITMDBParser, TMDBParser>();
+
+var PushInitialization = PushNotificationBootstrap.Configure(builder.Services, config);
 
 builder.Services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 {
@@ -120,15 +122,17 @@ builder.Services.AddTransient<IEmailSender, EmailSender>();
 //controller config
 builder.Services.AddControllers();
 
-/*
-//realtime notif config
-FirebaseApp.Create(new AppOptions()
-{
-    Credential = GoogleCredential.FromFile("heteroboxd-firebase-adminsdk-fbsvc-25e265c424.json")
-});
-*/
-
 var app = builder.Build();
+
+var PushLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("PushNotifications");
+if (PushInitialization.Status == PushNotificationInitializationStatus.Enabled)
+    PushLogger.LogInformation("Firebase push delivery initialized and enabled");
+else if (PushInitialization.Status == PushNotificationInitializationStatus.Disabled)
+    PushLogger.LogInformation("Firebase push delivery is disabled; using no-op delivery");
+else
+    PushLogger.LogError(
+        "Firebase push initialization failed; using no-op delivery. Verify GOOGLE_APPLICATION_CREDENTIALS and Firebase permissions. Exception type {ExceptionType}",
+        PushInitialization.ExceptionType);
 
 app.UseHealthChecks("/health");
 

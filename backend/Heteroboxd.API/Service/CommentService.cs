@@ -116,20 +116,6 @@ namespace Heteroboxd.API.Service
 
             await _repo.CreateAsync(new Comment(CommentRequest.Text, Guid.Parse(CommentRequest.AuthorId), Review.Id, RepliedCommentId, RepliedUserId, ThreadRootId));
 
-            if (Review.NotificationsOn && Review.AuthorId != User.Id)
-            {
-                await _notificationService.AddNotification(
-                    new List<Notification>
-                    {
-                        new Notification(
-                            $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
-                            Review.AuthorId,
-                            ReferencedObject.Comment,
-                            Review.Id.ToString()
-                        )
-                    }
-                );
-            }
             if (RepliedUserId.HasValue)
             {
                 await _notificationService.AddNotification(
@@ -138,6 +124,21 @@ namespace Heteroboxd.API.Service
                         new Notification(
                             $"{TruncateName(CommentRequest.AuthorName)} replied to your comment on the review of {TruncateTitle(CommentRequest.FilmTitle)}",
                             RepliedUserId.Value,
+                            ReferencedObject.Comment,
+                            Review.Id.ToString()
+                        )
+                    }
+                );
+                return;
+            }
+            if (Review.NotificationsOn && Review.AuthorId != User.Id)
+            {
+                await _notificationService.AddNotification(
+                    new List<Notification>
+                    {
+                        new Notification(
+                            $"{TruncateName(CommentRequest.AuthorName)} commented on your review of {TruncateTitle(CommentRequest.FilmTitle)}",
+                            Review.AuthorId,
                             ReferencedObject.Comment,
                             Review.Id.ToString()
                         )

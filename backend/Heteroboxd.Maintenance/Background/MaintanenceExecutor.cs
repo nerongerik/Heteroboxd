@@ -7,6 +7,7 @@ using Heteroboxd.Shared.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using Npgsql;
 
@@ -452,6 +453,20 @@ namespace Heteroboxd.Maintenance.Background
 
             await _context.Notifications.AddRangeAsync(Notifications, CT);
             await _context.SaveChangesAsync(CT);
+
+            try
+            {
+                var PushNotificationService = _scope.ServiceProvider.GetRequiredService<IPushNotificationService>();
+                await PushNotificationService.SendAsync(Notifications, CT);
+            }
+            catch (Exception ex)
+            {
+                var Logger = _scope.ServiceProvider.GetRequiredService<ILogger<MaintanenceExecutor>>();
+                Logger.LogError(
+                    "Push delivery failed safely after celebrity-credit notification persistence; exception type {ExceptionType}, notification count {NotificationCount}",
+                    ex.GetType().Name,
+                    Notifications.Count);
+            }
         }
 
         private async Task SaveNewFilmWithUniqueSlugAsync(HeteroboxdContext _context, Film Film, CancellationToken CT)
