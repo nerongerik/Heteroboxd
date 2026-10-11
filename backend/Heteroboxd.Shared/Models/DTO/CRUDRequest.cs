@@ -99,4 +99,9 @@
         public string Token { get; set; }
         public string NewPassword { get; set; }
     }
+
+    public class PushTokenRequest
+    {
+        public string Token { get; set; }
+    }
 }

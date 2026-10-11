@@ -1,6 +1,8 @@
 import { createContext, useEffect, useState } from 'react'
 import { Platform, View } from 'react-native'
 import * as auth from '../helpers/auth'
+import { removeCurrentPushToken } from '../helpers/pushToken'
+import { usePushTokenLifecycle } from '../hooks/usePushTokenLifecycle'
 import { Colors } from '../constants/colors'
 import LoadingResponse from '../components/loadingResponse'
 
@@ -9,6 +11,7 @@ export const AuthContext = createContext()
 export function AuthProvider({ children }) {
   const [ user, setUser ] = useState(null)
   const [ hydrated, setHydrated ] = useState(false)
+  const stopPushTokenLifecycle = usePushTokenLifecycle(hydrated, user)
 
   const isValidSession = async () => {
     let token = await auth.getJwt()
@@ -24,13 +27,29 @@ export function AuthProvider({ children }) {
   }
 
   const login = async (jwt, refresh) => {
-    auth.handleLogin(jwt, refresh)
+    await auth.handleLogin(jwt, refresh)
     setUser(auth.decodeUser(jwt))
   }
 
   const logout = async (userId) => {
-    await auth.logout(userId)
-    setUser(null)
+    try {
+      try {
+        stopPushTokenLifecycle()
+      } catch {
+      }
+      let jwt = null
+      try {
+        jwt = await auth.getJwt()
+      } catch {
+      }
+      try {
+        await removeCurrentPushToken(jwt)
+      } catch {
+      }
+      await auth.logout(userId)
+    } finally {
+      setUser(null)
+    }
   }
 
   const reloadUser = async () => {

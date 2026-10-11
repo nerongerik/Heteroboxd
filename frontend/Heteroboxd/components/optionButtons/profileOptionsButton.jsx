@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, Vibration, View } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import More from '../../assets/icons/more.svg'
@@ -8,6 +8,8 @@ import Trash from '../../assets/icons/trash.svg'
 import Logout from '../../assets/icons/logout.svg'
 import Block from '../../assets/icons/block.svg'
 import Unblock from '../../assets/icons/unblock.svg'
+import Notif from '../../assets/icons/notifications.svg'
+import NotifOff from '../../assets/icons/notifications-off.svg'
 import Share from '../../assets/icons/share.svg'
 import Check from '../../assets/icons/check.svg'
 import { useRouter } from 'expo-router'
@@ -21,7 +23,7 @@ import LoadingResponse from '../loadingResponse'
 import Popup from '../popup'
 import SlidingMenu from '../slidingMenu'
 
-const ProfileOptionsButton = ({ userId, userName, blocked }) => {
+const ProfileOptionsButton = ({ userId, userName, blocked, relationship, notifsOnInitial, onNotifChange }) => {
   const { user, logout, isValidSession } = useAuth()
   const [ other, setOther ] = useState(false)
   const [ menuShown, setMenuShown ] = useState(false)
@@ -30,6 +32,9 @@ const ProfileOptionsButton = ({ userId, userName, blocked }) => {
   const [ deleteConfirm, setDeleteConfirm ] = useState(false)
   const [ blockConfirm, setBlockConfirm ] = useState(false)
   const [ blockedLocalCopy, setBlockedLocalCopy ] = useState(false)
+  const [ notifsOnLocal, setNotifsOnLocal ] = useState(false)
+  const [ notifUpdating, setNotifUpdating ] = useState(false)
+  const notifUpdatingRef = useRef(false)
   const [ shared, setShared ] = useState(false)
   const router = useRouter()
   const { width } = useWindowDimensions()
@@ -135,6 +140,40 @@ const ProfileOptionsButton = ({ userId, userName, blocked }) => {
     }
   }, [user, userId, blockedLocalCopy])
 
+  const handleNotifications = useCallback(async () => {
+    if (notifUpdatingRef.current) return
+    if (user?.userId === userId || relationship !== 'following' || !(await isValidSession())) {
+      setServer(Response.forbidden)
+      return
+    }
+
+    const previousValue = notifsOnLocal
+    const nextValue = !previousValue
+    notifUpdatingRef.current = true
+    setNotifUpdating(true)
+    setNotifsOnLocal(nextValue)
+    setServer({ result: 201, message: nextValue ? 'You will now receive activity notifications!' : 'You will no longer receive activity notifications!' })
+    try {
+      const jwt = await auth.getJwt()
+      const res = await fetch(`${BaseUrl.api}/users/relationships/notifs?TargetId=${userId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${jwt}` }
+      })
+      if (res.ok) {
+        onNotifChange?.(nextValue)
+      } else {
+        setNotifsOnLocal(previousValue)
+        setServer(res.status === 404 ? Response.notFound : Response.internalServerError)
+      }
+    } catch {
+      setNotifsOnLocal(previousValue)
+      setServer(Response.networkError)
+    } finally {
+      notifUpdatingRef.current = false
+      setNotifUpdating(false)
+    }
+  }, [user, userId, relationship, isValidSession, notifsOnLocal, onNotifChange])
+
   const handleShare = useCallback(async () => {
     if (!userName) return
 
@@ -149,6 +188,10 @@ const ProfileOptionsButton = ({ userId, userName, blocked }) => {
   useEffect(() => {
     setBlockedLocalCopy(blocked)
   }, [blocked])
+
+  useEffect(() => {
+    setNotifsOnLocal(notifsOnInitial)
+  }, [notifsOnInitial, userId])
 
   useEffect(() => {
     setOther(user?.userId !== userId)
@@ -179,14 +222,28 @@ const ProfileOptionsButton = ({ userId, userName, blocked }) => {
               <Flag width={20} height={20} />
             </Pressable>
             {
+              relationship === 'following' ? (
+                <Pressable
+                  style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', opacity: notifUpdating ? 0.5 : 1}]}
+                  disabled={notifUpdating}
+                  onPress={handleNotifications}
+                >
+                  <HText style={styles.optionText}>{notifsOnLocal ? "Don't Notify Activity  " : 'Notify Activity  '}</HText>
+                  {notifsOnLocal
+                    ? <NotifOff width={20} height={20} fill={Colors.text} />
+                    : <Notif width={20} height={20} fill={Colors.text} />}
+                </Pressable>
+              ) : null
+            }
+            {
               blockedLocalCopy ? (
                 <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-                  <HText style={styles.optionText}>Unblock user  </HText>
+                  <HText style={styles.optionText}>Unblock User  </HText>
                   <Unblock width={20} height={20} />
                 </Pressable>
               ) : (
                 <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-                  <HText style={styles.optionText}>Block user  </HText>
+                  <HText style={styles.optionText}>Block User  </HText>
                   <Block width={20} height={20} />
                 </Pressable>
               )

@@ -23,7 +23,8 @@ namespace Heteroboxd.Shared.Repository
         Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize);
         Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize);
         Task<List<Guid>> GetFriendsAsync(Guid UserId);
-        Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
+        Task<List<Guid>> GetNotifiableFollowerIdsAsync(Guid UserId);
+        Task<(Models.Enums.Relationship? Relationship, bool NotificationsOn)> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
         Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task ReportAsync(Guid UserId);
         Task AddToWatchlistAsync(WatchlistEntry Entry);
@@ -33,6 +34,7 @@ namespace Heteroboxd.Shared.Repository
         Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId);
         Task BlockUnblockAsync(Guid UserId, Guid TargetId);
         Task RemoveFollowerAsync(Guid UserId, Guid TargetId);
+        Task<bool> ToggleRelationshipNotificationsAsync(Guid UserId, Guid TargetId);
 
         Task<UserLikedReview?> IsReviewLikedAsync(Guid UserId, Guid ReviewId);
         Task<UserLikedList?> IsListLikedAsync(Guid UserId, Guid ListId);
@@ -341,12 +343,25 @@ namespace Heteroboxd.Shared.Repository
                 .Select(ur => ur.TargetId)
                 .ToListAsync();
 
-        public async Task<Models.Enums.Relationship?> GetRelationshipStatusAsync(Guid UserId, Guid TargetId) =>
+        public async Task<List<Guid>> GetNotifiableFollowerIdsAsync(Guid UserId) =>
             await _context.UserRelationships
                 .AsNoTracking()
+                .Where(ur => ur.TargetId == UserId && ur.Relationship == Models.Enums.Relationship.Following && ur.NotificationsOn)
+                .Select(ur => ur.UserId)
+                .ToListAsync();
+
+        public async Task<(Models.Enums.Relationship? Relationship, bool NotificationsOn)> GetRelationshipStatusAsync(Guid UserId, Guid TargetId)
+        {
+            var Relationship = await _context.UserRelationships
+                .AsNoTracking()
                 .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId)
-                .Select(ur => (Models.Enums.Relationship?)ur.Relationship)
+                .Select(ur => new { ur.Relationship, ur.NotificationsOn })
                 .FirstOrDefaultAsync();
+
+            return Relationship == null
+                ? (null, false)
+                : (Relationship.Relationship, Relationship.Relationship == Models.Enums.Relationship.Following && Relationship.NotificationsOn);
+        }
 
         public async Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize)
         {
@@ -549,6 +564,14 @@ namespace Heteroboxd.Shared.Repository
                     .ExecuteDeleteAsync();
             }
         }
+
+        public async Task<bool> ToggleRelationshipNotificationsAsync(Guid UserId, Guid TargetId) =>
+            await _context.UserRelationships
+                .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId && ur.Relationship == Models.Enums.Relationship.Following)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(
+                    ur => ur.NotificationsOn,
+                    ur => !ur.NotificationsOn
+                )) > 0;
 
         public async Task RemoveFollowerAsync(Guid UserId, Guid TargetId) =>
             await _context.UserRelationships

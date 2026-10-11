@@ -12,6 +12,7 @@ import { useVersionCheck } from '../hooks/useVersionCheck'
 import './browser.css'
 import Back from '../assets/icons/back.svg'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import NotificationLifecycle from '../components/notificationLifecycle'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -74,6 +75,7 @@ const RootLayout = () => {
   return (
     <AuthProvider>
       <SafeAreaProvider>
+        <NotificationLifecycle />
         <UpdateModal
           visible={updateRequired || (updateAvailable && !softDismissed)}
           optional={!updateRequired}

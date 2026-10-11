@@ -30,6 +30,7 @@ namespace Heteroboxd.Shared.Data
         public DbSet<UserRelationship> UserRelationships { get; set; }
         public DbSet<ImportJob> ImportJobs { get; set; }
         public DbSet<UserStannedCelebrity> UserStannedCelebrities { get; set; }
+        public DbSet<PushToken> PushTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -243,6 +244,9 @@ namespace Heteroboxd.Shared.Data
             {
                 entity.HasKey(n => n.Id);
 
+                entity.Property(n => n.ReferencedObject)
+                      .HasConversion<string>();
+
                 entity.HasOne<User>()
                       .WithMany()
                       .HasForeignKey(n => n.UserId)
@@ -308,6 +312,8 @@ namespace Heteroboxd.Shared.Data
                 entity.HasKey(ur => ur.Id);
 
                 entity.HasIndex(ur => new { ur.UserId, ur.TargetId, ur.Relationship }).IsUnique();
+                entity.HasIndex(ur => new { ur.TargetId, ur.Relationship, ur.NotificationsOn, ur.UserId })
+                      .HasDatabaseName("IX_UserRelationships_NotifiableFollowers");
 
                 entity.HasOne<User>()
                       .WithMany()
@@ -347,6 +353,19 @@ namespace Heteroboxd.Shared.Data
                 entity.HasOne<Celebrity>()
                       .WithMany()
                       .HasForeignKey(usc => usc.CelebrityId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PushToken>(entity =>
+            {
+                entity.HasKey(pt => pt.Id);
+
+                entity.HasIndex(pt => pt.Token).IsUnique();
+                entity.HasIndex(pt => pt.UserId);
+
+                entity.HasOne<User>()
+                      .WithMany()
+                      .HasForeignKey(pt => pt.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
         }

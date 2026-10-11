@@ -3,7 +3,7 @@
     "scheme": "heteroscheme",
     "name": "Heteroboxd",
     "slug": "Heteroboxd",
-    "version": "1.5.2",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/master.png",
     "userInterfaceStyle": "dark",
@@ -32,7 +32,24 @@
     "plugins": [
       "expo-router",
       "expo-image-picker",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default",
+          "icon": "./assets/notifications-icon.png"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      "./plugins/withAndroidOptimizedProguard"
     ],
     "extra": {
       "router": {},

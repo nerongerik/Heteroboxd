@@ -3,9 +3,11 @@ using Heteroboxd.Shared.Data;
 using Heteroboxd.Shared.Integrations;
 using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
+using Heteroboxd.Shared.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using Npgsql;
 
@@ -227,7 +229,7 @@ namespace Heteroboxd.Maintenance.Background
                             });
 
                         if (Credits.Count != 0)
-                            await NotifyFollowers(_provider, Film.Title, Credits, CT);
+                            await NotifyFollowers(_provider, Film.Id, Film.Title, Credits, CT);
 
                         ExistingFilms.Add(Film);
                     }
@@ -411,13 +413,13 @@ namespace Heteroboxd.Maintenance.Background
                         });
 
                     if (NewFilm && Credits.Count != 0)
-                        await NotifyFollowers(_provider, Film.Title, Credits, CT);
+                        await NotifyFollowers(_provider, Film.Id, Film.Title, Credits, CT);
                 }
                 catch { continue; }
             }
         }
 
-        private async Task NotifyFollowers(IServiceProvider _provider, string Title, IEnumerable<CelebrityCredit> Credits, CancellationToken CT)
+        private async Task NotifyFollowers(IServiceProvider _provider, int FilmId, string Title, IEnumerable<CelebrityCredit> Credits, CancellationToken CT)
         {
             using var _scope = _provider.CreateScope();
             var _context = _scope.ServiceProvider.GetRequiredService<HeteroboxdContext>();
@@ -442,13 +444,29 @@ namespace Heteroboxd.Maintenance.Background
                 {
                     return new Notification(
                         $"{TruncateName(CelebNames.GetValueOrDefault(x.CelebrityId, "Celebrity"))} has been credited in {TruncateTitle(Title)}.",
-                        x.UserId
+                        x.UserId,
+                        ReferencedObject.Film,
+                        FilmId.ToString()
                     );
                 })
                 .ToList();
 
             await _context.Notifications.AddRangeAsync(Notifications, CT);
             await _context.SaveChangesAsync(CT);
+
+            try
+            {
+                var PushNotificationService = _scope.ServiceProvider.GetRequiredService<IPushNotificationService>();
+                await PushNotificationService.SendAsync(Notifications, CT);
+            }
+            catch (Exception ex)
+            {
+                var Logger = _scope.ServiceProvider.GetRequiredService<ILogger<MaintanenceExecutor>>();
+                Logger.LogError(
+                    "Push delivery failed safely after celebrity-credit notification persistence; exception type {ExceptionType}, notification count {NotificationCount}",
+                    ex.GetType().Name,
+                    Notifications.Count);
+            }
         }
 
         private async Task SaveNewFilmWithUniqueSlugAsync(HeteroboxdContext _context, Film Film, CancellationToken CT)

@@ -9,7 +9,7 @@ namespace Heteroboxd.Shared.Repository
         Task<Notification?> GetByIdAsync(Guid NotificationId);
         Task<int> CountUnreadAsync(Guid UserId);
         Task<(List<Notification> Notifications, int TotalCount)> GetByUserAsync(Guid UserId, int Page, int PageSize);
-        Task CreateAsync(Notification Notification);
+        Task CreateAsync(List<Notification> Notifications);
         Task UpdateAsync(Guid NotificationId);
         Task MarkAllReadAsync(Guid UserId);
         Task DeleteAsync(Guid NotificationId);
@@ -51,9 +51,9 @@ namespace Heteroboxd.Shared.Repository
             return (Notifications, TotalCount);
         }
 
-        public async Task CreateAsync(Notification Notification)
+        public async Task CreateAsync(List<Notification> Notifications)
         {
-            _context.Notifications.Add(Notification);
+            _context.Notifications.AddRange(Notifications);
             await _context.SaveChangesAsync();
         }
 

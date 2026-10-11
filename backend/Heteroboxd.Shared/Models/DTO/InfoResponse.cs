@@ -471,6 +471,8 @@
         public string Date { get; set; }
         public bool Read { get; set; }
         public string UserId { get; set; }
+        public string ReferencedObject { get; set; }
+        public string ReferenceId { get; set; }
 
         public NotificationInfoResponse(Notification Notification)
         {
@@ -479,6 +481,8 @@
             this.Date = Notification.Date.ToString("dd/MM/yyyy HH:mm");
             this.Read = Notification.Read;
             this.UserId = Notification.UserId.ToString();
+            this.ReferencedObject = Notification.ReferencedObject.ToString();
+            this.ReferenceId = Notification.ReferenceId;
         }
     }
 
