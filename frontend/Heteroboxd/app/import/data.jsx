@@ -1,6 +1,5 @@
-import { View, ScrollView, useWindowDimensions, Platform, Pressable, Linking } from 'react-native'
+import { View, ScrollView, useWindowDimensions, Image, Pressable, Linking } from 'react-native'
 import { Link, useRouter } from 'expo-router'
-import { Image } from 'expo-image'
 import Head from 'expo-router/head'
 import HText from '../../components/htext'
 import { Colors } from '../../constants/colors'

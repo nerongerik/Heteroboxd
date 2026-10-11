@@ -1,5 +1,4 @@
-import { useWindowDimensions } from 'react-native'
-import { Image } from 'expo-image'
+import { useWindowDimensions, Image } from 'react-native'
 
 export const Poster = ({ posterUrl, style, other, wcp = false }) => {
   const { width } = useWindowDimensions()
@@ -17,9 +16,7 @@ export const Poster = ({ posterUrl, style, other, wcp = false }) => {
       <Image
         source={posterUrl === 'noposter' ? require("../assets/noposter.png") : { uri: posterUrl.replace('original', replacer) }}
         style={style}
-        contentFit="cover"
-        cachePolicy="disk"
-        transition={0}
+        resizeMode="cover"
       />
     )
   }
