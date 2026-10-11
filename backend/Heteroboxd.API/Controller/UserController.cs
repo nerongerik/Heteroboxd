@@ -34,12 +34,16 @@ namespace Heteroboxd.API.Controller
             {
                 if (Inclusive)
                 {
+                    var Relationship = VisitorId == null
+                        ? (Relationship: "", NotificationsOn: false)
+                        : await _service.DetermineRelationship(VisitorId, UserId);
                     return Ok(
                     new
                     {
                         Profile = await _service.GetUser(UserId),
                         Ratings = await _service.GetUserRatings(UserId),
-                        Relationship = VisitorId == null ? "" : await _service.DetermineRelationship(VisitorId, UserId)
+                        Relationship = Relationship.Relationship,
+                        Relationship.NotificationsOn
                     });
                 }
                 else
@@ -67,12 +71,16 @@ namespace Heteroboxd.API.Controller
                 var User = await _service.GetUserByUserName(UserName);
                 if (Inclusive)
                 {
+                    var Relationship = VisitorId == null
+                        ? (Relationship: "", NotificationsOn: false)
+                        : await _service.DetermineRelationship(VisitorId, User.Id.ToString());
                     return Ok(
                     new
                     {
                         Profile = User,
                         Ratings = await _service.GetUserRatings(User.Id.ToString()),
-                        Relationship = VisitorId == null ? "" : await _service.DetermineRelationship(VisitorId, User.Id.ToString())
+                        Relationship = Relationship.Relationship,
+                        Relationship.NotificationsOn
                     });
                 }
                 else
@@ -409,6 +417,25 @@ namespace Heteroboxd.API.Controller
             catch (KeyNotFoundException)
             {
                 return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPut("relationships/notifs")]
+        [Authorize]
+        public async Task<IActionResult> ToggleRelationshipNotifications(string TargetId)
+        {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            _logger.LogInformation($"ToggleRelationshipNotifications endpoint hit with originator {UserId}, target {TargetId}");
+            if (!Guid.TryParse(UserId, out var ParsedUserId) || !Guid.TryParse(TargetId, out var ParsedTargetId)) return BadRequest();
+            try
+            {
+                return await _service.ToggleRelationshipNotifications(ParsedUserId, ParsedTargetId)
+                    ? Ok()
+                    : NotFound();
             }
             catch
             {

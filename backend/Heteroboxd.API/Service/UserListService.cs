@@ -168,7 +168,7 @@ namespace Heteroboxd.API.Service
 
             if (!NewList.Private)
             {
-                var FollowerIds = await _userRepo.GetFollowerIdsAsync(User.Id);
+                var FollowerIds = await _userRepo.GetNotifiableFollowerIdsAsync(User.Id);
                 var Notifications = new List<Notification>();
                 foreach (var FollowerId in FollowerIds)
                 {

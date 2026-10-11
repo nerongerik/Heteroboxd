@@ -131,7 +131,7 @@ else if (PushInitialization.Status == PushNotificationInitializationStatus.Disab
     PushLogger.LogInformation("Firebase push delivery is disabled; using no-op delivery");
 else
     PushLogger.LogError(
-        "Firebase push initialization failed; using no-op delivery. Verify GOOGLE_APPLICATION_CREDENTIALS and Firebase permissions. Exception type {ExceptionType}",
+        "Firebase push initialization failed; using no-op delivery. Verify Push:FirebaseCredentialsJson and Firebase permissions. Exception type {ExceptionType}",
         PushInitialization.ExceptionType);
 
 app.UseHealthChecks("/health");

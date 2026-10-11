@@ -19,7 +19,7 @@ namespace Heteroboxd.API.Service
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
         Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
         Task<PagedResponse<CelebrityInfoResponse>> GetStannedCelebrities(string UserId, int Page, int PageSize);
-        Task<string> DetermineRelationship(string UserId, string TargetId);
+        Task<(string Relationship, bool NotificationsOn)> DetermineRelationship(string UserId, string TargetId);
         Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task<bool> IsObjectLiked(string UserId, string ObjectId, string ObjectType);
         Task<UserWatchedFilmInfoResponse?> DidUserWatchFilm(string UserId, int FilmId);
@@ -33,6 +33,7 @@ namespace Heteroboxd.API.Service
         Task UpdateWatchlist(string UserId, int FilmId);
         Task<Dictionary<string, object?>> UpdateFavorites(string UserId, int? FilmId, int Index);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
+        Task<bool> ToggleRelationshipNotifications(Guid UserId, Guid TargetId);
         Task UpdateLikes(UpdateUserLikesRequest LikeRequest);
         Task TrackFilm(string UserId, int FilmId, string Action);
         Task PinObject(string UserId, string ObjectId, string Type);
@@ -200,17 +201,19 @@ namespace Heteroboxd.API.Service
             };
         }
 
-        public async Task<string> DetermineRelationship(string UserId, string TargetId)
+        public async Task<(string Relationship, bool NotificationsOn)> DetermineRelationship(string UserId, string TargetId)
         {
-            var Status = await _repo.GetRelationshipStatusAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
+            var (Status, NotificationsOn) = await _repo.GetRelationshipStatusAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
 
-            return Status switch
+            var Relationship = Status switch
             {
                 Shared.Models.Enums.Relationship.Blocked => "blocked",
                 Shared.Models.Enums.Relationship.Following => "following",
                 null => "none",
                 _ => "none"
             };
+
+            return (Relationship, NotificationsOn);
         }
 
         public async Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize)
@@ -418,6 +421,9 @@ namespace Heteroboxd.API.Service
                     break;
             }
         }
+
+        public async Task<bool> ToggleRelationshipNotifications(Guid UserId, Guid TargetId) =>
+            await _repo.ToggleRelationshipNotificationsAsync(UserId, TargetId);
 
         public async Task UpdateLikes(UpdateUserLikesRequest LikeRequest)
         {

@@ -50,6 +50,8 @@ const Profile = () => {
   const [ pinned, setPinned ] = useState({})
   const [ blocked, setBlocked ] = useState(false)
   const [ following, setFollowing ] = useState(false)
+  const [ relationship, setRelationship ] = useState('')
+  const [ notificationsOn, setNotificationsOn ] = useState(false)
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
   const [ favIndex, setFavIndex ] = useState(-1)
@@ -123,9 +125,13 @@ const Profile = () => {
         const ownResolvedProfile = viewerId === profile.id
         if (!ownResolvedProfile && json.relationship) {
           const trimmed = json.relationship.replace(/^"|"$/g, '').trim().toLowerCase()
+          setRelationship(trimmed)
+          setNotificationsOn(trimmed === 'following' && json.notificationsOn === true)
           setBlocked(trimmed === 'blocked')
           setFollowing(trimmed === 'following')
         } else {
+          setRelationship('')
+          setNotificationsOn(false)
           setBlocked(false)
           setFollowing(false)
         }
@@ -225,7 +231,11 @@ const Profile = () => {
       return
     }
     const currentFollowing = followingLocalCopyRef.current
-    setFollowing(!currentFollowing)
+    const currentNotificationsOn = notificationsOn
+    const nextFollowing = !currentFollowing
+    setFollowing(nextFollowing)
+    setRelationship(nextFollowing ? 'following' : 'none')
+    setNotificationsOn(nextFollowing)
     const requestId = ++followRequestRef.current
     try {
       const jwt = await auth.getJwt()
@@ -235,13 +245,19 @@ const Profile = () => {
       })
       if (requestId !== followRequestRef.current) return
       if (!res.ok) {
+        setFollowing(currentFollowing)
+        setRelationship(currentFollowing ? 'following' : 'none')
+        setNotificationsOn(currentFollowing && currentNotificationsOn)
         console.log('follow/unfollow failed; internal server error...')
       }
     } catch {
       if (requestId !== followRequestRef.current) return
+      setFollowing(currentFollowing)
+      setRelationship(currentFollowing ? 'following' : 'none')
+      setNotificationsOn(currentFollowing && currentNotificationsOn)
       console.log('follow/unfollow failed; network error...')
     }
-  }, [user, isValidSession, profileUserId])
+  }, [user, isValidSession, profileUserId, notificationsOn])
 
   const handleVerify = useCallback(async () => {
     if (!verifyClicked.current) {
@@ -294,9 +310,18 @@ const Profile = () => {
     if (!data) return
     navigation.setOptions({
       headerTitle: '',
-      headerRight: () => user ? <ProfileOptionsButton userId={profileUserId} userName={data.userName} blocked={blocked} /> : null
+      headerRight: () => user ? (
+        <ProfileOptionsButton
+          userId={profileUserId}
+          userName={data.userName}
+          blocked={blocked}
+          relationship={relationship}
+          notifsOnInitial={notificationsOn}
+          onNotifChange={setNotificationsOn}
+        />
+      ) : null
     })
-  }, [navigation, blocked, data, user, profileUserId])
+  }, [navigation, blocked, data, user, profileUserId, relationship, notificationsOn])
 
   useEffect(() => {
     if (!profileUserId) return

@@ -9,13 +9,15 @@ namespace Heteroboxd.Shared.Models
         public Guid UserId { get; set; }
         public Guid TargetId { get; set; }
         public Relationship Relationship { get; set; }
-        public UserRelationship(Guid UserId, Guid TargetId, Relationship Relationship)
+        public bool NotificationsOn { get; set; }
+        public UserRelationship(Guid UserId, Guid TargetId, Relationship Relationship, bool NotificationsOn = true)
         {
             this.Id = Guid.NewGuid();
             this.Date = DateTime.UtcNow;
             this.UserId = UserId;
             this.TargetId = TargetId;
             this.Relationship = Relationship;
+            this.NotificationsOn = NotificationsOn;
         }
     }
 }

@@ -312,6 +312,8 @@ namespace Heteroboxd.Shared.Data
                 entity.HasKey(ur => ur.Id);
 
                 entity.HasIndex(ur => new { ur.UserId, ur.TargetId, ur.Relationship }).IsUnique();
+                entity.HasIndex(ur => new { ur.TargetId, ur.Relationship, ur.NotificationsOn, ur.UserId })
+                      .HasDatabaseName("IX_UserRelationships_NotifiableFollowers");
 
                 entity.HasOne<User>()
                       .WithMany()

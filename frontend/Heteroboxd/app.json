@@ -39,7 +39,17 @@
           "defaultChannel": "default",
           "icon": "./assets/notifications-icon.png"
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      "./plugins/withAndroidOptimizedProguard"
     ],
     "extra": {
       "router": {},

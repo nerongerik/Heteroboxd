@@ -267,9 +267,18 @@ namespace Heteroboxd.Shared.Integrations
 
             try
             {
+                var CredentialsJson = Config["Push:FirebaseCredentialsJson"];
+                if (string.IsNullOrWhiteSpace(CredentialsJson))
+                    throw new InvalidOperationException("Firebase credentials are not configured.");
+
+                using var CredentialsStream = new MemoryStream(
+                    System.Text.Encoding.UTF8.GetBytes(CredentialsJson));
+                var ServiceAccount = ServiceAccountCredential
+                    .FromServiceAccountData(CredentialsStream);
                 var FirebaseApplication = FirebaseApp.Create(new AppOptions
                 {
-                    Credential = GoogleCredential.GetApplicationDefault()
+                    Credential = GoogleCredential.FromServiceAccountCredential(ServiceAccount),
+                    ProjectId = ServiceAccount.ProjectId
                 });
                 var Messaging = FirebaseMessaging.GetMessaging(FirebaseApplication);
 

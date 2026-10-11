@@ -56,7 +56,7 @@ else if (PushInitialization.Status == PushNotificationInitializationStatus.Disab
     _logger.LogInformation("Firebase push delivery is disabled; using no-op delivery");
 else
     _logger.LogError(
-        "Firebase push initialization failed; using no-op delivery. Verify GOOGLE_APPLICATION_CREDENTIALS and Firebase permissions. Exception type {ExceptionType}",
+        "Firebase push initialization failed; using no-op delivery. Verify Push:FirebaseCredentialsJson and Firebase permissions. Exception type {ExceptionType}",
         PushInitialization.ExceptionType);
 
 _logger.LogInformation("=== Maintenance job started at {Time} UTC ===", DateTime.UtcNow);
