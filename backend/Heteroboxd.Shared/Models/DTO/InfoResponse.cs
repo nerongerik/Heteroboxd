@@ -31,7 +31,7 @@
             this.PosterUrl = Film.PosterUrl;
             this.BackdropUrl = Film.BackdropUrl;
             this.Length = Film.Length;
-            this.Date = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Film.Date);
             this.WatchCount = Film.WatchCount;
             this.Collection = Film.Collection;
             if (Credits != null)
@@ -60,10 +60,10 @@
         public WatchlistEntryInfoResponse(WatchlistEntry Entry, Film Film)
         {
             this.Id = Entry.Id.ToString();
-            this.Date = Entry.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Entry.Date);
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
-            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmDate = DateUtils.ToUtcIso8601(Film.Date);
             this.FilmPosterUrl = Film.PosterUrl;
         }
     }
@@ -75,7 +75,7 @@
 
         public UserWatchedFilmInfoResponse(UserWatchedFilm UWF)
         {
-            this.Date = UWF.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(UWF.Date);
             this.TimesWatched = UWF.TimesWatched;
         }
     }
@@ -159,7 +159,7 @@
             this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
-            this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Review.Date);
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
@@ -176,7 +176,7 @@
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
-            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmDate = DateUtils.ToUtcIso8601(Film.Date);
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
@@ -186,7 +186,7 @@
             this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
-            this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Review.Date);
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
@@ -210,7 +210,7 @@
             this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
-            this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Review.Date);
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
@@ -222,7 +222,7 @@
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
-            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmDate = DateUtils.ToUtcIso8601(Film.Date);
             this.FilmPosterUrl = Film.PosterUrl;
         }
 
@@ -232,7 +232,7 @@
             this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
-            this.Date = Review.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Review.Date);
             this.Flags = Review.Flags;
             this.Spoiler = Review.Spoiler;
             this.NotificationsOn = Review.NotificationsOn;
@@ -258,7 +258,7 @@
 
             this.FilmId = Film.Id;
             this.FilmTitle = Film.Title;
-            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmDate = DateUtils.ToUtcIso8601(Film.Date);
             this.FilmPosterUrl = Film.PosterUrl;
         }
     }
@@ -291,7 +291,7 @@
             this.Name = List.Name;
             this.Description = List.Description;
             this.Ranked = List.Ranked;
-            this.Date = List.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(List.Date);
             this.Flags = List.Flags;
             this.NotificationsOn = List.NotificationsOn;
             this.ListEntryCount = ListEntryCount;
@@ -313,7 +313,7 @@
             this.Name = List.Name;
             this.Description = List.Description;
             this.Ranked = List.Ranked;
-            this.Date = List.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(List.Date);
             this.Flags = List.Flags;
             this.NotificationsOn = List.NotificationsOn;
             this.ListEntryCount = ListEntryCount;
@@ -351,7 +351,7 @@
             this.Id = Entry.Id.ToString();
             this.Position = Entry.Position;
             this.FilmTitle = Film.Title;
-            this.FilmDate = Film.Date.ToString("dd/MM/yyyy HH:mm");
+            this.FilmDate = DateUtils.ToUtcIso8601(Film.Date);
             this.FilmPosterUrl = Film.PosterUrl;
             this.FilmId = Film.Id;
         }
@@ -378,7 +378,7 @@
         {
             this.Id = Comment.Id.ToString();
             this.Text = Comment.Tombstone == null ? Comment.Text : "";
-            this.Date = Comment.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Comment.Date);
             this.Flags = Comment.Flags;
             this.AuthorId = Author == null ? null : Comment.AuthorId?.ToString();
             this.AuthorName = Author?.Name;
@@ -425,7 +425,7 @@
             this.Bio = User.Bio;
             this.Gender = User.Gender.ToString();
             this.Admin = User.IsAdmin;
-            this.Date = User.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(User.Date);
             this.Flags = User.Flags;
             this.WatchlistCount = WatchlistCount;
             this.ListsCount = UserListCount;
@@ -475,7 +475,7 @@
         {
             this.Id = Notification.Id.ToString();
             this.Text = Notification.Text;
-            this.Date = Notification.Date.ToString("dd/MM/yyyy HH:mm");
+            this.Date = DateUtils.ToUtcIso8601(Notification.Date);
             this.Read = Notification.Read;
             this.UserId = Notification.UserId.ToString();
             this.ReferencedObject = Notification.ReferencedObject.ToString();

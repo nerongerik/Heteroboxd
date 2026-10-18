@@ -52,12 +52,12 @@ namespace Heteroboxd.API.Service
 
             if (LastSync != null)
             {
-                if (!DateTime.TryParse(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
+                if (!DateUtils.TryParseUtc(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
                 if (Countries.Max(c => c.LastSync) <= LastSyncDate) throw new ArgumentException();
             }
 
             return Countries
-                .Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("yyyy-MM-dd HH:mm") })
+                .Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = DateUtils.ToUtcIso8601(c.LastSync) })
                 .ToList();
         }
 
