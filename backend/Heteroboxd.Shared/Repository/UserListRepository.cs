@@ -384,49 +384,93 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<(List<JoinedListEntries> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            IQueryable<UserList> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
-                var PrefixQuery = _context.UserLists
+                var FuzzyQuery = _context.UserLists
                     .AsNoTracking()
-                    .Where(ul => EF.Functions.ILike(ul.Name, PrefixPattern) && !ul.Private);
-                var PrefixCount = await PrefixQuery.CountAsync();
+                    .Where(ul => EF.Functions.TrigramsSimilarity(ul.Name, Search) > 0.3 && !ul.Private);
+                var FuzzyCount = await FuzzyQuery.CountAsync();
+                var UsePrefixFallback = FuzzyCount < PageSize;
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                IQueryable<UserList>? PrefixOnlyQuery = null;
+                var PrefixOnlyCount = 0;
 
-                if (PrefixCount > 0)
+                if (UsePrefixFallback)
                 {
-                    Query = PrefixQuery;
-                }
-                else
-                {
-                    Query = _context.UserLists
+                    PrefixOnlyQuery = _context.UserLists
                         .AsNoTracking()
-                        .Where(ul => EF.Functions.ToTsVector("english", ul.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)) && !ul.Private);
+                        .Where(ul =>
+                            EF.Functions.ILike(ul.Name, PrefixPattern)
+                            && EF.Functions.TrigramsSimilarity(ul.Name, Search) <= 0.3
+                            && !ul.Private
+                        );
+                    PrefixOnlyCount = await PrefixOnlyQuery.CountAsync();
                 }
 
-                var TotalCount = await Query.CountAsync();
+                var TotalCount = UsePrefixFallback ? FuzzyCount + PrefixOnlyCount : FuzzyCount;
+                var GlobalOffset = (Page - 1) * PageSize;
+                var SelectedLists = new List<UserList>();
 
-                var Responses = await Query
+                if (GlobalOffset < FuzzyCount)
+                {
+                    var FuzzyLists = await FuzzyQuery
+                        .OrderByDescending(ul => EF.Functions.TrigramsSimilarity(ul.Name, Search))
+                        .ThenByDescending(ul => _context.UserLikedLists.Count(ull => ull.ListId == ul.Id))
+                        .ThenBy(ul => ul.Id)
+                        .Skip(GlobalOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    SelectedLists.AddRange(FuzzyLists);
+
+                    var RemainingPageSize = PageSize - FuzzyLists.Count;
+                    if (UsePrefixFallback && RemainingPageSize > 0)
+                    {
+                        var PrefixLists = await PrefixOnlyQuery!
+                            .OrderByDescending(ul => _context.UserLikedLists.Count(ull => ull.ListId == ul.Id))
+                            .ThenBy(ul => ul.Id)
+                            .Take(RemainingPageSize)
+                            .ToListAsync();
+                        SelectedLists.AddRange(PrefixLists);
+                    }
+                }
+                else if (UsePrefixFallback)
+                {
+                    var PrefixOffset = GlobalOffset - FuzzyCount;
+                    var PrefixLists = await PrefixOnlyQuery!
+                        .OrderByDescending(ul => _context.UserLikedLists.Count(ull => ull.ListId == ul.Id))
+                        .ThenBy(ul => ul.Id)
+                        .Skip(PrefixOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    SelectedLists.AddRange(PrefixLists);
+                }
+
+                var SelectedListIds = SelectedLists.Select(ul => ul.Id).ToHashSet();
+                var Responses = await _context.UserLists
+                    .AsNoTracking()
+                    .Where(ul => SelectedListIds.Contains(ul.Id))
                     .Select(ul => new
                     {
                         ul,
                         LikeCount = _context.UserLikedLists.Count(ull => ull.ListId == ul.Id),
                         ListEntryCount = _context.ListEntries.Count(le => le.UserListId == ul.Id)
                     })
-                    .OrderByDescending(x => x.LikeCount).ThenBy(x => x.ul.Id)
-                    .Skip((Page - 1) * PageSize)
-                    .Take(PageSize)
                     .Join(_context.Users, x => x.ul.AuthorId, u => u.Id, (x, u) => new { x.ul, u, x.LikeCount, x.ListEntryCount })
                     .ToListAsync();
 
-                var EntriesByList = await GetTopEntriesByListAsync(Responses.Select(x => x.ul.Id));
+                var ResponsesByList = Responses.ToDictionary(x => x.ul.Id);
+                var EntriesByList = await GetTopEntriesByListAsync(SelectedListIds);
 
-                return (Responses.Select(x => new JoinedListEntries(
-                    new JoinedUserList(x.ul, x.u, x.LikeCount, x.ListEntryCount),
-                    EntriesByList.TryGetValue(x.ul.Id, out var entries)
-                        ? entries
-                        : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
-                )).ToList(), TotalCount);
+                return (SelectedLists.Select(ul =>
+                {
+                    var Response = ResponsesByList[ul.Id];
+                    return new JoinedListEntries(
+                        new JoinedUserList(Response.ul, Response.u, Response.LikeCount, Response.ListEntryCount),
+                        EntriesByList.TryGetValue(ul.Id, out var entries)
+                            ? entries
+                            : Enumerable.Repeat<JoinResponse<ListEntry, Film>?>(null, 4).ToList()
+                    );
+                }).ToList(), TotalCount);
             }
             else
             {

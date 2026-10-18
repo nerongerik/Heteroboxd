@@ -133,32 +133,67 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            IQueryable<User> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
-                var PrefixQuery = _context.Users
+                var FuzzyQuery = _context.Users
                     .AsNoTracking()
-                    .Where(u => EF.Functions.ILike(u.Name, PrefixPattern) && u.EmailConfirmed);
-                var PrefixCount = await PrefixQuery.CountAsync();
+                    .Where(u => EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3 && u.EmailConfirmed);
+                var FuzzyCount = await FuzzyQuery.CountAsync();
+                var UsePrefixFallback = FuzzyCount < PageSize;
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                IQueryable<User>? PrefixOnlyQuery = null;
+                var PrefixOnlyCount = 0;
 
-                if (PrefixCount > 0)
+                if (UsePrefixFallback)
                 {
-                    Query = PrefixQuery;
-                }
-                else
-                {
-                    Query = _context.Users
+                    PrefixOnlyQuery = _context.Users
                         .AsNoTracking()
-                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)) && u.EmailConfirmed);
+                        .Where(u =>
+                            EF.Functions.ILike(u.Name, PrefixPattern)
+                            && EF.Functions.TrigramsSimilarity(u.Name, Search) <= 0.3
+                            && u.EmailConfirmed
+                        );
+                    PrefixOnlyCount = await PrefixOnlyQuery.CountAsync();
                 }
 
-                var TotalCount = await Query.CountAsync();
-                var Results = await Query
-                    .OrderBy(u => u.Date).ThenBy(u => u.Id)
-                    .Skip((Page - 1) * PageSize)
-                    .Take(PageSize)
-                    .ToListAsync();
+                var TotalCount = UsePrefixFallback ? FuzzyCount + PrefixOnlyCount : FuzzyCount;
+                var GlobalOffset = (Page - 1) * PageSize;
+                var Results = new List<User>();
+
+                if (GlobalOffset < FuzzyCount)
+                {
+                    var FuzzyResults = await FuzzyQuery
+                        .OrderByDescending(u => EF.Functions.TrigramsSimilarity(u.Name, Search))
+                        .ThenBy(u => u.Date)
+                        .ThenBy(u => u.Id)
+                        .Skip(GlobalOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    Results.AddRange(FuzzyResults);
+
+                    var RemainingPageSize = PageSize - FuzzyResults.Count;
+                    if (UsePrefixFallback && RemainingPageSize > 0)
+                    {
+                        var PrefixResults = await PrefixOnlyQuery!
+                            .OrderBy(u => u.Date)
+                            .ThenBy(u => u.Id)
+                            .Take(RemainingPageSize)
+                            .ToListAsync();
+                        Results.AddRange(PrefixResults);
+                    }
+                }
+                else if (UsePrefixFallback)
+                {
+                    var PrefixOffset = GlobalOffset - FuzzyCount;
+                    var PrefixResults = await PrefixOnlyQuery!
+                        .OrderBy(u => u.Date)
+                        .ThenBy(u => u.Id)
+                        .Skip(PrefixOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    Results.AddRange(PrefixResults);
+                }
+
                 return (Results, TotalCount);
             }
             else

@@ -35,6 +35,7 @@ namespace Heteroboxd.Shared.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder); //let Identity configure itself
+            modelBuilder.HasPostgresExtension("pg_trgm");
 
             //map Identity tables to preferred names
             modelBuilder.Entity<User>(b =>
@@ -42,6 +43,10 @@ namespace Heteroboxd.Shared.Data
                 b.ToTable("Users");
                 b.HasIndex(u => u.Email).IsUnique();
                 b.HasIndex(u => u.UserName).IsUnique();
+                b.HasIndex(u => u.Name)
+                    .HasDatabaseName("IX_Users_Name_Trgm")
+                    .HasMethod("gin")
+                    .HasOperators("gin_trgm_ops");
                 b.Property(u => u.Gender).HasConversion<string>();
             });
 
@@ -91,6 +96,14 @@ namespace Heteroboxd.Shared.Data
                 entity.HasIndex(f => f.Slug).IsUnique();
                 entity.HasIndex(f => f.WatchCount);
                 entity.HasIndex(f => f.AverageRating);
+                entity.HasIndex(f => f.Title)
+                    .HasDatabaseName("IX_Films_Title_Trgm")
+                    .HasMethod("gin")
+                    .HasOperators("gin_trgm_ops");
+                entity.HasIndex(f => f.OriginalTitle)
+                    .HasDatabaseName("IX_Films_OriginalTitle_Trgm")
+                    .HasMethod("gin")
+                    .HasOperators("gin_trgm_ops");
 
                 entity.Property(f => f.Collection)
                     .HasConversion(
@@ -174,6 +187,10 @@ namespace Heteroboxd.Shared.Data
             modelBuilder.Entity<Celebrity>(entity =>
             {
                 entity.HasKey(c => c.Id);
+                entity.HasIndex(c => c.Name)
+                    .HasDatabaseName("IX_Celebrities_Name_Trgm")
+                    .HasMethod("gin")
+                    .HasOperators("gin_trgm_ops");
             });
 
             //CelebrityCredit
@@ -232,6 +249,10 @@ namespace Heteroboxd.Shared.Data
             modelBuilder.Entity<UserList>(entity =>
             {
                 entity.HasKey(ul => ul.Id);
+                entity.HasIndex(ul => ul.Name)
+                    .HasDatabaseName("IX_UserLists_Name_Trgm")
+                    .HasMethod("gin")
+                    .HasOperators("gin_trgm_ops");
 
                 entity.HasOne<User>()
                       .WithMany()
