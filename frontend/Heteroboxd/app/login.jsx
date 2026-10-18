@@ -13,7 +13,7 @@ import LoadingResponse from '../components/loadingResponse'
 import Popup from '../components/popup'
 
 const Login = () => {
-  const [ email, setEmail ] = useState('')
+  const [ usernameOrEmail, setUsernameOrEmail ] = useState('')
   const [ password, setPassword ] = useState('')
   const [ server, setServer ] = useState(Response.initial)
   const [ showPassword, setShowPassword ] = useState(false)
@@ -33,7 +33,7 @@ const Login = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          Email: email,
+          Email: usernameOrEmail,
           Password: password
         })
       })
@@ -43,14 +43,14 @@ const Login = () => {
         setServer(Response.ok)
         router.replace('/')
       } else if (res.status === 400) {
-        setServer({ result: 400, message: 'Incorrect credentials! Please make sure you entered the correct email and password.' })
+        setServer({ result: 400, message: 'Incorrect credentials! Please make sure you entered the correct username or email and password.' })
       } else {
         setServer(Response.internalServerError)
       }
     } catch {
       setServer(Response.networkError)
     }
-  }, [email, password])
+  }, [usernameOrEmail, password])
 
   const sendRecovery = useCallback(async () => {
     setVisible(false)
@@ -86,10 +86,9 @@ const Login = () => {
           <HText style={styles.title}>Welcome Back</HText>
           <TextInput
             style={[styles.input, {borderColor: border1 ? Colors.heteroboxd : Colors.border_color, fontFamily: 'Inter_400Regular'}]}
-            placeholder='Email'
-            keyboardType='email-address'
-            value={email}
-            onChangeText={setEmail}
+            placeholder='Username or Email'
+            value={usernameOrEmail}
+            onChangeText={setUsernameOrEmail}
             autoCapitalize='none'
             placeholderTextColor={Colors.text_placeholder}
             onFocus={() => setBorder1(true)}
@@ -106,7 +105,7 @@ const Login = () => {
               onFocus={() => setBorder2(true)}
               onBlur={() => setBorder2(false)}
               onSubmitEditing={() => {
-                if (email.length > 0 && password.length > 0) {
+                if (usernameOrEmail.length > 0 && password.length > 0) {
                   handleLogin()
                 }
               }}
@@ -123,9 +122,9 @@ const Login = () => {
             </Pressable>
           </View>
           <Pressable
-            style={[styles.button, (email.length === 0 || password.length === 0) && { opacity: 0.5 }]}
+            style={[styles.button, (usernameOrEmail.length === 0 || password.length === 0) && { opacity: 0.5 }]}
             onPress={handleLogin}
-            disabled={email.length === 0 || password.length === 0}>
+            disabled={usernameOrEmail.length === 0 || password.length === 0}>
             <HText style={styles.buttonText}>Log In</HText>
           </Pressable>
           <Pressable onPress={() => setVisible(true)} style={{marginTop: 10}}>

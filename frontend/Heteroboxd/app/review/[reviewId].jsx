@@ -265,7 +265,7 @@ const CommentCard = ({ item, maxRowWidth, widescreen, router, user, handleReport
       ) : null}
       <View style={{width: commentWidth, marginLeft: replyIndent}}>
         <View
-          style={{position: 'relative', overflow: 'hidden'}}
+          style={[{position: 'relative', overflow: 'hidden'}, hasThreadReplies && replyEligible && swipeReply ? {backgroundColor: Colors.background} : null]}
           {...(replyEligible && desktopReply ? { onMouseEnter: handleHoverIn, onMouseLeave: handleHoverOut } : {})}
           {...(replyEligible && swipeReply ? { onTouchStart: handleTouchStart, onTouchEnd: handleTouchEnd, onTouchCancel: handleTouchCancel } : {})}
           {...(panResponder?.panHandlers ?? {})}

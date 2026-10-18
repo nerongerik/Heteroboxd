@@ -39,6 +39,7 @@ const Film = () => {
   const [ uwf, setUwf ] = useState(null)
   const [ usersReview, setUsersReview ] = useState(null)
   const [ topReviews, setTopReviews ] = useState([])
+  const [ revealedSpoilers, setRevealedSpoilers ] = useState(() => new Set())
   const [ reviewCount, setReviewCount ] = useState(0)
   const [ ratings, setRatings ] = useState({})
   const [ watchlisted, setWatchlisted ] = useState(false)
@@ -148,6 +149,16 @@ const Film = () => {
       console.log('network error in loadSubsequentData; handled above.')
     }
   }, [])
+
+  const revealSpoiler = useCallback((reviewId) => {
+    setRevealedSpoilers(prev => {
+      const next = new Set(prev)
+      next.add(reviewId)
+      return next
+    })
+  }, [])
+
+  const isRevealed = useCallback((reviewId) => revealedSpoilers.has(reviewId), [revealedSpoilers])
 
   useEffect(() => {
     let cancelled = false
@@ -505,7 +516,7 @@ const Film = () => {
         {
           topReviews.length === 0 ? (
             <View style={{height: headshotSize, alignSelf: 'center', alignItems: 'center', alignContent: 'center', justifyContent: 'center'}}>
-              <HText style={[styles.text, {fontSize: widescreen ? 18 : 14, textAlign: 'center'}]}>There are no spoiler-free reviews for this film.</HText>
+              <HText style={[styles.text, {fontSize: widescreen ? 18 : 14, textAlign: 'center'}]}>There are no reviews for this film.</HText>
               <Link href={`/review/alter/${film.id}`} style={{fontSize: widescreen ? 18 : 14, color: Colors.text_link, textAlign: 'center'}}>Be the first to write one!</Link>
             </View>
           ) : (
@@ -542,8 +553,8 @@ const Film = () => {
                         text={r.text}
                         width={'100%'}
                         maxHeight={widescreen ? 200 : 100}
-                        spoiler={true}
-                        revealSpoiler={() => {}}
+                        spoiler={(!r.spoiler || uwf || isRevealed(r.id))}
+                        revealSpoiler={() => revealSpoiler(r.id)}
                         widescreen={widescreen}
                       />
                       <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 3}}>

@@ -6,8 +6,6 @@ import Flag from '../../assets/icons/flag.svg'
 import Edit from '../../assets/icons/edit.svg'
 import Trash from '../../assets/icons/trash.svg'
 import Logout from '../../assets/icons/logout.svg'
-import Block from '../../assets/icons/block.svg'
-import Unblock from '../../assets/icons/unblock.svg'
 import Notif from '../../assets/icons/notifications.svg'
 import NotifOff from '../../assets/icons/notifications-off.svg'
 import Share from '../../assets/icons/share.svg'
@@ -23,15 +21,13 @@ import LoadingResponse from '../loadingResponse'
 import Popup from '../popup'
 import SlidingMenu from '../slidingMenu'
 
-const ProfileOptionsButton = ({ userId, userName, blocked, relationship, notifsOnInitial, onNotifChange }) => {
+const ProfileOptionsButton = ({ userId, userName, relationship, notifsOnInitial, onNotifChange }) => {
   const { user, logout, isValidSession } = useAuth()
   const [ other, setOther ] = useState(false)
   const [ menuShown, setMenuShown ] = useState(false)
   const slideAnim = useState(new Animated.Value(0))[0]
   const [ server, setServer ] = useState(Response.initial)
   const [ deleteConfirm, setDeleteConfirm ] = useState(false)
-  const [ blockConfirm, setBlockConfirm ] = useState(false)
-  const [ blockedLocalCopy, setBlockedLocalCopy ] = useState(false)
   const [ notifsOnLocal, setNotifsOnLocal ] = useState(false)
   const [ notifUpdating, setNotifUpdating ] = useState(false)
   const notifUpdatingRef = useRef(false)
@@ -115,31 +111,6 @@ const ProfileOptionsButton = ({ userId, userName, blocked, relationship, notifsO
     }
   }, [user, userId])
   
-  const handleBlock = useCallback(async () => {
-    if (user?.userId === userId || !(await isValidSession())) {
-      setServer(Response.forbidden)
-      return
-    }
-    setServer(Response.loading)
-    try {
-      const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/relationships?TargetId=${userId}&Action=block-unblock`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${jwt}` }
-      })
-      if (res.ok) {
-        setBlockConfirm(false)
-        setServer({ result: 202, message: blockedLocalCopy ? 'User unblocked.' : 'User blocked.' })
-      } else if (res.status === 404) {
-        setServer(Response.notFound)
-      } else {
-        setServer(Response.internalServerError)
-      }
-    } catch {
-      setServer(Response.networkError)
-    }
-  }, [user, userId, blockedLocalCopy])
-
   const handleNotifications = useCallback(async () => {
     if (notifUpdatingRef.current) return
     if (user?.userId === userId || relationship !== 'following' || !(await isValidSession())) {
@@ -184,10 +155,6 @@ const ProfileOptionsButton = ({ userId, userName, blocked, relationship, notifsO
       return
     }
   }, [userName])
-
-  useEffect(() => {
-    setBlockedLocalCopy(blocked)
-  }, [blocked])
 
   useEffect(() => {
     setNotifsOnLocal(notifsOnInitial)
@@ -235,19 +202,6 @@ const ProfileOptionsButton = ({ userId, userName, blocked, relationship, notifsO
                 </Pressable>
               ) : null
             }
-            {
-              blockedLocalCopy ? (
-                <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-                  <HText style={styles.optionText}>Unblock User  </HText>
-                  <Unblock width={20} height={20} />
-                </Pressable>
-              ) : (
-                <Pressable style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}]} onPress={() => blocked ? handleBlock() : setBlockConfirm(true)}>
-                  <HText style={styles.optionText}>Block User  </HText>
-                  <Block width={20} height={20} />
-                </Pressable>
-              )
-            }
           </>
         ) : (
           <>
@@ -287,13 +241,6 @@ const ProfileOptionsButton = ({ userId, userName, blocked, relationship, notifsO
         onConfirm={handleDelete}
       />
 
-      <Popup
-        visible={blockConfirm} 
-        message={'Are you sure you want to block this user? Interactions will be disabled until you unblock their account.'}
-        onClose={() => setBlockConfirm(false)} 
-        confirm={true} 
-        onConfirm={handleBlock}
-      />
     </View>
   )
 }
@@ -308,9 +255,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     color: Colors.text,
-  },
-  link: {
-    color: Colors.text_link,
-    fontWeight: "600",
   }
 })

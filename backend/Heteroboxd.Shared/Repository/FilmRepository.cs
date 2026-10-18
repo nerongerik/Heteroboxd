@@ -326,38 +326,81 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<(List<JoinResponse<Film, List<JoinResponse<Celebrity, List<CelebrityCredit>>>>> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            IQueryable<Film> Query;
-
             if (!string.IsNullOrEmpty(Search))
             {
-                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
-                var PrefixQuery = _context.Films
+                var FuzzyQuery = _context.Films
                     .AsNoTracking()
-                    .Where(f => EF.Functions.ILike(f.Title, PrefixPattern) || EF.Functions.ILike(f.OriginalTitle ?? "", PrefixPattern));
-                var PrefixCount = await PrefixQuery.CountAsync();
+                    .Select(f => new
+                    {
+                        Film = f,
+                        TitleSimilarity = EF.Functions.TrigramsSimilarity(f.Title, Search),
+                        OriginalTitleSimilarity = EF.Functions.TrigramsSimilarity(f.OriginalTitle ?? "", Search)
+                    })
+                    .Where(x => x.TitleSimilarity > 0.3 || x.OriginalTitleSimilarity > 0.3)
+                    .Select(x => new
+                    {
+                        x.Film,
+                        Similarity = x.TitleSimilarity > x.OriginalTitleSimilarity
+                            ? x.TitleSimilarity
+                            : x.OriginalTitleSimilarity
+                    });
 
-                if (PrefixCount > 0)
+                var FuzzyCount = await FuzzyQuery.CountAsync();
+                var UsePrefixFallback = FuzzyCount < PageSize;
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                IQueryable<Film>? PrefixOnlyQuery = null;
+                var PrefixOnlyCount = 0;
+
+                if (UsePrefixFallback)
                 {
-                    Query = PrefixQuery;
-                }
-                else
-                {
-                    Query = _context.Films
+                    PrefixOnlyQuery = _context.Films
                         .AsNoTracking()
-                        .Where(f => 
-                            EF.Functions.ToTsVector("english", f.Title).Matches(EF.Functions.PhraseToTsQuery("english", Search))
-                            ||
-                            EF.Functions.ToTsVector("english", f.OriginalTitle ?? "").Matches(EF.Functions.PhraseToTsQuery("english", Search))
+                        .Where(f =>
+                            (EF.Functions.ILike(f.Title, PrefixPattern) || EF.Functions.ILike(f.OriginalTitle ?? "", PrefixPattern))
+                            && EF.Functions.TrigramsSimilarity(f.Title, Search) <= 0.3
+                            && EF.Functions.TrigramsSimilarity(f.OriginalTitle ?? "", Search) <= 0.3
                         );
+                    PrefixOnlyCount = await PrefixOnlyQuery.CountAsync();
                 }
 
-                var TotalCount = await Query.CountAsync();
+                var TotalCount = UsePrefixFallback ? FuzzyCount + PrefixOnlyCount : FuzzyCount;
+                var GlobalOffset = (Page - 1) * PageSize;
+                var Films = new List<Film>();
 
-                var Films = await Query
-                    .OrderByDescending(f => f.WatchCount).ThenBy(f => f.Id)
-                    .Skip((Page - 1) * PageSize)
-                    .Take(PageSize)
-                    .ToListAsync();
+                if (GlobalOffset < FuzzyCount)
+                {
+                    var FuzzyFilms = await FuzzyQuery
+                        .OrderByDescending(x => x.Similarity)
+                        .ThenByDescending(x => x.Film.WatchCount)
+                        .ThenBy(x => x.Film.Id)
+                        .Skip(GlobalOffset)
+                        .Take(PageSize)
+                        .Select(x => x.Film)
+                        .ToListAsync();
+                    Films.AddRange(FuzzyFilms);
+
+                    var RemainingPageSize = PageSize - FuzzyFilms.Count;
+                    if (UsePrefixFallback && RemainingPageSize > 0)
+                    {
+                        var PrefixFilms = await PrefixOnlyQuery!
+                            .OrderByDescending(f => f.WatchCount)
+                            .ThenBy(f => f.Id)
+                            .Take(RemainingPageSize)
+                            .ToListAsync();
+                        Films.AddRange(PrefixFilms);
+                    }
+                }
+                else if (UsePrefixFallback)
+                {
+                    var PrefixOffset = GlobalOffset - FuzzyCount;
+                    var PrefixFilms = await PrefixOnlyQuery!
+                        .OrderByDescending(f => f.WatchCount)
+                        .ThenBy(f => f.Id)
+                        .Skip(PrefixOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    Films.AddRange(PrefixFilms);
+                }
 
                 var FilmIds = Films.Select(f => f.Id).ToHashSet();
 

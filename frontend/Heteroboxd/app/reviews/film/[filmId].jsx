@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, FlatList, Pressable, useWindowDimensions, View, RefreshControl } from 'react-native'
-import Spoiler from '../../../assets/icons/spoiler.svg'
 import Heart from '../../../assets/icons/heart.svg'
 import Filter from '../../../assets/icons/filter.svg'
 import Comments from '../../../assets/icons/comments.svg'

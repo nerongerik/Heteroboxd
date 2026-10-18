@@ -1,6 +1,4 @@
-﻿using Heteroboxd.Shared.Models.Enums;
-
-namespace Heteroboxd.Shared.Models
+﻿namespace Heteroboxd.Shared.Models
 {
     public class UserRelationship
     {
@@ -8,15 +6,13 @@ namespace Heteroboxd.Shared.Models
         public DateTime Date { get; set; }
         public Guid UserId { get; set; }
         public Guid TargetId { get; set; }
-        public Relationship Relationship { get; set; }
         public bool NotificationsOn { get; set; }
-        public UserRelationship(Guid UserId, Guid TargetId, Relationship Relationship, bool NotificationsOn = true)
+        public UserRelationship(Guid UserId, Guid TargetId, bool NotificationsOn = true)
         {
             this.Id = Guid.NewGuid();
             this.Date = DateTime.UtcNow;
             this.UserId = UserId;
             this.TargetId = TargetId;
-            this.Relationship = Relationship;
             this.NotificationsOn = NotificationsOn;
         }
     }

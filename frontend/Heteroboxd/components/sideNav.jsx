@@ -30,9 +30,6 @@ const SideNav = ({ menuShown, closeMenu, translateX, width, height, children, fo
 export default SideNav
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
   menu: {
     position: 'absolute',
     left: 0,

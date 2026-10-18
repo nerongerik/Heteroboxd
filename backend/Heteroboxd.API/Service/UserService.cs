@@ -17,7 +17,7 @@ namespace Heteroboxd.API.Service
         Task<PagedResponse<WatchlistEntryInfoResponse?>> ShuffleWatchlist(string UserId, int PageSize);
         Task<bool> IsFilmWatchlisted(string UserId, int FilmId);
         Task<Dictionary<string, object?>> GetFavorites(string UserId);
-        Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize);
+        Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int PageSize);
         Task<PagedResponse<CelebrityInfoResponse>> GetStannedCelebrities(string UserId, int Page, int PageSize);
         Task<(string Relationship, bool NotificationsOn)> DetermineRelationship(string UserId, string TargetId);
         Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize);
@@ -78,9 +78,9 @@ namespace Heteroboxd.API.Service
 
         public async Task<UserInfoResponse> GetUser(string UserId)
         {
-            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
-            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount, BlockedCount);
+            return new UserInfoResponse(User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikesCount, StannedCount, FollowerCount, FollowingCount);
         }
 
         public async Task<UserInfoResponse> GetUserByUserName(string UserName)
@@ -163,9 +163,9 @@ namespace Heteroboxd.API.Service
         }
 
 
-        public async Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int BlockedPage, int PageSize)
+        public async Task<DelimitedUserRelationshipsInfoResponse> GetRelationships(string UserId, int FollowersPage, int FollowingPage, int PageSize)
         {
-            var (Following, FollowingCount, Followers, FollowersCount, Blocked, BlockedCount) = await _repo.GetUserRelationshipsAsync(Guid.Parse(UserId), FollowingPage, FollowersPage, BlockedPage, PageSize);
+            var (Following, FollowingCount, Followers, FollowersCount) = await _repo.GetUserRelationshipsAsync(Guid.Parse(UserId), FollowingPage, FollowersPage, PageSize);
 
             return new DelimitedUserRelationshipsInfoResponse
             {
@@ -180,12 +180,6 @@ namespace Heteroboxd.API.Service
                     Items = Followers.Select(u => new UserInfoResponse(u)).ToList(),
                     Page = FollowersPage,
                     TotalCount = FollowersCount
-                },
-                Blocked = new PagedResponse<UserInfoResponse>
-                {
-                    Items = Blocked.Select(u => new UserInfoResponse(u)).ToList(),
-                    Page = BlockedPage,
-                    TotalCount = BlockedCount
                 }
             };
         }
@@ -203,17 +197,8 @@ namespace Heteroboxd.API.Service
 
         public async Task<(string Relationship, bool NotificationsOn)> DetermineRelationship(string UserId, string TargetId)
         {
-            var (Status, NotificationsOn) = await _repo.GetRelationshipStatusAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
-
-            var Relationship = Status switch
-            {
-                Shared.Models.Enums.Relationship.Blocked => "blocked",
-                Shared.Models.Enums.Relationship.Following => "following",
-                null => "none",
-                _ => "none"
-            };
-
-            return (Relationship, NotificationsOn);
+            var (Following, NotificationsOn) = await _repo.GetRelationshipStatusAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
+            return (Following ? "following" : "none", NotificationsOn);
         }
 
         public async Task<DelimitedUserLikesInfoResponse> GetLikes(string UserId, int ReviewsPage, int ListsPage, int PageSize)
@@ -328,7 +313,7 @@ namespace Heteroboxd.API.Service
 
         public async Task Verify(string UserId, string Token)
         {
-            var (User, _, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
+            var (User, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
             if (User == null) throw new KeyNotFoundException();
 
             var Result = await _userManager.ConfirmEmailAsync(User, Token);
@@ -412,9 +397,6 @@ namespace Heteroboxd.API.Service
                             }
                         );
                     }
-                    break;
-                case ("block-unblock"):
-                    await _repo.BlockUnblockAsync(Guid.Parse(UserId), Guid.Parse(TargetId));
                     break;
                 case ("remove-follower"):
                     await _repo.RemoveFollowerAsync(Guid.Parse(UserId), Guid.Parse(TargetId));

@@ -135,32 +135,63 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<(List<Celebrity> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            IQueryable<Celebrity> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
-                var PrefixQuery = _context.Celebrities
+                var FuzzyQuery = _context.Celebrities
                     .AsNoTracking()
-                    .Where(c => EF.Functions.ILike(c.Name, PrefixPattern));
-                var PrefixCount = await PrefixQuery.CountAsync();
+                    .Where(c => EF.Functions.TrigramsSimilarity(c.Name, Search) > 0.3);
+                var FuzzyCount = await FuzzyQuery.CountAsync();
+                var UsePrefixFallback = FuzzyCount < PageSize;
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                IQueryable<Celebrity>? PrefixOnlyQuery = null;
+                var PrefixOnlyCount = 0;
 
-                if (PrefixCount > 0)
+                if (UsePrefixFallback)
                 {
-                    Query = PrefixQuery;
-                }
-                else
-                {
-                    Query = _context.Celebrities
+                    PrefixOnlyQuery = _context.Celebrities
                         .AsNoTracking()
-                        .Where(c => EF.Functions.ToTsVector("english", c.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)));
+                        .Where(c =>
+                            EF.Functions.ILike(c.Name, PrefixPattern)
+                            && EF.Functions.TrigramsSimilarity(c.Name, Search) <= 0.3
+                        );
+                    PrefixOnlyCount = await PrefixOnlyQuery.CountAsync();
                 }
 
-                var TotalCount = await Query.CountAsync();
-                var Results = await Query
-                    .OrderBy(c => c.Id)
-                    .Skip((Page - 1) * PageSize)
-                    .Take(PageSize)
-                    .ToListAsync();
+                var TotalCount = UsePrefixFallback ? FuzzyCount + PrefixOnlyCount : FuzzyCount;
+                var GlobalOffset = (Page - 1) * PageSize;
+                var Results = new List<Celebrity>();
+
+                if (GlobalOffset < FuzzyCount)
+                {
+                    var FuzzyResults = await FuzzyQuery
+                        .OrderByDescending(c => EF.Functions.TrigramsSimilarity(c.Name, Search))
+                        .ThenBy(c => c.Id)
+                        .Skip(GlobalOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    Results.AddRange(FuzzyResults);
+
+                    var RemainingPageSize = PageSize - FuzzyResults.Count;
+                    if (UsePrefixFallback && RemainingPageSize > 0)
+                    {
+                        var PrefixResults = await PrefixOnlyQuery!
+                            .OrderBy(c => c.Id)
+                            .Take(RemainingPageSize)
+                            .ToListAsync();
+                        Results.AddRange(PrefixResults);
+                    }
+                }
+                else if (UsePrefixFallback)
+                {
+                    var PrefixOffset = GlobalOffset - FuzzyCount;
+                    var PrefixResults = await PrefixOnlyQuery!
+                        .OrderBy(c => c.Id)
+                        .Skip(PrefixOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    Results.AddRange(PrefixResults);
+                }
+
                 return (Results, TotalCount);
             }
             else

@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from 'react'
-import { Platform, View } from 'react-native'
+import { View } from 'react-native'
 import * as auth from '../helpers/auth'
 import { removeCurrentPushToken } from '../helpers/pushToken'
 import { usePushTokenLifecycle } from '../hooks/usePushTokenLifecycle'

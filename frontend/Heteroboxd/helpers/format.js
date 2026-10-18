@@ -19,33 +19,58 @@ export const roundSeen = (seenCount, totalCount) => {
   return percentage > 0 && percentage < 1 ? 1 : Math.floor(percentage)
 }
 
+const createUtcDate = (year, month, day) => {
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) return null
+
+  return parsed
+}
+
+const parseApiDate = (value) => {
+  if (!value) return null
+
+  const text = String(value).trim()
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(text)
+  if (iso) {
+    const parsed = new Date(text)
+    if (!Number.isNaN(parsed.getTime())) return parsed
+    return createUtcDate(Number(iso[1]), Number(iso[2]), Number(iso[3]))
+  }
+
+  const legacy = /^(\d{1,2})\D+(\d{1,2})\D+(\d{4})(?:\D|$)/.exec(text)
+  if (!legacy) return null
+
+  return createUtcDate(Number(legacy[3]), Number(legacy[2]), Number(legacy[1]))
+}
+
+const formatApiDate = (date, month) => {
+  const parsed = parseApiDate(date)
+  if (!parsed) return ''
+
+  return new Intl.DateTimeFormat('en-US', {
+    month,
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(parsed)
+}
+
 export const parseDate = (date) => {
-  if (!date) return date
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-  const nums = date.split(" ")[0].split("/")
-  const day = nums[0]
-  const year = nums[2]
-  const month = months[parseInt(nums[1] - 1)]
-  return `${month} ${day}, ${year}`
+  return formatApiDate(date, 'long')
 }
 
 export const parseDateShort = (date) => {
-  if (!date) return date
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const nums = date.split(" ")[0].split("/")
-  const day = nums[0]
-  const year = nums[2]
-  const month = months[parseInt(nums[1] - 1)]
-  return `${month} ${day},\n${year}`
+  return formatApiDate(date, 'short').replace(/, (\d{4})$/, ',\n$1')
 }
 
 export const parseOutYear = (date) => {
-  try {
-    const nums = date.split(" ")[0].split("/")
-    return nums[2]
-  } catch {
-    return ''
-  }
+  const parsed = parseApiDate(date)
+  return parsed ? parsed.getUTCFullYear().toString() : ''
 }
 
 export const formatTimestamp = (ts) => {

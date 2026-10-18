@@ -52,12 +52,12 @@ namespace Heteroboxd.API.Service
 
             if (LastSync != null)
             {
-                if (!DateTime.TryParse(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
+                if (!DateUtils.TryParseUtc(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
                 if (Countries.Max(c => c.LastSync) <= LastSyncDate) throw new ArgumentException();
             }
 
             return Countries
-                .Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = c.LastSync.ToString("yyyy-MM-dd HH:mm") })
+                .Select(c => new CountryInfoResponse { Name = c.Name, Code = c.Code, LastSync = DateUtils.ToUtcIso8601(c.LastSync) })
                 .ToList();
         }
 
@@ -103,6 +103,7 @@ namespace Heteroboxd.API.Service
         public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
         {
             var User = await _userManager.FindByEmailAsync(Request.Email);
+            if (User == null) User = await _userManager.FindByNameAsync(Request.Email);
             if (User == null) return (false, null, null);
 
             var Check = await _signInManager.CheckPasswordSignInAsync(User, Request.Password, false);

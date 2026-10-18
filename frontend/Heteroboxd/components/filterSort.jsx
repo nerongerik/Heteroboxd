@@ -150,7 +150,6 @@ const FilterSort = ({context, currentFilter, onFilterChange, currentSort, onSort
               showsVerticalScrollIndicator={false}
             >
               {getValueOptions(item).map((value) => {
-                const displayValue = item === 'COUNTRY' ? value.name : value.toString();
                 const storedValue = item === 'COUNTRY' ? value.code : value.toString();
                 const isValueSelected = isSelected && currentFilter.value === storedValue;
                 

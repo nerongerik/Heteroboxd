@@ -34,12 +34,12 @@ namespace Heteroboxd.API.Service
 
             if (LastSync != null)
             {
-                if (!DateTime.TryParse(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
+                if (!DateUtils.TryParseUtc(LastSync, out DateTime LastSyncDate)) throw new ArgumentException();
                 if (Trending.Max(c => c.LastSync) <= LastSyncDate) throw new ArgumentException();
             }
 
             return Trending
-                .Select(t => new TrendingInfoResponse { FilmId = t.FilmId, Title = t.Title, FilmPosterUrl = t.PosterUrl, Rank = t.Rank, LastSync = t.LastSync.ToString("yyyy-MM-dd HH:mm") })
+                .Select(t => new TrendingInfoResponse { FilmId = t.FilmId, Title = t.Title, FilmPosterUrl = t.PosterUrl, Rank = t.Rank, LastSync = DateUtils.ToUtcIso8601(t.LastSync) })
                 .ToList();
         }
 

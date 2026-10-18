@@ -3,6 +3,7 @@ using Heteroboxd.Shared.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Heteroboxd.Shared.Models;
+using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Repository;
 
 namespace Heteroboxd.API.Service
@@ -35,7 +36,7 @@ namespace Heteroboxd.API.Service
         public async Task<(string PresignedUrl, string Path)> SignImportJob(string UserId)
         {
             var Existing = await _repo.GetByUserAsync(Guid.Parse(UserId));
-            if (Existing != null && Existing.Status != ImportJobStatus.Failed) throw new ArgumentException(Existing.Date.ToString("dd/MM/yyyy HH:mm"));
+            if (Existing != null && Existing.Status != ImportJobStatus.Failed) throw new ArgumentException(DateUtils.ToUtcIso8601(Existing.Date));
             return await _r2Handler.GeneratePresignedUrl(Guid.Parse(UserId), 1);
         }
 
@@ -48,7 +49,7 @@ namespace Heteroboxd.API.Service
             catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
             {
                 var Existing = await _repo.GetByUserAsync(Guid.Parse(UserId));
-                throw new ArgumentException(Existing!.Date.ToString("dd/MM/yyyy HH:mm"));
+                throw new ArgumentException(DateUtils.ToUtcIso8601(Existing!.Date));
             }
         }
     }

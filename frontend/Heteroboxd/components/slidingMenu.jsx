@@ -20,9 +20,6 @@ const SlidingMenu = ({ menuShown, closeMenu, translateY, widescreen, width, heig
 export default SlidingMenu
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
   menu: {
     position: 'absolute',
     bottom: 0,

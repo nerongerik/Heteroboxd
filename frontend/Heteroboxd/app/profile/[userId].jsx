@@ -48,7 +48,6 @@ const Profile = () => {
   const [ favorites, setFavorites ] = useState([])
   const [ recent, setRecent ] = useState(null)
   const [ pinned, setPinned ] = useState({})
-  const [ blocked, setBlocked ] = useState(false)
   const [ following, setFollowing ] = useState(false)
   const [ relationship, setRelationship ] = useState('')
   const [ notificationsOn, setNotificationsOn ] = useState(false)
@@ -127,12 +126,10 @@ const Profile = () => {
           const trimmed = json.relationship.replace(/^"|"$/g, '').trim().toLowerCase()
           setRelationship(trimmed)
           setNotificationsOn(trimmed === 'following' && json.notificationsOn === true)
-          setBlocked(trimmed === 'blocked')
           setFollowing(trimmed === 'following')
         } else {
           setRelationship('')
           setNotificationsOn(false)
-          setBlocked(false)
           setFollowing(false)
         }
 
@@ -140,7 +137,7 @@ const Profile = () => {
           id: profile.id, userName: profile.userName, name: profile.name, pictureUrl: profile.pictureUrl, bio: profile.bio,
           gender: profile.gender, admin: profile.admin, joined: format.parseDate(profile.date), flags: profile.flags,
           watchlistCount: profile.watchlistCount, listsCount: profile.listsCount, stannedCount: profile.stannedCount,
-          followersCount: profile.followersCount, followingCount: profile.followingCount, blockedCount: profile.blockedCount,
+          followersCount: profile.followersCount, followingCount: profile.followingCount,
           reviewsCount: profile.reviewsCount, likes: profile.likesCount, watched: profile.watchedCount, pinnedReviewId: profile.pinnedReviewId || null
         })
 
@@ -215,9 +212,6 @@ const Profile = () => {
         break
       case 'Following':
         router.push(`/relationships/${profileUserId}?t=following`)
-        break
-      case 'Blocked':
-        router.push(`/relationships/${profileUserId}?t=blocked`)
         break
       default:
         setSnack({ shown: true, msg: 'You cannot access that functionality.' })
@@ -314,14 +308,13 @@ const Profile = () => {
         <ProfileOptionsButton
           userId={profileUserId}
           userName={data.userName}
-          blocked={blocked}
           relationship={relationship}
           notifsOnInitial={notificationsOn}
           onNotifChange={setNotificationsOn}
         />
       ) : null
     })
-  }, [navigation, blocked, data, user, profileUserId, relationship, notificationsOn])
+  }, [navigation, data, user, profileUserId, relationship, notificationsOn])
 
   useEffect(() => {
     if (!profileUserId) return
@@ -521,29 +514,6 @@ const Profile = () => {
     }
   }
 
-  if (blocked) {
-    return (
-      <>
-      <Head>
-        <title>{data.name}</title>
-        <meta name="description" content="You have blocked this user." />
-        <meta property="og:title" content={data.name} />
-        <meta property="og:description" content="You have blocked this user." />
-        <link rel="icon" type="image/x-icon" href="https://www.heteroboxd.com/favicon.ico" />
-        <link rel="icon" type="image/png" href="https://www.heteroboxd.com/favicon.png" sizes="48x48" />
-      </Head>
-      <View style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        backgroundColor: Colors.background
-      }}>
-        <HText style={styles.text}>You have blocked this user.</HText>
-      </View>
-      </>
-    )
-  }
-
   return (
     <>
     <Head>
@@ -705,7 +675,6 @@ const Profile = () => {
             { label: 'Stanned', count: data.stannedCount },
             { label: 'Followers', count: data.followersCount },
             { label: 'Following', count: data.followingCount },
-            ...(isOwnProfile ? [{ label: 'Blocked', count: data.blockedCount }] : []),
           ]
           .map((item, index) => {
             const disabled = item.label === 'Lists' ? (isOwnProfile ? false : item.count === 0) : item.count === 0
@@ -807,10 +776,6 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     width: '75%',
   },
-  ratings: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   buttons: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -830,14 +795,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: Colors.text_title,
     textAlign: "left",
-  },
-  subtext: {
-    fontWeight: "100",
-    fontSize: 12,
-    color: Colors.text_placeholder,
-    textAlign: "justify",
-    fontStyle: 'italic',
-    marginTop: 0,
   },
   profileImage: {
     width: 150,
@@ -865,11 +822,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "400",
     textAlign: "right",
-  },
-  link: {
-    color: Colors.text_link,
-    fontWeight: "600",
-    fontSize: 16
   },
   card: {
     borderTopWidth: 1,

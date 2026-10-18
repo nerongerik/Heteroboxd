@@ -9,7 +9,7 @@ namespace Heteroboxd.Shared.Repository
     public interface IUserRepository
     {
         Task<(List<User> Users, int TotalCount)> GetAllAsync(int Page, int PageSize);
-        Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int StannedCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id);
+        Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int StannedCount, int FollowerCount, int FollowingCount)> GetByIdAsync(Guid Id);
         Task<Guid?> GetIdByUserNameAsync(string UserName);
         Task<User?> LightweightFetcherAsync(Guid Id);
         Task<Dictionary<double, int>> GetRatingsAsync(Guid UserId);
@@ -20,11 +20,11 @@ namespace Heteroboxd.Shared.Repository
         Task<UserFavorites?> GetUserFavoritesAsync(Guid UserId);
         Task<UserWatchedFilm?> GetUserWatchedFilmAsync(Guid UserId, int FilmId);
         Task<(List<User> Friends, List<Review> ExistingReviews)> GetFriendsForFilmAsync(Guid UserId, int FilmId);
-        Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize);
+        Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int PageSize);
         Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize);
         Task<List<Guid>> GetFriendsAsync(Guid UserId);
         Task<List<Guid>> GetNotifiableFollowerIdsAsync(Guid UserId);
-        Task<(Models.Enums.Relationship? Relationship, bool NotificationsOn)> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
+        Task<(bool Following, bool NotificationsOn)> GetRelationshipStatusAsync(Guid UserId, Guid TargetId);
         Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize);
         Task ReportAsync(Guid UserId);
         Task AddToWatchlistAsync(WatchlistEntry Entry);
@@ -32,7 +32,6 @@ namespace Heteroboxd.Shared.Repository
         Task<(bool Added, bool NotificationsOn)> UpdateLikedReviewsAsync(Guid UserId, Guid ReviewId);
         Task<(bool Added, bool NotificationsOn)> UpdateLikedListsAsync(Guid UserId, Guid ListId);
         Task<(bool SendNotif, string UserName)> FollowUnfollowAsync(Guid UserId, Guid TargetId);
-        Task BlockUnblockAsync(Guid UserId, Guid TargetId);
         Task RemoveFollowerAsync(Guid UserId, Guid TargetId);
         Task<bool> ToggleRelationshipNotificationsAsync(Guid UserId, Guid TargetId);
 
@@ -77,7 +76,7 @@ namespace Heteroboxd.Shared.Repository
             return (Users, TotalCount);
         }
 
-        public async Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int StannedCount, int FollowerCount, int FollowingCount, int BlockedCount)> GetByIdAsync(Guid Id)
+        public async Task<(User? User, int WatchlistCount, int UserListCount, int ReviewCount, int WatchedFilmCount, int LikesCount, int StannedCount, int FollowerCount, int FollowingCount)> GetByIdAsync(Guid Id)
         {
             var WatchlistCount = await _context.WatchlistEntries
                 .AsNoTracking()
@@ -102,17 +101,14 @@ namespace Heteroboxd.Shared.Repository
                 .CountAsync(usc => usc.UserId == Id);
             var FollowerCount = await _context.UserRelationships
                 .AsNoTracking()
-                .CountAsync(ur => ur.TargetId == Id && ur.Relationship == Models.Enums.Relationship.Following);
+                .CountAsync(ur => ur.TargetId == Id);
             var FollowingCount = await _context.UserRelationships
                 .AsNoTracking()
-                .CountAsync(ur => ur.UserId == Id && ur.Relationship == Models.Enums.Relationship.Following);
-            var BlockedCount = await _context.UserRelationships
-                .AsNoTracking()
-                .CountAsync(ur => ur.UserId == Id && ur.Relationship == Models.Enums.Relationship.Blocked);
+                .CountAsync(ur => ur.UserId == Id);
             var User = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == Id);
 
-            return (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikedReviewsCount + LikedListCount, StannedCount, FollowerCount, FollowingCount, BlockedCount);
+            return (User, WatchlistCount, UserListCount, ReviewCount, WatchedFilmCount, LikedReviewsCount + LikedListCount, StannedCount, FollowerCount, FollowingCount);
         }
 
         public async Task<Guid?> GetIdByUserNameAsync(string UserName) =>
@@ -137,32 +133,67 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task<(List<User> Results, int TotalCount)> SearchAsync(string Search, int Page, int PageSize)
         {
-            IQueryable<User> Query;
             if (!string.IsNullOrEmpty(Search))
             {
-                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
-                var PrefixQuery = _context.Users
+                var FuzzyQuery = _context.Users
                     .AsNoTracking()
-                    .Where(u => EF.Functions.ILike(u.Name, PrefixPattern) && u.EmailConfirmed);
-                var PrefixCount = await PrefixQuery.CountAsync();
+                    .Where(u => EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3 && u.EmailConfirmed);
+                var FuzzyCount = await FuzzyQuery.CountAsync();
+                var UsePrefixFallback = FuzzyCount < PageSize;
+                var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
+                IQueryable<User>? PrefixOnlyQuery = null;
+                var PrefixOnlyCount = 0;
 
-                if (PrefixCount > 0)
+                if (UsePrefixFallback)
                 {
-                    Query = PrefixQuery;
-                }
-                else
-                {
-                    Query = _context.Users
+                    PrefixOnlyQuery = _context.Users
                         .AsNoTracking()
-                        .Where(u => EF.Functions.ToTsVector("english", u.Name).Matches(EF.Functions.PhraseToTsQuery("english", Search)) && u.EmailConfirmed);
+                        .Where(u =>
+                            EF.Functions.ILike(u.Name, PrefixPattern)
+                            && EF.Functions.TrigramsSimilarity(u.Name, Search) <= 0.3
+                            && u.EmailConfirmed
+                        );
+                    PrefixOnlyCount = await PrefixOnlyQuery.CountAsync();
                 }
 
-                var TotalCount = await Query.CountAsync();
-                var Results = await Query
-                    .OrderBy(u => u.Date).ThenBy(u => u.Id)
-                    .Skip((Page - 1) * PageSize)
-                    .Take(PageSize)
-                    .ToListAsync();
+                var TotalCount = UsePrefixFallback ? FuzzyCount + PrefixOnlyCount : FuzzyCount;
+                var GlobalOffset = (Page - 1) * PageSize;
+                var Results = new List<User>();
+
+                if (GlobalOffset < FuzzyCount)
+                {
+                    var FuzzyResults = await FuzzyQuery
+                        .OrderByDescending(u => EF.Functions.TrigramsSimilarity(u.Name, Search))
+                        .ThenBy(u => u.Date)
+                        .ThenBy(u => u.Id)
+                        .Skip(GlobalOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    Results.AddRange(FuzzyResults);
+
+                    var RemainingPageSize = PageSize - FuzzyResults.Count;
+                    if (UsePrefixFallback && RemainingPageSize > 0)
+                    {
+                        var PrefixResults = await PrefixOnlyQuery!
+                            .OrderBy(u => u.Date)
+                            .ThenBy(u => u.Id)
+                            .Take(RemainingPageSize)
+                            .ToListAsync();
+                        Results.AddRange(PrefixResults);
+                    }
+                }
+                else if (UsePrefixFallback)
+                {
+                    var PrefixOffset = GlobalOffset - FuzzyCount;
+                    var PrefixResults = await PrefixOnlyQuery!
+                        .OrderBy(u => u.Date)
+                        .ThenBy(u => u.Id)
+                        .Skip(PrefixOffset)
+                        .Take(PageSize)
+                        .ToListAsync();
+                    Results.AddRange(PrefixResults);
+                }
+
                 return (Results, TotalCount);
             }
             else
@@ -256,7 +287,7 @@ namespace Heteroboxd.Shared.Repository
         {
             var FriendIds = await _context.UserRelationships
                 .AsNoTracking()
-                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Where(ur => ur.UserId == UserId)
                 .Select(ur => ur.TargetId)
                 .ToListAsync();
 
@@ -279,30 +310,22 @@ namespace Heteroboxd.Shared.Repository
             return (FriendsWatchedResponse.Select(x => x.u).ToList(), Reviews);
         }
 
-        public async Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount, List<User> Blocked, int BlockedCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int BlockedPage, int PageSize)
+        public async Task<(List<User> Following, int FollowingCount, List<User> Followers, int FollowersCount)> GetUserRelationshipsAsync(Guid UserId, int FollowingPage, int FollowersPage, int PageSize)
         {
             var FollowingQuery = _context.UserRelationships
                 .AsNoTracking()
-                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Where(ur => ur.UserId == UserId)
                 .OrderBy(ur => ur.Date).ThenBy(ur => ur.Id)
                 .Join(_context.Users, ur => ur.TargetId, u => u.Id, (ur, u) => new { ur, u })
                 .Select(x => x.u);
             var FollowersQuery = _context.UserRelationships
                 .AsNoTracking()
-                .Where(ur => ur.TargetId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Where(ur => ur.TargetId == UserId)
                 .OrderBy(ur => ur.Date).ThenBy(ur => ur.Id)
                 .Join(_context.Users, ur => ur.UserId, u => u.Id, (ur, u) => new { ur, u })
                 .Select(x => x.u);
-            var BlockedQuery = _context.UserRelationships
-                .AsNoTracking()
-                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Blocked)
-                .OrderBy(ur => ur.Date).ThenBy(ur => ur.Id)
-                .Join(_context.Users, ur => ur.TargetId, u => u.Id, (ur, u) => new { ur, u })
-                .Select(x => x.u);
-
             var FollowingCount = FollowingPage > 0 ? await FollowingQuery.CountAsync() : 0;
             var FollowersCount = FollowersPage > 0 ? await FollowersQuery.CountAsync() : 0;
-            var BlockedCount = BlockedPage > 0 ? await BlockedQuery.CountAsync() : 0;
 
             var Following = FollowingPage > 0
                 ? await FollowingQuery.Skip((FollowingPage - 1) * PageSize).Take(PageSize).ToListAsync()
@@ -310,11 +333,7 @@ namespace Heteroboxd.Shared.Repository
             var Followers = FollowersPage > 0
                 ? await FollowersQuery.Skip((FollowersPage - 1) * PageSize).Take(PageSize).ToListAsync()
                 : new();
-            var Blocked = BlockedPage > 0
-                ? await BlockedQuery.Skip((BlockedPage - 1) * PageSize).Take(PageSize).ToListAsync()
-                : new();
-
-            return (Following, FollowingCount, Followers, FollowersCount, Blocked, BlockedCount);
+            return (Following, FollowingCount, Followers, FollowersCount);
         }
 
         public async Task<(List<Celebrity> Responses, int TotalCount)> GetStannedCelebritiesAsync(Guid UserId, int Page, int PageSize)
@@ -339,28 +358,28 @@ namespace Heteroboxd.Shared.Repository
         public async Task<List<Guid>> GetFriendsAsync(Guid UserId) =>
             await _context.UserRelationships
                 .AsNoTracking()
-                .Where(ur => ur.UserId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Where(ur => ur.UserId == UserId)
                 .Select(ur => ur.TargetId)
                 .ToListAsync();
 
         public async Task<List<Guid>> GetNotifiableFollowerIdsAsync(Guid UserId) =>
             await _context.UserRelationships
                 .AsNoTracking()
-                .Where(ur => ur.TargetId == UserId && ur.Relationship == Models.Enums.Relationship.Following && ur.NotificationsOn)
+                .Where(ur => ur.TargetId == UserId && ur.NotificationsOn)
                 .Select(ur => ur.UserId)
                 .ToListAsync();
 
-        public async Task<(Models.Enums.Relationship? Relationship, bool NotificationsOn)> GetRelationshipStatusAsync(Guid UserId, Guid TargetId)
+        public async Task<(bool Following, bool NotificationsOn)> GetRelationshipStatusAsync(Guid UserId, Guid TargetId)
         {
             var Relationship = await _context.UserRelationships
                 .AsNoTracking()
                 .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId)
-                .Select(ur => new { ur.Relationship, ur.NotificationsOn })
+                .Select(ur => new { ur.NotificationsOn })
                 .FirstOrDefaultAsync();
 
             return Relationship == null
-                ? (null, false)
-                : (Relationship.Relationship, Relationship.Relationship == Models.Enums.Relationship.Following && Relationship.NotificationsOn);
+                ? (false, false)
+                : (true, Relationship.NotificationsOn);
         }
 
         public async Task<(List<JoinResponse<JoinedReviewFilm, User>> ReviewResponses, int ReviewCount, List<JoinedListEntries> ListResponses, int ListCount)> GetUserLikedAsync(Guid UserId, int ReviewsPage, int ListsPage, int PageSize)
@@ -529,7 +548,7 @@ namespace Heteroboxd.Shared.Repository
         {
             try
             {
-                _context.UserRelationships.Add(new UserRelationship(UserId, TargetId, Models.Enums.Relationship.Following));
+                _context.UserRelationships.Add(new UserRelationship(UserId, TargetId));
                 await _context.SaveChangesAsync();
 
                 return (true, (await _context.Users.Where(u => u.Id == UserId).Select(u => u.Name).FirstOrDefaultAsync())!);
@@ -538,36 +557,16 @@ namespace Heteroboxd.Shared.Repository
             {
                 _context.ChangeTracker.Clear();
                 await _context.UserRelationships
-                    .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId && ur.Relationship == Models.Enums.Relationship.Following)
+                    .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId)
                     .ExecuteDeleteAsync();
 
                 return (false, "");
             }
         }
 
-        public async Task BlockUnblockAsync(Guid UserId, Guid TargetId)
-        {
-            try
-            {
-                _context.UserRelationships.Add(new UserRelationship(UserId, TargetId, Models.Enums.Relationship.Blocked));
-                await _context.SaveChangesAsync();
-
-                await _context.UserRelationships
-                    .Where(ur => ((ur.UserId == TargetId && ur.TargetId == UserId) || (ur.UserId == UserId && ur.TargetId == TargetId)) && ur.Relationship == Models.Enums.Relationship.Following)
-                    .ExecuteDeleteAsync();
-            }
-            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-            {
-                _context.ChangeTracker.Clear();
-                await _context.UserRelationships
-                    .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId && ur.Relationship == Models.Enums.Relationship.Blocked)
-                    .ExecuteDeleteAsync();
-            }
-        }
-
         public async Task<bool> ToggleRelationshipNotificationsAsync(Guid UserId, Guid TargetId) =>
             await _context.UserRelationships
-                .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Where(ur => ur.UserId == UserId && ur.TargetId == TargetId)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(
                     ur => ur.NotificationsOn,
                     ur => !ur.NotificationsOn
@@ -575,7 +574,7 @@ namespace Heteroboxd.Shared.Repository
 
         public async Task RemoveFollowerAsync(Guid UserId, Guid TargetId) =>
             await _context.UserRelationships
-                .Where(ur => ur.UserId == TargetId && ur.TargetId == UserId && ur.Relationship == Models.Enums.Relationship.Following)
+                .Where(ur => ur.UserId == TargetId && ur.TargetId == UserId)
                 .ExecuteDeleteAsync();
 
         public async Task<UserLikedReview?> IsReviewLikedAsync(Guid UserId, Guid ReviewId) =>
