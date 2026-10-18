@@ -180,7 +180,7 @@ const Watchlist = () => {
       return <View style={{width: posterWidth, height: posterHeight, margin: spacing / 2}} />
     }
     const title = item.title || item.filmTitle || ''
-    const year = format.parseOutYear(item.date || item.filmDate) || item.releaseYear || ''
+    const year = format.parseOutYear(item.filmDate) || item.releaseYear || ''
     return (
       <View style={{width: posterWidth, margin: spacing / 2, alignItems: 'center'}}>
         <Pressable
