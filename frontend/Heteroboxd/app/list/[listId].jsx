@@ -35,7 +35,7 @@ const List = () => {
   const [ data, setData ] = useState({ page: 1, entries: [], totalCount: 0, seenCount: 0 })
   const [ fadeSeen, setFadeSeen ] = useState(true)
   const [ descCollapsed, setDescCollapsed ] = useState(true)
-  const [ currentFilter, setCurrentFilter ] = useState({ field: 'ALL', value: null })
+  const [ currentFilter ] = useState({ field: 'ALL', value: null })
   const [ currentSort, setCurrentSort ] = useState({ field: 'POSITION', desc: false })
   const [ menuShown2, setMenuShown2 ] = useState(false)
   const slideAnim2 = useState(new Animated.Value(0))[0]
@@ -473,11 +473,6 @@ const List = () => {
 export default List
 
 const styles = StyleSheet.create({
-  author: {
-    color: Colors.text,
-    fontWeight: 'bold',
-    fontSize: 16
-  },
   title: {
     color: Colors.text_title,
     fontWeight: '600',

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { KeyboardAvoidingView, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
 import Check from '../../../assets/icons/check.svg'
 import Spoiler from '../../../assets/icons/spoiler.svg'

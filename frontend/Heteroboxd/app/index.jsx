@@ -755,10 +755,6 @@ const Home = () => {
 export default Home
 
 const styles = StyleSheet.create({
-  link: {
-    color: Colors.text_link,
-    fontWeight: "600",
-  },
   badge: {
     position: 'absolute',
     top: -3,

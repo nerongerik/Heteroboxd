@@ -255,9 +255,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     color: Colors.text,
-  },
-  link: {
-    color: Colors.text_link,
-    fontWeight: "600",
   }
 })

@@ -281,7 +281,6 @@ export default ProfileEdit
 
 const styles = StyleSheet.create({
   form: { width: '100%', alignSelf: 'center' },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 30, color: Colors.text_title, textAlign: 'center' },
   profileWrapper: { alignItems: 'center', marginBottom: 16 },
   profileImage: { width: 100, height: 100, borderRadius: 50, borderColor: Colors.border_color, borderWidth: 1.5 },
   changePicText: { marginTop: 6, color: Colors.text_link, fontWeight: '600' },

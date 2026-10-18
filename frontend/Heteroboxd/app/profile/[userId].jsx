@@ -776,10 +776,6 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     width: '75%',
   },
-  ratings: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   buttons: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -799,14 +795,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: Colors.text_title,
     textAlign: "left",
-  },
-  subtext: {
-    fontWeight: "100",
-    fontSize: 12,
-    color: Colors.text_placeholder,
-    textAlign: "justify",
-    fontStyle: 'italic',
-    marginTop: 0,
   },
   profileImage: {
     width: 150,
@@ -834,11 +822,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "400",
     textAlign: "right",
-  },
-  link: {
-    color: Colors.text_link,
-    fontWeight: "600",
-    fontSize: 16
   },
   card: {
     borderTopWidth: 1,

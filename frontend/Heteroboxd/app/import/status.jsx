@@ -1,5 +1,5 @@
-import { Text, View, ScrollView, useWindowDimensions, Pressable } from 'react-native'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, ScrollView, useWindowDimensions, Pressable } from 'react-native'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Colors } from '../../constants/colors'
 import Refresh from '../../assets/icons/refresh.svg'
 import { useAuth } from '../../hooks/useAuth'
