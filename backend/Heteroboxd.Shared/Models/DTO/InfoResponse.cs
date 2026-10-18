@@ -409,7 +409,6 @@
         public int StannedCount { get; set; }
         public int FollowersCount { get; set; }
         public int FollowingCount { get; set; }
-        public int BlockedCount { get; set; }
         public int ReviewsCount { get; set; }
         public int LikesCount { get; set; }
         public int WatchedCount { get; set; }
@@ -417,7 +416,7 @@
         public string? PinnedReviewId { get; set; }
         public bool FromLetterboxd { get; set; }
 
-        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int StannedCount = 0, int FollowerCount = 0, int FollowingCount = 0, int BlockedCount = 0)
+        public UserInfoResponse(User User, int WatchlistCount = 0, int UserListCount = 0, int ReviewCount = 0, int WatchedFilmCount = 0, int LikesCount = 0, int StannedCount = 0, int FollowerCount = 0, int FollowingCount = 0)
         {
             this.Id = User.Id.ToString();
             this.UserName = User.UserName!;
@@ -433,7 +432,6 @@
             this.StannedCount = StannedCount;
             this.FollowersCount = FollowerCount;
             this.FollowingCount = FollowingCount;
-            this.BlockedCount = BlockedCount;
             this.ReviewsCount = ReviewCount;
             this.LikesCount = LikesCount;
             this.WatchedCount = WatchedFilmCount;
@@ -453,7 +451,6 @@
     {
         public PagedResponse<UserInfoResponse> Following { get; set; }
         public PagedResponse<UserInfoResponse> Followers { get; set; }
-        public PagedResponse<UserInfoResponse> Blocked { get; set; }
     }
 
     public class DelimitedUserFilmInfoResponse

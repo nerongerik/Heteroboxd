@@ -5,27 +5,22 @@ import { Colors } from '../../constants/colors'
 import HText from '../htext'
 import { UserAvatar } from '../userAvatar'
 
-const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPress, onRemoveFollower, onPageChange, active, pageSize, isRefreshing, onRefresh, loading }) => {
-  const [ activeTab, setActiveTab ] = useState(active)
+const RelationshipTabs = ({ isMyProfile, followers, following, onUserPress, onRemoveFollower, onPageChange, active, pageSize, isRefreshing, onRefresh, loading }) => {
+  const [ activeTab, setActiveTab ] = useState(active === 'following' ? 'following' : 'followers')
   const { width } = useWindowDimensions()
   const listRef = useRef(null)
 
   const widescreen = useMemo(() => width > 1000, [width])
 
-  const allTabs = useMemo(() => {
-    const tabs = ['followers', 'following']
-    if (isMyProfile) tabs.push('blocked')
-    return tabs
-  }, [isMyProfile])
+  const allTabs = useMemo(() => ['followers', 'following'], [])
 
   const currentData = useMemo(() => {
     switch (activeTab) {
       case 'followers': return followers
       case 'following': return following
-      case 'blocked': return blocked
       default: return { items: [], totalCount: 0, page: 1 }
     }
-  }, [activeTab, followers, following, blocked])
+  }, [activeTab, followers, following])
 
   const totalPages = useMemo(() => Math.ceil(currentData.totalCount / pageSize), [currentData.totalCount, pageSize])
 
@@ -67,7 +62,6 @@ const RelationshipTabs = ({ isMyProfile, followers, following, blocked, onUserPr
       <View style={widescreen ? styles.tabRowWeb : styles.tabRowMobile}>
         <TabButton title='Followers' active={activeTab === 'followers'} onPress={() => setActiveTab('followers')} />
         <TabButton title='Following' active={activeTab === 'following'} onPress={() => setActiveTab('following')} />
-        {isMyProfile && <TabButton title='Blocked' active={activeTab === 'blocked'} onPress={() => setActiveTab('blocked')} />}
       </View>
 
       <FlatList

@@ -157,12 +157,12 @@ namespace Heteroboxd.API.Controller
 
         [HttpGet("relationships")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetUserRelationships(string UserId, int FollowersPage = 1, int FollowingPage = 1, int BlockedPage = 1, int PageSize = 20)
+        public async Task<IActionResult> GetUserRelationships(string UserId, int FollowersPage = 1, int FollowingPage = 1, int PageSize = 20)
         {
             _logger.LogInformation($"GetUserRelationships endpoint hit for UserId: {UserId}");
             try
             {
-                return Ok(await _service.GetRelationships(UserId, FollowersPage, FollowingPage, BlockedPage, PageSize));
+                return Ok(await _service.GetRelationships(UserId, FollowersPage, FollowingPage, PageSize));
             }
             catch (KeyNotFoundException)
             {

@@ -311,8 +311,8 @@ namespace Heteroboxd.Shared.Data
             {
                 entity.HasKey(ur => ur.Id);
 
-                entity.HasIndex(ur => new { ur.UserId, ur.TargetId, ur.Relationship }).IsUnique();
-                entity.HasIndex(ur => new { ur.TargetId, ur.Relationship, ur.NotificationsOn, ur.UserId })
+                entity.HasIndex(ur => new { ur.UserId, ur.TargetId }).IsUnique();
+                entity.HasIndex(ur => new { ur.TargetId, ur.NotificationsOn, ur.UserId })
                       .HasDatabaseName("IX_UserRelationships_NotifiableFollowers");
 
                 entity.HasOne<User>()
@@ -324,9 +324,6 @@ namespace Heteroboxd.Shared.Data
                       .WithMany()
                       .HasForeignKey(ur => ur.TargetId)
                       .OnDelete(DeleteBehavior.Cascade);
-
-                entity.Property(ur => ur.Relationship)
-                      .HasConversion<string>();
             });
 
             modelBuilder.Entity<ImportJob>(entity =>
