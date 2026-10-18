@@ -103,6 +103,7 @@ namespace Heteroboxd.API.Service
         public async Task<(bool Success, string? Jwt, RefreshToken? RefreshToken)> Login(LoginRequest Request)
         {
             var User = await _userManager.FindByEmailAsync(Request.Email);
+            if (User == null) User = await _userManager.FindByNameAsync(Request.Email);
             if (User == null) return (false, null, null);
 
             var Check = await _signInManager.CheckPasswordSignInAsync(User, Request.Password, false);
