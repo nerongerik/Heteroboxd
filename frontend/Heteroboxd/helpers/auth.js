@@ -73,7 +73,6 @@ export const decodeUser = (token) => {
     username: decoded.username || null,
     pictureUrl: decoded.pictureUrl,
     admin: decoded.admin.toLowerCase() === 'true',
-    lb: decoded.lb?.toLowerCase() === 'true' || false,
-    verified: decoded.verified?.toLowerCase() === 'true' || false
+    lb: decoded.lb?.toLowerCase() === 'true' || false
   }
 }
