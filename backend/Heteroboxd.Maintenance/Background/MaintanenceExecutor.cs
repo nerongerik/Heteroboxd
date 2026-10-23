@@ -4,11 +4,13 @@ using Heteroboxd.Shared.Integrations;
 using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Models.Enums;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Text;
+using System.Text.Json;
 using Npgsql;
 
 namespace Heteroboxd.Maintenance.Background
@@ -16,7 +18,6 @@ namespace Heteroboxd.Maintenance.Background
     public interface IMaintanenceExecutor
     {
         Task ExecuteRefreshPurge(IServiceProvider _provider, CancellationToken CT);
-        Task ExecuteUserPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteImportJobPurge(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteFilmRepair(IServiceProvider _provider, CancellationToken CT);
@@ -24,6 +25,7 @@ namespace Heteroboxd.Maintenance.Background
         Task ExecuteTrendingSync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteCelebritySync(IServiceProvider _provider, CancellationToken CT);
         Task ExecuteFilmSync(IServiceProvider _provider, CancellationToken CT);
+        Task ExecuteBrevoApiKeyRevival(IServiceProvider _provider, CancellationToken CT);
     }
 
     public class MaintanenceExecutor : IMaintanenceExecutor
@@ -36,28 +38,6 @@ namespace Heteroboxd.Maintenance.Background
             await _context.RefreshTokens
                 .Where(r => r.Used || r.Revoked || r.Expires < DateTime.UtcNow)
                 .ExecuteDeleteAsync(CT);
-        }
-
-        public async Task ExecuteUserPurge(IServiceProvider _provider, CancellationToken CT)
-        {
-            using var scope = _provider.CreateScope();
-            var _manager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-            var _r2 = scope.ServiceProvider.GetRequiredService<IR2Handler>();
-
-            var Cutoff = DateTime.UtcNow.AddHours(-24);
-
-            var UnverifiedIds = await _manager.Users
-                .Where(u => !u.EmailConfirmed && u.Date < Cutoff)
-                .Select(u => u.Id)
-                .ToListAsync(CT);
-
-            if (UnverifiedIds.Count == 0) return;
-
-            await _manager.Users
-                .Where(u => UnverifiedIds.Contains(u.Id))
-                .ExecuteDeleteAsync(CT);
-
-            foreach (var id in UnverifiedIds) await _r2.DeleteByUser(id, 0);
         }
 
         public async Task ExecuteNotificationPurge(IServiceProvider _provider, CancellationToken CT)
@@ -417,6 +397,33 @@ namespace Heteroboxd.Maintenance.Background
                 }
                 catch { continue; }
             }
+        }
+
+        public async Task ExecuteBrevoApiKeyRevival(IServiceProvider _provider, CancellationToken CT)
+        {
+            using var _scope = _provider.CreateScope();
+            var _config = _scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var _httpClientFactory = _scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
+            var ApiKey = _config["Brevo:ApiKey"];
+            var FromEmail = _config["Brevo:From"];
+
+            if (string.IsNullOrWhiteSpace(ApiKey) || string.IsNullOrWhiteSpace(FromEmail))
+                throw new InvalidOperationException("Brevo configuration is missing.");
+
+            var Payload = new
+            {
+                sender = new { email = FromEmail, name = _config["Brevo:FromName"] ?? "Heteroboxd" },
+                to = new[] { new { email = "admin+daily@heteroboxd.com" } },
+                subject = "Heteroboxd Maintenance Completed Successfully",
+                htmlContent = "<p>Heteroboxd maintenance completed successfully.</p>"
+            };
+
+            using var Request = new HttpRequestMessage(HttpMethod.Post, "v3/smtp/email");
+            Request.Headers.Add("api-key", ApiKey);
+            Request.Content = new StringContent(JsonSerializer.Serialize(Payload), Encoding.UTF8, "application/json");
+
+            using var Response = await _httpClientFactory.CreateClient("Brevo").SendAsync(Request, CT);
+            Response.EnsureSuccessStatusCode();
         }
 
         private async Task NotifyFollowers(IServiceProvider _provider, int FilmId, string Title, IEnumerable<CelebrityCredit> Credits, CancellationToken CT)

@@ -76,11 +76,11 @@ namespace Heteroboxd.Import.Background
                     await ParseLetterboxdProfile(await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "profile.csv")), User.Id, _context, CT);
                     await ParseLetterboxdWatchlist(MatchedIds, await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "watchlist.csv")), User.Id, _context, CT);
                     await ParseLetterboxdWatched(MatchedIds, await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "watched.csv")), User.Id, _context, CT);
-                    await ParseLetterboxdRatingsAndReviews(MatchedIds, await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "ratings.csv")), await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "reviews.csv")), User.Id, User.EmailConfirmed, _context, CT);
+                    await ParseLetterboxdRatingsAndReviews(MatchedIds, await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "ratings.csv")), await ParseCsv(Zip.Entries.FirstOrDefault(e => e.FullName == "reviews.csv")), User.Id, _context, CT);
                     foreach (var e in Zip.Entries.Where(ze => ze.FullName.StartsWith("lists/")))
                     {
                         var (Header, Entries) = await ParseListCsv(e);
-                        await ParseLetterboxdList(MatchedIds, Header, Entries, User.Id, User.EmailConfirmed, _context, CT);
+                        await ParseLetterboxdList(MatchedIds, Header, Entries, User.Id, _context, CT);
                     }
 
                     await _context.ImportJobs
@@ -243,7 +243,7 @@ namespace Heteroboxd.Import.Background
             );
         }
 
-        private async Task ParseLetterboxdRatingsAndReviews(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, List<string>>? Ratings, Dictionary<string, List<string>>? Reviews, Guid UserId, bool EmailConfirmed, HeteroboxdContext _context, CancellationToken CT)
+        private async Task ParseLetterboxdRatingsAndReviews(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, List<string>>? Ratings, Dictionary<string, List<string>>? Reviews, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
         {
             if (Ratings == null && Reviews == null) return;
 
@@ -290,7 +290,7 @@ namespace Heteroboxd.Import.Background
                 var Date = DateTime.UtcNow;
                 try { Date = DateTime.SpecifyKind(DateTime.ParseExact(tlv.Date.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture), DateTimeKind.Utc); }
                 catch { }
-                UserReviews.Add(new Review(!EmailConfirmed, tlv.Rating, tlv.Text, Date, UserId, tlv.FilmId));
+                UserReviews.Add(new Review(tlv.Rating, tlv.Text, Date, UserId, tlv.FilmId));
                 UserReviewIds.Add(tlv.FilmId);
             });
 
@@ -332,7 +332,7 @@ namespace Heteroboxd.Import.Background
             );
         }
 
-        private async Task ParseLetterboxdList(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, string>? Header, Dictionary<string, List<string>>? Entries, Guid UserId, bool EmailConfirmed, HeteroboxdContext _context, CancellationToken CT)
+        private async Task ParseLetterboxdList(Dictionary<(string Name, int Year), int> MatchedIds, Dictionary<string, string>? Header, Dictionary<string, List<string>>? Entries, Guid UserId, HeteroboxdContext _context, CancellationToken CT)
         {
             if (Header == null || Entries == null) return;
 
@@ -342,7 +342,7 @@ namespace Heteroboxd.Import.Background
             try { Date = DateTime.SpecifyKind(DateTime.ParseExact(Header["Date"], "yyyy-MM-dd", CultureInfo.InvariantCulture), DateTimeKind.Utc); }
             catch { }
 
-            var UserList = new UserList(!EmailConfirmed, Header["Name"], string.IsNullOrEmpty(Header["Description"].Trim()) ? null : Header["Description"].Trim(), Date, UserId);
+            var UserList = new UserList(Header["Name"], string.IsNullOrEmpty(Header["Description"].Trim()) ? null : Header["Description"].Trim(), Date, UserId);
             
             _context.UserLists.Add(UserList);
             await _context.SaveChangesAsync(CT);

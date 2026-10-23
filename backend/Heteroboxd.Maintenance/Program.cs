@@ -1,9 +1,7 @@
 ﻿using Heteroboxd.Maintenance.Background;
 using Heteroboxd.Shared.Data;
 using Heteroboxd.Shared.Integrations;
-using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Repository;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,18 +22,16 @@ services.AddDbContext<HeteroboxdContext>(options =>
     options.UseNpgsql(config.GetConnectionString("DefaultConnection"), o =>
         o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(15), null)));
 
-services.AddIdentity<User, IdentityRole<Guid>>(options =>
-{
-    options.User.RequireUniqueEmail = true;
-    options.SignIn.RequireConfirmedEmail = true;
-})
-.AddEntityFrameworkStores<HeteroboxdContext>()
-.AddDefaultTokenProviders();
-
 services.AddHttpClient<ITMDBClient, TMDBClient>(client =>
 {
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config["TMDB:AccessToken"]}");
+});
+
+services.AddHttpClient("Brevo", client =>
+{
+    client.BaseAddress = new Uri("https://api.brevo.com/");
+    client.Timeout = TimeSpan.FromSeconds(15);
 });
 
 services.AddScoped<ITMDBParser, TMDBParser>();
@@ -66,9 +62,6 @@ try
     _logger.LogInformation("REMOVING INVALID REFRESH TOKENS...");
     await _executor.ExecuteRefreshPurge(_provider, _ct);
 
-    _logger.LogInformation("REMOVING UNVERIFIED USERS...");
-    await _executor.ExecuteUserPurge(_provider, _ct);
-
     _logger.LogInformation("REMOVING OLD NOTIFICATIONS...");
     await _executor.ExecuteNotificationPurge(_provider, _ct);
 
@@ -92,6 +85,8 @@ try
 
     _logger.LogInformation("SYNCING FILM CHANGES FROM TMDB...");
     await _executor.ExecuteFilmSync(_provider, _ct);
+
+    await _executor.ExecuteBrevoApiKeyRevival(_provider, _ct);
 
     _logger.LogInformation("=== Maintenance job finished at {Time} UTC ===", DateTime.UtcNow);
     Environment.Exit(0);
