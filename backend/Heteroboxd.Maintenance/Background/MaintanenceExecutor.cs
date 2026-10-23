@@ -415,8 +415,8 @@ namespace Heteroboxd.Maintenance.Background
             {
                 sender = new { email = FromEmail, name = _config["Brevo:FromName"] ?? "Heteroboxd" },
                 to = new[] { new { email = "nerongerik+daily@gmail.com" } },
-                subject = "Heteroboxd Maintenance Completed Successfully",
-                htmlContent = "<p>Heteroboxd maintenance completed successfully.</p>"
+                subject = "Heteroboxd Maintenance",
+                htmlContent = "<p>Heteroboxd maintenance completed successfully!</p>"
             };
 
             using var Request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
