@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Npgsql;
@@ -418,7 +419,8 @@ namespace Heteroboxd.Maintenance.Background
                 htmlContent = "<p>Heteroboxd maintenance completed successfully.</p>"
             };
 
-            using var Request = new HttpRequestMessage(HttpMethod.Post, "v3/smtp/email");
+            using var Request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+            Request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             Request.Headers.Add("api-key", ApiKey);
             Request.Content = new StringContent(JsonSerializer.Serialize(Payload), Encoding.UTF8, "application/json");
 
