@@ -72,8 +72,6 @@ namespace Heteroboxd.API.Service
         {
             var User = await _userRepo.LightweightFetcherAsync(Guid.Parse(CommentRequest.AuthorId));
             if (User == null) throw new KeyNotFoundException();
-            if (!User.EmailConfirmed) throw new InvalidOperationException();
-
             var Review = await _reviewRepo.GetByIdAsync(Guid.Parse(CommentRequest.ReviewId));
             if (Review == null) throw new KeyNotFoundException();
 

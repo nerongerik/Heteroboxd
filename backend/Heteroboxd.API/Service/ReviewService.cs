@@ -127,7 +127,7 @@ namespace Heteroboxd.API.Service
             var Film = await _filmRepo.LightweightFetcherAsync(ReviewRequest.FilmId);
             if (Film == null) throw new KeyNotFoundException();
 
-            var Review = new Review(!User.EmailConfirmed, ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Spoiler, User.Id, ReviewRequest.FilmId);
+            var Review = new Review(ReviewRequest.Rating, ReviewRequest.Text, ReviewRequest.Spoiler, User.Id, ReviewRequest.FilmId);
             try
             {
                 await _repo.CreateAsync(Review);
@@ -150,22 +150,19 @@ namespace Heteroboxd.API.Service
                 await _filmRepo.IncrementWatchCountAsync(ReviewRequest.FilmId);
             }
 
-            if (!Review.Private)
+            var FollowerIds = await _userRepo.GetNotifiableFollowerIdsAsync(User.Id);
+            var Notifications = new List<Notification>();
+            foreach (var FollowerId in FollowerIds)
             {
-                var FollowerIds = await _userRepo.GetNotifiableFollowerIdsAsync(User.Id);
-                var Notifications = new List<Notification>();
-                foreach (var FollowerId in FollowerIds)
-                {
-                    Notifications.Add(new Notification(
-                        $"Your friend {TruncateName(User.Name)} just reviewed {TruncateTitle(Film.Title)} with {FormatStars(Review.Rating)}!",
-                        FollowerId,
-                        ReferencedObject.Review,
-                        Review.Id.ToString()
-                    ));
-                }
-
-                if (Notifications.Count > 0) await _notificationService.AddNotification(Notifications);
+                Notifications.Add(new Notification(
+                    $"Your friend {TruncateName(User.Name)} just reviewed {TruncateTitle(Film.Title)} with {FormatStars(Review.Rating)}!",
+                    FollowerId,
+                    ReferencedObject.Review,
+                    Review.Id.ToString()
+                ));
             }
+
+            if (Notifications.Count > 0) await _notificationService.AddNotification(Notifications);
             return new ReviewInfoResponse(Review, 0, 0);
         }
 

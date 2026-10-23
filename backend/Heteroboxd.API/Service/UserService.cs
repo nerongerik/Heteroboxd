@@ -3,8 +3,6 @@ using Heteroboxd.Shared.Models;
 using Heteroboxd.Shared.Models.DTO;
 using Heteroboxd.Shared.Models.Enums;
 using Heteroboxd.Shared.Repository;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace Heteroboxd.API.Service
 {
@@ -28,8 +26,6 @@ namespace Heteroboxd.API.Service
         Task<PagedResponse<UserInfoResponse>> SearchUsers(string Search, int Page, int PageSize);
         Task ReportAsync(string UserId);
         Task<string?> UpdateUser(UpdateUserRequest UserUpdate);
-        Task SendVerificationEmail(string UserId);
-        Task Verify(string UserId, string Token);
         Task UpdateWatchlist(string UserId, int FilmId);
         Task<Dictionary<string, object?>> UpdateFavorites(string UserId, int? FilmId, int Index);
         Task UpdateRelationship(string UserId, string TargetId, string Action);
@@ -46,23 +42,17 @@ namespace Heteroboxd.API.Service
         private readonly IFilmRepository _filmRepo;
         private readonly IReviewRepository _reviewRepo;
         private readonly IAuthService _authService;
-        private readonly UserManager<User> _userManager;
         private readonly INotificationService _notificationService;
         private readonly IR2Handler _r2Handler;
-        private readonly IConfiguration _config;
-        private readonly IEmailSender _emailSender;
 
-        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, UserManager<User> userManager, INotificationService notificationService, IR2Handler r2Handler, IConfiguration config, IEmailSender emailSender)
+        public UserService(IUserRepository repo, IFilmRepository filmRepo, IReviewRepository reviewRepository, IAuthService authService, INotificationService notificationService, IR2Handler r2Handler)
         {
             _repo = repo;
             _filmRepo = filmRepo;
             _reviewRepo = reviewRepository;
             _authService = authService;
-            _userManager = userManager;
             _notificationService = notificationService;
             _r2Handler = r2Handler;
-            _config = config;
-            _emailSender = emailSender;
         }
 
         public async Task<PagedResponse<UserInfoResponse>> GetUsers(int Page, int PageSize)
@@ -290,36 +280,6 @@ namespace Heteroboxd.API.Service
             await _repo.UpdateAsync(User);
 
             return PresignedUrl;
-        }
-
-        public async Task SendVerificationEmail(string UserId)
-        {
-            var User = await _repo.LightweightFetcherAsync(Guid.Parse(UserId));
-            if (User == null) throw new KeyNotFoundException();
-
-            var Token = await _userManager.GenerateEmailConfirmationTokenAsync(User);
-            var ConfirmUrl = $"{_config["Frontend:BaseUrl"]}/verify?userId={User.Id}&token={Uri.EscapeDataString(Token)}";
-
-            //confirmation email
-            string Message = $@"
-                <html>
-                    <body>
-                        <p>Verify Your Account!</p>
-                        <p>To complete your account verification, simply click <a href=""{ConfirmUrl}"">HERE</a>. (The link is valid for 24 hours)</p>
-                    </body>
-                </html>";
-            await _emailSender.SendEmailAsync(User.Email!, "Verify Your Account", Message);
-        }
-
-        public async Task Verify(string UserId, string Token)
-        {
-            var (User, _, _, _, _, _, _, _, _) = await _repo.GetByIdAsync(Guid.Parse(UserId));
-            if (User == null) throw new KeyNotFoundException();
-
-            var Result = await _userManager.ConfirmEmailAsync(User, Token);
-            if (!Result.Succeeded) throw new Exception();
-
-            await _repo.Publicize(User.Id);
         }
 
         public async Task ReportAsync(string UserId) =>

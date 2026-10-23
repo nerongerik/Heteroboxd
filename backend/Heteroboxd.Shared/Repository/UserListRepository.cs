@@ -7,7 +7,7 @@ namespace Heteroboxd.Shared.Repository
 {
     public interface IUserListRepository
     {
-        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue, bool Admin);
+        Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserList?> GetByIdAsync(Guid ListId);
         Task<JoinedUserList?> GetJoinedByIdAsync(Guid ListId);
         Task<(List<JoinResponse<ListEntry, Film>> Responses, int TotalCount, List<UserWatchedFilm>? Seen, int? SeenCount)> GetEntriesByIdAsync(Guid ListId, Guid? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
@@ -37,34 +37,19 @@ namespace Heteroboxd.Shared.Repository
             _context = context;
         }
 
-        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue, bool Admin)
+        public async Task<(List<JoinedListEntries> Responses, int TotalCount)> GetAllAsync(IEnumerable<Guid>? UsersFriends, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
-            var Query = 
-                Admin ?
-                    _context.UserLists
-                        .AsNoTracking()
-                        .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
-                        .Select(x => new
-                        {
-                            x.ul,
-                            x.u,
-                            LikeCount = _context.UserLikedLists.Count(ull => ull.ListId == x.ul.Id),
-                            ListEntryCount = _context.ListEntries.Count(le => le.UserListId == x.ul.Id)
-                        })
-                        .AsQueryable()
-                :
-                    _context.UserLists
-                        .AsNoTracking()
-                        .Where(ul => !ul.Private)
-                        .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
-                        .Select(x => new
-                        {
-                            x.ul,
-                            x.u,
-                            LikeCount = _context.UserLikedLists.Count(ull => ull.ListId == x.ul.Id),
-                            ListEntryCount = _context.ListEntries.Count(le => le.UserListId == x.ul.Id)
-                        })
-                        .AsQueryable();
+            var Query = _context.UserLists
+                .AsNoTracking()
+                .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
+                .Select(x => new
+                {
+                    x.ul,
+                    x.u,
+                    LikeCount = _context.UserLikedLists.Count(ull => ull.ListId == x.ul.Id),
+                    ListEntryCount = _context.ListEntries.Count(le => le.UserListId == x.ul.Id)
+                })
+                .AsQueryable();
 
             //filtering
             switch (Filter.ToLower())
@@ -321,7 +306,7 @@ namespace Heteroboxd.Shared.Repository
 
             var ListQuery = _context.UserLists
                 .AsNoTracking()
-                .Where(ul => ListIdsQuery.Contains(ul.Id) && !ul.Private)
+                .Where(ul => ListIdsQuery.Contains(ul.Id))
                 .Join(_context.Users, ul => ul.AuthorId, u => u.Id, (ul, u) => new { ul, u })
                 .Select(x => new
                 {
@@ -388,7 +373,7 @@ namespace Heteroboxd.Shared.Repository
             {
                 var FuzzyQuery = _context.UserLists
                     .AsNoTracking()
-                    .Where(ul => EF.Functions.TrigramsSimilarity(ul.Name, Search) > 0.3 && !ul.Private);
+                    .Where(ul => EF.Functions.TrigramsSimilarity(ul.Name, Search) > 0.3);
                 var FuzzyCount = await FuzzyQuery.CountAsync();
                 var UsePrefixFallback = FuzzyCount < PageSize;
                 var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
@@ -402,7 +387,6 @@ namespace Heteroboxd.Shared.Repository
                         .Where(ul =>
                             EF.Functions.ILike(ul.Name, PrefixPattern)
                             && EF.Functions.TrigramsSimilarity(ul.Name, Search) <= 0.3
-                            && !ul.Private
                         );
                     PrefixOnlyCount = await PrefixOnlyQuery.CountAsync();
                 }

@@ -120,7 +120,7 @@ namespace Heteroboxd.Shared.Repository
         {
             var FilmQuery = _context.Reviews
                 .AsNoTracking()
-                .Where(r => r.FilmId == FilmId && !r.Private)
+                .Where(r => r.FilmId == FilmId)
                 .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new { r, u })
                 .Select(x => new
                 {
@@ -184,7 +184,7 @@ namespace Heteroboxd.Shared.Repository
         {
             var Responses = await _context.Reviews
                 .AsNoTracking()
-                .Where(r => r.FilmId == FilmId && r.Text != null && r.Text.Length > 0 && !r.Private)
+                .Where(r => r.FilmId == FilmId && r.Text != null && r.Text.Length > 0)
                 .Join(_context.Users, r => r.AuthorId, u => u.Id, (r, u) => new
                 {
                     r,
