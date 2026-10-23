@@ -5,7 +5,6 @@ namespace Heteroboxd.Shared.Models
     public class Review
     {
         public Guid Id { get; set; }
-        public bool Private { get; set; }
         public double Rating { get; set; }
         public string? Text { get; set; }
         public DateTime Date { get; set; }
@@ -18,10 +17,9 @@ namespace Heteroboxd.Shared.Models
 
         protected Review() { }
 
-        public Review(bool Private, double Rating, string? Text, bool Spoiler, Guid AuthorId, int FilmId)
+        public Review(double Rating, string? Text, bool Spoiler, Guid AuthorId, int FilmId)
         {
             this.Id = Guid.NewGuid();
-            this.Private = Private;
             this.Rating = Rating;
             this.Text = Text;
             this.Date = DateTime.UtcNow;
@@ -33,10 +31,9 @@ namespace Heteroboxd.Shared.Models
             this.FromLetterboxd = false;
         }
 
-        public Review(bool Private, double Rating, string? Text, DateTime Date, Guid AuthorId, int FilmId)
+        public Review(double Rating, string? Text, DateTime Date, Guid AuthorId, int FilmId)
         {
             this.Id = Guid.NewGuid();
-            this.Private = Private;
             this.Rating = Rating;
             this.Text = Text;
             this.Date = Date;

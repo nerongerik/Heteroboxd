@@ -39,7 +39,6 @@ namespace Heteroboxd.Shared.Repository
         Task<UserLikedList?> IsListLikedAsync(Guid UserId, Guid ListId);
         Task<WatchlistEntry?> IsWatchlistedAsync(int FilmId, Guid UserId);
 
-        Task Publicize(Guid UserId);
         Task UpdateAsync(User User);
         Task UpdateFavoritesAsync(UserFavorites Favorites);
         Task CreateUserWatchedFilmAsync(UserWatchedFilm WatchedFilm);
@@ -137,7 +136,7 @@ namespace Heteroboxd.Shared.Repository
             {
                 var FuzzyQuery = _context.Users
                     .AsNoTracking()
-                    .Where(u => EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3 && u.EmailConfirmed);
+                    .Where(u => EF.Functions.TrigramsSimilarity(u.Name, Search) > 0.3);
                 var FuzzyCount = await FuzzyQuery.CountAsync();
                 var UsePrefixFallback = FuzzyCount < PageSize;
                 var PrefixPattern = $"{Search.Replace("%", "\\%").Replace("_", "\\_")}%";
@@ -151,7 +150,6 @@ namespace Heteroboxd.Shared.Repository
                         .Where(u =>
                             EF.Functions.ILike(u.Name, PrefixPattern)
                             && EF.Functions.TrigramsSimilarity(u.Name, Search) <= 0.3
-                            && u.EmailConfirmed
                         );
                     PrefixOnlyCount = await PrefixOnlyQuery.CountAsync();
                 }
@@ -595,22 +593,6 @@ namespace Heteroboxd.Shared.Repository
                 .AsNoTracking()
                 .FirstOrDefaultAsync(wle => wle.FilmId == FilmId && wle.UserId == UserId);
             return Entry;
-        }
-
-        public async Task Publicize(Guid UserId)
-        {
-            await _context.Reviews
-                .Where(r => r.AuthorId == UserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    r => r.Private,
-                    r => false
-                ));
-            await _context.UserLists
-                .Where(ul => ul.AuthorId == UserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(
-                    ul => ul.Private,
-                    ul => false
-                ));
         }
 
         public async Task UpdateAsync(User User)

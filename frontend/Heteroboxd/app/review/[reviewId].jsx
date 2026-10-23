@@ -664,14 +664,6 @@ const ReviewWithComments = () => {
 
   const Header = useMemo(() => (
     <View style={{padding: 5, paddingTop: 0, width: widescreen ? 1000 : '100%', alignSelf: 'center'}}>
-      {
-        user && !user.verified && review?.authorId === user.userId && (
-        <>
-          <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>Your account is not verified! Until you verify your account, all your reviews will remain private and won't show up for other users.</Link>
-          <View style={{height: 20}} />
-        </>
-        )
-      }
       <View style={{marginBottom: -5}}>
         <Author
           userId={review?.authorId}
@@ -747,7 +739,7 @@ const ReviewWithComments = () => {
       ) : null}
 
       <View onLayout={handleCommentComposerLayout}>
-        {(user && user.verified) ?
+        {user ?
           <View style={[styles.commentInputContainer, {width: maxRowWidth, alignSelf: 'center'}]}>
             <View style={styles.descWrapper}>
               <TextInput
@@ -778,12 +770,7 @@ const ReviewWithComments = () => {
               <HText style={{color: Colors.text_title, fontSize: widescreen ? 32 : 24, marginBottom: 10}}>{' ➜'}</HText>
             </Pressable>
           </View>
-        : (user && !user.verified) ?
-          <>
-            <Link href={`/profile/${user.userId}`} style={{padding: 10, textAlign: 'center', color: Colors.heteroboxd, fontSize: widescreen ? 16 : 12, fontFamily: 'Inter_400Regular'}}>You must verify your account to leave comments.</Link>
-            <Divider marginVertical={10} />
-          </>
-          : null
+        : null
         }
       </View>
 

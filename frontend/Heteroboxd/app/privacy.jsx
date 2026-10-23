@@ -45,7 +45,7 @@ const Privacy = () => {
           </HText>
           {[
             'Name (the full name or alias of your profile)',
-            'Email address (used to verify your account, identify you uniquely, and form your public username)',
+            'Email address (used to identify you uniquely and form your public username)',
             'Password (stored securely as a hashed value, never as plaintext)',
             'Gender (shown on your profile page)',
             'Bio (an optional description shown on your profile page)',

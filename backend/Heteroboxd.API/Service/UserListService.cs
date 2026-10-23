@@ -7,7 +7,7 @@ namespace Heteroboxd.API.Service
 {
     public interface IUserListService
     {
-        Task<PagedResponse<UserListInfoResponse>> GetLists(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue, bool Admin = false);
+        Task<PagedResponse<UserListInfoResponse>> GetLists(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<UserListInfoResponse> GetList(string ListId);
         Task<PagedResponse<ListEntryInfoResponse?>> GetListEntries(string ListId, string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue);
         Task<List<ListEntryInfoResponse>> PowerGetEntries(string ListId);
@@ -39,7 +39,7 @@ namespace Heteroboxd.API.Service
             _notificationService = notificationService;
         }
 
-        public async Task<PagedResponse<UserListInfoResponse>> GetLists(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue, bool Admin = false)
+        public async Task<PagedResponse<UserListInfoResponse>> GetLists(string? UserId, int Page, int PageSize, string Filter, string Sort, bool Desc, string? FilterValue)
         {
             if (UserId == null && Filter.ToLower() == "friends") throw new KeyNotFoundException();
 
@@ -49,7 +49,7 @@ namespace Heteroboxd.API.Service
                 UsersFriends = await _userRepo.GetFriendsAsync(Guid.Parse(UserId));
             }
 
-            var (Responses, TotalCount) = await _repo.GetAllAsync(UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue, Admin);
+            var (Responses, TotalCount) = await _repo.GetAllAsync(UsersFriends, Page, PageSize, Filter, Sort, Desc, FilterValue);
             return new PagedResponse<UserListInfoResponse>
             {
                 TotalCount = TotalCount,
@@ -162,26 +162,23 @@ namespace Heteroboxd.API.Service
             var User = await _userRepo.LightweightFetcherAsync(Guid.Parse(ListRequest.AuthorId));
             if (User == null) throw new KeyNotFoundException();
 
-            var NewList = new UserList(!User.EmailConfirmed, ListRequest.Name, ListRequest.Description, ListRequest.Ranked, User.Id);
+            var NewList = new UserList(ListRequest.Name, ListRequest.Description, ListRequest.Ranked, User.Id);
             await _repo.CreateAsync(NewList);
             await AddListEntries(NewList.Id, ListRequest.Entries);
 
-            if (!NewList.Private)
+            var FollowerIds = await _userRepo.GetNotifiableFollowerIdsAsync(User.Id);
+            var Notifications = new List<Notification>();
+            foreach (var FollowerId in FollowerIds)
             {
-                var FollowerIds = await _userRepo.GetNotifiableFollowerIdsAsync(User.Id);
-                var Notifications = new List<Notification>();
-                foreach (var FollowerId in FollowerIds)
-                {
-                    Notifications.Add(new Notification(
-                        $"Your friend {TruncateName(User.Name)} just created a new list {TruncateTitle(NewList.Name)} - check it out!",
-                        FollowerId,
-                        ReferencedObject.UserList,
-                        NewList.Id.ToString()
-                    ));
-                }
-
-                if (Notifications.Count > 0) await _notificationService.AddNotification(Notifications);
+                Notifications.Add(new Notification(
+                    $"Your friend {TruncateName(User.Name)} just created a new list {TruncateTitle(NewList.Name)} - check it out!",
+                    FollowerId,
+                    ReferencedObject.UserList,
+                    NewList.Id.ToString()
+                ));
             }
+
+            if (Notifications.Count > 0) await _notificationService.AddNotification(Notifications);
         }
 
         public async Task UpdateList(UpdateUserListRequest ListRequest)

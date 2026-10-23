@@ -132,7 +132,6 @@
     public class ReviewInfoResponse
     {
         public string Id { get; set; }
-        public bool Private { get; set; }
         public double Rating { get; set; }
         public string? Text { get; set; }
         public string Date { get; set; }
@@ -156,7 +155,6 @@
         public ReviewInfoResponse(Review Review, User Author, Film Film, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
-            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = DateUtils.ToUtcIso8601(Review.Date);
@@ -183,7 +181,6 @@
         public ReviewInfoResponse(Review Review, User Author, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
-            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = DateUtils.ToUtcIso8601(Review.Date);
@@ -207,7 +204,6 @@
         public ReviewInfoResponse(Review Review, Film Film, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
-            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = DateUtils.ToUtcIso8601(Review.Date);
@@ -229,7 +225,6 @@
         public ReviewInfoResponse(Review Review, int LikeCount, int CommentCount)
         {
             this.Id = Review.Id.ToString();
-            this.Private = Review.Private;
             this.Rating = Review.Rating;
             this.Text = Review.Text;
             this.Date = DateUtils.ToUtcIso8601(Review.Date);
@@ -248,7 +243,6 @@
         public ReviewInfoResponse(Film Film)
         {
             this.Id = "";
-            this.Private = true;
             this.Text = "";
             this.Date = "";
             this.LikeCount = 0;
@@ -266,7 +260,6 @@
     public class UserListInfoResponse
     {
         public string Id { get; set; }
-        public bool Private { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
         public bool Ranked { get; set; }
@@ -287,7 +280,6 @@
         public UserListInfoResponse(UserList List, User Author, int LikeCount, int ListEntryCount)
         {
             this.Id = List.Id.ToString();
-            this.Private = List.Private;
             this.Name = List.Name;
             this.Description = List.Description;
             this.Ranked = List.Ranked;
@@ -309,7 +301,6 @@
         public UserListInfoResponse(UserList List, List<JoinResponse<ListEntry, Film>?> Entries, User Author, int LikeCount, int ListEntryCount)
         {
             this.Id = List.Id.ToString();
-            this.Private = List.Private;
             this.Name = List.Name;
             this.Description = List.Description;
             this.Ranked = List.Ranked;

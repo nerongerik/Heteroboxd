@@ -61,7 +61,6 @@ const Profile = () => {
   const [ resolvedUserId, setResolvedUserId ] = useState(null)
   const resolvedUserRef = useRef({ id: null, userName: null, viewerId: null })
   const [ isRefreshing, setIsRefreshing ] = useState(false)
-  const verifyClicked = useRef(null)
   const insets = useSafeAreaInsets()
 
   const translateY2 = slideAnim2.interpolate({inputRange: [0, 1], outputRange: [300, 0]})
@@ -252,30 +251,6 @@ const Profile = () => {
       console.log('follow/unfollow failed; network error...')
     }
   }, [user, isValidSession, profileUserId, notificationsOn])
-
-  const handleVerify = useCallback(async () => {
-    if (!verifyClicked.current) {
-      verifyClicked.current = true
-      if (!user || !(await isValidSession())) {
-        setServer(Response.forbidden)
-        router.replace('/login')
-        return
-      }
-      setServer(Response.loading)
-      setData(null)
-      const jwt = await auth.getJwt()
-      const res = await fetch(`${BaseUrl.api}/users/send`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${jwt}` }
-      })
-      if (res.ok) {
-        setServer({ result: 201, message: `We sent the verification link to your e-mail. Please remember to check your spam folder in the case our message doesn't appear in the inbox.` })
-      } else {
-        setServer(Response.internalServerError)
-        verifyClicked.current = false
-      }
-    }
-  }, [user, isValidSession])
 
   const updateFavorites = useCallback(async (filmId, index) => {
     if (!user || !isOwnProfile || !(await isValidSession())) {
@@ -556,7 +531,7 @@ const Profile = () => {
           <View style={{alignItems: 'center', justifyContent: 'center'}}>
             <HText style={styles.username}>{data.name}{data.admin && <HText style={{color: Colors._heteroboxd}}>{'[ADMIN]'}</HText>}</HText>
           </View>
-          {!isOwnProfile ? (
+          {!isOwnProfile && (
             <Pressable
               onPress={handleFollow}
               style={{
@@ -571,22 +546,6 @@ const Profile = () => {
               }}
             >
               <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: followButtonColor, textAlign: 'center'}}>{followLabel}</HText>
-            </Pressable>
-          ) : !user.verified && (
-            <Pressable
-              onPress={handleVerify}
-              style={{
-                backgroundColor: 'transparent',
-                borderWidth: 3,
-                borderColor: Colors.heteroboxd,
-                borderRadius: 3,
-                paddingVertical: widescreen ? 8 : 6,
-                paddingHorizontal: widescreen ? 8 : 6,
-                justifyContent: 'center',
-                alignSelf: 'center'
-              }}
-            >
-              <HText style={{fontSize: widescreen ? 16 : 12, fontWeight: '700', color: Colors.heteroboxd, textAlign: 'center'}}>VERIFY YOUR ACCOUNT</HText>
             </Pressable>
           )}
         </View>

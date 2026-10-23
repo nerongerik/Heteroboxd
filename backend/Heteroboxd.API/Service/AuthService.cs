@@ -157,8 +157,7 @@ namespace Heteroboxd.API.Service
                     new Claim("username", User.UserName!),
                     new Claim("pictureUrl", string.IsNullOrEmpty(User.PictureUrl) ? User.PictureUrl : User.PictureUrl + $"?v={User.PictureUrlCacheVersion}"),
                     new Claim("admin", User.IsAdmin.ToString()),
-                    new Claim("lb", User.FromLetterboxd.ToString()),
-                    new Claim("verified", User.EmailConfirmed.ToString())
+                    new Claim("lb", User.FromLetterboxd.ToString())
                 };
 
                 var Creds = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256);
@@ -207,7 +206,7 @@ namespace Heteroboxd.API.Service
             var User = await _userManager.FindByEmailAsync(Email);
 
             //never reveal user's existance
-            if (User == null || !(await _userManager.IsEmailConfirmedAsync(User))) return;
+            if (User == null) return;
 
             var Token = await _userManager.GeneratePasswordResetTokenAsync(User);
 
