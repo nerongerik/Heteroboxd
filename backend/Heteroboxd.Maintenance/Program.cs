@@ -78,14 +78,15 @@ try
     }
 
     _logger.LogInformation("SYNCING TRENDING FILMS FROM TMDB...");
-    await _executor.ExecuteTrendingSync(_provider, _ct);
+    //await _executor.ExecuteTrendingSync(_provider, _ct);
 
     _logger.LogInformation("SYNCING CELEBRITY CHANGES FROM TMDB...");
-    await _executor.ExecuteCelebritySync(_provider, _ct);
+    //await _executor.ExecuteCelebritySync(_provider, _ct);
 
     _logger.LogInformation("SYNCING FILM CHANGES FROM TMDB...");
-    await _executor.ExecuteFilmSync(_provider, _ct);
+    //await _executor.ExecuteFilmSync(_provider, _ct);
 
+    _logger.LogInformation("SENDING THE HEALTH CHECKPOINT EMAIL...");
     await _executor.ExecuteBrevoApiKeyRevival(_provider, _ct);
 
     _logger.LogInformation("=== Maintenance job finished at {Time} UTC ===", DateTime.UtcNow);

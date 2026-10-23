@@ -414,7 +414,7 @@ namespace Heteroboxd.Maintenance.Background
             var Payload = new
             {
                 sender = new { email = FromEmail, name = _config["Brevo:FromName"] ?? "Heteroboxd" },
-                to = new[] { new { email = "admin+daily@heteroboxd.com" } },
+                to = new[] { new { email = "nerongerik+daily@gmail.com" } },
                 subject = "Heteroboxd Maintenance Completed Successfully",
                 htmlContent = "<p>Heteroboxd maintenance completed successfully.</p>"
             };
