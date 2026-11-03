@@ -74,7 +74,7 @@ const NotificationLifecycle = () => {
       handleNotification: async () => ({
         shouldShowBanner: false,
         shouldShowList: true,
-        shouldPlaySound: false,
+        shouldPlaySound: true,
         shouldSetBadge: false,
         priority: Notifications.AndroidNotificationPriority.HIGH
       })
