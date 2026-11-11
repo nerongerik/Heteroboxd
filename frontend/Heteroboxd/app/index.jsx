@@ -10,7 +10,6 @@ import About from '../assets/icons/about.svg'
 import Android from '../assets/icons/android.svg'
 import Import from '../assets/icons/import.svg'
 import Contact from '../assets/icons/contact.svg'
-import Donate from '../assets/icons/donate.svg'
 import Notif from '../assets/icons/notifications.svg'
 import X from '../assets/icons/x.svg'
 import Profile from '../assets/icons/profile.svg'
@@ -329,12 +328,6 @@ const Home = () => {
                 </View>
                 <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Contact</HText>
               </Pressable>
-              <Pressable onPress={() => navPress(`/sponsor`)} style={{marginBottom: shortscreen ? 10 :  20, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-                <View style={{width: 40, alignItems: 'center'}}>
-                <Donate width={22} height={22} fill={Colors.text} />
-                </View>
-                <HText style={{fontSize: shortscreen ? 18 : 20, fontWeight: '500', color: Colors.text}}>Donate</HText>
-              </Pressable>
               {
                 user?.userId ? (
                   <>
@@ -420,12 +413,6 @@ const Home = () => {
               <Contact height={22} width={22} fill={Colors.text} />
               </View>
               <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Contact</HText>
-            </Pressable>
-            <Pressable onPress={() => navPress(`/sponsor`)} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}>
-              <View style={{width: 30, alignItems: 'center'}}>
-              <Donate width={22} height={22} fill={Colors.text} />
-              </View>
-              <HText style={{fontSize: 16, fontWeight: '500', color: Colors.text}}>Donate</HText>
             </Pressable>
             {
               user?.userId ? (

@@ -67,16 +67,7 @@ const About = () => {
         <HText style={styles.text}>
           You can access Heteroboxd on any web browser at <Link style={styles.link} href='https://www.heteroboxd.com'>heteroboxd.com</Link>,
           or download our mobile app from the Google Play Store. The iOS build is ready for deployment, but due to massive
-          costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest and
-          <Link style={styles.link} href='/sponsor'> funding.</Link>
-        </HText>
-    
-        <HText style={styles.subtitle}>
-          How can I support Heteroboxd?
-        </HText>
-        <HText style={styles.text}>
-          Heteroboxd is free to use for everyone, and the (many) expenses are currently covered by the developer.
-          If you'd like to support us, please consider making <Link style={styles.link} href='sponsor'>a donation</Link>.
+          costs of Apple's developer program and App Store fees, it won't be published until we reach sufficient interest.
         </HText>
 
         <HText style={styles.subtitle}>
