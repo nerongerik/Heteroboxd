@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
+import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View, Platform } from 'react-native'
 import { Link, useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import Head from 'expo-router/head'
 import * as ImageManipulator from 'expo-image-manipulator'
@@ -58,11 +58,6 @@ const ProfileEdit = () => {
 
   const pickImage = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission required', 'Permission to access media library is required to change profile picture.')
-        return
-      }
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         quality: 1,
@@ -107,7 +102,7 @@ const ProfileEdit = () => {
       }
       setServer(Response.ok)
     } catch {
-      console.log('image pick failed; debugging...')
+      Alert.alert('Unable to open gallery', 'Please try again.')
     }
   }
 
@@ -222,9 +217,7 @@ const ProfileEdit = () => {
             {profileUri ? (
               <Image source={{ uri: profileUri }} style={styles.profileImage} />
             ) : (
-              <Pressable onPress={pickImage}>
-                <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
-              </Pressable>
+              <UserAvatar pictureUrl={data.pictureUrl} style={styles.profileImage} />
             )}
             <HText style={[styles.changePicText, {fontSize: width > 1000 ? 16 : 12}]}>Change Profile Picture</HText>
           </Pressable>
