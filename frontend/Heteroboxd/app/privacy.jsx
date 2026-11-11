@@ -70,13 +70,6 @@ const Privacy = () => {
 
           <Divider marginVertical={20} />
 
-          <HText style={styles.subtitle}>Donations</HText>
-          <HText style={styles.text}>
-            Heteroboxd earns no money from its services and follows TMDB API rules. Donations help cover maintenance costs and are not processed by us — we only link to our PayPal, Patreon, and Buy Me a Coffee pages.
-          </HText>
-
-          <Divider marginVertical={20} />
-
           <HText style={styles.subtitle}>Your Rights</HText>
           <HText style={styles.text}>
             You have the right to view, edit, or permanently delete all data associated with your account at any time, with no retention.

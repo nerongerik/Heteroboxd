@@ -13,6 +13,7 @@ import './browser.css'
 import Back from '../assets/icons/back.svg'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import NotificationLifecycle from '../components/notificationLifecycle'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -73,34 +74,36 @@ const RootLayout = () => {
   }
 
   return (
-    <AuthProvider>
-      <SafeAreaProvider>
-        <NotificationLifecycle />
-        <UpdateModal
-          visible={updateRequired || (updateAvailable && !softDismissed)}
-          optional={!updateRequired}
-          onUpdate={openStore}
-          onDismiss={() => setSoftDismissed(true)}
-        />
-        <Stack initialRouteName='index'
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: Colors.background,
-              elevation: 0,
-              shadowOpacity: 0,
-            },
-            headerTintColor: Colors.text,
-            headerShadowVisible: false,
-            title: '',
-            headerTitleStyle: {fontFamily: 'Inter_400Regular'},
-            headerBackImage: () => (<Back width={24} height={24} />)
-          }}
-        >
-          <Stack.Screen name='login' options={{ headerShown: false }} />
-          <Stack.Screen name='register' options={{ headerShown: false }} />
-        </Stack>
-      </SafeAreaProvider>
-    </AuthProvider>
+    <GestureHandlerRootView>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <NotificationLifecycle />
+          <UpdateModal
+            visible={updateRequired || (updateAvailable && !softDismissed)}
+            optional={!updateRequired}
+            onUpdate={openStore}
+            onDismiss={() => setSoftDismissed(true)}
+          />
+          <Stack initialRouteName='index'
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: Colors.background,
+                elevation: 0,
+                shadowOpacity: 0,
+              },
+              headerTintColor: Colors.text,
+              headerShadowVisible: false,
+              title: '',
+              headerTitleStyle: {fontFamily: 'Inter_400Regular'},
+              headerBackImage: () => (<Back width={24} height={24} />)
+            }}
+          >
+            <Stack.Screen name='login' options={{ headerShown: false }} />
+            <Stack.Screen name='register' options={{ headerShown: false }} />
+          </Stack>
+        </SafeAreaProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   )
 }
 
