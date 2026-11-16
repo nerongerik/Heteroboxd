@@ -191,6 +191,7 @@ namespace Heteroboxd.Shared.Integrations
                     Notification = new AndroidNotification
                     {
                         ChannelId = AndroidChannelId,
+                        EventTimestamp = Notification.Date
                         DefaultVibrateTimings = true
                     }
                 }
