@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Platform, Pressable, StyleSheet, useWindowDimensions, Vibration, View } from 'react-native'
+import { Animated, Platform, Pressable, Share as NativeShare, StyleSheet, useWindowDimensions, Vibration, View } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import More from '../../assets/icons/more.svg'
 import Flag from '../../assets/icons/flag.svg'
@@ -8,7 +8,7 @@ import Trash from '../../assets/icons/trash.svg'
 import Logout from '../../assets/icons/logout.svg'
 import Notif from '../../assets/icons/notifications.svg'
 import NotifOff from '../../assets/icons/notifications-off.svg'
-import Share from '../../assets/icons/share.svg'
+import ShareIcon from '../../assets/icons/share.svg'
 import Check from '../../assets/icons/check.svg'
 import { useRouter } from 'expo-router'
 import * as auth from '../../helpers/auth'
@@ -149,7 +149,12 @@ const ProfileOptionsButton = ({ userId, userName, relationship, notifsOnInitial,
     if (!userName) return
 
     try {
-      await Clipboard.setStringAsync(`https://www.heteroboxd.com/profile/${userName}`)
+      const url = `https://www.heteroboxd.com/profile/${userName}`
+      if (Platform.OS === 'android') {
+        await NativeShare.share({ message: url })
+        return
+      }
+      await Clipboard.setStringAsync(url)
       setShared(true)
     } catch {
       return
@@ -221,7 +226,7 @@ const ProfileOptionsButton = ({ userId, userName, relationship, notifsOnInitial,
         )}
         <Pressable disabled={shared} style={[styles.option, {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', opacity: shared ? 0.5 : 1}]} onPress={handleShare}>
           <HText style={styles.optionText}>{shared ? 'Copied to Clipboard  ' : 'Share  '}</HText>
-          {shared ? <Check width={18} height={18} /> : <Share width={20} height={20} />}
+          {shared ? <Check width={18} height={18} /> : <ShareIcon width={20} height={20} />}
         </Pressable>
       </SlidingMenu>
       
